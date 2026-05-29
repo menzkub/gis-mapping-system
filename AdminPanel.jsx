@@ -52,7 +52,7 @@ function AdminPanel({ data, setData, currentUser, addAudit }) {
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
-        {tab === "audit"     && <AdminAudit  data={data} />}
+        {tab === "audit"     && <AdminAudit />}
       </div>
     </div>
   );
@@ -190,15 +190,31 @@ function Donut({ peaMeters, custMeters, peaTr, custTr, displayTotal }) {
 }
 
 function actionLabel(a) {
-  const m = { login: "Login", logout: "Logout", search_meter: "ค้นหา Meter", search_tr: "ค้นหา TR", update_meter: "แก้ Meter", update_tr: "แก้ TR", delete_meter: "ลบ Meter", delete_tr: "ลบ TR", approve_user: "Approve", ban_user: "Ban", import_csv: "Import", export_csv: "Export", view_map: "ดูแผนที่", create_user: "สร้างบัญชี", create_meter: "เพิ่ม Meter", create_tr: "เพิ่ม TR" };
+  const m = {
+    login: "Login", logout: "Logout",
+    change_password: "เปลี่ยนรหัส", enable_2fa: "เปิด 2FA", disable_2fa: "ปิด 2FA",
+    search_meter: "ค้นหา Meter", search_tr: "ค้นหา TR", view_map: "ดูแผนที่",
+    update_meter: "แก้ Meter", update_tr: "แก้ TR",
+    delete_meter: "ลบ Meter", delete_tr: "ลบ TR",
+    approve_user: "Approve", ban_user: "Ban", update_user: "แก้ User",
+    import_csv: "Import", export_csv: "Export",
+    create_user: "สร้างบัญชี", create_meter: "เพิ่ม Meter", create_tr: "เพิ่ม TR",
+  };
   return m[a] || a;
 }
 function actionBadge(a) {
-  if (a.startsWith("delete") || a === "ban_user") return "badge-red";
-  if (a.startsWith("update") || a === "import_csv") return "badge-amber";
-  if (a === "approve_user" || a === "create_user" || a === "create_meter" || a === "create_tr") return "badge-green";
-  if (a === "export_csv" || a === "view_map") return "badge-blue";
-  return "badge-purple";
+  if (a.startsWith("delete") || a === "ban_user")                       return "badge-red";
+  if (a.startsWith("update") || a === "import_csv")                     return "badge-amber";
+  if (a === "login" || a.startsWith("approve") || a.startsWith("create")) return "badge-green";
+  if (a === "logout")                                                    return "badge-purple";
+  if (a.startsWith("search") || a === "view_map")                       return "badge-blue";
+  if (a === "change_password" || a === "enable_2fa" || a === "disable_2fa") return "badge-orange";
+  return "";
+}
+function parseDeviceAd(ua = "") {
+  const b = /Edg/.test(ua) ? "Edge" : /Chrome/.test(ua) ? "Chrome" : /Firefox/.test(ua) ? "Firefox" : /Safari/.test(ua) ? "Safari" : "Browser";
+  const o = /Windows NT/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "Mac" : /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : "Other";
+  return `${b} · ${o}`;
 }
 
 /* ---------- Users ---------- */
@@ -797,53 +813,183 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
   );
 }
 
-/* ---------- Audit Log ---------- */
-function AdminAudit({ data }) {
-  const [q, setQ]         = useStateAd("");
-  const [action, setAction] = useStateAd("");
-  const list = data.auditLog.filter(r =>
-    (!q      || `${r.user} ${r.target} ${r.detail}`.toLowerCase().includes(q.toLowerCase())) &&
-    (!action || r.action === action)
-  );
-  const actions = Array.from(new Set(data.auditLog.map(r => r.action)));
+/* ---------- Audit Log (server-side pagination + filters) ---------- */
+const ALL_ACTIONS = [
+  "login","logout","change_password","enable_2fa","disable_2fa",
+  "search_meter","search_tr","view_map",
+  "create_meter","update_meter","delete_meter",
+  "create_tr","update_tr","delete_tr",
+  "approve_user","ban_user","update_user","import_csv","export_csv","create_user",
+];
+const PAGE_SIZE = 50;
+
+function AdminAudit() {
+  const [logs, setLogs]       = useStateAd([]);
+  const [total, setTotal]     = useStateAd(0);
+  const [page, setPage]       = useStateAd(0);
+  const [loading, setLoading] = useStateAd(true);
+  const [userList, setUserList] = useStateAd([]);
+
+  const [q, setQ]             = useStateAd("");
+  const [userF, setUserF]     = useStateAd("");
+  const [actionF, setActionF] = useStateAd("");
+  const [dateFrom, setDateFrom] = useStateAd("");
+  const [dateTo, setDateTo]   = useStateAd("");
+
+  useEffectAd(() => {
+    _supabase.from("profiles").select("username").order("username")
+      .then(({ data }) => setUserList((data || []).map(r => r.username)));
+  }, []);
+
+  const fetchPage = async (p, f) => {
+    setLoading(true);
+    try {
+      let qb = _supabase.from("audit_log")
+        .select("*", { count: "exact" })
+        .order("at", { ascending: false })
+        .range(p * PAGE_SIZE, (p + 1) * PAGE_SIZE - 1);
+
+      if (f.userF)    qb = qb.eq("username", f.userF);
+      if (f.actionF)  qb = qb.eq("action",   f.actionF);
+      if (f.dateFrom) qb = qb.gte("at", f.dateFrom + "T00:00:00");
+      if (f.dateTo)   qb = qb.lte("at", f.dateTo   + "T23:59:59");
+      if (f.q.trim()) {
+        const s = f.q.trim().replace(/[%_]/g, "\\$&");
+        qb = qb.or(`username.ilike.%${s}%,target.ilike.%${s}%,detail.ilike.%${s}%`);
+      }
+
+      const { data, count } = await qb;
+      setLogs((data || []).map(toAuditEntry));
+      setTotal(count || 0);
+      setPage(p);
+    } finally { setLoading(false); }
+  };
+
+  const curFilters = () => ({ q, userF, actionF, dateFrom, dateTo });
+
+  useEffectAd(() => {
+    const t = setTimeout(() => fetchPage(0, { q, userF, actionF, dateFrom, dateTo }), 350);
+    return () => clearTimeout(t);
+  }, [q, userF, actionF, dateFrom, dateTo]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const hasFilter  = q || userF || actionF || dateFrom || dateTo;
 
   return (
     <div className="card card-elev fade-up">
-      <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
-        <div>
-          <div className="text-lg fw-7">Audit Log ({list.length})</div>
-          <div className="t-mute text-sm">บันทึกการใช้งานระบบทั้งหมด — บันทึกถาวรใน Supabase</div>
+      {/* Toolbar */}
+      <div style={{ marginBottom: 14 }}>
+        <div className="f-between f-gap-2" style={{ marginBottom: 10 }}>
+          <div>
+            <div className="text-lg fw-7">Audit Log</div>
+            <div className="t-mute text-sm">
+              {loading ? "กำลังโหลด…" : `พบ ${total.toLocaleString()} รายการ${hasFilter ? " (กรอง)" : ""}`}
+            </div>
+          </div>
+          <div className="f-gap-2 flex">
+            {hasFilter && (
+              <button className="btn btn-outline" style={{ height: 36, fontSize: 12 }}
+                onClick={() => { setQ(""); setUserF(""); setActionF(""); setDateFrom(""); setDateTo(""); }}>
+                <Icon name="close" size={13} /> ล้างตัวกรอง
+              </button>
+            )}
+            <button className="btn btn-outline" style={{ height: 36, fontSize: 12 }}
+              onClick={() => downloadCSV("audit-log.csv", logs)}>
+              <Icon name="download" size={14} /> Export หน้านี้
+            </button>
+          </div>
         </div>
-        <div className="f-gap-2 flex">
-          <input className="input" style={{ width: 240, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา user / target / detail" />
-          <select className="input" style={{ width: 180, height: 38 }} value={action} onChange={e => setAction(e.target.value)}>
-            <option value="">การกระทำทั้งหมด</option>
-            {actions.map(a => <option key={a} value={a}>{actionLabel(a)}</option>)}
+
+        {/* Filter row */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <input className="input" style={{ flex: "1 1 200px", height: 36 }}
+            placeholder="🔍 ค้นหา user / target / detail…"
+            value={q} onChange={e => setQ(e.target.value)} />
+
+          <select className="input" style={{ flex: "1 1 160px", height: 36 }}
+            value={userF} onChange={e => setUserF(e.target.value)}>
+            <option value="">👤 ผู้ใช้ทั้งหมด</option>
+            {userList.map(u => <option key={u} value={u}>@{u}</option>)}
           </select>
-          <button className="btn btn-outline btn-sm" onClick={() => downloadCSV("audit-log.csv", list)}><Icon name="download" size={14} /> Export</button>
+
+          <select className="input" style={{ flex: "1 1 160px", height: 36 }}
+            value={actionF} onChange={e => setActionF(e.target.value)}>
+            <option value="">⚡ การกระทำทั้งหมด</option>
+            {ALL_ACTIONS.map(a => <option key={a} value={a}>{actionLabel(a)}</option>)}
+          </select>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="t-mute text-xs">วันที่</span>
+            <input className="input" type="date" style={{ height: 36, width: 148 }}
+              title="วันที่เริ่มต้น" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <span className="t-mute text-xs">ถึง</span>
+            <input className="input" type="date" style={{ height: 36, width: 148 }}
+              title="วันที่สิ้นสุด" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          </div>
         </div>
       </div>
-      <div style={{ overflow: "auto", maxHeight: "62vh" }}>
+
+      {/* Table */}
+      <div style={{ overflow: "auto", maxHeight: "52vh" }}>
         <table className="table">
-          <thead><tr>{["เวลา", "ผู้ใช้", "การกระทำ", "เป้าหมาย", "รายละเอียด"].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>ผู้ใช้</th>
+              <th>การกระทำ</th>
+              <th>เป้าหมาย</th>
+              <th>รายละเอียด</th>
+              <th>อุปกรณ์</th>
+            </tr>
+          </thead>
           <tbody>
-            {list.map(r => (
+            {loading && logs.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--ink-mute)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid var(--line)", borderTopColor: "var(--pea-purple-500)", animation: "pea-spin 0.8s linear infinite" }} />
+                  กำลังโหลด…
+                </div>
+              </td></tr>
+            ) : logs.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--ink-mute)" }}>ไม่พบข้อมูล</td></tr>
+            ) : logs.map(r => (
               <tr key={r.id}>
-                <td className="mono text-xs">{r.at}</td>
+                <td className="mono text-xs" style={{ whiteSpace: "nowrap" }}>{r.at}</td>
                 <td>
-                  <div className="f-gap-2 flex" style={{ alignItems: "center" }}>
-                    <div style={{ width: 26, height: 26, borderRadius: "50%", background: avatarBg(r.user || "x"), color: "white", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 11 }}>{(r.user[0] || "?").toUpperCase()}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: "50%", background: avatarBg(r.user || "x"), color: "white", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+                      {(r.user[0] || "?").toUpperCase()}
+                    </div>
                     <span className="mono text-sm">{r.user}</span>
                   </div>
                 </td>
                 <td><span className={"badge " + actionBadge(r.action)}>{actionLabel(r.action)}</span></td>
                 <td className="mono text-xs">{r.target}</td>
                 <td className="text-sm">{r.detail}</td>
+                <td className="text-xs t-mute" title={r.ip}>{r.ip ? parseDeviceAd(r.ip) : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page === 0 || loading} onClick={() => fetchPage(0, curFilters())}>«</button>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page === 0 || loading} onClick={() => fetchPage(page - 1, curFilters())}>‹</button>
+          <span className="text-sm t-mute" style={{ minWidth: 140, textAlign: "center" }}>
+            หน้า {page + 1} / {totalPages} &nbsp;·&nbsp; {total.toLocaleString()} รายการ
+          </span>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page >= totalPages - 1 || loading} onClick={() => fetchPage(page + 1, curFilters())}>›</button>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page >= totalPages - 1 || loading} onClick={() => fetchPage(totalPages - 1, curFilters())}>»</button>
+        </div>
+      )}
     </div>
   );
 }

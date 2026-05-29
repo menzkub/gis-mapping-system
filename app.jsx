@@ -66,7 +66,14 @@ function ProfileView({ currentUser, data, addAudit }) {
   const [saving, setSaving]       = useStateApp(false);
   const [err, setErr]             = useStateApp(null);
   const [pwSuccess, setPwSuccess] = useStateApp(false);
+  const [mfaStatus, setMfaStatus] = useStateApp(null); // null=loading | true=enrolled | false=not
   const toast = useToast();
+
+  useEffectApp(() => {
+    _supabase.auth.mfa.listFactors().then(({ data: d }) => {
+      setMfaStatus(d?.totp?.some(f => f.status === "verified") || false);
+    });
+  }, []);
 
   const checks = {
     length:  newPw.length >= 8,
@@ -107,7 +114,6 @@ function ProfileView({ currentUser, data, addAudit }) {
     }
   };
 
-  const myActivity = data.auditLog.filter(r => r.user === currentUser.username);
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 24px", height: "100%", overflow: "auto" }}>
@@ -118,9 +124,10 @@ function ProfileView({ currentUser, data, addAudit }) {
 
       <div className="tabs" style={{ marginBottom: 20 }}>
         {[
-          { id: "info",     label: "ข้อมูลบัญชี",     icon: "user" },
-          { id: "password", label: "เปลี่ยนรหัสผ่าน", icon: "lock" },
-          { id: "activity", label: "ประวัติการใช้งาน", icon: "history" },
+          { id: "info",     label: "ข้อมูลบัญชี",      icon: "user" },
+          { id: "password", label: "เปลี่ยนรหัสผ่าน",  icon: "lock" },
+          { id: "activity", label: "ประวัติการใช้งาน",  icon: "history" },
+          { id: "search",   label: "ประวัติการค้นหา",   icon: "search" },
         ].map(t => (
           <button key={t.id} className={"tab " + (tab === t.id ? "active" : "")} onClick={() => setTabPV(t.id)}>
             <Icon name={t.icon} size={14} /> {t.label}
@@ -147,9 +154,18 @@ function ProfileView({ currentUser, data, addAudit }) {
             {[
               { label: "ชื่อ-นามสกุล",      value: currentUser.name },
               { label: "Username",           value: "@" + currentUser.username },
+              { label: "อีเมล",              value: currentUser.email || "—" },
               { label: "สิทธิ์การใช้งาน",   value: currentUser.role },
               { label: "สถานะบัญชี",         value: currentUser.status === "active" ? "✅ ใช้งานได้" : currentUser.status },
               { label: "เข้าสู่ระบบล่าสุด", value: currentUser.lastLogin || "—" },
+              {
+                label: "2FA (TOTP)",
+                value: currentUser.require_2fa
+                  ? (mfaStatus === null ? "กำลังตรวจสอบ…"
+                    : mfaStatus ? "🔒 เปิดใช้งานแล้ว"
+                    : "⚠️ บังคับแต่ยังไม่ได้ตั้งค่า")
+                  : (mfaStatus ? "🔒 เปิดใช้งาน (ไม่บังคับ)" : "ปิดอยู่"),
+              },
             ].map(r => (
               <div key={r.label} style={{ padding: "14px 0", borderBottom: "1px solid var(--line)" }}>
                 <div className="t-mute text-xs fw-6" style={{ textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{r.label}</div>
@@ -239,36 +255,97 @@ function ProfileView({ currentUser, data, addAudit }) {
         </div>
       )}
 
-      {/* ── Activity ── */}
-      {tab === "activity" && (
-        <div className="card card-elev fade-up">
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>ประวัติการใช้งาน ({myActivity.length})</div>
-            <div className="t-mute text-sm">กิจกรรมทั้งหมดของบัญชีคุณ</div>
-          </div>
-          {myActivity.length === 0 ? (
-            <div className="t-mute text-sm" style={{ padding: "20px 0" }}>ยังไม่มีประวัติการใช้งาน</div>
-          ) : (
-            <div style={{ overflow: "auto", maxHeight: "60vh" }}>
-              <table className="table">
-                <thead>
-                  <tr><th>เวลา</th><th>การกระทำ</th><th>รายละเอียด</th><th>อุปกรณ์</th></tr>
-                </thead>
-                <tbody>
-                  {myActivity.map(r => (
-                    <tr key={r.id}>
-                      <td className="mono text-xs">{r.at}</td>
-                      <td><span className={"badge " + activityBadge(r.action)}>{activityLabel(r.action)}</span></td>
-                      <td className="text-sm">{r.detail}</td>
-                      <td className="text-xs t-mute" title={r.ip}>{r.ip ? parseDevice(r.ip) : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* ── Activity (login/logout/password/2FA) ── */}
+      {tab === "activity" && (() => {
+        const USAGE_ACTIONS = ["login", "logout", "change_password", "enable_2fa", "disable_2fa"];
+        const rows = data.auditLog.filter(r =>
+          (currentUser.role === "admin" || r.user === currentUser.username) &&
+          USAGE_ACTIONS.includes(r.action)
+        );
+        return (
+          <div className="card card-elev fade-up">
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 17, fontWeight: 700 }}>
+                ประวัติการใช้งาน ({rows.length})
+                {currentUser.role === "admin" && <span className="badge badge-orange" style={{ marginLeft: 8, fontSize: 11 }}>ทุก user</span>}
+              </div>
+              <div className="t-mute text-sm">Login · Logout · เปลี่ยนรหัสผ่าน · 2FA</div>
             </div>
-          )}
-        </div>
-      )}
+            {rows.length === 0 ? (
+              <div className="t-mute text-sm" style={{ padding: "20px 0" }}>ยังไม่มีประวัติ</div>
+            ) : (
+              <div style={{ overflow: "auto", maxHeight: "58vh" }}>
+                <table className="table">
+                  <thead><tr>
+                    <th>เวลา</th>
+                    {currentUser.role === "admin" && <th>ผู้ใช้</th>}
+                    <th>การกระทำ</th>
+                    <th>รายละเอียด</th>
+                    <th>อุปกรณ์</th>
+                  </tr></thead>
+                  <tbody>
+                    {rows.map(r => (
+                      <tr key={r.id}>
+                        <td className="mono text-xs">{r.at}</td>
+                        {currentUser.role === "admin" && <td className="mono text-sm">@{r.user}</td>}
+                        <td><span className={"badge " + activityBadge(r.action)}>{activityLabel(r.action)}</span></td>
+                        <td className="text-sm">{r.detail}</td>
+                        <td className="text-xs t-mute" title={r.ip}>{r.ip ? parseDevice(r.ip) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ── Search History ── */}
+      {tab === "search" && (() => {
+        const SEARCH_ACTIONS = ["search_meter", "search_tr", "view_map"];
+        const rows = data.auditLog.filter(r =>
+          (currentUser.role === "admin" || r.user === currentUser.username) &&
+          SEARCH_ACTIONS.includes(r.action)
+        );
+        return (
+          <div className="card card-elev fade-up">
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 17, fontWeight: 700 }}>
+                ประวัติการค้นหา ({rows.length})
+                {currentUser.role === "admin" && <span className="badge badge-orange" style={{ marginLeft: 8, fontSize: 11 }}>ทุก user</span>}
+              </div>
+              <div className="t-mute text-sm">ค้นหา Meter · TR · ดูแผนที่</div>
+            </div>
+            {rows.length === 0 ? (
+              <div className="t-mute text-sm" style={{ padding: "20px 0" }}>ยังไม่มีประวัติการค้นหา</div>
+            ) : (
+              <div style={{ overflow: "auto", maxHeight: "58vh" }}>
+                <table className="table">
+                  <thead><tr>
+                    <th>เวลา</th>
+                    {currentUser.role === "admin" && <th>ผู้ใช้</th>}
+                    <th>ประเภท</th>
+                    <th>คีย์ค้นหา</th>
+                    <th>รายละเอียด</th>
+                  </tr></thead>
+                  <tbody>
+                    {rows.map(r => (
+                      <tr key={r.id}>
+                        <td className="mono text-xs">{r.at}</td>
+                        {currentUser.role === "admin" && <td className="mono text-sm">@{r.user}</td>}
+                        <td><span className={"badge " + activityBadge(r.action)}>{activityLabel(r.action)}</span></td>
+                        <td className="mono text-sm">{r.target}</td>
+                        <td className="text-sm">{r.detail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
