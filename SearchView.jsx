@@ -76,7 +76,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
               action: tab === "meter" ? "search_meter" : "search_tr",
               target: query.trim(),
               detail: `ค้นหา ${tab === "meter" ? "มิเตอร์" : "หม้อแปลง"} • พบ ${mapped.length} รายการ`,
-              ip: "10.0.12.32",
+              ip: (navigator.userAgent || "").substring(0, 200),
             });
           }
         }
