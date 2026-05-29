@@ -56,6 +56,72 @@ function parseDevice(ua = "") {
   return `${b} · ${o}`;
 }
 
+// ── NotifPanel ────────────────────────────────────────────────────────────
+function NotifPanel({ data, currentUser }) {
+  const pendingUsers = currentUser?.role === "admin"
+    ? data.users.filter(u => u.status === "pending") : [];
+  const recentLog = data.auditLog
+    .filter(r => currentUser?.role === "admin" || r.user === currentUser?.username)
+    .slice(0, 7);
+
+  return (
+    <div style={{
+      position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 2000,
+      width: 300, background: "var(--surface)", borderRadius: 16,
+      boxShadow: "0 20px 56px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
+      overflow: "hidden",
+    }}>
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon name="bell" size={14} />
+        <span style={{ fontWeight: 700, fontSize: 14 }}>การแจ้งเตือน</span>
+      </div>
+
+      {pendingUsers.length > 0 && (
+        <div style={{ padding: "10px 14px 12px", borderBottom: "1px solid var(--line)", background: "rgba(244,123,32,0.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--pea-orange-500)", marginBottom: 8 }}>
+            <Icon name="warning" size={13} /> {pendingUsers.length} บัญชีรอการอนุมัติ
+          </div>
+          {pendingUsers.slice(0, 3).map(u => (
+            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", fontSize: 12 }}>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                {(u.name || u.username || "?")[0]}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
+                <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>@{u.username}</div>
+              </div>
+            </div>
+          ))}
+          {pendingUsers.length > 3 && <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 4 }}>และอีก {pendingUsers.length - 3} คน…</div>}
+        </div>
+      )}
+
+      {recentLog.length > 0 ? (
+        <div style={{ padding: "8px 0", maxHeight: 220, overflowY: "auto" }}>
+          <div style={{ padding: "2px 14px 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)" }}>
+            กิจกรรมล่าสุด
+          </div>
+          {recentLog.map(r => (
+            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 14px", fontSize: 12 }}>
+              <span className={"badge " + activityBadge(r.action)} style={{ fontSize: 10, flexShrink: 0 }}>
+                {activityLabel(r.action)}
+              </span>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11, color: "var(--ink-mute)" }}>
+                {r.user} · {r.at}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : pendingUsers.length === 0 && (
+        <div style={{ padding: "24px 16px", textAlign: "center" }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>🔔</div>
+          <div style={{ fontSize: 13, color: "var(--ink-mute)" }}>ไม่มีการแจ้งเตือน</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── ProfileView ───────────────────────────────────────────────────────────
 function ProfileView({ currentUser, data, addAudit }) {
   const [tab, setTabPV]           = useStateApp("info");
@@ -669,6 +735,8 @@ function App() {
   const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
   const [maintenanceMessage, setMaintenanceMessage] = useStateApp("");
   const [maintenanceUntil, setMaintenanceUntil] = useStateApp("");
+  const [showNotif, setShowNotif] = useStateApp(false);
+  const [refreshing, setRefreshing] = useStateApp(false);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -842,6 +910,26 @@ function App() {
     }
   }, [currentUser]);
 
+  const handleRefresh = useCallbackApp(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      const [profilesRes, auditRes, statsRes] = await Promise.all([
+        _supabase.from("profiles").select("*").order("created_at"),
+        _supabase.from("audit_log").select("*").order("at", { ascending: false }).limit(500),
+        _supabase.rpc("get_dashboard_stats"),
+      ]);
+      setData(d => ({
+        ...d,
+        users:    (profilesRes.data || []).map(toProfile),
+        auditLog: (auditRes.data   || []).map(toAuditEntry),
+        dashStats: statsRes.data?.[0] || d.dashStats,
+      }));
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing]);
+
   // ── Render states ────────────────────────────────────────────────────────
   if (appState === "checking") return <LoadingScreen message="กำลังตรวจสอบการเข้าสู่ระบบ…" />;
   if (appState === "loading")  return <LoadingScreen message="กำลังโหลดข้อมูล…" />;
@@ -951,8 +1039,23 @@ function App() {
         {/* Topbar */}
         <header className="app-topbar" style={{
           background: "var(--surface)", borderBottom: "1px solid var(--line)",
-          padding: "0 24px", display: "flex", alignItems: "center", gap: 14,
+          padding: "0 20px", display: "flex", alignItems: "center", gap: 10,
+          position: "relative",
         }}>
+          <style>{`
+            .topbar-mobile-brand { display: none; flex: 1; align-items: center; gap: 8px; }
+            .topbar-mobile-user  { display: none; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 20px; border: 1px solid rgba(139,63,196,0.3); background: rgba(139,63,196,0.1); cursor: pointer; white-space: nowrap; }
+            .topbar-mobile-user:hover { background: rgba(139,63,196,0.2); }
+            @media (max-width: 680px) {
+              .topbar-greeting       { display: none !important; }
+              .topbar-mapswitcher    { display: none !important; }
+              .topbar-logout         { display: none !important; }
+              .topbar-mobile-brand   { display: flex !important; }
+              .topbar-mobile-user    { display: flex !important; }
+            }
+          `}</style>
+
+          {/* Desktop greeting */}
           <div className="topbar-greeting" style={{ flex: 1 }}>
             <div className="t-mute text-xs">วันนี้ • {new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
             <div className="fw-7" style={{ fontSize: 15 }}>
@@ -960,6 +1063,15 @@ function App() {
             </div>
           </div>
 
+          {/* Mobile brand */}
+          <div className="topbar-mobile-brand">
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <Icon name="bolt" size={14} style={{ color: "white" }} />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 14 }}>PEA Meter & TR</span>
+          </div>
+
+          {/* Map layer switcher */}
           <div className="topbar-mapswitcher tabs" style={{ padding: 4 }}>
             {Object.entries(TILE_LAYERS).map(([k, v]) => (
               <button key={k} className={"tab " + (baseMap === k ? "active" : "")} style={{ height: 36, padding: "0 14px", fontSize: 12 }} onClick={() => setBaseMap(k)}>
@@ -968,15 +1080,42 @@ function App() {
             ))}
           </div>
 
+          {/* Refresh */}
+          <button className="btn-icon" title="รีเฟรชข้อมูล" onClick={handleRefresh} disabled={refreshing}
+            style={{ color: refreshing ? "var(--pea-purple-500)" : undefined }}>
+            <Icon name="refresh" size={18} style={{ animation: refreshing ? "pea-spin 0.8s linear infinite" : "none" }} />
+          </button>
+
+          {/* Theme toggle */}
           <button className="btn-icon" title={theme === "dark" ? "Light mode" : "Dark mode"} onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
             <Icon name={theme === "dark" ? "sun" : "moon"} />
           </button>
 
-          <button className="btn-icon" title="แจ้งเตือน">
-            <Icon name="bell" />
-          </button>
+          {/* Bell notification */}
+          <div style={{ position: "relative" }}>
+            <button className="btn-icon" title="การแจ้งเตือน" onClick={() => setShowNotif(s => !s)} style={{ position: "relative" }}>
+              <Icon name="bell" />
+              {currentUser.role === "admin" && data.users.filter(u => u.status === "pending").length > 0 && (
+                <span style={{
+                  position: "absolute", top: 2, right: 2,
+                  minWidth: 16, height: 16, padding: "0 3px", borderRadius: 999,
+                  background: "var(--pea-orange-500)", color: "white",
+                  display: "grid", placeItems: "center", fontSize: 9, fontWeight: 800,
+                  pointerEvents: "none",
+                }}>
+                  {data.users.filter(u => u.status === "pending").length}
+                </span>
+              )}
+            </button>
+            {showNotif && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setShowNotif(false)} />
+                <NotifPanel data={data} currentUser={currentUser} />
+              </>
+            )}
+          </div>
 
-          {/* Mobile only: user avatar + logout */}
+          {/* Desktop logout (hidden on mobile) */}
           <button className="topbar-logout" title="ออกจากระบบ" onClick={async () => {
             await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" });
             await _supabase.auth.signOut();
@@ -990,6 +1129,20 @@ function App() {
               {currentUser.name?.[0] || currentUser.username[0]}
             </div>
             <Icon name="logout" size={14} />
+          </button>
+
+          {/* Mobile: user name + logout */}
+          <button className="topbar-mobile-user" onClick={async () => {
+            await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" });
+            await _supabase.auth.signOut();
+          }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+              {currentUser.name?.[0] || currentUser.username[0]}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--pea-purple-600)" }}>
+              {(currentUser.name || currentUser.username).split(" ")[0]}
+            </span>
+            <Icon name="logout" size={13} style={{ color: "var(--red)" }} />
           </button>
         </header>
 
