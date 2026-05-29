@@ -498,16 +498,23 @@ function AdminMeters({ addAudit, currentUser }) {
 
   return (
     <div className="card card-elev fade-up">
+      <style>{`
+        .adm-tb { display: flex; gap: 8px; align-items: center; }
+        @media (max-width: 680px) {
+          .adm-tb { flex-wrap: wrap; width: 100%; }
+          .adm-tb .input { flex: 1 1 0; min-width: 0; width: auto !important; }
+        }
+      `}</style>
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
           <div className="text-lg fw-7">PEA Meter {searching ? "…" : `(${list.length}${list.length >= 100 ? "+" : ""})`}</div>
           <div className="t-mute text-sm">เพิ่ม/แก้ไข/ลบข้อมูลมิเตอร์ · ค้นหาเพื่อกรองผลลัพธ์</div>
         </div>
-        <div className="f-gap-2 flex">
-          <input className="input" style={{ width: 260, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, ACCOUNTNUM…" />
-          <button className="btn btn-outline btn-sm" onClick={() => downloadCSV(`pea-meter-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", CODE: "AFAG", ROUTE: "", ACCOUNTNUM: "", PEANO: "", FEEDERID: "", OWNER: "PEA", INSTALLATI: "", LATITUDE: 19.86, LONGITUDE: 99.18 })}>
-            <Icon name="plus" size={14} /> เพิ่มมิเตอร์
+        <div className="adm-tb">
+          <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, ACCOUNTNUM…" />
+          <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => downloadCSV(`pea-meter-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
+          <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", CODE: "AFAG", ROUTE: "", ACCOUNTNUM: "", PEANO: "", FEEDERID: "", OWNER: "PEA", INSTALLATI: "", LATITUDE: 19.86, LONGITUDE: 99.18 })}>
+            <Icon name="plus" size={14} /> เพิ่ม
           </button>
         </div>
       </div>
@@ -655,11 +662,11 @@ function AdminTrs({ addAudit, currentUser }) {
           <div className="text-lg fw-7">PEA Transformer {searching ? "…" : `(${list.length}${list.length >= 100 ? "+" : ""})`}</div>
           <div className="t-mute text-sm">เพิ่ม/แก้ไข/ลบข้อมูลหม้อแปลง · ค้นหาเพื่อกรองผลลัพธ์</div>
         </div>
-        <div className="f-gap-2 flex">
-          <input className="input" style={{ width: 260, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, สถานที่…" />
-          <button className="btn btn-outline btn-sm" onClick={() => downloadCSV(`pea-tr-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", PHASE: "หม้อแปลง 3 Phase", VOLTAGE: "22 kV", PEANO_TR: "", INSTALL_PHASE: "ABC", KVA: 100, OWNER_TR: "PEA", LOCATION: "", FEEDER1: "", LATITUDE: 19.86, LONGITUDE: 99.18, PEA_METER: "" })}>
-            <Icon name="plus" size={14} /> เพิ่มหม้อแปลง
+        <div className="adm-tb">
+          <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, สถานที่…" />
+          <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => downloadCSV(`pea-tr-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
+          <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", PHASE: "หม้อแปลง 3 Phase", VOLTAGE: "22 kV", PEANO_TR: "", INSTALL_PHASE: "ABC", KVA: 100, OWNER_TR: "PEA", LOCATION: "", FEEDER1: "", LATITUDE: 19.86, LONGITUDE: 99.18, PEA_METER: "" })}>
+            <Icon name="plus" size={14} /> เพิ่ม
           </button>
         </div>
       </div>
@@ -819,14 +826,14 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
           <button className={"tab " + (target === "tr" ? "active" : "")} onClick={() => setTarget("tr")}><Icon name="tr" size={14} /> PEA TR</button>
         </div>
 
-        <label className="card" style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer", borderStyle: "dashed", borderColor: "var(--pea-purple-300)", background: "var(--pea-purple-50)" }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, var(--pea-purple-600), var(--pea-orange-500))", color: "white", display: "grid", placeItems: "center", boxShadow: "var(--shadow-glow)" }}>
-            <Icon name="upload" size={24} />
+        <label className="card" style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", borderStyle: "dashed", borderColor: "var(--pea-purple-300)", background: "var(--pea-purple-50)", overflow: "hidden" }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, var(--pea-purple-600), var(--pea-orange-500))", color: "white", display: "grid", placeItems: "center", boxShadow: "var(--shadow-glow)", flexShrink: 0 }}>
+            <Icon name="upload" size={22} />
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="fw-7">{fileName || "เลือกไฟล์ CSV"}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="fw-7" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fileName || "เลือกไฟล์ CSV"}</div>
             <div className="t-mute text-sm">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก · UTF-8</div>
-            <div className="t-mute text-xs mono" style={{ marginTop: 4 }}>{sampleHeaders}</div>
+            <div className="t-mute text-xs mono" style={{ marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sampleHeaders}</div>
           </div>
           <input type="file" accept=".csv" onChange={onFile} style={{ display: "none" }} />
         </label>
