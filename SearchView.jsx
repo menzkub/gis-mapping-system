@@ -117,78 +117,105 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
 
   return (
     <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
+      <style>{`
+        .sv-header { display: flex; flex-direction: column; gap: 10px; padding: 16px 24px 0; }
+        .sv-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .sv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .sv-tabs::-webkit-scrollbar { display: none; }
+        .sv-controls { display: flex; align-items: center; gap: 8px; }
+        .sv-search-wrap { flex: 1; min-width: 0; position: relative; }
+        .sv-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        @media (max-width: 680px) {
+          .sv-header { padding: 10px 14px 0; gap: 8px; }
+          .sv-title-row { flex-direction: column; gap: 6px; align-items: flex-start; }
+          .sv-search-title { font-size: 20px !important; }
+          .sv-tabs .tab { font-size: 12px !important; padding: 0 12px !important; height: 34px !important; white-space: nowrap; }
+          .sv-controls { flex-wrap: wrap; gap: 8px; }
+          .sv-search-wrap { flex-basis: 100%; }
+          .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; width: 100%; }
+          .sv-actions::-webkit-scrollbar { display: none; }
+          .search-filter-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
+          .search-view-switcher .tab { height: 36px !important; padding: 0 10px !important; font-size: 12px !important; white-space: nowrap; }
+          .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
+          .input-lg { height: 48px !important; }
+          .sv-content { padding: 10px 14px 14px !important; }
+        }
+      `}</style>
+
       {/* Header bar */}
-      <div className="search-header-bar" style={{ padding: "20px 28px 0", display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="f-between f-gap-4 f-wrap">
+      <div className="sv-header">
+        <div className="sv-title-row">
           <div>
             <div className="t-eyebrow">ค้นหาข้อมูล</div>
-            <div className="search-title-text t-display" style={{ fontSize: 28, marginTop: 2 }}>
-              {tab === "meter" ? "PEA Meter" : "PEA Transformer"}
-              <span style={{ marginLeft: 12, fontSize: 14, fontWeight: 600, color: "var(--ink-mute)" }}>
+            <div className="search-title-text sv-search-title t-display" style={{ fontSize: 28, marginTop: 2, display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "0 8px" }}>
+              <span>{tab === "meter" ? "PEA มิเตอร์" : "PEA หม้อแปลง"}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-mute)" }}>
                 {hasSearched
                   ? `${results.length.toLocaleString()}${results.length >= 500 ? "+" : ""} / ${totalCount.toLocaleString()} รายการ`
                   : `${totalCount.toLocaleString()} รายการทั้งหมด`}
               </span>
               {searching && (
-                <span style={{ marginLeft: 10, fontSize: 12, color: "var(--pea-purple-500)", fontWeight: 600 }}>
+                <span style={{ fontSize: 12, color: "var(--pea-purple-500)", fontWeight: 600 }}>
                   กำลังค้นหา…
                 </span>
               )}
             </div>
           </div>
-          <div className="tabs">
+          <div className="tabs sv-tabs" style={{ flexShrink: 0 }}>
             <button className={"tab " + (tab === "meter" ? "active" : "")} onClick={() => { setTab("meter"); resetFilters(); setSelectedId(null); setResults([]); setHasSearched(false); }}>
-              <Icon name="meter" size={15} /> ค้นหา PEA Meter
+              <Icon name="meter" size={14} /> ค้นหา PEA มิเตอร์
             </button>
             <button className={"tab " + (tab === "tr" ? "active" : "")} onClick={() => { setTab("tr"); resetFilters(); setSelectedId(null); setResults([]); setHasSearched(false); }}>
-              <Icon name="tr" size={15} /> ค้นหา PEA TR
+              <Icon name="tr" size={14} /> ค้นหา PEA หม้อแปลง
             </button>
           </div>
         </div>
 
         {/* Search + actions */}
-        <div className="f-gap-3" style={{ display: "flex", flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ flex: 1, minWidth: 280, position: "relative" }}>
-            <div style={{ position: "absolute", left: 18, top: "50%", transform: "translateY(-50%)", color: searching ? "var(--pea-orange-500)" : "var(--pea-purple-500)" }}>
-              <Icon name="search" size={20} />
+        <div className="sv-controls">
+          <div className="sv-search-wrap">
+            <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: searching ? "var(--pea-orange-500)" : "var(--pea-purple-500)", zIndex: 1 }}>
+              <Icon name="search" size={19} />
             </div>
             <input
               className="input input-lg"
-              style={{ paddingLeft: 52, paddingRight: query ? 50 : 18 }}
+              style={{ paddingLeft: 48, paddingRight: query ? 46 : 16, width: "100%", boxSizing: "border-box" }}
               placeholder={tab === "meter" ? "พิมพ์ TAG, PEANO, ACCOUNTNUM, Feeder…" : "พิมพ์ TAG, PEANO หม้อแปลง, สถานที่, Feeder…"}
               value={query}
               onChange={e => setQuery(e.target.value)}
               autoFocus
             />
             {query && (
-              <button className="btn-icon" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 36, height: 36 }} onClick={() => setQuery("")}>
-                <Icon name="close" size={16} />
+              <button className="btn-icon" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 34, height: 34 }} onClick={() => setQuery("")}>
+                <Icon name="close" size={15} />
               </button>
             )}
           </div>
 
-          <button className={"search-filter-btn btn btn-outline " + (showFilters ? "active" : "")} onClick={() => setShowFilters(s => !s)} style={{ height: 56, borderRadius: 18, position: "relative" }}>
-            <Icon name="filter" size={16} /> ตัวกรอง
-            {activeFilterCount > 0 && (
-              <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, width: 22, height: 22, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800 }}>{activeFilterCount}</span>
-            )}
-          </button>
+          <div className="sv-actions">
+            <button className={"search-filter-btn btn btn-outline " + (showFilters ? "active" : "")} onClick={() => setShowFilters(s => !s)} style={{ height: 54, borderRadius: 16, position: "relative", flexShrink: 0 }}>
+              <Icon name="filter" size={15} /> ตัวกรอง
+              {activeFilterCount > 0 && (
+                <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, width: 20, height: 20, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{activeFilterCount}</span>
+              )}
+            </button>
 
-          <div className="search-view-switcher tabs" style={{ padding: 4 }}>
-            {[
-              { id: "split", icon: "layers", label: "Split" },
-              { id: "map",   icon: "map",    label: "แผนที่" },
-              { id: "table", icon: "table",  label: "ตาราง" },
-            ].map(v => (
-              <button key={v.id} className={"tab " + (view === v.id ? "active" : "")} style={{ height: 48, padding: "0 16px" }} onClick={() => setView(v.id)}>
-                <Icon name={v.icon} size={14} /> {v.label}
-              </button>
-            ))}
+            <div className="search-view-switcher tabs" style={{ padding: 4, flexShrink: 0 }}>
+              {[
+                { id: "split", icon: "layers", label: "Split" },
+                { id: "map",   icon: "map",    label: "แผนที่" },
+                { id: "table", icon: "table",  label: "ตาราง" },
+              ].map(v => (
+                <button key={v.id} className={"tab " + (view === v.id ? "active" : "")} style={{ height: 46, padding: "0 14px" }} onClick={() => setView(v.id)}>
+                  <Icon name={v.icon} size={14} /> {v.label}
+                </button>
+              ))}
+            </div>
+
+            <button className="search-export-btn btn btn-outline" style={{ height: 54, borderRadius: 16, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
+              <Icon name="download" size={15} /> Export
+            </button>
           </div>
-
-          <button className="search-export-btn btn btn-outline" style={{ height: 56, borderRadius: 18 }} onClick={handleExport} disabled={results.length === 0}>
-            <Icon name="download" size={16} /> Export CSV
-          </button>
         </div>
 
         {/* Filters drawer */}
