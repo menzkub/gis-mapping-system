@@ -671,45 +671,85 @@ function formatUntil(until) {
 function MaintenanceScreen({ currentUser, message, until, onLogout }) {
   const displayMsg = (message || "").trim() || DEFAULT_MAINTENANCE_MSG;
   const untilStr = formatUntil(until);
+  const initials = (currentUser?.name || currentUser?.username || "?")[0].toUpperCase();
+  const firstName = (currentUser?.name || currentUser?.username || "").split(" ")[0];
+
   return (
     <div style={{
       height: "100vh", display: "grid", placeItems: "center",
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
+      padding: "0 16px",
     }}>
       <div className="fade-up" style={{
-        width: "100%", maxWidth: 480, margin: "0 20px",
+        width: "100%", maxWidth: 500,
         background: "var(--surface)", borderRadius: 24,
-        boxShadow: "0 24px 64px rgba(0,0,0,0.5)", overflow: "hidden",
+        boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden",
       }}>
+
+        {/* Orange header — title left, user right */}
         <div style={{
-          background: "linear-gradient(135deg,#f47b20,#e85d04)",
-          padding: "28px 32px", display: "flex", alignItems: "center", gap: 16,
+          background: "linear-gradient(135deg,#f47b20 0%,#e85d04 60%,#c94e00 100%)",
+          padding: "22px 28px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          position: "relative", overflow: "hidden",
         }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-            background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center",
-          }}>
-            <Icon name="settings" size={28} stroke={2} style={{ color: "white" }} />
+          {/* decorative circle */}
+          <div style={{ position: "absolute", right: -40, top: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+
+          {/* Left: icon + title */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+              background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center",
+            }}>
+              <Icon name="settings" size={24} stroke={2} style={{ color: "white" }} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 20, color: "white", lineHeight: 1.2 }}>ระบบปิดปรับปรุง</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>System Maintenance</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 22, color: "white" }}>ระบบปิดปรับปรุง</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>System Maintenance</div>
+
+          {/* Right: user avatar + name */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, position: "relative" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>สวัสดี</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "white" }}>{firstName}</div>
+            </div>
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+              background: "rgba(255,255,255,0.25)", border: "2px solid rgba(255,255,255,0.5)",
+              display: "grid", placeItems: "center",
+              fontWeight: 800, fontSize: 16, color: "white",
+            }}>
+              {initials}
+            </div>
           </div>
         </div>
-        <div style={{ padding: "28px 32px 32px" }}>
+
+        {/* Body */}
+        <div style={{ padding: "24px 28px 28px" }}>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>ขณะนี้ระบบปิดให้บริการชั่วคราว</div>
-          <div className="t-mute" style={{ fontSize: 14, lineHeight: 1.7, marginBottom: untilStr ? 16 : 24, whiteSpace: "pre-line" }}>
+          <div className="t-mute" style={{ fontSize: 14, lineHeight: 1.75, marginBottom: 20, whiteSpace: "pre-line" }}>
             {displayMsg}
           </div>
+
           {untilStr && (
-            <div className="badge badge-purple fade-up" style={{ marginBottom: 20, padding: "10px 14px", display: "flex", gap: 8, alignItems: "center" }}>
-              <Icon name="clock" size={14} />
-              คาดว่าจะกลับมาให้บริการ: <strong>{untilStr}</strong>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 16px", borderRadius: 12, marginBottom: 16,
+              background: "rgba(107,44,145,0.12)", border: "1px solid rgba(107,44,145,0.25)",
+            }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <Icon name="clock" size={15} style={{ color: "white" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>คาดว่าจะกลับมาให้บริการ</div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{untilStr}</div>
+              </div>
             </div>
           )}
-          <div className="badge badge-orange" style={{ marginBottom: 20, padding: "8px 14px" }}>
-            <Icon name="user" size={14} /> สวัสดี {currentUser?.name || currentUser?.username}
-          </div>
+
           <button className="btn btn-outline" style={{ width: "100%", height: 46 }} onClick={onLogout}>
             <Icon name="logout" size={14} /> ออกจากระบบ
           </button>
