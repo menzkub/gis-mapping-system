@@ -1,7 +1,7 @@
 /* global React, Icon, _supabase */
 const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
 
-/* ── Animated power-grid canvas ─────────────────────────────────────────── */
+/* ── Animated power poles canvas ────────────────────────────────────────── */
 function AnimatedPowerGrid() {
   const ref = useRefA(null);
   useEffectA(() => {
@@ -9,6 +9,7 @@ function AnimatedPowerGrid() {
     if (!cv) return;
     const ctx = cv.getContext("2d");
     let raf;
+    const PI2 = Math.PI * 2;
 
     const fit = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -17,35 +18,92 @@ function AnimatedPowerGrid() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     fit();
-    window.addEventListener("resize", fit);
 
     const W = () => cv.offsetWidth;
     const H = () => cv.offsetHeight;
 
-    // Nodes: type "tr" = transformer (orange hexagon), "m" = meter (purple circle)
-    const NODES = [
-      { rx: 0.18, ry: 0.09, t: "tr" }, { rx: 0.80, ry: 0.06, t: "tr" },
-      { rx: 0.52, ry: 0.30, t: "tr" }, { rx: 0.14, ry: 0.52, t: "m"  },
-      { rx: 0.38, ry: 0.64, t: "m"  }, { rx: 0.67, ry: 0.55, t: "m"  },
-      { rx: 0.88, ry: 0.38, t: "m"  }, { rx: 0.05, ry: 0.79, t: "m"  },
-      { rx: 0.58, ry: 0.82, t: "m"  }, { rx: 0.93, ry: 0.71, t: "m"  },
-    ];
-    const EDGES = [
-      [0,2],[1,2],[2,3],[2,4],[2,5],[1,6],[0,3],[3,7],[4,8],[5,8],[6,9],[5,9],[2,6],
+    // Sample a quadratic bezier at t
+    const bpt = (t, x0,y0,x1,y1,x2,y2) => {
+      const u = 1 - t;
+      return [u*u*x0 + 2*u*t*x1 + t*t*x2, u*u*y0 + 2*u*t*y1 + t*t*y2];
+    };
+
+    // Pole definitions (relative x, scale, has transformer)
+    const DEFS = [
+      { rx:0.04, sz:0.70, hasTr:false },
+      { rx:0.27, sz:1.00, hasTr:true  },
+      { rx:0.53, sz:1.10, hasTr:false },
+      { rx:0.77, sz:0.96, hasTr:true  },
+      { rx:0.97, sz:0.68, hasTr:false },
     ];
 
-    // Flowing electricity particles along each edge
-    const parts = EDGES.flatMap((_, ei) =>
-      Array.from({ length: ei % 3 === 0 ? 2 : 1 }, (__, j) => ({
-        ei, t: Math.random(), spd: 0.0018 + Math.random() * 0.0026,
+    // Twinkling stars
+    const STARS = Array.from({length:45}, () => ({
+      rx: Math.random(), ry: Math.random() * 0.82,
+      r:  0.4 + Math.random() * 1.1,
+      a:  0.20 + Math.random() * 0.45,
+      ph: Math.random() * PI2,
+      sp: 0.4 + Math.random() * 2.0,
+    }));
+
+    const buildScene = () => {
+      const w = W(), h = H();
+      const GY = h * 0.875; // ground y
+
+      const poles = DEFS.map(d => {
+        const x      = d.rx * w;
+        const poleH  = h * (0.24 + d.sz * 0.06);
+        const topY   = GY - poleH;
+        const crossW = 34 * d.sz;
+        const crossY = topY + poleH * 0.055;
+        return {
+          x, GY, poleH, topY, crossW, crossY,
+          hasTr: d.hasTr, sz: d.sz,
+          ins: [
+            { x: x - crossW, y: crossY },
+            { x,              y: crossY - 4 * d.sz },
+            { x: x + crossW, y: crossY },
+          ],
+          trX: x + crossW * 0.52,
+          trY: topY + poleH * 0.32,
+        };
+      });
+
+      // 3 wires per span between adjacent poles
+      const wires = [];
+      for (let i = 0; i < poles.length - 1; i++) {
+        const A = poles[i], B = poles[i + 1];
+        for (let w2 = 0; w2 < 3; w2++) {
+          const p0 = A.ins[w2], p2 = B.ins[w2];
+          const span = Math.abs(p2.x - p0.x);
+          wires.push({
+            p0x: p0.x, p0y: p0.y,
+            p1x: (p0.x + p2.x) / 2,
+            p1y: Math.max(p0.y, p2.y) + span * 0.058,
+            p2x: p2.x, p2y: p2.y,
+          });
+        }
+      }
+      return { poles, wires };
+    };
+
+    let scene = buildScene();
+
+    const makeParts = (wires) => wires.flatMap((_, wi) =>
+      Array.from({length: 2}, (__, j) => ({
+        wi, t: j * 0.45 + Math.random() * 0.4,
+        spd: 0.0016 + Math.random() * 0.003,
         dir: j === 0 ? 1 : -1,
       }))
     );
+    let parts = makeParts(scene.wires);
 
-    // Random surge flashes per edge
-    const surges = EDGES.map((_, i) => ({
-      a: 0, next: 1500 + i * 700 + Math.random() * 7000,
-    }));
+    const onResize = () => {
+      fit();
+      scene = buildScene();
+      parts = makeParts(scene.wires);
+    };
+    window.addEventListener("resize", onResize);
 
     let prev = performance.now();
 
@@ -53,106 +111,166 @@ function AnimatedPowerGrid() {
       const dt = Math.min(now - prev, 50); prev = now;
       const w = W(), h = H();
       ctx.clearRect(0, 0, w, h);
+      const T = now / 1000;
+      const { poles, wires } = scene;
 
-      // Surge timers
-      surges.forEach(s => {
-        s.next -= dt;
-        if (s.next <= 0) { s.a = 1; s.next = 3500 + Math.random() * 9000; }
-        if (s.a > 0) s.a = Math.max(0, s.a - dt * 0.003);
+      // ── Stars ──────────────────────────────────────────────
+      STARS.forEach(s => {
+        const a = s.a * (0.5 + 0.5 * Math.sin(T * s.sp + s.ph));
+        ctx.beginPath(); ctx.arc(s.rx * w, s.ry * h, s.r, 0, PI2);
+        ctx.fillStyle = `rgba(215,195,255,${a})`; ctx.fill();
       });
 
-      // Draw connection lines
-      EDGES.forEach(([a, b], i) => {
-        const sx = surges[i].a;
+      // ── Wires (behind poles) ────────────────────────────────
+      wires.forEach(({ p0x,p0y,p1x,p1y,p2x,p2y }) => {
+        // Soft glow pass
+        ctx.beginPath(); ctx.moveTo(p0x,p0y); ctx.quadraticCurveTo(p1x,p1y,p2x,p2y);
+        ctx.strokeStyle = "rgba(165,95,255,0.09)"; ctx.lineWidth = 4.5; ctx.stroke();
+        // Wire line
+        ctx.beginPath(); ctx.moveTo(p0x,p0y); ctx.quadraticCurveTo(p1x,p1y,p2x,p2y);
+        ctx.strokeStyle = "rgba(82,30,138,0.65)"; ctx.lineWidth = 1.2; ctx.stroke();
+      });
+
+      // ── Poles ───────────────────────────────────────────────
+      [...poles].sort((a, b) => a.sz - b.sz).forEach(pole => {
+        const { x, GY, poleH, topY, crossW, crossY, sz, ins, hasTr, trX, trY } = pole;
+        const pw = 3.2 * sz;
+
+        // Ground shadow
+        const sg = ctx.createRadialGradient(x, GY, 0, x, GY, 14 * sz);
+        sg.addColorStop(0, "rgba(0,0,0,0.30)"); sg.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.beginPath(); ctx.ellipse(x, GY, 13*sz, 3.5*sz, 0, 0, PI2);
+        ctx.fillStyle = sg; ctx.fill();
+
+        // Pole shaft
+        ctx.beginPath(); ctx.moveTo(x, GY); ctx.lineTo(x, topY);
+        ctx.strokeStyle = "rgba(52,20,98,0.93)"; ctx.lineWidth = pw; ctx.lineCap = "round"; ctx.stroke();
+        // Edge highlight
+        ctx.beginPath(); ctx.moveTo(x - pw*0.25, GY); ctx.lineTo(x - pw*0.25, topY);
+        ctx.strokeStyle = "rgba(115,55,185,0.22)"; ctx.lineWidth = pw*0.28; ctx.stroke();
+
+        // Crossarm
+        ctx.beginPath(); ctx.moveTo(x - crossW, crossY); ctx.lineTo(x + crossW, crossY);
+        ctx.strokeStyle = "rgba(45,16,85,0.92)"; ctx.lineWidth = pw * 0.72; ctx.stroke();
+
+        // Diagonal braces
         ctx.beginPath();
-        ctx.moveTo(NODES[a].rx * w, NODES[a].ry * h);
-        ctx.lineTo(NODES[b].rx * w, NODES[b].ry * h);
-        ctx.strokeStyle = sx > 0
-          ? `rgba(255,205,80,${0.06 + sx * 0.52})`
-          : "rgba(150,65,225,0.11)";
-        ctx.lineWidth = sx > 0 ? 1 + sx * 2.5 : 0.8;
-        ctx.stroke();
+        ctx.moveTo(x - crossW*0.60, crossY); ctx.lineTo(x, crossY + crossW*0.28);
+        ctx.moveTo(x + crossW*0.60, crossY); ctx.lineTo(x, crossY + crossW*0.28);
+        ctx.strokeStyle = "rgba(40,15,75,0.78)"; ctx.lineWidth = pw * 0.40; ctx.stroke();
+
+        // Insulators on crossarm
+        ins.forEach(({ x: ix, y: iy }) => {
+          ctx.beginPath(); ctx.arc(ix, iy, 6.5*sz, 0, PI2);
+          ctx.fillStyle = "rgba(135,55,205,0.08)"; ctx.fill();
+          ctx.beginPath(); ctx.arc(ix, iy, 3.2*sz, 0, PI2);
+          ctx.fillStyle = "rgba(122,52,192,0.83)";
+          ctx.strokeStyle = "rgba(195,138,255,0.70)"; ctx.lineWidth = 0.7;
+          ctx.fill(); ctx.stroke();
+          // Glint
+          ctx.beginPath(); ctx.arc(ix - sz, iy - sz, 0.9*sz, 0, PI2);
+          ctx.fillStyle = "rgba(218,192,255,0.62)"; ctx.fill();
+        });
+
+        // ── Transformer ──────────────────────────────────────
+        if (hasTr) {
+          const pulse = 1 + 0.07 * Math.sin(T * 2.1 + x * 0.05);
+          const tw = 8.5 * sz, th = 19 * sz;
+          const r = 3.5 * sz;
+          const bx = trX - tw, by = trY - th/2, bw = tw*2, bh = th;
+
+          // Glow halo
+          const tg = ctx.createRadialGradient(trX, trY, 0, trX, trY, th * 2.2 * pulse);
+          tg.addColorStop(0,   "rgba(244,123,32,0.28)");
+          tg.addColorStop(0.5, "rgba(244,123,32,0.09)");
+          tg.addColorStop(1,   "rgba(244,123,32,0)");
+          ctx.beginPath(); ctx.arc(trX, trY, th * 2.2 * pulse, 0, PI2);
+          ctx.fillStyle = tg; ctx.fill();
+
+          // Cylindrical body (linear gradient for 3D illusion)
+          const bg = ctx.createLinearGradient(bx, trY, bx + bw, trY);
+          bg.addColorStop(0,    "rgba(52,18,7,0.97)");
+          bg.addColorStop(0.22, "rgba(170,65,16,0.97)");
+          bg.addColorStop(0.52, "rgba(205,96,26,0.97)");
+          bg.addColorStop(0.78, "rgba(178,72,20,0.97)");
+          bg.addColorStop(1,    "rgba(52,18,7,0.97)");
+
+          // Rounded rect
+          ctx.beginPath();
+          ctx.moveTo(bx+r, by); ctx.lineTo(bx+bw-r, by);
+          ctx.arc(bx+bw-r, by+r, r, -Math.PI/2, 0);
+          ctx.lineTo(bx+bw, by+bh-r);
+          ctx.arc(bx+bw-r, by+bh-r, r, 0, Math.PI/2);
+          ctx.lineTo(bx+r, by+bh);
+          ctx.arc(bx+r, by+bh-r, r, Math.PI/2, Math.PI);
+          ctx.lineTo(bx, by+r);
+          ctx.arc(bx+r, by+r, r, Math.PI, -Math.PI/2);
+          ctx.closePath();
+          ctx.fillStyle = bg; ctx.fill();
+          ctx.strokeStyle = `rgba(255,158,62,${0.48 + 0.18*Math.sin(T*3 + x*0.08)})`;
+          ctx.lineWidth = 1; ctx.stroke();
+
+          // Top cap (ellipse)
+          ctx.beginPath();
+          ctx.ellipse(trX, by, tw*0.88, 3.0*sz, 0, 0, PI2);
+          ctx.fillStyle = "rgba(235,136,50,0.94)"; ctx.fill();
+          ctx.strokeStyle = "rgba(255,198,98,0.65)"; ctx.lineWidth = 0.7; ctx.stroke();
+
+          // Horizontal ribs detail
+          for (let i = 1; i <= 4; i++) {
+            const ry = by + bh * i / 5;
+            ctx.beginPath(); ctx.moveTo(bx+r, ry); ctx.lineTo(bx+bw-r, ry);
+            ctx.strokeStyle = "rgba(75,25,6,0.40)"; ctx.lineWidth = 0.6; ctx.stroke();
+          }
+
+          // Bottom cap
+          ctx.beginPath();
+          ctx.ellipse(trX, by+bh, tw*0.88, 3.0*sz, 0, 0, PI2);
+          ctx.fillStyle = "rgba(80,30,10,0.88)"; ctx.fill();
+
+          // Bushing wire from pole to transformer top
+          ctx.beginPath();
+          ctx.moveTo(x, crossY + 5*sz);
+          ctx.lineTo(trX, by - 1);
+          ctx.strokeStyle = "rgba(185,120,45,0.70)"; ctx.lineWidth = 1.4*sz; ctx.stroke();
+
+          // Small TR label
+          ctx.save();
+          ctx.fillStyle = "rgba(255,205,130,0.88)";
+          ctx.font = `bold ${7.5*sz}px monospace`;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText("TR", trX, trY + 1);
+          ctx.restore();
+        }
       });
 
-      // Draw particles (electricity flowing along lines)
+      // ── Electricity particles on wires ──────────────────────
       parts.forEach(p => {
         p.t += (p.spd * p.dir * dt) / 16;
         if (p.t > 1) p.t = 0;
         if (p.t < 0) p.t = 1;
-        const [a, b] = EDGES[p.ei];
-        const px = (NODES[a].rx + (NODES[b].rx - NODES[a].rx) * p.t) * w;
-        const py = (NODES[a].ry + (NODES[b].ry - NODES[a].ry) * p.t) * h;
-        const g = ctx.createRadialGradient(px, py, 0, px, py, 7);
-        g.addColorStop(0,    "rgba(255,218,128,1)");
+        if (p.wi >= wires.length) return;
+        const wr = wires[p.wi];
+        const [px, py] = bpt(p.t, wr.p0x,wr.p0y, wr.p1x,wr.p1y, wr.p2x,wr.p2y);
+        const g = ctx.createRadialGradient(px, py, 0, px, py, 6.5);
+        g.addColorStop(0,    "rgba(255,228,135,1)");
         g.addColorStop(0.38, "rgba(244,123,32,0.55)");
         g.addColorStop(1,    "rgba(244,123,32,0)");
-        ctx.beginPath(); ctx.arc(px, py, 7, 0, 6.283);
+        ctx.beginPath(); ctx.arc(px, py, 6.5, 0, PI2);
         ctx.fillStyle = g; ctx.fill();
-      });
-
-      // Draw nodes
-      const T = now / 1000;
-      NODES.forEach((n, i) => {
-        const x = n.rx * w, y = n.ry * h;
-        const pulse = 1 + 0.14 * Math.sin(T * 1.6 + i * 0.85);
-        const base  = n.t === "tr" ? 8 : 5;
-        const sz    = base * pulse;
-
-        // Outer glow
-        const gr = sz * (n.t === "tr" ? 5 : 4.5);
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, gr);
-        glow.addColorStop(0, n.t === "tr" ? "rgba(244,123,32,0.38)" : "rgba(138,58,200,0.30)");
-        glow.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.beginPath(); ctx.arc(x, y, gr, 0, 6.283);
-        ctx.fillStyle = glow; ctx.fill();
-
-        // Shape
-        ctx.beginPath();
-        if (n.t === "tr") {
-          for (let j = 0; j < 6; j++) {
-            const a2 = j * 1.0472 - 0.5236;
-            j ? ctx.lineTo(x + sz * Math.cos(a2), y + sz * Math.sin(a2))
-              : ctx.moveTo(x + sz * Math.cos(a2), y + sz * Math.sin(a2));
-          }
-          ctx.closePath();
-          ctx.fillStyle   = "rgba(244,123,32,0.88)";
-          ctx.strokeStyle = "rgba(255,190,100,0.95)";
-          ctx.lineWidth   = 1.5;
-        } else {
-          ctx.arc(x, y, sz, 0, 6.283);
-          ctx.fillStyle   = "rgba(128,52,182,0.80)";
-          ctx.strokeStyle = "rgba(200,145,255,0.85)";
-          ctx.lineWidth   = 1;
-        }
-        ctx.fill(); ctx.stroke();
-
-        // Inner accent
-        if (n.t === "m") {
-          ctx.beginPath(); ctx.arc(x, y, sz * 0.34, 0, 6.283);
-          ctx.fillStyle = "rgba(228,180,255,0.9)"; ctx.fill();
-        } else {
-          // Mini bolt mark inside transformer
-          ctx.save(); ctx.translate(x, y);
-          ctx.fillStyle = "rgba(255,240,200,0.95)";
-          ctx.beginPath();
-          ctx.moveTo( 1.4, -3.2); ctx.lineTo(-1.4,  0.4);
-          ctx.lineTo( 0.4,  0.4); ctx.lineTo(-1.0,  3.2);
-          ctx.lineTo( 1.9, -0.4); ctx.lineTo( 0.0, -0.4);
-          ctx.closePath(); ctx.fill(); ctx.restore();
-        }
       });
 
       raf = requestAnimationFrame(frame);
     };
 
     raf = requestAnimationFrame(frame);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", fit); };
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
   }, []);
 
   return (
     <canvas ref={ref} style={{
       position: "absolute", inset: 0, width: "100%", height: "100%",
-      pointerEvents: "none", opacity: 0.68,
+      pointerEvents: "none", opacity: 0.80,
     }} />
   );
 }
