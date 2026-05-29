@@ -1,5 +1,161 @@
 /* global React, Icon, _supabase */
-const { useState: useStateA } = React;
+const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
+
+/* ── Animated power-grid canvas ─────────────────────────────────────────── */
+function AnimatedPowerGrid() {
+  const ref = useRefA(null);
+  useEffectA(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const ctx = cv.getContext("2d");
+    let raf;
+
+    const fit = () => {
+      const dpr = window.devicePixelRatio || 1;
+      cv.width  = cv.offsetWidth  * dpr;
+      cv.height = cv.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+
+    const W = () => cv.offsetWidth;
+    const H = () => cv.offsetHeight;
+
+    // Nodes: type "tr" = transformer (orange hexagon), "m" = meter (purple circle)
+    const NODES = [
+      { rx: 0.18, ry: 0.09, t: "tr" }, { rx: 0.80, ry: 0.06, t: "tr" },
+      { rx: 0.52, ry: 0.30, t: "tr" }, { rx: 0.14, ry: 0.52, t: "m"  },
+      { rx: 0.38, ry: 0.64, t: "m"  }, { rx: 0.67, ry: 0.55, t: "m"  },
+      { rx: 0.88, ry: 0.38, t: "m"  }, { rx: 0.05, ry: 0.79, t: "m"  },
+      { rx: 0.58, ry: 0.82, t: "m"  }, { rx: 0.93, ry: 0.71, t: "m"  },
+    ];
+    const EDGES = [
+      [0,2],[1,2],[2,3],[2,4],[2,5],[1,6],[0,3],[3,7],[4,8],[5,8],[6,9],[5,9],[2,6],
+    ];
+
+    // Flowing electricity particles along each edge
+    const parts = EDGES.flatMap((_, ei) =>
+      Array.from({ length: ei % 3 === 0 ? 2 : 1 }, (__, j) => ({
+        ei, t: Math.random(), spd: 0.0018 + Math.random() * 0.0026,
+        dir: j === 0 ? 1 : -1,
+      }))
+    );
+
+    // Random surge flashes per edge
+    const surges = EDGES.map((_, i) => ({
+      a: 0, next: 1500 + i * 700 + Math.random() * 7000,
+    }));
+
+    let prev = performance.now();
+
+    const frame = (now) => {
+      const dt = Math.min(now - prev, 50); prev = now;
+      const w = W(), h = H();
+      ctx.clearRect(0, 0, w, h);
+
+      // Surge timers
+      surges.forEach(s => {
+        s.next -= dt;
+        if (s.next <= 0) { s.a = 1; s.next = 3500 + Math.random() * 9000; }
+        if (s.a > 0) s.a = Math.max(0, s.a - dt * 0.003);
+      });
+
+      // Draw connection lines
+      EDGES.forEach(([a, b], i) => {
+        const sx = surges[i].a;
+        ctx.beginPath();
+        ctx.moveTo(NODES[a].rx * w, NODES[a].ry * h);
+        ctx.lineTo(NODES[b].rx * w, NODES[b].ry * h);
+        ctx.strokeStyle = sx > 0
+          ? `rgba(255,205,80,${0.06 + sx * 0.52})`
+          : "rgba(150,65,225,0.11)";
+        ctx.lineWidth = sx > 0 ? 1 + sx * 2.5 : 0.8;
+        ctx.stroke();
+      });
+
+      // Draw particles (electricity flowing along lines)
+      parts.forEach(p => {
+        p.t += (p.spd * p.dir * dt) / 16;
+        if (p.t > 1) p.t = 0;
+        if (p.t < 0) p.t = 1;
+        const [a, b] = EDGES[p.ei];
+        const px = (NODES[a].rx + (NODES[b].rx - NODES[a].rx) * p.t) * w;
+        const py = (NODES[a].ry + (NODES[b].ry - NODES[a].ry) * p.t) * h;
+        const g = ctx.createRadialGradient(px, py, 0, px, py, 7);
+        g.addColorStop(0,    "rgba(255,218,128,1)");
+        g.addColorStop(0.38, "rgba(244,123,32,0.55)");
+        g.addColorStop(1,    "rgba(244,123,32,0)");
+        ctx.beginPath(); ctx.arc(px, py, 7, 0, 6.283);
+        ctx.fillStyle = g; ctx.fill();
+      });
+
+      // Draw nodes
+      const T = now / 1000;
+      NODES.forEach((n, i) => {
+        const x = n.rx * w, y = n.ry * h;
+        const pulse = 1 + 0.14 * Math.sin(T * 1.6 + i * 0.85);
+        const base  = n.t === "tr" ? 8 : 5;
+        const sz    = base * pulse;
+
+        // Outer glow
+        const gr = sz * (n.t === "tr" ? 5 : 4.5);
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, gr);
+        glow.addColorStop(0, n.t === "tr" ? "rgba(244,123,32,0.38)" : "rgba(138,58,200,0.30)");
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.beginPath(); ctx.arc(x, y, gr, 0, 6.283);
+        ctx.fillStyle = glow; ctx.fill();
+
+        // Shape
+        ctx.beginPath();
+        if (n.t === "tr") {
+          for (let j = 0; j < 6; j++) {
+            const a2 = j * 1.0472 - 0.5236;
+            j ? ctx.lineTo(x + sz * Math.cos(a2), y + sz * Math.sin(a2))
+              : ctx.moveTo(x + sz * Math.cos(a2), y + sz * Math.sin(a2));
+          }
+          ctx.closePath();
+          ctx.fillStyle   = "rgba(244,123,32,0.88)";
+          ctx.strokeStyle = "rgba(255,190,100,0.95)";
+          ctx.lineWidth   = 1.5;
+        } else {
+          ctx.arc(x, y, sz, 0, 6.283);
+          ctx.fillStyle   = "rgba(128,52,182,0.80)";
+          ctx.strokeStyle = "rgba(200,145,255,0.85)";
+          ctx.lineWidth   = 1;
+        }
+        ctx.fill(); ctx.stroke();
+
+        // Inner accent
+        if (n.t === "m") {
+          ctx.beginPath(); ctx.arc(x, y, sz * 0.34, 0, 6.283);
+          ctx.fillStyle = "rgba(228,180,255,0.9)"; ctx.fill();
+        } else {
+          // Mini bolt mark inside transformer
+          ctx.save(); ctx.translate(x, y);
+          ctx.fillStyle = "rgba(255,240,200,0.95)";
+          ctx.beginPath();
+          ctx.moveTo( 1.4, -3.2); ctx.lineTo(-1.4,  0.4);
+          ctx.lineTo( 0.4,  0.4); ctx.lineTo(-1.0,  3.2);
+          ctx.lineTo( 1.9, -0.4); ctx.lineTo( 0.0, -0.4);
+          ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+      });
+
+      raf = requestAnimationFrame(frame);
+    };
+
+    raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", fit); };
+  }, []);
+
+  return (
+    <canvas ref={ref} style={{
+      position: "absolute", inset: 0, width: "100%", height: "100%",
+      pointerEvents: "none", opacity: 0.68,
+    }} />
+  );
+}
 
 /* ============================================================
    AuthScreen — Login / Signup backed by Supabase Auth
@@ -101,6 +257,7 @@ function AuthScreen({ initialError }) {
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
+        <AnimatedPowerGrid />
 
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14 }}>
           <img src="logo.svg" alt="PEA" style={{ width: 56, height: 56, borderRadius: 16, boxShadow: "0 12px 32px rgba(139,63,196,0.5)", flexShrink: 0 }} />
