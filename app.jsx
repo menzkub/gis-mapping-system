@@ -698,9 +698,17 @@ function App() {
       action:   entry.action    || "",
       target:   entry.target    || "",
       detail:   entry.detail    || "",
-      ip:       entry.ip        || "",
+      ip:       entry.ip        || (navigator.userAgent || "").substring(0, 200),
     };
-    const { data: inserted } = await _supabase.from("audit_log").insert(row).select().single();
+    const { data: inserted, error } = await _supabase.from("audit_log").insert(row).select().single();
+    if (error) {
+      console.warn("[Audit] insert failed:", error.message, row);
+      // still update local state optimistically so ProfileView shows it
+      const fake = { id: String(Date.now()), at: new Date().toISOString().replace("T"," ").slice(0,19),
+        user: row.username, action: row.action, target: row.target, detail: row.detail, ip: row.ip };
+      setData(d => ({ ...d, auditLog: [fake, ...d.auditLog].slice(0, 500) }));
+      return;
+    }
     if (inserted) {
       setData(d => ({
         ...d,
