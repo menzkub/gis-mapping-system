@@ -545,6 +545,51 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
   );
 }
 
+// ── MaintenanceScreen ─────────────────────────────────────────────────────
+function MaintenanceScreen({ currentUser, onLogout }) {
+  return (
+    <div style={{
+      height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
+    }}>
+      <div className="fade-up" style={{
+        width: "100%", maxWidth: 480, margin: "0 20px",
+        background: "var(--surface)", borderRadius: 24,
+        boxShadow: "0 24px 64px rgba(0,0,0,0.5)", overflow: "hidden",
+      }}>
+        <div style={{
+          background: "linear-gradient(135deg,#f47b20,#e85d04)",
+          padding: "28px 32px", display: "flex", alignItems: "center", gap: 16,
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+            background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center",
+          }}>
+            <Icon name="settings" size={28} stroke={2} style={{ color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 22, color: "white" }}>ระบบปิดปรับปรุง</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>System Maintenance</div>
+          </div>
+        </div>
+        <div style={{ padding: "28px 32px 32px" }}>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>ขณะนี้ระบบปิดให้บริการชั่วคราว</div>
+          <div className="t-mute" style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
+            ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ<br />
+            กรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ
+          </div>
+          <div className="badge badge-orange" style={{ marginBottom: 20, padding: "8px 14px" }}>
+            <Icon name="user" size={14} /> สวัสดี {currentUser?.name || currentUser?.username}
+          </div>
+          <button className="btn btn-outline" style={{ width: "100%", height: 46 }} onClick={onLogout}>
+            <Icon name="logout" size={14} /> ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────────────────
 function App() {
   const [appState, setAppState] = useStateApp("checking");
@@ -558,6 +603,7 @@ function App() {
   const [route, setRoute] = useStateApp("search");
   const [theme, setTheme] = useStateApp(() => localStorage.getItem("pea_theme") || "light");
   const [baseMap, setBaseMap] = useStateApp(() => localStorage.getItem("pea_base") || "satellite");
+  const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -569,8 +615,10 @@ function App() {
   const loadAppData = useCallbackApp(async (supabaseUser, logLogin = false) => {
     setAppState("loading");
     try {
-      const myProfileRes = await _supabase
-        .from("profiles").select("*").eq("id", supabaseUser.id).single();
+      const [myProfileRes, settingsRes] = await Promise.all([
+        _supabase.from("profiles").select("*").eq("id", supabaseUser.id).single(),
+        _supabase.from("settings").select("value").eq("key", "maintenance_mode").single(),
+      ]);
 
       if (myProfileRes.error || !myProfileRes.data) {
         await _supabase.auth.signOut();
@@ -584,6 +632,15 @@ function App() {
           ? "บัญชีของคุณรอการอนุมัติจากผู้ดูแลระบบ"
           : "บัญชีของคุณถูกระงับการใช้งาน";
         setAppState("unauthed");
+        return;
+      }
+
+      // ── Maintenance mode check ────────────────────────────────────────────
+      const isMaintenance = settingsRes.data?.value === "true";
+      setMaintenanceMode(isMaintenance);
+      if (isMaintenance && myProfile.role !== "admin") {
+        setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+        setAppState("maintenance");
         return;
       }
 
@@ -720,6 +777,13 @@ function App() {
   // ── Render states ────────────────────────────────────────────────────────
   if (appState === "checking") return <LoadingScreen message="กำลังตรวจสอบการเข้าสู่ระบบ…" />;
   if (appState === "loading")  return <LoadingScreen message="กำลังโหลดข้อมูล…" />;
+
+  if (appState === "maintenance") return (
+    <MaintenanceScreen
+      currentUser={currentUser}
+      onLogout={async () => { await _supabase.auth.signOut(); }}
+    />
+  );
 
   if (appState === "unauthed" || !currentUser) {
     return (
@@ -873,7 +937,8 @@ function App() {
             <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} />
           )}
           {route === "admin" && currentUser.role === "admin" && (
-            <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit} />
+            <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit}
+              maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} />
           )}
         </main>
       </div>
