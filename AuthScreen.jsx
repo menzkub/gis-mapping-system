@@ -5,7 +5,7 @@ const { useState: useStateA } = React;
    AuthScreen — Login / Signup backed by Supabase Auth
    ============================================================ */
 function AuthScreen({ initialError }) {
-  const [mode, setMode] = useStateA("login"); // login | signup
+  const [mode, setMode] = useStateA("login"); // login | signup | forgot
   const [email, setEmail] = useStateA("");
   const [password, setPassword] = useStateA("");
   const [showPw, setShowPw] = useStateA(false);
@@ -13,12 +13,29 @@ function AuthScreen({ initialError }) {
   const [err, setErr] = useStateA(initialError || null);
   const [loading, setLoading] = useStateA(false);
   const [signupDone, setSignupDone] = useStateA(false);
+  const [forgotEmail, setForgotEmail] = useStateA("");
+  const [forgotDone, setForgotDone] = useStateA(false);
+
+  const goForgot = () => { setMode("forgot"); setErr(null); setForgotDone(false); setForgotEmail(email); };
+  const goLogin  = () => { setMode("login");  setErr(null); };
 
   const submit = async (e) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        const { error } = await _supabase.auth.resetPasswordForEmail(
+          forgotEmail.trim().toLowerCase(),
+          { redirectTo: window.location.origin }
+        );
+        if (error) {
+          setErr(error.message);
+        } else {
+          setForgotDone(true);
+        }
+        return;
+      }
       if (mode === "login") {
         const { error } = await _supabase.auth.signInWithPassword({
           email:    email.trim().toLowerCase(),
@@ -116,92 +133,145 @@ function AuthScreen({ initialError }) {
           </div>
         </div>
 
-        <div style={{ position: "relative", fontSize: 12, opacity: 0.6 }}>© 2026 Provincial Electricity Authority</div>
+        <div style={{ position: "relative", fontSize: 12, opacity: 0.6 }}>© 2026 ระบบสารสนเทศภูมิศาสตร์ · กฟอ.ฝาง</div>
       </div>
 
       {/* Right — form */}
       <div className="auth-form-panel" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40, overflow: "auto" }}>
         <div style={{ width: "100%", maxWidth: 420 }}>
-          <div className="tabs" style={{ marginBottom: 28 }}>
-            <button className={"tab " + (mode === "login" ? "active" : "")} onClick={() => { setMode("login"); setErr(null); }}>
-              <Icon name="user" size={15} /> เข้าสู่ระบบ
-            </button>
-            <button className={"tab " + (mode === "signup" ? "active" : "")} onClick={() => { setMode("signup"); setErr(null); setSignupDone(false); }}>
-              <Icon name="plus" size={15} /> สมัครสมาชิก
-            </button>
-          </div>
 
-          {signupDone ? (
-            <div className="fade-up card" style={{ borderColor: "var(--green)", background: "var(--green-bg)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green)", color: "white", display: "grid", placeItems: "center" }}><Icon name="check" size={22} stroke={3} /></div>
-                <div style={{ fontWeight: 800, fontSize: 18, color: "#065f46" }}>ส่งคำขอแล้ว</div>
+          {/* ── Forgot password screen ───────────────────────────── */}
+          {mode === "forgot" ? (
+            forgotDone ? (
+              <div className="fade-up card" style={{ borderColor: "var(--green)", background: "var(--green-bg)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green)", color: "white", display: "grid", placeItems: "center" }}><Icon name="check" size={22} stroke={3} /></div>
+                  <div style={{ fontWeight: 800, fontSize: 18, color: "#065f46" }}>ส่งอีเมลแล้ว!</div>
+                </div>
+                <div style={{ color: "#047857", fontSize: 14, lineHeight: 1.6 }}>
+                  ลิงค์รีเซ็ตรหัสผ่านถูกส่งไปที่ <b>{forgotEmail}</b><br />กรุณาตรวจสอบกล่องจดหมาย (รวมถึงโฟลเดอร์ Spam)
+                </div>
+                <button className="btn btn-primary" style={{ marginTop: 16, width: "100%" }} onClick={goLogin}>
+                  กลับไปหน้าเข้าสู่ระบบ
+                </button>
               </div>
-              <div style={{ color: "#047857", fontSize: 14, lineHeight: 1.55 }}>
-                บัญชี <b>{signup.username}</b> รอการอนุมัติจากผู้ดูแลระบบ
-              </div>
-              <button className="btn btn-primary" style={{ marginTop: 16, width: "100%" }} onClick={() => { setMode("login"); setSignupDone(false); setSignup({ name: "", username: "", email: "", password: "" }); }}>
-                กลับไปหน้าเข้าสู่ระบบ
-              </button>
-            </div>
-          ) : (
-            <form className="fade-up" onSubmit={submit}>
-              <div className="t-display" style={{ fontSize: 32, marginBottom: 6, letterSpacing: "-0.02em" }}>
-                {mode === "login" ? "ยินดีต้อนรับกลับ" : "สร้างบัญชีใหม่"}
-              </div>
-              <div className="t-mute" style={{ marginBottom: 28, fontSize: 15 }}>
-                {mode === "login" ? "กรอกอีเมลและรหัสผ่านเพื่อเข้าสู่ระบบ" : "กรอกข้อมูลเพื่อขออนุมัติเข้าใช้งาน"}
-              </div>
-
-              {mode === "login" ? (
+            ) : (
+              <form className="fade-up" onSubmit={submit}>
+                <button type="button" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-mute)", fontWeight: 600, marginBottom: 24, padding: 0 }} onClick={goLogin}>
+                  <Icon name="chevLeft" size={16} /> กลับหน้าเข้าสู่ระบบ
+                </button>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", marginBottom: 20, boxShadow: "0 8px 24px rgba(107,44,145,0.35)" }}>
+                  <Icon name="lock" size={24} stroke={2} style={{ color: "white" }} />
+                </div>
+                <div className="t-display" style={{ fontSize: 32, marginBottom: 6, letterSpacing: "-0.02em" }}>รีเซ็ตรหัสผ่าน</div>
+                <div className="t-mute" style={{ marginBottom: 28, fontSize: 15 }}>
+                  กรอกอีเมลที่ใช้สมัคร เราจะส่งลิงค์รีเซ็ตให้
+                </div>
                 <div className="f-col f-gap-4">
                   <div className="field">
                     <label className="field-label">อีเมล</label>
                     <div style={{ position: "relative" }}>
-                      <input className="input" style={{ paddingLeft: 42 }} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@pea.co.th" autoComplete="email" required />
-                      <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}><Icon name="user" size={18} /></div>
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label className="field-label">รหัสผ่าน</label>
-                    <div style={{ position: "relative" }}>
-                      <input className="input" type={showPw ? "text" : "password"} style={{ paddingLeft: 42, paddingRight: 44 }} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
-                      <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}><Icon name="lock" size={18} /></div>
-                      <button type="button" onClick={() => setShowPw(s => !s)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
-                        <Icon name={showPw ? "eyeOff" : "eye"} size={18} />
-                      </button>
+                      <input className="input" type="email" style={{ paddingLeft: 42 }} value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="your@email.com" autoComplete="email" required />
+                      <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}><Icon name="mail" size={18} /></div>
                     </div>
                   </div>
                   {err && <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
                   <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15, marginTop: 4 }} disabled={loading}>
-                    {loading ? "กำลังเข้าสู่ระบบ…" : <><span>เข้าสู่ระบบ</span> <Icon name="arrowRight" size={16} /></>}
+                    {loading ? "กำลังส่ง…" : <><span>ส่งลิงค์รีเซ็ต</span> <Icon name="arrowRight" size={16} /></>}
+                  </button>
+                </div>
+              </form>
+            )
+          ) : (
+            /* ── Login / Signup tabs ────────────────────────────── */
+            <>
+              <div className="tabs" style={{ marginBottom: 28 }}>
+                <button className={"tab " + (mode === "login" ? "active" : "")} onClick={() => { setMode("login"); setErr(null); }}>
+                  <Icon name="user" size={15} /> เข้าสู่ระบบ
+                </button>
+                <button className={"tab " + (mode === "signup" ? "active" : "")} onClick={() => { setMode("signup"); setErr(null); setSignupDone(false); }}>
+                  <Icon name="plus" size={15} /> สมัครสมาชิก
+                </button>
+              </div>
+
+              {signupDone ? (
+                <div className="fade-up card" style={{ borderColor: "var(--green)", background: "var(--green-bg)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green)", color: "white", display: "grid", placeItems: "center" }}><Icon name="check" size={22} stroke={3} /></div>
+                    <div style={{ fontWeight: 800, fontSize: 18, color: "#065f46" }}>ส่งคำขอแล้ว</div>
+                  </div>
+                  <div style={{ color: "#047857", fontSize: 14, lineHeight: 1.55 }}>
+                    บัญชี <b>{signup.username}</b> รอการอนุมัติจากผู้ดูแลระบบ
+                  </div>
+                  <button className="btn btn-primary" style={{ marginTop: 16, width: "100%" }} onClick={() => { setMode("login"); setSignupDone(false); setSignup({ name: "", username: "", email: "", password: "" }); }}>
+                    กลับไปหน้าเข้าสู่ระบบ
                   </button>
                 </div>
               ) : (
-                <div className="f-col f-gap-4">
-                  <div className="field">
-                    <label className="field-label">ชื่อ-นามสกุล</label>
-                    <input className="input" value={signup.name} onChange={e => setSignup(s => ({ ...s, name: e.target.value }))} placeholder="เช่น สมชาย ใจดี" />
+                <form className="fade-up" onSubmit={submit}>
+                  <div className="t-display" style={{ fontSize: 32, marginBottom: 6, letterSpacing: "-0.02em" }}>
+                    {mode === "login" ? "ยินดีต้อนรับกลับ" : "สร้างบัญชีใหม่"}
                   </div>
-                  <div className="field">
-                    <label className="field-label">ชื่อผู้ใช้ (username)</label>
-                    <input className="input" value={signup.username} onChange={e => setSignup(s => ({ ...s, username: e.target.value }))} placeholder="somchai.j" />
+                  <div className="t-mute" style={{ marginBottom: 28, fontSize: 15 }}>
+                    {mode === "login" ? "กรอกอีเมลและรหัสผ่านเพื่อเข้าสู่ระบบ" : "กรอกข้อมูลเพื่อขออนุมัติเข้าใช้งาน"}
                   </div>
-                  <div className="field">
-                    <label className="field-label">อีเมล</label>
-                    <input className="input" type="email" value={signup.email} onChange={e => setSignup(s => ({ ...s, email: e.target.value }))} placeholder="name@pea.co.th" />
-                  </div>
-                  <div className="field">
-                    <label className="field-label">รหัสผ่าน</label>
-                    <input className="input" type="password" value={signup.password} onChange={e => setSignup(s => ({ ...s, password: e.target.value }))} placeholder="อย่างน้อย 6 ตัวอักษร" />
-                  </div>
-                  {err && <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
-                  <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15, marginTop: 4 }} disabled={loading}>
-                    {loading ? "กำลังสมัครสมาชิก…" : <><span>สมัครสมาชิก</span> <Icon name="arrowRight" size={16} /></>}
-                  </button>
-                </div>
+
+                  {mode === "login" ? (
+                    <div className="f-col f-gap-4">
+                      <div className="field">
+                        <label className="field-label">อีเมล</label>
+                        <div style={{ position: "relative" }}>
+                          <input className="input" style={{ paddingLeft: 42 }} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" autoComplete="email" required />
+                          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}><Icon name="user" size={18} /></div>
+                        </div>
+                      </div>
+                      <div className="field">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <label className="field-label" style={{ margin: 0 }}>รหัสผ่าน</label>
+                          <button type="button" onClick={goForgot} style={{ fontSize: 12, color: "var(--pea-purple-500)", fontWeight: 600, padding: 0, background: "none" }}>
+                            ลืมรหัสผ่าน?
+                          </button>
+                        </div>
+                        <div style={{ position: "relative" }}>
+                          <input className="input" type={showPw ? "text" : "password"} style={{ paddingLeft: 42, paddingRight: 44 }} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+                          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}><Icon name="lock" size={18} /></div>
+                          <button type="button" onClick={() => setShowPw(s => !s)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
+                            <Icon name={showPw ? "eyeOff" : "eye"} size={18} />
+                          </button>
+                        </div>
+                      </div>
+                      {err && <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
+                      <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15, marginTop: 4 }} disabled={loading}>
+                        {loading ? "กำลังเข้าสู่ระบบ…" : <><span>เข้าสู่ระบบ</span> <Icon name="arrowRight" size={16} /></>}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="f-col f-gap-4">
+                      <div className="field">
+                        <label className="field-label">ชื่อ-นามสกุล</label>
+                        <input className="input" value={signup.name} onChange={e => setSignup(s => ({ ...s, name: e.target.value }))} placeholder="เช่น สมชาย ใจดี" />
+                      </div>
+                      <div className="field">
+                        <label className="field-label">ชื่อผู้ใช้ (username)</label>
+                        <input className="input" value={signup.username} onChange={e => setSignup(s => ({ ...s, username: e.target.value }))} placeholder="somchai.j" />
+                      </div>
+                      <div className="field">
+                        <label className="field-label">อีเมล</label>
+                        <input className="input" type="email" value={signup.email} onChange={e => setSignup(s => ({ ...s, email: e.target.value }))} placeholder="your@email.com" />
+                      </div>
+                      <div className="field">
+                        <label className="field-label">รหัสผ่าน</label>
+                        <input className="input" type="password" value={signup.password} onChange={e => setSignup(s => ({ ...s, password: e.target.value }))} placeholder="อย่างน้อย 6 ตัวอักษร" />
+                      </div>
+                      {err && <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
+                      <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15, marginTop: 4 }} disabled={loading}>
+                        {loading ? "กำลังสมัครสมาชิก…" : <><span>สมัครสมาชิก</span> <Icon name="arrowRight" size={16} /></>}
+                      </button>
+                    </div>
+                  )}
+                </form>
               )}
-            </form>
+            </>
           )}
         </div>
       </div>
