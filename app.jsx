@@ -1,949 +1,1232 @@
-/* global React, ReactDOM, Icon, ToastProvider, ConfirmProvider, useToast,
-   AuthScreen, SearchView, AdminPanel, TILE_LAYERS, formatThaiDate,
-   _supabase, toProfile, toAuditEntry */
+/* global React, Icon, StatCard, Modal, downloadCSV, useToast, useConfirm, formatThaiDate,
+   _supabase, fromMeter, fromTransformer, fromProfilePatch, toMeter, toTransformer, toProfile */
 const {
-  useState: useStateApp,
-  useEffect: useEffectApp,
-  useCallback: useCallbackApp,
+  useState:  useStateAd,
+  useEffect: useEffectAd,
 } = React;
 
-// ── Loading screen ────────────────────────────────────────────────────────
-function LoadingScreen({ message = "กำลังโหลดข้อมูล…" }) {
+/* ============================================================
+   AdminPanel — dashboard, users, meters, transformers, import, audit
+   ============================================================ */
+function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil }) {
+  const [tab, setTab] = useStateAd("dashboard");
+  const pendingCount = data.users.filter(u => u.status === "pending").length;
+
+  const tabs = [
+    { id: "dashboard", icon: "dashboard", label: "Dashboard" },
+    { id: "users",     icon: "users",     label: "ผู้ใช้งาน" },
+    { id: "meters",    icon: "meter",     label: "PEA Meter" },
+    { id: "trs",       icon: "tr",        label: "PEA TR" },
+    { id: "import",    icon: "upload",    label: "นำเข้าข้อมูล" },
+    { id: "audit",     icon: "history",   label: "Audit Log" },
+    { id: "settings",  icon: "settings",  label: "ตั้งค่า" },
+  ];
+
   return (
-    <div style={{
-      height: "100vh", display: "grid", placeItems: "center",
-      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
-    }}>
-      <div style={{ textAlign: "center", color: "white" }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 18, margin: "0 auto 20px",
-          background: "linear-gradient(135deg,#f47b20,#ffba7a)",
-          display: "grid", placeItems: "center",
-          boxShadow: "0 12px 36px rgba(244,123,32,0.4)",
-          animation: "pea-spin 1.4s linear infinite",
-        }}>
-          <Icon name="bolt" size={30} stroke={2.4} />
+    <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
+      <style>{`
+        .adm-header { padding: 16px 20px 0; }
+        .adm-tabs-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+        .adm-title { font-size: 28px; }
+        .adm-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .adm-tabs::-webkit-scrollbar { display: none; }
+        .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; }
+        @media (max-width: 680px) {
+          .adm-header { padding: 12px 16px 0; }
+          .adm-title { font-size: 22px !important; }
+          .adm-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+          .adm-tabs .tab { font-size: 12px !important; padding: 0 10px !important; height: 32px !important; white-space: nowrap; }
+          .adm-body { padding: 12px 14px 24px; }
+        }
+      `}</style>
+      <div className="adm-header">
+        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>Admin</div>
+        <div className="adm-tabs-row">
+          <div className="t-display adm-title">จัดการระบบ</div>
+          <div className="admin-tabs tabs adm-tabs">
+            {tabs.map(t => (
+              <button key={t.id} className={"tab " + (tab === t.id ? "active" : "")} onClick={() => setTab(t.id)}>
+                <Icon name={t.icon} size={14} /> {t.label}
+                {t.id === "users" && pendingCount > 0 && (
+                  <span style={{
+                    background: "var(--pea-orange-500)", color: "white",
+                    borderRadius: 999, minWidth: 18, height: 18,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, fontWeight: 800, padding: "0 5px", marginLeft: 2,
+                  }}>
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>PEA Meter &amp; TR</div>
-        <div style={{ fontSize: 13, opacity: 0.65 }}>{message}</div>
       </div>
-      <style>{`@keyframes pea-spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="adm-body">
+        {tab === "dashboard" && <AdminDashboard data={data} />}
+        {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "audit"     && <AdminAudit />}
+        {tab === "settings"  && <AdminSettings
+          maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
+          maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
+          maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
+          addAudit={addAudit} currentUser={currentUser} />}
+      </div>
     </div>
   );
 }
 
-// ── Profile helpers ───────────────────────────────────────────────────────
-function activityLabel(a) {
+/* ---------- Dashboard — all stats from data.dashStats (server aggregates) ---------- */
+function AdminDashboard({ data }) {
+  const s = data.dashStats || {};
+  const meterCount = +(s.meter_count  || 0);
+  const trCount    = +(s.tr_count     || 0);
+  const totalKva   = +(s.total_kva    || 0);
+  const peaMeters  = +(s.pea_meters   || 0);
+  const custMeters = +(s.cust_meters  || 0);
+  const peaTr      = +(s.pea_tr       || 0);
+  const custTr     = +(s.cust_tr      || 0);
+  const pending    = data.users.filter(u => u.status === "pending").length;
+
+  const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
+  const recent = data.auditLog.slice(0, 5);
+
+  return (
+    <div className="f-col f-gap-4 fade-up">
+      <style>{`
+        .db-stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+        .db-mid-grid  { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+        .db-donut-row { display: flex; align-items: center; gap: 20px; }
+        .db-donut-row svg { width: 130px; height: 130px; flex-shrink: 0; }
+        .db-act-row   { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+        @media (max-width: 680px) {
+          .db-stat-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+          .db-mid-grid  { grid-template-columns: 1fr; }
+          .db-donut-row { flex-direction: column; align-items: stretch; gap: 12px; }
+          .db-donut-row svg { width: 110px; height: 110px; align-self: center; }
+          .db-donut-row .db-legend-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+          .db-act-target { display: none; }
+        }
+      `}</style>
+
+      {/* Stat cards — 4 cols desktop, 2×2 mobile */}
+      <div className="db-stat-grid">
+        <StatCard label="มิเตอร์ทั้งหมด"  value={meterCount.toLocaleString()} delta={4} icon="meter"  accent="purple" />
+        <StatCard label="หม้อแปลงทั้งหมด" value={trCount.toLocaleString()}    delta={2} icon="tr"     accent="orange" />
+        <StatCard label="กำลัง (kVA)"      value={totalKva.toLocaleString()}   delta={6} icon="bolt"  accent="blue" />
+        <StatCard label="ผู้ใช้งาน"        value={data.users.length} delta={pending > 0 ? pending : 0} icon="users" accent="green" />
+      </div>
+
+      {/* Feeder + Donut — side-by-side desktop, stacked mobile */}
+      <div className="db-mid-grid">
+        <div className="card card-elev">
+          <div className="f-between" style={{ marginBottom: 16 }}>
+            <div>
+              <div className="t-eyebrow">การกระจาย</div>
+              <div className="text-lg fw-7">มิเตอร์ตาม Feeder</div>
+            </div>
+            <div className="badge badge-purple">Top {feederStats.length}</div>
+          </div>
+          {feederStats.length === 0 ? (
+            <div className="t-mute text-sm">ไม่มีข้อมูล Feeder</div>
+          ) : (
+            <div className="f-col f-gap-3">
+              {feederStats.map(([f, n], i) => {
+                const max = feederStats[0][1];
+                const pct = (n / max) * 100;
+                return (
+                  <div key={f} className="fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+                    <div className="f-between" style={{ marginBottom: 4 }}>
+                      <div className="fw-6 text-sm">{f}</div>
+                      <div className="t-mute text-sm">{n.toLocaleString()} รายการ</div>
+                    </div>
+                    <div style={{ height: 8, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: "linear-gradient(90deg,var(--pea-purple-600),var(--pea-orange-500))", transition: "width 600ms var(--ease-out)" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="card card-elev">
+          <div className="text-lg fw-7" style={{ marginBottom: 14 }}>เจ้าของอุปกรณ์</div>
+          <div className="db-donut-row">
+            <Donut peaMeters={peaMeters} custMeters={custMeters} peaTr={peaTr} custTr={custTr} displayTotal={meterCount + trCount} />
+            <div className="db-legend-list f-col f-gap-2 text-sm">
+              <Legend color="#6b2c91" label="PEA Meter"      value={peaMeters.toLocaleString()} />
+              <Legend color="#b67dee" label="Cust. Meter"    value={custMeters.toLocaleString()} />
+              <Legend color="#f47b20" label="PEA TR"         value={peaTr.toLocaleString()} />
+              <Legend color="#ffba7a" label="Cust. TR"       value={custTr.toLocaleString()} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent activity */}
+      <div className="card card-elev">
+        <div className="f-between" style={{ marginBottom: 8 }}>
+          <div className="text-lg fw-7">กิจกรรมล่าสุด</div>
+          <div className="t-mute text-sm">{recent.length} รายการ</div>
+        </div>
+        {recent.length === 0 ? (
+          <div className="t-mute text-sm" style={{ padding: "16px 0" }}>ไม่มีกิจกรรม</div>
+        ) : recent.map(r => (
+          <div key={r.id} className="db-act-row">
+            <div className={"badge " + actionBadge(r.action)} style={{ flexShrink: 0 }}>{actionLabel(r.action)}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="text-sm fw-6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.detail || "—"}</div>
+              <div className="t-mute text-xs">{r.at} · {r.user}</div>
+            </div>
+            <div className="mono text-xs t-mute db-act-target" style={{ flexShrink: 0 }}>{r.target}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Legend({ color, label, value }) {
+  return (
+    <div className="f-gap-2 flex" style={{ alignItems: "center" }}>
+      <div style={{ width: 12, height: 12, borderRadius: 4, background: color }} />
+      <div className="fw-6">{label}</div>
+      <div className="t-mute mono">{value}</div>
+    </div>
+  );
+}
+
+function Donut({ peaMeters, custMeters, peaTr, custTr, displayTotal }) {
+  const total = peaMeters + custMeters + peaTr + custTr || 1;
+  const shown = displayTotal || total;
+  const segs = [
+    { v: peaMeters,  color: "#6b2c91" },
+    { v: custMeters, color: "#b67dee" },
+    { v: peaTr,      color: "#f47b20" },
+    { v: custTr,     color: "#ffba7a" },
+  ];
+  const C = 2 * Math.PI * 42;
+  let offset = 0;
+  return (
+    <svg viewBox="0 0 120 120" style={{ width: 140, height: 140 }}>
+      <circle cx="60" cy="60" r="42" fill="none" stroke="var(--line)" strokeWidth="14" />
+      {segs.map((s, i) => {
+        const len = (s.v / total) * C;
+        const dash = `${len} ${C - len}`;
+        const el = <circle key={i} cx="60" cy="60" r="42" fill="none" stroke={s.color} strokeWidth="14" strokeDasharray={dash} strokeDashoffset={-offset} transform="rotate(-90 60 60)" strokeLinecap="butt" />;
+        offset += len;
+        return el;
+      })}
+      <text x="60" y="58" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: "var(--ink)" }}>{shown.toLocaleString()}</text>
+      <text x="60" y="74" textAnchor="middle" style={{ fontSize: 9, fill: "var(--ink-mute)", fontWeight: 600, letterSpacing: "0.1em" }}>TOTAL</text>
+    </svg>
+  );
+}
+
+function actionLabel(a) {
   const m = {
-    login: "เข้าสู่ระบบ", logout: "ออกจากระบบ",
-    change_password: "เปลี่ยนรหัสผ่าน",
-    search_meter: "ค้นหา Meter", search_tr: "ค้นหา TR",
-    view_map: "ดูแผนที่", create_user: "สร้างบัญชี",
-    update_meter: "แก้ไข Meter", update_tr: "แก้ไข TR",
+    login: "Login", logout: "Logout",
+    change_password: "เปลี่ยนรหัส", enable_2fa: "เปิด 2FA", disable_2fa: "ปิด 2FA",
+    search_meter: "ค้นหา Meter", search_tr: "ค้นหา TR", view_map: "ดูแผนที่",
+    update_meter: "แก้ Meter", update_tr: "แก้ TR",
+    delete_meter: "ลบ Meter", delete_tr: "ลบ TR",
+    approve_user: "Approve", ban_user: "Ban", update_user: "แก้ User",
+    import_csv: "Import", export_csv: "Export",
+    create_user: "สร้างบัญชี", create_meter: "เพิ่ม Meter", create_tr: "เพิ่ม TR",
   };
   return m[a] || a;
 }
-function activityBadge(a) {
-  if (a === "login")           return "badge-green";
-  if (a === "logout")          return "badge-purple";
-  if (a === "change_password") return "badge-orange";
-  if (a.startsWith("search"))  return "badge-blue";
-  return "badge-amber";
+function actionBadge(a) {
+  if (a.startsWith("delete") || a === "ban_user")                       return "badge-red";
+  if (a.startsWith("update") || a === "import_csv")                     return "badge-amber";
+  if (a === "login" || a.startsWith("approve") || a.startsWith("create")) return "badge-green";
+  if (a === "logout")                                                    return "badge-purple";
+  if (a.startsWith("search") || a === "view_map")                       return "badge-blue";
+  if (a === "change_password" || a === "enable_2fa" || a === "disable_2fa") return "badge-orange";
+  return "";
 }
-function parseDevice(ua = "") {
+function parseDeviceAd(ua = "") {
   const b = /Edg/.test(ua) ? "Edge" : /Chrome/.test(ua) ? "Chrome" : /Firefox/.test(ua) ? "Firefox" : /Safari/.test(ua) ? "Safari" : "Browser";
   const o = /Windows NT/.test(ua) ? "Windows" : /Macintosh/.test(ua) ? "Mac" : /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : "Other";
   return `${b} · ${o}`;
 }
 
-// ── ProfileView ───────────────────────────────────────────────────────────
-function ProfileView({ currentUser, data, addAudit }) {
-  const [tab, setTabPV]           = useStateApp("info");
-  const [newPw, setNewPw]         = useStateApp("");
-  const [confirmPw, setConfirmPw] = useStateApp("");
-  const [showNewPw, setShowNewPw]         = useStateApp(false);
-  const [showConfirmPw, setShowConfirmPw] = useStateApp(false);
-  const [saving, setSaving]       = useStateApp(false);
-  const [err, setErr]             = useStateApp(null);
-  const [pwSuccess, setPwSuccess] = useStateApp(false);
-  const [mfaStatus, setMfaStatus] = useStateApp(null); // null=loading | true=enrolled | false=not
+/* ---------- Users ---------- */
+function AdminUsers({ data, setData, addAudit, currentUser }) {
+  const [q, setQ]       = useStateAd("");
+  const [edit, setEdit] = useStateAd(null);
+  const [saving, setSaving] = useStateAd(false);
+  const confirm = useConfirm();
+  const toast   = useToast();
+  const list = data.users.filter(u => !q || `${u.username} ${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
+
+  const toggle2FA = (u) => updateUser(
+    u.id,
+    { require_2fa: !u.require_2fa },
+    u.require_2fa ? "disable_2fa" : "enable_2fa",
+    `${u.require_2fa ? "ปิด" : "เปิด"} 2FA สำหรับ ${u.username}`,
+    `${u.require_2fa ? "ปิด" : "เปิด"} 2FA สำหรับ ${u.name} แล้ว`
+  );
+
+  const updateUser = async (id, patch, action, detail, toastMsg) => {
+    setSaving(true);
+    const { error } = await _supabase.from("profiles").update(fromProfilePatch(patch)).eq("id", id);
+    setSaving(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    setData(d => ({ ...d, users: d.users.map(u => u.id === id ? { ...u, ...patch } : u) }));
+    addAudit({ user: currentUser.username, action, target: id, detail });
+    if (toastMsg) toast?.(toastMsg, "success");
+  };
+
+  const banUser = async (u) => {
+    const ok = await confirm({
+      title: "ระงับผู้ใช้งาน",
+      message: <>ต้องการระงับบัญชี <b>{u.name}</b>? ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้</>,
+      target: `@${u.username}`,
+      confirmText: "ระงับบัญชี",
+      tone: "danger",
+    });
+    if (ok) await updateUser(u.id, { status: "banned" }, "ban_user", `ระงับบัญชี ${u.username}`, `ระงับบัญชี ${u.name}`);
+  };
+
+  const saveEdit = async () => {
+    if (!edit) return;
+    setSaving(true);
+
+    // 2FA อัตโนมัติตาม role
+    const auto2fa = edit.role === "admin" ? true : false;
+    const patch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa };
+
+    const { error } = await _supabase.from("profiles")
+      .update(fromProfilePatch(patch))
+      .eq("id", edit.id);
+    setSaving(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    setData(d => ({ ...d, users: d.users.map(u => u.id === edit.id ? { ...u, ...patch } : u) }));
+
+    const roleChanged = edit.role !== data.users.find(u => u.id === edit.id)?.role;
+    const detail = roleChanged
+      ? `แก้ไขข้อมูล ${edit.username} · role → ${edit.role} · 2FA ${auto2fa ? "เปิด" : "ปิด"}อัตโนมัติ`
+      : `แก้ไขข้อมูล ${edit.username}`;
+    addAudit({ user: currentUser.username, action: "update_user", target: edit.username, detail });
+    toast?.(`บันทึก ${edit.name} แล้ว${roleChanged ? ` · 2FA ${auto2fa ? "เปิด" : "ปิด"}อัตโนมัติ` : ""}`, "success");
+    setEdit(null);
+  };
+
+  return (
+    <div className="card card-elev fade-up">
+      <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
+        <div>
+          <div className="text-lg fw-7">ผู้ใช้งาน ({list.length})</div>
+          <div className="t-mute text-sm">อนุมัติบัญชีใหม่ · ระงับ · แก้ไขข้อมูล</div>
+        </div>
+        <input className="input" style={{ width: 280, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาชื่อ / username / email" />
+      </div>
+      <div style={{ overflow: "auto", maxHeight: "60vh" }}>
+        <table className="table">
+          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <tbody>
+            {list.map(u => (
+              <tr key={u.id}>
+                <td>
+                  <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: avatarBg(u.username), color: "white", display: "grid", placeItems: "center", fontWeight: 800 }}>{u.name?.[0] || u.username[0]}</div>
+                    <div>
+                      <div className="fw-6">{u.name}</div>
+                      <div className="t-mute text-xs mono">@{u.username}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span className={"badge " + (u.role === "admin" ? "badge-orange" : "badge-blue")}>{u.role}</span></td>
+                <td>
+                  <span className={"badge " + (u.status === "active" ? "badge-green" : u.status === "banned" ? "badge-red" : "badge-amber")}>
+                    {u.status === "active" ? "ใช้งานได้" : u.status === "banned" ? "ระงับ" : "รออนุมัติ"}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    title={u.require_2fa ? "ปิด 2FA" : "เปิด 2FA"}
+                    onClick={() => toggle2FA(u)}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+                      border: `1px solid ${u.require_2fa ? "#16a34a" : "var(--line)"}`,
+                      background: u.require_2fa ? "rgba(22,163,74,0.1)" : "var(--surface-2)",
+                      color: u.require_2fa ? "#16a34a" : "var(--ink-mute)",
+                      cursor: "pointer",
+                    }}>
+                    <Icon name="lock" size={11} />
+                    {u.require_2fa ? "เปิดอยู่" : "ปิดอยู่"}
+                  </button>
+                </td>
+                <td className="text-sm t-mute">{u.lastLogin}</td>
+                <td>
+                  <div className="row-action">
+                    {u.status === "pending" && (
+                      <button className="btn-icon" title="อนุมัติ" onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`)}>
+                        <Icon name="check" size={14} />
+                      </button>
+                    )}
+                    {u.status === "active" && u.id !== currentUser.id && (
+                      <button className="btn-icon" title="ระงับ" onClick={() => banUser(u)}>
+                        <Icon name="lock" size={14} />
+                      </button>
+                    )}
+                    {u.status === "banned" && (
+                      <button className="btn-icon" title="ปลดระงับ" onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `ปลดระงับ ${u.username}`, `ปลดระงับ ${u.name}`)}>
+                        <Icon name="check" size={14} />
+                      </button>
+                    )}
+                    <button className="btn-icon" title="แก้ไข" onClick={() => setEdit({ ...u })}><Icon name="edit" size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal open={!!edit} onClose={() => setEdit(null)} title="แก้ไขข้อมูลผู้ใช้" width={520}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setEdit(null)}>ยกเลิก</button>
+            <button className="btn btn-primary" onClick={saveEdit} disabled={saving}>
+              <Icon name="check" size={14} /> {saving ? "กำลังบันทึก…" : "บันทึก"}
+            </button>
+          </>
+        }>
+        {edit && (
+          <div className="f-col f-gap-4">
+            <div className="field"><label className="field-label">ชื่อ-นามสกุล</label><input className="input" value={edit.name} onChange={e => setEdit({ ...edit, name: e.target.value })} /></div>
+            <div className="field"><label className="field-label">Username</label><input className="input" value={edit.username} onChange={e => setEdit({ ...edit, username: e.target.value })} /></div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="field"><label className="field-label">Role</label>
+                <select className="input" value={edit.role} onChange={e => setEdit({ ...edit, role: e.target.value })}>
+                  <option value="user">user</option><option value="admin">admin</option>
+                </select>
+              </div>
+              <div className="field"><label className="field-label">สถานะ</label>
+                <select className="input" value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value })}>
+                  <option value="active">active</option><option value="pending">pending</option><option value="banned">banned</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function avatarBg(seed) {
+  const colors = ["#6b2c91", "#f47b20", "#3b82f6", "#10b981", "#8b3fc4", "#d96512"];
+  let h = 0; for (const c of seed) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return colors[Math.abs(h) % colors.length];
+}
+
+/* ---------- Meters CRUD — server-side search ---------- */
+function AdminMeters({ addAudit, currentUser }) {
+  const [q, setQ]             = useStateAd("");
+  const [list, setList]       = useStateAd([]);
+  const [searching, setSearching] = useStateAd(false);
+  const [edit, setEdit]       = useStateAd(null);
+  const [saving, setSaving]   = useStateAd(false);
+  const confirm = useConfirm();
+  const toast   = useToast();
+
+  // Load first page on mount, then re-search on query change
+  useEffectAd(() => {
+    let cancelled = false;
+    const run = async () => {
+      setSearching(true);
+      let dbq = _supabase.from("meters").select("*").limit(100);
+      if (q.trim()) {
+        const safe = q.trim().replace(/%/g, "\\%").replace(/_/g, "\\_");
+        dbq = dbq.or(`tag.ilike.%${safe}%,peano.ilike.%${safe}%,accountnum.ilike.%${safe}%,feederid.ilike.%${safe}%`);
+      } else {
+        dbq = dbq.order("objectid");
+      }
+      const { data: rows } = await dbq;
+      if (!cancelled) setList((rows || []).map(toMeter));
+      setSearching(false);
+    };
+    const t = q.trim() ? setTimeout(run, 400) : (run(), undefined);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
+
+  const isNew = (m) => !list.find(x => x.OBJECTID === m.OBJECTID);
+
+  const save = async (m) => {
+    setSaving(true);
+    const existing = !isNew(m);
+    const { error } = existing
+      ? await _supabase.from("meters").update(fromMeter(m)).eq("objectid", m.OBJECTID)
+      : await _supabase.from("meters").insert(fromMeter(m));
+    setSaving(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    if (existing) {
+      setList(l => l.map(x => x.OBJECTID === m.OBJECTID ? m : x));
+      addAudit({ user: currentUser.username, action: "update_meter", target: `OBJECTID ${m.OBJECTID}`, detail: `แก้ไขมิเตอร์ ${m.TAG}` });
+      toast?.(`บันทึกมิเตอร์ ${m.TAG} แล้ว`, "success");
+    } else {
+      setList(l => [m, ...l]);
+      addAudit({ user: currentUser.username, action: "create_meter", target: `OBJECTID ${m.OBJECTID}`, detail: `เพิ่มมิเตอร์ ${m.TAG}` });
+      toast?.(`เพิ่มมิเตอร์ ${m.TAG} แล้ว`, "success");
+    }
+    setEdit(null);
+  };
+
+  const remove = async (m) => {
+    const ok = await confirm({
+      title: "ลบมิเตอร์",
+      message: <>ยืนยันลบมิเตอร์นี้? ข้อมูลจะหายถาวรจากฐานข้อมูล</>,
+      target: `PEA Meter ${m.PEANO || "—"}`,
+      confirmText: "ลบมิเตอร์",
+      tone: "danger",
+    });
+    if (!ok) return;
+    const { error } = await _supabase.from("meters").delete().eq("objectid", m.OBJECTID);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    setList(l => l.filter(x => x.OBJECTID !== m.OBJECTID));
+    addAudit({ user: currentUser.username, action: "delete_meter", target: `OBJECTID ${m.OBJECTID}`, detail: `ลบมิเตอร์ ${m.TAG}` });
+    toast?.(`ลบมิเตอร์ ${m.TAG} แล้ว`, "success");
+  };
+
+  return (
+    <div className="card card-elev fade-up">
+      <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
+        <div>
+          <div className="text-lg fw-7">PEA Meter {searching ? "…" : `(${list.length}${list.length >= 100 ? "+" : ""})`}</div>
+          <div className="t-mute text-sm">เพิ่ม/แก้ไข/ลบข้อมูลมิเตอร์ · ค้นหาเพื่อกรองผลลัพธ์</div>
+        </div>
+        <div className="f-gap-2 flex">
+          <input className="input" style={{ width: 260, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, ACCOUNTNUM…" />
+          <button className="btn btn-outline btn-sm" onClick={() => downloadCSV(`pea-meter-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", CODE: "AFAG", ROUTE: "", ACCOUNTNUM: "", PEANO: "", FEEDERID: "", OWNER: "PEA", INSTALLATI: "", LATITUDE: 19.86, LONGITUDE: 99.18 })}>
+            <Icon name="plus" size={14} /> เพิ่มมิเตอร์
+          </button>
+        </div>
+      </div>
+      <div style={{ overflow: "auto", maxHeight: "60vh" }}>
+        <table className="table">
+          <thead><tr>{["OBJECTID", "TAG", "CODE", "ROUTE", "PEANO", "Feeder", "OWNER", "พิกัด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <tbody>
+            {list.map(m => (
+              <tr key={m.OBJECTID}>
+                <td className="mono text-xs t-mute">{m.OBJECTID}</td>
+                <td className="mono fw-6">{m.TAG}</td>
+                <td>{m.CODE}</td>
+                <td>{m.ROUTE}</td>
+                <td className="mono">{m.PEANO}</td>
+                <td><span className="badge badge-purple">{m.FEEDERID || "—"}</span></td>
+                <td><span className={"badge " + (m.OWNER === "Customer" ? "badge-orange" : "badge-purple")}>{m.OWNER || "—"}</span></td>
+                <td className="mono text-xs">{m.LATITUDE.toFixed(4)}, {m.LONGITUDE.toFixed(4)}</td>
+                <td>
+                  <div className="row-action">
+                    <button className="btn-icon" onClick={() => setEdit(m)}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" onClick={() => remove(m)}><Icon name="trash" size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {list.length >= 100 && (
+          <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>
+            แสดง {list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์
+          </div>
+        )}
+      </div>
+
+      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? "แก้ไขมิเตอร์" : "เพิ่มมิเตอร์"} width={640}
+        footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>ยกเลิก</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? "กำลังบันทึก…" : "บันทึก"}</button></>}>
+        {edit && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="TAG"        v={edit.TAG}        onC={v => setEdit({ ...edit, TAG: v })} />
+            <div className="field"><label className="field-label">CODE</label>
+              <select className="input" value={edit.CODE} onChange={e => setEdit({ ...edit, CODE: e.target.value })}>
+                <option value="AFAG">AFAG</option>
+                <option value="ACPK">ACPK</option>
+              </select>
+            </div>
+            <Field label="ROUTE"      v={edit.ROUTE}      onC={v => setEdit({ ...edit, ROUTE: v })} />
+            <Field label="ACCOUNTNUM" v={edit.ACCOUNTNUM} onC={v => setEdit({ ...edit, ACCOUNTNUM: v })} />
+            <Field label="PEANO"      v={edit.PEANO}      onC={v => setEdit({ ...edit, PEANO: v })} />
+            <Field label="FEEDERID"   v={edit.FEEDERID}   onC={v => setEdit({ ...edit, FEEDERID: v })} />
+            <div className="field"><label className="field-label">OWNER</label>
+              <select className="input" value={edit.OWNER} onChange={e => setEdit({ ...edit, OWNER: e.target.value })}>
+                <option value="PEA">PEA</option><option value="Customer">Customer</option>
+              </select>
+            </div>
+            <Field label="INSTALLATI" v={edit.INSTALLATI} onC={v => setEdit({ ...edit, INSTALLATI: v })} />
+            <Field label="LATITUDE"   v={edit.LATITUDE}   onC={v => setEdit({ ...edit, LATITUDE: +v })}  type="number" />
+            <Field label="LONGITUDE"  v={edit.LONGITUDE}  onC={v => setEdit({ ...edit, LONGITUDE: +v })} type="number" />
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function Field({ label, v, onC, type = "text" }) {
+  return (
+    <div className="field">
+      <label className="field-label">{label}</label>
+      <input className="input" type={type} value={v ?? ""} onChange={e => onC(e.target.value)} />
+    </div>
+  );
+}
+
+/* ---------- TRs CRUD — server-side search ---------- */
+function AdminTrs({ addAudit, currentUser }) {
+  const [q, setQ]           = useStateAd("");
+  const [list, setList]     = useStateAd([]);
+  const [searching, setSearching] = useStateAd(false);
+  const [edit, setEdit]     = useStateAd(null);
+  const [saving, setSaving] = useStateAd(false);
+  const confirm = useConfirm();
+  const toast   = useToast();
+
+  useEffectAd(() => {
+    let cancelled = false;
+    const run = async () => {
+      setSearching(true);
+      let dbq = _supabase.from("transformers").select("*").limit(100);
+      if (q.trim()) {
+        const safe = q.trim().replace(/%/g, "\\%").replace(/_/g, "\\_");
+        dbq = dbq.or(`tag.ilike.%${safe}%,peano_tr.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`);
+      } else {
+        dbq = dbq.order("objectid");
+      }
+      const { data: rows } = await dbq;
+      if (!cancelled) setList((rows || []).map(toTransformer));
+      setSearching(false);
+    };
+    const t = q.trim() ? setTimeout(run, 400) : (run(), undefined);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
+
+  const isNew = (t) => !list.find(x => x.OBJECTID === t.OBJECTID);
+
+  const save = async (t) => {
+    setSaving(true);
+    const existing = !isNew(t);
+    const { error } = existing
+      ? await _supabase.from("transformers").update(fromTransformer(t)).eq("objectid", t.OBJECTID)
+      : await _supabase.from("transformers").insert(fromTransformer(t));
+    setSaving(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    if (existing) {
+      setList(l => l.map(x => x.OBJECTID === t.OBJECTID ? t : x));
+      addAudit({ user: currentUser.username, action: "update_tr", target: `OBJECTID ${t.OBJECTID}`, detail: `แก้ไขหม้อแปลง ${t.TAG}` });
+      toast?.(`บันทึกหม้อแปลง ${t.TAG} แล้ว`, "success");
+    } else {
+      setList(l => [t, ...l]);
+      addAudit({ user: currentUser.username, action: "create_tr", target: `OBJECTID ${t.OBJECTID}`, detail: `เพิ่มหม้อแปลง ${t.TAG}` });
+      toast?.(`เพิ่มหม้อแปลง ${t.TAG} แล้ว`, "success");
+    }
+    setEdit(null);
+  };
+
+  const remove = async (t) => {
+    const ok = await confirm({
+      title: "ลบหม้อแปลง",
+      message: <>ยืนยันลบหม้อแปลงนี้? ข้อมูลจะหายถาวร</>,
+      target: `PEA TR ${t.PEANO_TR || "—"} · ${t.KVA} kVA`,
+      confirmText: "ลบหม้อแปลง",
+      tone: "danger",
+    });
+    if (!ok) return;
+    const { error } = await _supabase.from("transformers").delete().eq("objectid", t.OBJECTID);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    setList(l => l.filter(x => x.OBJECTID !== t.OBJECTID));
+    addAudit({ user: currentUser.username, action: "delete_tr", target: `OBJECTID ${t.OBJECTID}`, detail: `ลบหม้อแปลง ${t.TAG}` });
+    toast?.(`ลบหม้อแปลง ${t.TAG} แล้ว`, "success");
+  };
+
+  return (
+    <div className="card card-elev fade-up">
+      <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
+        <div>
+          <div className="text-lg fw-7">PEA Transformer {searching ? "…" : `(${list.length}${list.length >= 100 ? "+" : ""})`}</div>
+          <div className="t-mute text-sm">เพิ่ม/แก้ไข/ลบข้อมูลหม้อแปลง · ค้นหาเพื่อกรองผลลัพธ์</div>
+        </div>
+        <div className="f-gap-2 flex">
+          <input className="input" style={{ width: 260, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, สถานที่…" />
+          <button className="btn btn-outline btn-sm" onClick={() => downloadCSV(`pea-tr-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", PHASE: "หม้อแปลง 3 Phase", VOLTAGE: "22 kV", PEANO_TR: "", INSTALL_PHASE: "ABC", KVA: 100, OWNER_TR: "PEA", LOCATION: "", FEEDER1: "", LATITUDE: 19.86, LONGITUDE: 99.18, PEA_METER: "" })}>
+            <Icon name="plus" size={14} /> เพิ่มหม้อแปลง
+          </button>
+        </div>
+      </div>
+      <div style={{ overflow: "auto", maxHeight: "60vh" }}>
+        <table className="table">
+          <thead><tr>{["TAG", "PEANO", "ระบบเฟส", "kV", "kVA", "เจ้าของ", "สถานที่", "Feeder", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <tbody>
+            {list.map(t => (
+              <tr key={t.OBJECTID}>
+                <td className="mono fw-6">{t.TAG}</td>
+                <td className="mono">{t.PEANO_TR}</td>
+                <td>{t.PHASE.replace("หม้อแปลง ", "")}</td>
+                <td>{t.VOLTAGE}</td>
+                <td className="fw-7" style={{ color: "var(--pea-orange-600)" }}>{t.KVA}</td>
+                <td><span className={"badge " + (t.OWNER_TR === "Customer" ? "badge-orange" : "badge-purple")}>{t.OWNER_TR}</span></td>
+                <td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.LOCATION}</td>
+                <td><span className="badge">{t.FEEDER1}</span></td>
+                <td>
+                  <div className="row-action">
+                    <button className="btn-icon" onClick={() => setEdit(t)}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" onClick={() => remove(t)}><Icon name="trash" size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {list.length >= 100 && (
+          <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>
+            แสดง {list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์
+          </div>
+        )}
+      </div>
+
+      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? "แก้ไขหม้อแปลง" : "เพิ่มหม้อแปลง"} width={680}
+        footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>ยกเลิก</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? "กำลังบันทึก…" : "บันทึก"}</button></>}>
+        {edit && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="TAG"              v={edit.TAG}          onC={v => setEdit({ ...edit, TAG: v })} />
+            <Field label="PEANO หม้อแปลง"  v={edit.PEANO_TR}     onC={v => setEdit({ ...edit, PEANO_TR: v })} />
+            <div className="field"><label className="field-label">ระบบเฟส</label>
+              <select className="input" value={edit.PHASE} onChange={e => setEdit({ ...edit, PHASE: e.target.value })}>
+                <option>หม้อแปลง 1 Phase</option><option>หม้อแปลง 3 Phase</option>
+              </select>
+            </div>
+            <div className="field"><label className="field-label">ระดับแรงดัน</label>
+              <select className="input" value={edit.VOLTAGE} onChange={e => setEdit({ ...edit, VOLTAGE: e.target.value })}>
+                <option>22 kV</option><option>33 kV</option>
+              </select>
+            </div>
+            <Field label="เฟสที่ติดตั้ง"   v={edit.INSTALL_PHASE} onC={v => setEdit({ ...edit, INSTALL_PHASE: v })} />
+            <Field label="ค่าพิกัด kVA"    v={edit.KVA}           onC={v => setEdit({ ...edit, KVA: +v })} type="number" />
+            <div className="field"><label className="field-label">เจ้าของ</label>
+              <select className="input" value={edit.OWNER_TR} onChange={e => setEdit({ ...edit, OWNER_TR: e.target.value })}>
+                <option>PEA</option><option>Customer</option>
+              </select>
+            </div>
+            <Field label="รหัสสายป้อนที่ 1" v={edit.FEEDER1}      onC={v => setEdit({ ...edit, FEEDER1: v })} />
+            <div className="field" style={{ gridColumn: "1 / -1" }}><label className="field-label">สถานที่</label><input className="input" value={edit.LOCATION} onChange={e => setEdit({ ...edit, LOCATION: e.target.value })} /></div>
+            <Field label="LATITUDE"         v={edit.LATITUDE}     onC={v => setEdit({ ...edit, LATITUDE: +v })}  type="number" />
+            <Field label="LONGITUDE"        v={edit.LONGITUDE}    onC={v => setEdit({ ...edit, LONGITUDE: +v })} type="number" />
+            <Field label="PEA Meter (เชื่อมโยง)" v={edit.PEA_METER} onC={v => setEdit({ ...edit, PEA_METER: v })} />
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+/* ---------- Import ---------- */
+function AdminImport({ data, setData, addAudit, currentUser }) {
+  const [target, setTarget]   = useStateAd("meter");
+  const [preview, setPreview] = useStateAd(null);
+  const [fileName, setFileName] = useStateAd("");
+  const [importing, setImporting] = useStateAd(false);
   const toast = useToast();
 
-  useEffectApp(() => {
-    _supabase.auth.mfa.listFactors().then(({ data: d }) => {
-      setMfaStatus(d?.totp?.some(f => f.status === "verified") || false);
+  const parseCsv = (text) => {
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    const cols  = lines[0].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+    const rows  = lines.slice(1).map(l => {
+      const vals = l.match(/("([^"]|"")*"|[^,]+)/g) || [];
+      const obj  = {};
+      cols.forEach((c, i) => obj[c] = (vals[i] || "").trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
+      return obj;
     });
-  }, []);
-
-  const checks = {
-    length:  newPw.length >= 8,
-    upper:   /[A-Z]/.test(newPw),
-    lower:   /[a-z]/.test(newPw),
-    number:  /[0-9]/.test(newPw),
-    special: /[^A-Za-z0-9]/.test(newPw),
+    return { cols, rows };
   };
-  const strength = Object.values(checks).filter(Boolean).length;
-  const sColors = ["", "#ef4444", "#f97316", "#eab308", "#22c55e", "#16a34a"];
-  const sLabels = ["", "อ่อนมาก", "อ่อน", "ปานกลาง", "แข็งแกร่ง", "แข็งแกร่งมาก"];
-  const confirmOk  = confirmPw.length > 0 && confirmPw === newPw;
-  const confirmBad = confirmPw.length > 0 && confirmPw !== newPw;
 
-  const changePassword = async (e) => {
-    e.preventDefault();
-    setErr(null);
-    if (!Object.values(checks).every(Boolean)) {
-      setErr("รหัสผ่านไม่ตรงตามเกณฑ์ความปลอดภัย"); return;
-    }
-    if (newPw !== confirmPw) {
-      setErr("รหัสผ่านและการยืนยันไม่ตรงกัน"); return;
-    }
-    setSaving(true);
-    const { error } = await _supabase.auth.updateUser({ password: newPw });
-    setSaving(false);
-    if (error) {
-      setErr(error.message);
-    } else {
-      await addAudit({
-        user: currentUser.username, action: "change_password",
-        target: currentUser.username, detail: "เปลี่ยนรหัสผ่านสำเร็จ",
+  const onFile = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setFileName(f.name);
+    const reader = new FileReader();
+    reader.onload = () => setPreview(parseCsv(reader.result));
+    reader.readAsText(f, "utf-8");
+  };
+
+  const commit = async () => {
+    if (!preview) return;
+    setImporting(true);
+    const table = target === "meter" ? "meters" : "transformers";
+    try {
+      const dbRows = preview.rows.map((r, i) => target === "meter" ? {
+        objectid:   +r.OBJECTID || (8000000 + i),
+        tag:        r.TAG || "", code:       r.CODE || "",
+        route:      r.ROUTE || "", accountnum: r.ACCOUNTNUM || "",
+        peano:      r.PEANO || "", feederid:   r.FEEDERID || "",
+        owner:      r.OWNER || "PEA", installati: r.INSTALLATI || "",
+        latitude:   +r.LATITUDE || 0, longitude:  +r.LONGITUDE || 0,
+      } : {
+        objectid:      +r.OBJECTID || (9000000 + i),
+        tag:           r.TAG || "", phase:         r.PHASE || "",
+        voltage:       r.VOLTAGE || "", peano_tr:      r.PEANO_TR || r.PEANO || "",
+        install_phase: r.INSTALL_PHASE || "", kva:           +r.KVA || 0,
+        owner_tr:      r.OWNER_TR || "PEA", location:      r.LOCATION || "",
+        feeder1:       r.FEEDER1 || "", latitude:      +r.LATITUDE || 0,
+        longitude:     +r.LONGITUDE || 0, pea_meter:     r.PEA_METER || "",
       });
-      toast?.("เปลี่ยนรหัสผ่านสำเร็จแล้ว", "success");
-      setPwSuccess(true);
-      setNewPw(""); setConfirmPw("");
-      setTimeout(() => setPwSuccess(false), 4000);
+
+      // Upsert in batches of 500
+      const BATCH = 500;
+      for (let i = 0; i < dbRows.length; i += BATCH) {
+        const { error } = await _supabase
+          .from(table)
+          .upsert(dbRows.slice(i, i + BATCH), { onConflict: "objectid" });
+        if (error) throw error;
+      }
+
+      // Refresh dashboard stats (no need to load all records)
+      const { data: newStats } = await _supabase.rpc("get_dashboard_stats");
+      if (newStats) setData(d => ({ ...d, dashStats: newStats }));
+
+      addAudit({ user: currentUser.username, action: "import_csv", target: target === "meter" ? "PEA Meter" : "PEA TR", detail: `นำเข้า ${preview.rows.length} รายการ จาก ${fileName}` });
+      toast?.(`นำเข้า ${preview.rows.length} รายการ สำเร็จ`, "success");
+      setPreview(null);
+      setFileName("");
+    } catch (err) {
+      toast?.("นำเข้าล้มเหลว: " + err.message, "error");
+    } finally {
+      setImporting(false);
     }
   };
 
+  const sampleHeaders = target === "meter"
+    ? "OBJECTID,TAG,CODE,ROUTE,ACCOUNTNUM,PEANO,FEEDERID,OWNER,INSTALLATI,LATITUDE,LONGITUDE"
+    : "OBJECTID,TAG,PHASE,VOLTAGE,PEANO_TR,INSTALL_PHASE,KVA,OWNER_TR,LOCATION,FEEDER1,LATITUDE,LONGITUDE,PEA_METER";
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 24px", height: "100%", overflow: "auto" }}>
-      <div style={{ marginBottom: 24 }}>
-        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>บัญชีของฉัน</div>
-        <div className="t-display" style={{ fontSize: 26 }}>ข้อมูลส่วนตัว</div>
+    <div className="f-col f-gap-4 fade-up">
+      <div className="card card-elev">
+        <div className="text-lg fw-7" style={{ marginBottom: 6 }}>นำเข้าข้อมูลจาก CSV</div>
+        <div className="t-mute text-sm" style={{ marginBottom: 16 }}>อัปโหลด CSV (UTF-8) — ข้อมูลจะ upsert เข้า Supabase ทันที (ตาม OBJECTID)</div>
+
+        <div className="tabs" style={{ marginBottom: 16 }}>
+          <button className={"tab " + (target === "meter" ? "active" : "")} onClick={() => setTarget("meter")}><Icon name="meter" size={14} /> PEA Meter</button>
+          <button className={"tab " + (target === "tr" ? "active" : "")} onClick={() => setTarget("tr")}><Icon name="tr" size={14} /> PEA TR</button>
+        </div>
+
+        <label className="card" style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer", borderStyle: "dashed", borderColor: "var(--pea-purple-300)", background: "var(--pea-purple-50)" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, var(--pea-purple-600), var(--pea-orange-500))", color: "white", display: "grid", placeItems: "center", boxShadow: "var(--shadow-glow)" }}>
+            <Icon name="upload" size={24} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="fw-7">{fileName || "เลือกไฟล์ CSV"}</div>
+            <div className="t-mute text-sm">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก · UTF-8</div>
+            <div className="t-mute text-xs mono" style={{ marginTop: 4 }}>{sampleHeaders}</div>
+          </div>
+          <input type="file" accept=".csv" onChange={onFile} style={{ display: "none" }} />
+        </label>
       </div>
 
-      <div className="tabs" style={{ marginBottom: 20 }}>
-        {[
-          { id: "info",     label: "ข้อมูลบัญชี",      icon: "user" },
-          { id: "password", label: "เปลี่ยนรหัสผ่าน",  icon: "lock" },
-          { id: "activity", label: "ประวัติการใช้งาน",  icon: "history" },
-          { id: "search",   label: "ประวัติการค้นหา",   icon: "search" },
-        ].map(t => (
-          <button key={t.id} className={"tab " + (tab === t.id ? "active" : "")} onClick={() => setTabPV(t.id)}>
-            <Icon name={t.icon} size={14} /> {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Info ── */}
-      {tab === "info" && (
+      {preview && (
         <div className="card card-elev fade-up">
-          <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--line)" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 28, color: "white", flexShrink: 0 }}>
-              {currentUser.name?.[0] || currentUser.username[0]}
-            </div>
+          <div className="f-between" style={{ marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800 }}>{currentUser.name}</div>
-              <div style={{ color: "var(--ink-mute)", fontSize: 14 }}>@{currentUser.username}</div>
-              <span className={"badge " + (currentUser.role === "admin" ? "badge-orange" : "badge-blue")} style={{ marginTop: 6, display: "inline-block" }}>
-                {currentUser.role}
-              </span>
+              <div className="text-lg fw-7">ตรวจสอบข้อมูล ({preview.rows.length} รายการ)</div>
+              <div className="t-mute text-sm">ไฟล์: {fileName}</div>
+            </div>
+            <div className="f-gap-2 flex">
+              <button className="btn btn-outline" onClick={() => { setPreview(null); setFileName(""); }}>ยกเลิก</button>
+              <button className="btn btn-primary" onClick={commit} disabled={importing}>
+                {importing ? "กำลังนำเข้า…" : <><Icon name="check" size={14} /> ยืนยันนำเข้า {preview.rows.length} รายการ</>}
+              </button>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
-            {[
-              { label: "ชื่อ-นามสกุล",      value: currentUser.name },
-              { label: "Username",           value: "@" + currentUser.username },
-              { label: "อีเมล",              value: currentUser.email || "—" },
-              { label: "สิทธิ์การใช้งาน",   value: currentUser.role },
-              { label: "สถานะบัญชี",         value: currentUser.status === "active" ? "✅ ใช้งานได้" : currentUser.status },
-              { label: "เข้าสู่ระบบล่าสุด", value: currentUser.lastLogin || "—" },
-              {
-                label: "2FA (TOTP)",
-                value: currentUser.require_2fa
-                  ? (mfaStatus === null ? "กำลังตรวจสอบ…"
-                    : mfaStatus ? "🔒 เปิดใช้งานแล้ว"
-                    : "⚠️ บังคับแต่ยังไม่ได้ตั้งค่า")
-                  : (mfaStatus ? "🔒 เปิดใช้งาน (ไม่บังคับ)" : "ปิดอยู่"),
-              },
-            ].map(r => (
-              <div key={r.label} style={{ padding: "14px 0", borderBottom: "1px solid var(--line)" }}>
-                <div className="t-mute text-xs fw-6" style={{ textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{r.label}</div>
-                <div className="fw-6">{r.value}</div>
-              </div>
-            ))}
+          <div style={{ overflow: "auto", maxHeight: 360, borderRadius: 12, border: "1px solid var(--line)" }}>
+            <table className="table">
+              <thead><tr>{preview.cols.map(c => <th key={c}>{c}</th>)}</tr></thead>
+              <tbody>{preview.rows.slice(0, 10).map((r, i) => (
+                <tr key={i}>{preview.cols.map(c => <td key={c} className="mono text-xs">{r[c]}</td>)}</tr>
+              ))}</tbody>
+            </table>
           </div>
+          {preview.rows.length > 10 && <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>แสดง 10 จาก {preview.rows.length} รายการ</div>}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* ── Change Password ── */}
-      {tab === "password" && (
-        <div className="card card-elev fade-up" style={{ maxWidth: 480 }}>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>เปลี่ยนรหัสผ่าน</div>
-            <div className="t-mute text-sm">รหัสผ่านใหม่ต้องผ่านเกณฑ์ความปลอดภัยทั้งหมด</div>
-          </div>
-          {pwSuccess && (
-            <div className="badge badge-green fade-up" style={{ padding: "10px 14px", marginBottom: 16, width: "100%", display: "flex", gap: 8 }}>
-              <Icon name="check" size={14} /> เปลี่ยนรหัสผ่านสำเร็จแล้ว
+/* ---------- Audit Log (server-side pagination + filters) ---------- */
+const ALL_ACTIONS = [
+  "login","logout","change_password","enable_2fa","disable_2fa",
+  "search_meter","search_tr","view_map",
+  "create_meter","update_meter","delete_meter",
+  "create_tr","update_tr","delete_tr",
+  "approve_user","ban_user","update_user","import_csv","export_csv","create_user",
+];
+const PAGE_SIZE = 50;
+
+function AdminAudit() {
+  const [logs, setLogs]       = useStateAd([]);
+  const [total, setTotal]     = useStateAd(0);
+  const [page, setPage]       = useStateAd(0);
+  const [loading, setLoading] = useStateAd(true);
+  const [userList, setUserList] = useStateAd([]);
+
+  const [q, setQ]             = useStateAd("");
+  const [userF, setUserF]     = useStateAd("");
+  const [actionF, setActionF] = useStateAd("");
+  const [dateFrom, setDateFrom] = useStateAd("");
+  const [dateTo, setDateTo]   = useStateAd("");
+
+  useEffectAd(() => {
+    _supabase.from("profiles").select("username").order("username")
+      .then(({ data }) => setUserList((data || []).map(r => r.username)));
+  }, []);
+
+  const fetchPage = async (p, f) => {
+    setLoading(true);
+    try {
+      let qb = _supabase.from("audit_log")
+        .select("*", { count: "exact" })
+        .order("at", { ascending: false })
+        .range(p * PAGE_SIZE, (p + 1) * PAGE_SIZE - 1);
+
+      if (f.userF)    qb = qb.eq("username", f.userF);
+      if (f.actionF)  qb = qb.eq("action",   f.actionF);
+      if (f.dateFrom) qb = qb.gte("at", f.dateFrom + "T00:00:00");
+      if (f.dateTo)   qb = qb.lte("at", f.dateTo   + "T23:59:59");
+      if (f.q.trim()) {
+        const s = f.q.trim().replace(/[%_]/g, "\\$&");
+        qb = qb.or(`username.ilike.%${s}%,target.ilike.%${s}%,detail.ilike.%${s}%`);
+      }
+
+      const { data, count } = await qb;
+      setLogs((data || []).map(toAuditEntry));
+      setTotal(count || 0);
+      setPage(p);
+    } finally { setLoading(false); }
+  };
+
+  const curFilters = () => ({ q, userF, actionF, dateFrom, dateTo });
+
+  useEffectAd(() => {
+    const t = setTimeout(() => fetchPage(0, { q, userF, actionF, dateFrom, dateTo }), 350);
+    return () => clearTimeout(t);
+  }, [q, userF, actionF, dateFrom, dateTo]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const hasFilter  = q || userF || actionF || dateFrom || dateTo;
+
+  return (
+    <div className="card card-elev fade-up">
+      {/* Toolbar */}
+      <div style={{ marginBottom: 14 }}>
+        <div className="f-between f-gap-2" style={{ marginBottom: 10 }}>
+          <div>
+            <div className="text-lg fw-7">Audit Log</div>
+            <div className="t-mute text-sm">
+              {loading ? "กำลังโหลด…" : `พบ ${total.toLocaleString()} รายการ${hasFilter ? " (กรอง)" : ""}`}
             </div>
-          )}
-          <form className="f-col f-gap-4" onSubmit={changePassword}>
-            <div className="field">
-              <label className="field-label">รหัสผ่านใหม่</label>
-              <div style={{ position: "relative" }}>
-                <input className="input" type={showNewPw ? "text" : "password"}
-                  style={{ paddingLeft: 42, paddingRight: 44 }}
-                  value={newPw} onChange={e => { setNewPw(e.target.value); setErr(null); }}
-                  placeholder="อย่างน้อย 8 ตัวอักษร" autoComplete="new-password" />
-                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}>
-                  <Icon name="lock" size={18} />
+          </div>
+          <div className="f-gap-2 flex">
+            {hasFilter && (
+              <button className="btn btn-outline" style={{ height: 36, fontSize: 12 }}
+                onClick={() => { setQ(""); setUserF(""); setActionF(""); setDateFrom(""); setDateTo(""); }}>
+                <Icon name="close" size={13} /> ล้างตัวกรอง
+              </button>
+            )}
+            <button className="btn btn-outline" style={{ height: 36, fontSize: 12 }}
+              onClick={() => downloadCSV("audit-log.csv", logs)}>
+              <Icon name="download" size={14} /> Export หน้านี้
+            </button>
+          </div>
+        </div>
+
+        {/* Filter row */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <input className="input" style={{ flex: "1 1 200px", height: 36 }}
+            placeholder="🔍 ค้นหา user / target / detail…"
+            value={q} onChange={e => setQ(e.target.value)} />
+
+          <select className="input" style={{ flex: "1 1 160px", height: 36 }}
+            value={userF} onChange={e => setUserF(e.target.value)}>
+            <option value="">👤 ผู้ใช้ทั้งหมด</option>
+            {userList.map(u => <option key={u} value={u}>@{u}</option>)}
+          </select>
+
+          <select className="input" style={{ flex: "1 1 160px", height: 36 }}
+            value={actionF} onChange={e => setActionF(e.target.value)}>
+            <option value="">⚡ การกระทำทั้งหมด</option>
+            {ALL_ACTIONS.map(a => <option key={a} value={a}>{actionLabel(a)}</option>)}
+          </select>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="t-mute text-xs">วันที่</span>
+            <input className="input" type="date" style={{ height: 36, width: 148 }}
+              title="วันที่เริ่มต้น" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <span className="t-mute text-xs">ถึง</span>
+            <input className="input" type="date" style={{ height: 36, width: 148 }}
+              title="วันที่สิ้นสุด" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflow: "auto", maxHeight: "52vh" }}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>ผู้ใช้</th>
+              <th>การกระทำ</th>
+              <th>เป้าหมาย</th>
+              <th>รายละเอียด</th>
+              <th>อุปกรณ์</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && logs.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--ink-mute)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid var(--line)", borderTopColor: "var(--pea-purple-500)", animation: "pea-spin 0.8s linear infinite" }} />
+                  กำลังโหลด…
                 </div>
-                <button type="button" onClick={() => setShowNewPw(s => !s)}
-                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
-                  <Icon name={showNewPw ? "eyeOff" : "eye"} size={18} />
-                </button>
-              </div>
-              {newPw.length > 0 && (
-                <>
-                  <div style={{ display: "flex", gap: 4, marginTop: 8, marginBottom: 4 }}>
-                    {[1,2,3,4,5].map(i => (
-                      <div key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= strength ? sColors[strength] : "var(--line)", transition: "background 300ms" }} />
-                    ))}
+              </td></tr>
+            ) : logs.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--ink-mute)" }}>ไม่พบข้อมูล</td></tr>
+            ) : logs.map(r => (
+              <tr key={r.id}>
+                <td className="mono text-xs" style={{ whiteSpace: "nowrap" }}>{r.at}</td>
+                <td>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: "50%", background: avatarBg(r.user || "x"), color: "white", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+                      {(r.user[0] || "?").toUpperCase()}
+                    </div>
+                    <span className="mono text-sm">{r.user}</span>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: sColors[strength], marginBottom: 8 }}>{sLabels[strength]}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px" }}>
-                    {[
-                      { ok: checks.length,  label: "ขั้นต่ำ 8 ตัวอักษร" },
-                      { ok: checks.upper,   label: "ตัวพิมพ์ใหญ่ (A-Z)" },
-                      { ok: checks.lower,   label: "ตัวพิมพ์เล็ก (a-z)" },
-                      { ok: checks.number,  label: "ตัวเลข (0-9)" },
-                      { ok: checks.special, label: "อักขระพิเศษ (!@#$...)" },
-                    ].map(r => (
-                      <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: r.ok ? "#16a34a" : "var(--ink-mute)", fontWeight: r.ok ? 700 : 400 }}>
-                        <span>{r.ok ? "✓" : "○"}</span>{r.label}
-                      </div>
-                    ))}
-                  </div>
-                </>
+                </td>
+                <td><span className={"badge " + actionBadge(r.action)}>{actionLabel(r.action)}</span></td>
+                <td className="mono text-xs">{r.target}</td>
+                <td className="text-sm">{r.detail}</td>
+                <td className="text-xs t-mute" title={r.ip}>{r.ip ? parseDeviceAd(r.ip) : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page === 0 || loading} onClick={() => fetchPage(0, curFilters())}>«</button>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page === 0 || loading} onClick={() => fetchPage(page - 1, curFilters())}>‹</button>
+          <span className="text-sm t-mute" style={{ minWidth: 140, textAlign: "center" }}>
+            หน้า {page + 1} / {totalPages} &nbsp;·&nbsp; {total.toLocaleString()} รายการ
+          </span>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page >= totalPages - 1 || loading} onClick={() => fetchPage(page + 1, curFilters())}>›</button>
+          <button className="btn btn-outline" style={{ height: 32, width: 32, padding: 0 }}
+            disabled={page >= totalPages - 1 || loading} onClick={() => fetchPage(totalPages - 1, curFilters())}>»</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Settings ---------- */
+const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
+
+function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser }) {
+  const [loading, setLoading] = useStateAd(false);
+  const [savingMsg, setSavingMsg] = useStateAd(false);
+  const [localMsg, setLocalMsg] = useStateAd(maintenanceMessage || DEFAULT_MSG);
+  const [localUntil, setLocalUntil] = useStateAd(maintenanceUntil || "");
+  const toast = useToast();
+
+  const toggle = async () => {
+    setLoading(true);
+    const newVal = !maintenanceMode;
+    const { error } = await _supabase.from("settings")
+      .update({
+        value:      String(newVal),
+        updated_at: new Date().toISOString(),
+        updated_by: currentUser.username,
+      })
+      .eq("key", "maintenance_mode");
+    setLoading(false);
+    if (error) {
+      toast?.("เกิดข้อผิดพลาด: " + error.message, "error");
+    } else {
+      setMaintenanceMode(newVal);
+      addAudit({
+        user:   currentUser.username,
+        action: "toggle_maintenance",
+        target: "system",
+        detail: `${newVal ? "เปิด" : "ปิด"} Maintenance Mode`,
+      });
+      toast?.(newVal ? "⚠️ เปิด Maintenance Mode แล้ว — user ทั่วไปเข้าระบบไม่ได้" : "✅ ปิด Maintenance Mode แล้ว — ระบบกลับมาปกติ",
+        newVal ? "warning" : "success");
+    }
+  };
+
+  const saveMessage = async () => {
+    setSavingMsg(true);
+    const now = new Date().toISOString();
+    const [r1, r2] = await Promise.all([
+      _supabase.from("settings").update({ value: localMsg, updated_at: now, updated_by: currentUser.username }).eq("key", "maintenance_message"),
+      _supabase.from("settings").update({ value: localUntil, updated_at: now, updated_by: currentUser.username }).eq("key", "maintenance_until"),
+    ]);
+    setSavingMsg(false);
+    if (r1.error || r2.error) {
+      toast?.("เกิดข้อผิดพลาด: " + (r1.error?.message || r2.error?.message), "error");
+    } else {
+      setMaintenanceMessage(localMsg);
+      setMaintenanceUntil(localUntil);
+      addAudit({
+        user:   currentUser.username,
+        action: "update_maintenance_message",
+        target: "system",
+        detail: "อัปเดตข้อความ Maintenance Mode",
+      });
+      toast?.("บันทึกข้อความสำเร็จ", "success");
+    }
+  };
+
+  return (
+    <div className="f-col f-gap-4 fade-up" style={{ maxWidth: 580 }}>
+      <div>
+        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>System</div>
+        <div className="t-display" style={{ fontSize: 24 }}>ตั้งค่าระบบ</div>
+      </div>
+
+      {/* Maintenance Mode Toggle Card */}
+      <div className="card card-elev">
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
+              <Icon name="settings" size={16} />
+              Maintenance Mode
+              {maintenanceMode && (
+                <span className="badge badge-orange" style={{ fontSize: 10 }}>เปิดอยู่</span>
               )}
             </div>
-            <div className="field">
-              <label className="field-label">ยืนยันรหัสผ่านใหม่</label>
-              <div style={{ position: "relative" }}>
-                <input className="input" type={showConfirmPw ? "text" : "password"}
-                  style={{ paddingLeft: 42, paddingRight: 44, borderColor: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : undefined }}
-                  value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-                  placeholder="กรอกรหัสผ่านอีกครั้ง" autoComplete="new-password" />
-                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none",
-                  color: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : "var(--ink-mute)" }}>
-                  <Icon name={confirmOk ? "check" : "lock"} size={18} />
-                </div>
-                <button type="button" onClick={() => setShowConfirmPw(s => !s)}
-                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
-                  <Icon name={showConfirmPw ? "eyeOff" : "eye"} size={18} />
-                </button>
-              </div>
-              {confirmBad && <div style={{ marginTop: 5, fontSize: 11, color: "var(--red)", fontWeight: 600 }}>✕ รหัสผ่านไม่ตรงกัน</div>}
-              {confirmOk  && <div style={{ marginTop: 5, fontSize: 11, color: "#16a34a", fontWeight: 600 }}>✓ รหัสผ่านตรงกัน</div>}
+            <div className="t-mute text-sm" style={{ lineHeight: 1.6 }}>
+              เมื่อเปิด ผู้ใช้ทั่วไปจะเห็นหน้า "ระบบปิดปรับปรุง" และเข้าใช้งานไม่ได้<br />
+              Admin ยังคงเข้าใช้งานได้ตามปกติ
             </div>
-            {err && <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
-            <button type="submit" className="btn btn-primary" style={{ height: 48 }} disabled={saving}>
-              {saving ? "กำลังบันทึก…" : <><Icon name="check" size={14} /> บันทึกรหัสผ่านใหม่</>}
-            </button>
-          </form>
+          </div>
+          <button
+            onClick={toggle}
+            disabled={loading}
+            title={maintenanceMode ? "คลิกเพื่อเปิดระบบ" : "คลิกเพื่อปิดปรับปรุง"}
+            style={{
+              width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
+              background: maintenanceMode ? "var(--pea-orange-500)" : "var(--line)",
+              position: "relative", transition: "background 250ms", border: "none",
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            <div style={{
+              width: 24, height: 24, borderRadius: "50%", background: "white",
+              position: "absolute", top: 4,
+              left: maintenanceMode ? 32 : 4,
+              transition: "left 250ms",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+            }} />
+          </button>
         </div>
-      )}
-
-      {/* ── Activity (login/logout/password/2FA) ── */}
-      {tab === "activity" && (() => {
-        const USAGE_ACTIONS = ["login", "logout", "change_password", "enable_2fa", "disable_2fa"];
-        const rows = data.auditLog.filter(r =>
-          (currentUser.role === "admin" || r.user === currentUser.username) &&
-          USAGE_ACTIONS.includes(r.action)
-        );
-        return (
-          <div className="card card-elev fade-up">
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 17, fontWeight: 700 }}>
-                ประวัติการใช้งาน ({rows.length})
-                {currentUser.role === "admin" && <span className="badge badge-orange" style={{ marginLeft: 8, fontSize: 11 }}>ทุก user</span>}
-              </div>
-              <div className="t-mute text-sm">Login · Logout · เปลี่ยนรหัสผ่าน · 2FA</div>
-            </div>
-            {rows.length === 0 ? (
-              <div className="t-mute text-sm" style={{ padding: "20px 0" }}>ยังไม่มีประวัติ</div>
-            ) : (
-              <div style={{ overflow: "auto", maxHeight: "58vh" }}>
-                <table className="table">
-                  <thead><tr>
-                    <th>เวลา</th>
-                    {currentUser.role === "admin" && <th>ผู้ใช้</th>}
-                    <th>การกระทำ</th>
-                    <th>รายละเอียด</th>
-                    <th>อุปกรณ์</th>
-                  </tr></thead>
-                  <tbody>
-                    {rows.map(r => (
-                      <tr key={r.id}>
-                        <td className="mono text-xs">{r.at}</td>
-                        {currentUser.role === "admin" && <td className="mono text-sm">@{r.user}</td>}
-                        <td><span className={"badge " + activityBadge(r.action)}>{activityLabel(r.action)}</span></td>
-                        <td className="text-sm">{r.detail}</td>
-                        <td className="text-xs t-mute" title={r.ip}>{r.ip ? parseDevice(r.ip) : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {maintenanceMode && (
+          <div className="badge badge-orange fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
+            <Icon name="warning" size={15} />
+            ระบบปิดปรับปรุงอยู่ — ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้
           </div>
-        );
-      })()}
-
-      {/* ── Search History ── */}
-      {tab === "search" && (() => {
-        const SEARCH_ACTIONS = ["search_meter", "search_tr", "view_map"];
-        const rows = data.auditLog.filter(r =>
-          (currentUser.role === "admin" || r.user === currentUser.username) &&
-          SEARCH_ACTIONS.includes(r.action)
-        );
-        return (
-          <div className="card card-elev fade-up">
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 17, fontWeight: 700 }}>
-                ประวัติการค้นหา ({rows.length})
-                {currentUser.role === "admin" && <span className="badge badge-orange" style={{ marginLeft: 8, fontSize: 11 }}>ทุก user</span>}
-              </div>
-              <div className="t-mute text-sm">ค้นหา Meter · TR · ดูแผนที่</div>
-            </div>
-            {rows.length === 0 ? (
-              <div className="t-mute text-sm" style={{ padding: "20px 0" }}>ยังไม่มีประวัติการค้นหา</div>
-            ) : (
-              <div style={{ overflow: "auto", maxHeight: "58vh" }}>
-                <table className="table">
-                  <thead><tr>
-                    <th>เวลา</th>
-                    {currentUser.role === "admin" && <th>ผู้ใช้</th>}
-                    <th>ประเภท</th>
-                    <th>คีย์ค้นหา</th>
-                    <th>รายละเอียด</th>
-                  </tr></thead>
-                  <tbody>
-                    {rows.map(r => (
-                      <tr key={r.id}>
-                        <td className="mono text-xs">{r.at}</td>
-                        {currentUser.role === "admin" && <td className="mono text-sm">@{r.user}</td>}
-                        <td><span className={"badge " + activityBadge(r.action)}>{activityLabel(r.action)}</span></td>
-                        <td className="mono text-sm">{r.target}</td>
-                        <td className="text-sm">{r.detail}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        )}
+        {!maintenanceMode && (
+          <div className="badge badge-green fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
+            <Icon name="check" size={15} />
+            ระบบเปิดให้บริการปกติ
           </div>
-        );
-      })()}
-    </div>
-  );
-}
+        )}
+      </div>
 
-// ── MFASetupScreen ────────────────────────────────────────────────────────
-function MFASetupScreen({ currentUser, onComplete, onCancel }) {
-  const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
-  const [step, setStep]       = useStateMFAS("loading"); // loading | scan | error
-  const [factorId, setFactorId] = useStateMFAS("");
-  const [qrSvg, setQrSvg]     = useStateMFAS("");
-  const [secret, setSecret]   = useStateMFAS("");
-  const [code, setCode]       = useStateMFAS("");
-  const [err, setErr]         = useStateMFAS(null);
-  const [busy, setBusy]       = useStateMFAS(false);
+      {/* Message & Return Time Card */}
+      <div className="card card-elev">
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="edit" size={16} />
+          ข้อความแจ้งผู้ใช้งาน
+        </div>
+        <div className="t-mute text-sm" style={{ marginBottom: 16, lineHeight: 1.6 }}>
+          ข้อความที่แสดงบนหน้าปิดปรับปรุง หากไม่กรอก จะใช้ข้อความเริ่มต้น
+        </div>
 
-  useEffectMFAS(() => {
-    (async () => {
-      // Unenroll any pending (unverified) factors first to avoid conflict
-      const { data: existing } = await _supabase.auth.mfa.listFactors();
-      for (const f of (existing?.all || [])) {
-        await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
-      }
-      const { data, error } = await _supabase.auth.mfa.enroll({
-        factorType: "totp", friendlyName: `totp-${Date.now()}`,
-      });
-      if (error) { setErr(error.message); setStep("error"); return; }
-      setFactorId(data.id);
-      setQrSvg(data.totp.qr_code);
-      setSecret(data.totp.secret);
-      setStep("scan");
-    })();
-  }, []);
-
-  const verify = async (e) => {
-    e?.preventDefault();
-    if (code.length !== 6) { setErr("กรุณากรอก 6 หลัก"); return; }
-    setBusy(true); setErr(null);
-    try {
-      const { data: ch, error: chErr } = await _supabase.auth.mfa.challenge({ factorId });
-      if (chErr) throw chErr;
-      const { error: vErr } = await _supabase.auth.mfa.verify({ factorId, challengeId: ch.id, code });
-      if (vErr) throw new Error("รหัสไม่ถูกต้อง กรุณาลองใหม่");
-      // cleanup old factors now that we're at AAL2
-      const { data: all } = await _supabase.auth.mfa.listFactors();
-      for (const f of (all?.all || [])) {
-        if (f.id !== factorId) await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
-      }
-      onComplete();
-    } catch (e) { setErr(e.message); } finally { setBusy(false); }
-  };
-
-  return (
-    <div style={{ height: "100vh", display: "grid", placeItems: "center",
-      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
-      <div className="fade-up" style={{ width: "100%", maxWidth: 460, margin: "0 20px",
-        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.5)", overflow: "hidden" }}>
-        {/* Header */}
-        <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid var(--line)",
-          display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-            background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
-            boxShadow: "0 8px 24px rgba(107,44,145,0.4)" }}>
-            <Icon name="lock" size={22} stroke={2} style={{ color: "white" }} />
-          </div>
+        <div className="f-col f-gap-3">
           <div>
-            <div style={{ fontWeight: 800, fontSize: 20 }}>ตั้งค่า 2-Factor Auth</div>
-            <div className="t-mute text-sm">บัญชี <b>{currentUser.username}</b> ต้องเปิดใช้งาน 2FA</div>
-          </div>
-        </div>
-
-        <div style={{ padding: "24px 28px 28px" }}>
-          {step === "loading" && (
-            <div style={{ textAlign: "center", padding: "32px 0", color: "var(--ink-mute)" }}>
-              <div style={{ width: 32, height: 32, margin: "0 auto 12px", borderRadius: "50%",
-                border: "3px solid var(--line)", borderTopColor: "var(--pea-purple-500)",
-                animation: "pea-spin 0.8s linear infinite" }} />
-              กำลังสร้าง QR Code…
-            </div>
-          )}
-
-          {step === "scan" && (
-            <div>
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, marginBottom: 4 }}>ขั้นตอนที่ 1 — สแกน QR Code</div>
-                <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
-              </div>
-              <div style={{ background: "white", padding: 14, borderRadius: 12,
-                display: "inline-block", marginBottom: 14, border: "1px solid var(--line)" }}
-                dangerouslySetInnerHTML={{ __html: qrSvg }} />
-              <div style={{ marginBottom: 20 }}>
-                <div className="t-mute text-xs" style={{ marginBottom: 4 }}>หรือกรอก Secret Key ด้วยตนเอง</div>
-                <code style={{ fontFamily: "monospace", fontSize: 11, background: "var(--surface-2)",
-                  padding: "6px 10px", borderRadius: 6, display: "block", wordBreak: "break-all",
-                  letterSpacing: "0.12em", color: "var(--pea-purple-600)" }}>{secret}</code>
-              </div>
-              <div style={{ fontWeight: 700, marginBottom: 10 }}>ขั้นตอนที่ 2 — กรอกรหัส 6 หลักเพื่อยืนยัน</div>
-              <form onSubmit={verify} className="f-col f-gap-3">
-                <input className="input"
-                  style={{ fontSize: 26, letterSpacing: "0.5em", textAlign: "center", fontWeight: 700, height: 58 }}
-                  maxLength={6} inputMode="numeric" autoComplete="one-time-code"
-                  placeholder="000000" value={code}
-                  onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
-                  autoFocus />
-                {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
-                <button type="submit" className="btn btn-primary" style={{ height: 50 }}
-                  disabled={busy || code.length !== 6}>
-                  {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน &amp; เปิดใช้งาน 2FA</>}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {step === "error" && (
-            <div className="badge badge-red" style={{ padding: "10px 14px", marginBottom: 16 }}>
-              <Icon name="close" size={14} /> {err}
-            </div>
-          )}
-
-          <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
-            textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
-            ออกจากระบบแทน
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── MFAVerifyScreen ───────────────────────────────────────────────────────
-function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
-  const { useState: useStateMFAV, useEffect: useEffectMFAV } = React;
-  const [factorId, setFactorId] = useStateMFAV("");
-  const [code, setCode]         = useStateMFAV("");
-  const [err, setErr]           = useStateMFAV(null);
-  const [busy, setBusy]         = useStateMFAV(false);
-
-  useEffectMFAV(() => {
-    _supabase.auth.mfa.listFactors().then(({ data }) => {
-      const totp = data?.totp?.find(f => f.status === "verified");
-      if (totp) setFactorId(totp.id);
-    });
-  }, []);
-
-  const verify = async (e) => {
-    e?.preventDefault();
-    if (!factorId) { setErr("ไม่พบ 2FA ที่ตั้งค่าไว้ กรุณาติดต่อ Admin"); return; }
-    setBusy(true); setErr(null);
-    try {
-      const { data: ch, error: chErr } = await _supabase.auth.mfa.challenge({ factorId });
-      if (chErr) throw chErr;
-      const { error: vErr } = await _supabase.auth.mfa.verify({ factorId, challengeId: ch.id, code });
-      if (vErr) throw new Error("รหัสไม่ถูกต้อง กรุณาลองใหม่");
-      onComplete();
-    } catch (e) { setErr(e.message); } finally { setBusy(false); }
-  };
-
-  return (
-    <div style={{ height: "100vh", display: "grid", placeItems: "center",
-      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
-      <div className="fade-up" style={{ width: "100%", maxWidth: 400, margin: "0 20px",
-        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
-        <div style={{ padding: "28px 32px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-              background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
-              boxShadow: "0 8px 24px rgba(107,44,145,0.4)" }}>
-              <Icon name="lock" size={24} stroke={2} style={{ color: "white" }} />
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 22 }}>ยืนยัน 2FA</div>
-              <div className="t-mute text-sm">สวัสดี, <b>{currentUser.name}</b></div>
-            </div>
-          </div>
-          <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
-            เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักของบัญชีนี้
-          </div>
-          <form onSubmit={verify} className="f-col f-gap-3">
-            <input className="input"
-              style={{ fontSize: 30, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700, height: 68 }}
-              maxLength={6} inputMode="numeric" autoComplete="one-time-code"
-              placeholder="000000" value={code}
-              onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
-              autoFocus />
-            {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
-            <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15 }}
-              disabled={busy || code.length !== 6}>
-              {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน</>}
-            </button>
-          </form>
-          <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
-            textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
-            ออกจากระบบ
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── MaintenanceScreen ─────────────────────────────────────────────────────
-function MaintenanceScreen({ currentUser, onLogout }) {
-  return (
-    <div style={{
-      height: "100vh", display: "grid", placeItems: "center",
-      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
-    }}>
-      <div className="fade-up" style={{
-        width: "100%", maxWidth: 480, margin: "0 20px",
-        background: "var(--surface)", borderRadius: 24,
-        boxShadow: "0 24px 64px rgba(0,0,0,0.5)", overflow: "hidden",
-      }}>
-        <div style={{
-          background: "linear-gradient(135deg,#f47b20,#e85d04)",
-          padding: "28px 32px", display: "flex", alignItems: "center", gap: 16,
-        }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-            background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center",
-          }}>
-            <Icon name="settings" size={28} stroke={2} style={{ color: "white" }} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 22, color: "white" }}>ระบบปิดปรับปรุง</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>System Maintenance</div>
-          </div>
-        </div>
-        <div style={{ padding: "28px 32px 32px" }}>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>ขณะนี้ระบบปิดให้บริการชั่วคราว</div>
-          <div className="t-mute" style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
-            ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ<br />
-            กรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ
-          </div>
-          <div className="badge badge-orange" style={{ marginBottom: 20, padding: "8px 14px" }}>
-            <Icon name="user" size={14} /> สวัสดี {currentUser?.name || currentUser?.username}
-          </div>
-          <button className="btn btn-outline" style={{ width: "100%", height: 46 }} onClick={onLogout}>
-            <Icon name="logout" size={14} /> ออกจากระบบ
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Root App ──────────────────────────────────────────────────────────────
-function App() {
-  const [appState, setAppState] = useStateApp("checking");
-  const [currentUser, setCurrentUser] = useStateApp(null);
-  const [pendingUser, setPendingUser] = useStateApp(null);
-  const [data, setData] = useStateApp({
-    meters: [], transformers: [],
-    users: [], auditLog: [], feeders: [],
-    dashStats: {},
-  });
-  const [route, setRoute] = useStateApp("search");
-  const [theme, setTheme] = useStateApp(() => localStorage.getItem("pea_theme") || "light");
-  const [baseMap, setBaseMap] = useStateApp(() => localStorage.getItem("pea_base") || "satellite");
-  const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
-
-  useEffectApp(() => {
-    document.documentElement.dataset.theme = theme;
-    localStorage.setItem("pea_theme", theme);
-  }, [theme]);
-  useEffectApp(() => { localStorage.setItem("pea_base", baseMap); }, [baseMap]);
-
-  // ── Load app data after auth ─────────────────────────────────────────────
-  const loadAppData = useCallbackApp(async (supabaseUser, logLogin = false) => {
-    setAppState("loading");
-    try {
-      const [myProfileRes, settingsRes] = await Promise.all([
-        _supabase.from("profiles").select("*").eq("id", supabaseUser.id).single(),
-        _supabase.from("settings").select("value").eq("key", "maintenance_mode").single(),
-      ]);
-
-      if (myProfileRes.error || !myProfileRes.data) {
-        await _supabase.auth.signOut();
-        setAppState("unauthed");
-        return;
-      }
-      const myProfile = myProfileRes.data;
-      if (myProfile.status === "pending" || myProfile.status === "banned") {
-        await _supabase.auth.signOut();
-        window.__peaAuthErr = myProfile.status === "pending"
-          ? "บัญชีของคุณรอการอนุมัติจากผู้ดูแลระบบ"
-          : "บัญชีของคุณถูกระงับการใช้งาน";
-        setAppState("unauthed");
-        return;
-      }
-
-      // ── Maintenance mode check ────────────────────────────────────────────
-      const isMaintenance = settingsRes.data?.value === "true";
-      setMaintenanceMode(isMaintenance);
-      if (isMaintenance && myProfile.role !== "admin") {
-        setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
-        setAppState("maintenance");
-        return;
-      }
-
-      // ── 2FA check ────────────────────────────────────────────────────────
-      if (myProfile.require_2fa) {
-        const { data: aal } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (aal?.currentLevel !== "aal2") {
-          setPendingUser(supabaseUser);
-          setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
-          setAppState(aal?.nextLevel === "aal2" ? "mfa_verify" : "mfa_setup");
-          return;
-        }
-      }
-      // ── end 2FA check ────────────────────────────────────────────────────
-
-      const [profilesRes, auditRes, feedersRes, statsRes] = await Promise.all([
-        _supabase.from("profiles").select("*").order("created_at"),
-        _supabase.from("audit_log").select("*").order("at", { ascending: false }).limit(500),
-        _supabase.rpc("get_feeders"),
-        _supabase.rpc("get_dashboard_stats"),
-      ]);
-
-      const users     = (profilesRes.data || []).map(r => toProfile({ ...r, email: "" }));
-      const feeders   = (feedersRes.data  || []).map(r => r.feeder).filter(Boolean);
-      const dashStats = statsRes.data || {};
-
-      let auditLog = (auditRes.data || []).map(toAuditEntry);
-      if (logLogin) {
-        const deviceInfo = (navigator.userAgent || "").substring(0, 200);
-        const { data: loginRow } = await _supabase.from("audit_log").insert({
-          user_id:  supabaseUser.id,
-          username: myProfile.username || "",
-          action:   "login",
-          target:   "—",
-          detail:   "เข้าสู่ระบบ",
-          ip:       deviceInfo,
-        }).select().single();
-        if (loginRow) auditLog = [toAuditEntry(loginRow), ...auditLog].slice(0, 500);
-      }
-
-      setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
-      setData({ meters: [], transformers: [], users, auditLog, feeders, dashStats });
-      setAppState("ready");
-
-      await _supabase.from("profiles")
-        .update({ last_login: new Date().toISOString() })
-        .eq("id", supabaseUser.id);
-    } catch (err) {
-      console.error("loadAppData failed:", err);
-      setAppState("unauthed");
-    }
-  }, []);
-
-  // ── Auth state listener ──────────────────────────────────────────────────
-  useEffectApp(() => {
-    _supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadAppData(session.user, false); // session restore — ไม่ log login ซ้ำ
-      } else {
-        setAppState("unauthed");
-      }
-    });
-
-    const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        loadAppData(session.user, true); // login จริง — log ได้
-      }
-      if (event === "SIGNED_OUT") {
-        setCurrentUser(null);
-        setData({ meters: [], transformers: [], users: [], auditLog: [], feeders: [], dashStats: {} });
-        window.__peaAuthErr = null;
-        setAppState("unauthed");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [loadAppData]);
-
-  // ── Auto-logout หลังไม่ใช้งาน 30 นาที ───────────────────────────────────
-  useEffectApp(() => {
-    if (!currentUser) return;
-    const TIMEOUT = 30 * 60 * 1000;
-    let timer;
-    const reset = () => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        await _supabase.from("audit_log").insert({
-          user_id:  currentUser.id,
-          username: currentUser.username,
-          action:   "logout",
-          target:   "—",
-          detail:   "ออกจากระบบอัตโนมัติ (ไม่มีการใช้งาน 30 นาที)",
-          ip:       "",
-        });
-        await _supabase.auth.signOut();
-      }, TIMEOUT);
-    };
-    const events = ["mousedown", "keydown", "scroll", "touchstart", "click", "mousemove"];
-    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
-    reset();
-    return () => {
-      clearTimeout(timer);
-      events.forEach(e => window.removeEventListener(e, reset));
-    };
-  }, [currentUser]);
-
-  // ── addAudit ─────────────────────────────────────────────────────────────
-  const addAudit = useCallbackApp(async (entry) => {
-    const row = {
-      user_id:  currentUser?.id || null,
-      username: entry.user      || currentUser?.username || "",
-      action:   entry.action    || "",
-      target:   entry.target    || "",
-      detail:   entry.detail    || "",
-      ip:       entry.ip        || (navigator.userAgent || "").substring(0, 200),
-    };
-    const { data: inserted, error } = await _supabase.from("audit_log").insert(row).select().single();
-    if (error) {
-      console.warn("[Audit] insert failed:", error.message, row);
-      // still update local state optimistically so ProfileView shows it
-      const fake = { id: String(Date.now()), at: new Date().toISOString().replace("T"," ").slice(0,19),
-        user: row.username, action: row.action, target: row.target, detail: row.detail, ip: row.ip };
-      setData(d => ({ ...d, auditLog: [fake, ...d.auditLog].slice(0, 500) }));
-      return;
-    }
-    if (inserted) {
-      setData(d => ({
-        ...d,
-        auditLog: [toAuditEntry(inserted), ...d.auditLog].slice(0, 500),
-      }));
-    }
-  }, [currentUser]);
-
-  // ── Render states ────────────────────────────────────────────────────────
-  if (appState === "checking") return <LoadingScreen message="กำลังตรวจสอบการเข้าสู่ระบบ…" />;
-  if (appState === "loading")  return <LoadingScreen message="กำลังโหลดข้อมูล…" />;
-
-  if (appState === "maintenance") return (
-    <MaintenanceScreen
-      currentUser={currentUser}
-      onLogout={async () => { await _supabase.auth.signOut(); }}
-    />
-  );
-
-  if (appState === "unauthed" || !currentUser) {
-    return (
-      <ToastProvider><ConfirmProvider>
-        <AuthScreen initialError={window.__peaAuthErr || null} />
-      </ConfirmProvider></ToastProvider>
-    );
-  }
-
-  if (appState === "mfa_setup") return (
-    <MFASetupScreen
-      currentUser={currentUser}
-      onComplete={() => loadAppData(pendingUser, false)}
-      onCancel={async () => { await _supabase.auth.signOut(); }}
-    />
-  );
-
-  if (appState === "mfa_verify") return (
-    <MFAVerifyScreen
-      currentUser={currentUser}
-      onComplete={() => loadAppData(pendingUser, false)}
-      onCancel={async () => { await _supabase.auth.signOut(); }}
-    />
-  );
-
-  const navItems = [
-    { id: "search",  icon: "search",   label: "ค้นหา" },
-    { id: "profile", icon: "user",     label: "บัญชีฉัน" },
-    ...(currentUser.role === "admin" ? [{ id: "admin", icon: "settings", label: "Admin" }] : []),
-  ];
-
-  return (
-    <ToastProvider><ConfirmProvider>
-      <div className="app-root">
-        {/* Sidebar */}
-        <aside className="app-sidebar" style={{
-          background: "linear-gradient(180deg, #1b0926 0%, #321148 50%, #1b0926 100%)",
-          color: "white", padding: "22px 16px", display: "flex", flexDirection: "column", gap: 16,
-          borderRight: "1px solid rgba(255,255,255,0.06)",
-        }}>
-          <div className="sidebar-brand f-gap-3 flex" style={{ alignItems: "center", padding: "0 6px 8px" }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#f47b20,#ffba7a)", display: "grid", placeItems: "center", boxShadow: "0 8px 24px rgba(244,123,32,0.4)", flexShrink: 0 }}>
-              <Icon name="bolt" size={20} stroke={2.4} />
-            </div>
-            <div className="sidebar-brand-text">
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA</div>
-              <div style={{ fontWeight: 800, fontSize: 14 }}>Meter &amp; TR</div>
-            </div>
-          </div>
-          <nav className="sidebar-nav f-col f-gap-2">
-            {navItems.map(it => (
-              <button
-                key={it.id}
-                className={"sidebar-nav-btn" + (route === it.id ? " sidebar-nav-btn--active" : "")}
-                onClick={() => setRoute(it.id)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                  borderRadius: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 14,
-                  background: route === it.id ? "linear-gradient(135deg, rgba(244,123,32,0.25), rgba(139,63,196,0.25))" : "transparent",
-                  border: route === it.id ? "1px solid rgba(244,123,32,0.5)" : "1px solid transparent",
-                  boxShadow: route === it.id ? "0 8px 20px rgba(244,123,32,0.18)" : "none",
-                  textAlign: "left", transition: "all 180ms var(--ease-out)",
-                }}
-              >
-                <Icon name={it.icon} size={18} />
-                <span className="sidebar-nav-label">{it.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="sidebar-user" style={{ marginTop: "auto", padding: 14, background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
-                {currentUser.name?.[0] || currentUser.username[0]}
-              </div>
-              <div className="sidebar-user-info" style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentUser.name}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>@{currentUser.username} · {currentUser.role}</div>
-              </div>
-            </div>
-            <button className="sidebar-logout-btn" onClick={async () => {
-              await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" });
-              await _supabase.auth.signOut();
-            }} style={{
-              marginTop: 10, width: "100%", padding: "8px 12px", borderRadius: 10,
-              background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: 600,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}>
-              <Icon name="logout" size={14} />
-              <span className="sidebar-logout-text">ออกจากระบบ</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* Topbar */}
-        <header className="app-topbar" style={{
-          background: "var(--surface)", borderBottom: "1px solid var(--line)",
-          padding: "0 24px", display: "flex", alignItems: "center", gap: 14,
-        }}>
-          <div className="topbar-greeting" style={{ flex: 1 }}>
-            <div className="t-mute text-xs">วันนี้ • {new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
-            <div className="fw-7" style={{ fontSize: 15 }}>
-              สวัสดี <span style={{ color: "var(--pea-purple-600)" }}>{currentUser.name}</span> 👋
-            </div>
-          </div>
-
-          <div className="topbar-mapswitcher tabs" style={{ padding: 4 }}>
-            {Object.entries(TILE_LAYERS).map(([k, v]) => (
-              <button key={k} className={"tab " + (baseMap === k ? "active" : "")} style={{ height: 36, padding: "0 14px", fontSize: 12 }} onClick={() => setBaseMap(k)}>
-                <Icon name={k === "satellite" ? "layers" : k === "dark" ? "moon" : "map"} size={12} /> {v.label}
-              </button>
-            ))}
-          </div>
-
-          <button className="btn-icon" title={theme === "dark" ? "Light mode" : "Dark mode"} onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
-            <Icon name={theme === "dark" ? "sun" : "moon"} />
-          </button>
-
-          <button className="btn-icon" title="แจ้งเตือน">
-            <Icon name="bell" />
-          </button>
-
-          {/* Mobile only: user avatar + logout */}
-          <button className="topbar-logout" title="ออกจากระบบ" onClick={async () => {
-            await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" });
-            await _supabase.auth.signOut();
-          }} style={{
-            display: "none", alignItems: "center", gap: 8,
-            padding: "6px 10px", borderRadius: 20,
-            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-            color: "var(--red)", fontSize: 12, fontWeight: 700,
-          }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
-              {currentUser.name?.[0] || currentUser.username[0]}
-            </div>
-            <Icon name="logout" size={14} />
-          </button>
-        </header>
-
-        {/* Main */}
-        <main className="app-main">
-          {route === "search" && (
-            <SearchView
-              data={data}
-              baseMap={baseMap}
-              currentUser={currentUser}
-              onLogSearch={(entry) => addAudit(entry)}
+            <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>ข้อความ</label>
+            <textarea
+              value={localMsg}
+              onChange={e => setLocalMsg(e.target.value)}
+              rows={4}
+              placeholder={DEFAULT_MSG}
+              style={{
+                width: "100%", resize: "vertical", fontFamily: "inherit",
+                padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                border: "1px solid var(--line)", background: "var(--bg)",
+                color: "var(--text)", lineHeight: 1.6, boxSizing: "border-box",
+              }}
             />
-          )}
-          {route === "profile" && (
-            <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} />
-          )}
-          {route === "admin" && currentUser.role === "admin" && (
-            <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit}
-              maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} />
-          )}
-        </main>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+              <button className="btn btn-ghost text-sm" style={{ padding: "2px 8px", height: 28 }}
+                onClick={() => setLocalMsg(DEFAULT_MSG)}>
+                รีเซ็ตข้อความเริ่มต้น
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
+              วันที่/เวลาที่คาดว่าจะกลับมาให้บริการ <span className="t-mute">(ไม่บังคับ)</span>
+            </label>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="datetime-local"
+                value={localUntil}
+                onChange={e => setLocalUntil(e.target.value)}
+                style={{
+                  flex: 1, padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                  border: "1px solid var(--line)", background: "var(--bg)",
+                  color: "var(--text)", fontFamily: "inherit",
+                }}
+              />
+              {localUntil && (
+                <button className="btn btn-ghost" style={{ height: 42, padding: "0 12px", flexShrink: 0 }}
+                  onClick={() => setLocalUntil("")} title="ล้างวันที่">
+                  <Icon name="close" size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <button
+            className="btn btn-primary"
+            style={{ height: 44, marginTop: 4 }}
+            disabled={savingMsg}
+            onClick={saveMessage}
+          >
+            {savingMsg ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อความ</>}
+          </button>
+        </div>
       </div>
-    </ConfirmProvider></ToastProvider>
+    </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+window.AdminPanel = AdminPanel;
