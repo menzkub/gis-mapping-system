@@ -4,12 +4,32 @@ const { useState: useStateA } = React;
 /* ============================================================
    AuthScreen — Login / Signup backed by Supabase Auth
    ============================================================ */
+
+function pwChecks(pw) {
+  return {
+    length:  pw.length >= 8,
+    upper:   /[A-Z]/.test(pw),
+    lower:   /[a-z]/.test(pw),
+    number:  /[0-9]/.test(pw),
+    special: /[^A-Za-z0-9]/.test(pw),
+  };
+}
+function pwStrength(pw) {
+  const c = pwChecks(pw);
+  return Object.values(c).filter(Boolean).length; // 0–5
+}
+const strengthLabel = ["", "อ่อนมาก", "อ่อน", "ปานกลาง", "แข็งแกร่ง", "แข็งแกร่งมาก"];
+const strengthColor = ["", "#ef4444", "#f97316", "#eab308", "#22c55e", "#16a34a"];
+
 function AuthScreen({ initialError }) {
   const [mode, setMode] = useStateA("login"); // login | signup | forgot
   const [email, setEmail] = useStateA("");
   const [password, setPassword] = useStateA("");
   const [showPw, setShowPw] = useStateA(false);
   const [signup, setSignup] = useStateA({ name: "", username: "", email: "", password: "" });
+  const [confirmPw, setConfirmPw] = useStateA("");
+  const [showSignupPw, setShowSignupPw] = useStateA(false);
+  const [showConfirmPw, setShowConfirmPw] = useStateA(false);
   const [err, setErr] = useStateA(initialError || null);
   const [loading, setLoading] = useStateA(false);
   const [signupDone, setSignupDone] = useStateA(false);
@@ -29,11 +49,7 @@ function AuthScreen({ initialError }) {
           forgotEmail.trim().toLowerCase(),
           { redirectTo: window.location.origin }
         );
-        if (error) {
-          setErr(error.message);
-        } else {
-          setForgotDone(true);
-        }
+        if (error) { setErr(error.message); } else { setForgotDone(true); }
         return;
       }
       if (mode === "login") {
@@ -48,31 +64,23 @@ function AuthScreen({ initialError }) {
             setErr(error.message);
           }
         }
-        // On success: onAuthStateChange in app.jsx fires SIGNED_IN → loadAppData
       } else {
         if (!signup.name || !signup.username || !signup.email || !signup.password) {
-          setErr("กรุณากรอกข้อมูลให้ครบทุกช่อง");
-          return;
+          setErr("กรุณากรอกข้อมูลให้ครบทุกช่อง"); return;
         }
-        if (signup.password.length < 6) {
-          setErr("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
-          return;
+        const checks = pwChecks(signup.password);
+        if (!checks.length || !checks.upper || !checks.lower || !checks.number || !checks.special) {
+          setErr("รหัสผ่านไม่ตรงตามเกณฑ์ความปลอดภัย กรุณาตรวจสอบรายการด้านล่าง"); return;
+        }
+        if (signup.password !== confirmPw) {
+          setErr("รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน"); return;
         }
         const { error } = await _supabase.auth.signUp({
           email:    signup.email.trim().toLowerCase(),
           password: signup.password,
-          options: {
-            data: {
-              username: signup.username.trim().toLowerCase(),
-              name:     signup.name.trim(),
-            },
-          },
+          options: { data: { username: signup.username.trim().toLowerCase(), name: signup.name.trim() } },
         });
-        if (error) {
-          setErr(error.message);
-        } else {
-          setSignupDone(true);
-        }
+        if (error) { setErr(error.message); } else { setSignupDone(true); }
       }
     } finally {
       setLoading(false);
@@ -245,7 +253,13 @@ function AuthScreen({ initialError }) {
                         {loading ? "กำลังเข้าสู่ระบบ…" : <><span>เข้าสู่ระบบ</span> <Icon name="arrowRight" size={16} /></>}
                       </button>
                     </div>
-                  ) : (
+                  ) : (() => {
+                    const strength = pwStrength(signup.password);
+                    const checks   = pwChecks(signup.password);
+                    const pwEntered = signup.password.length > 0;
+                    const confirmOk = confirmPw.length > 0 && confirmPw === signup.password;
+                    const confirmBad = confirmPw.length > 0 && confirmPw !== signup.password;
+                    return (
                     <div className="f-col f-gap-4">
                       <div className="field">
                         <label className="field-label">ชื่อ-นามสกุล</label>
@@ -259,16 +273,85 @@ function AuthScreen({ initialError }) {
                         <label className="field-label">อีเมล</label>
                         <input className="input" type="email" value={signup.email} onChange={e => setSignup(s => ({ ...s, email: e.target.value }))} placeholder="your@email.com" />
                       </div>
+
+                      {/* Password + strength */}
                       <div className="field">
                         <label className="field-label">รหัสผ่าน</label>
-                        <input className="input" type="password" value={signup.password} onChange={e => setSignup(s => ({ ...s, password: e.target.value }))} placeholder="อย่างน้อย 6 ตัวอักษร" />
+                        <div style={{ position: "relative" }}>
+                          <input className="input" type={showSignupPw ? "text" : "password"}
+                            style={{ paddingLeft: 42, paddingRight: 44 }}
+                            value={signup.password}
+                            onChange={e => setSignup(s => ({ ...s, password: e.target.value }))}
+                            placeholder="อย่างน้อย 8 ตัวอักษร"
+                            autoComplete="new-password" />
+                          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}>
+                            <Icon name="lock" size={18} />
+                          </div>
+                          <button type="button" onClick={() => setShowSignupPw(s => !s)}
+                            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
+                            <Icon name={showSignupPw ? "eyeOff" : "eye"} size={18} />
+                          </button>
+                        </div>
+
+                        {/* Strength bar */}
+                        {pwEntered && (
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                              {[1,2,3,4,5].map(i => (
+                                <div key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= strength ? strengthColor[strength] : "var(--line)", transition: "background 300ms" }} />
+                              ))}
+                            </div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: strengthColor[strength] }}>{strengthLabel[strength]}</div>
+                          </div>
+                        )}
+
+                        {/* Requirements checklist */}
+                        {pwEntered && (
+                          <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px" }}>
+                            {[
+                              { ok: checks.length,  label: "ขั้นต่ำ 8 ตัวอักษร" },
+                              { ok: checks.upper,   label: "ตัวพิมพ์ใหญ่ (A-Z)" },
+                              { ok: checks.lower,   label: "ตัวพิมพ์เล็ก (a-z)" },
+                              { ok: checks.number,  label: "ตัวเลข (0-9)" },
+                              { ok: checks.special, label: "อักขระพิเศษ (!@#$...)" },
+                            ].map(r => (
+                              <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: r.ok ? "#16a34a" : "var(--ink-mute)", fontWeight: r.ok ? 700 : 400 }}>
+                                <span style={{ fontSize: 13 }}>{r.ok ? "✓" : "○"}</span>{r.label}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
+
+                      {/* Confirm password */}
+                      <div className="field">
+                        <label className="field-label">ยืนยันรหัสผ่าน</label>
+                        <div style={{ position: "relative" }}>
+                          <input className="input" type={showConfirmPw ? "text" : "password"}
+                            style={{ paddingLeft: 42, paddingRight: 44, borderColor: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : undefined }}
+                            value={confirmPw}
+                            onChange={e => setConfirmPw(e.target.value)}
+                            placeholder="กรอกรหัสผ่านอีกครั้ง"
+                            autoComplete="new-password" />
+                          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : "var(--ink-mute)", pointerEvents: "none" }}>
+                            <Icon name={confirmOk ? "check" : "lock"} size={18} />
+                          </div>
+                          <button type="button" onClick={() => setShowConfirmPw(s => !s)}
+                            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
+                            <Icon name={showConfirmPw ? "eyeOff" : "eye"} size={18} />
+                          </button>
+                        </div>
+                        {confirmBad && <div style={{ marginTop: 5, fontSize: 11, color: "var(--red)", fontWeight: 600 }}>✕ รหัสผ่านไม่ตรงกัน</div>}
+                        {confirmOk  && <div style={{ marginTop: 5, fontSize: 11, color: "#16a34a", fontWeight: 600 }}>✓ รหัสผ่านตรงกัน</div>}
+                      </div>
+
                       {err && <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
                       <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15, marginTop: 4 }} disabled={loading}>
                         {loading ? "กำลังสมัครสมาชิก…" : <><span>สมัครสมาชิก</span> <Icon name="arrowRight" size={16} /></>}
                       </button>
                     </div>
-                  )}
+                    );
+                  })()}
                 </form>
               )}
             </>
