@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, setMaintenanceMode }) {
+function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil }) {
   const [tab, setTab] = useStateAd("dashboard");
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 
@@ -24,11 +24,26 @@ function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, set
 
   return (
     <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
-      <div style={{ padding: "20px 28px 0" }}>
+      <style>{`
+        .adm-header { padding: 16px 20px 0; }
+        .adm-tabs-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+        .adm-title { font-size: 28px; }
+        .adm-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .adm-tabs::-webkit-scrollbar { display: none; }
+        .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; }
+        @media (max-width: 680px) {
+          .adm-header { padding: 12px 16px 0; }
+          .adm-title { font-size: 22px !important; }
+          .adm-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+          .adm-tabs .tab { font-size: 12px !important; padding: 0 10px !important; height: 32px !important; white-space: nowrap; }
+          .adm-body { padding: 12px 14px 24px; }
+        }
+      `}</style>
+      <div className="adm-header">
         <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>Admin</div>
-        <div className="f-between f-gap-4 f-wrap" style={{ marginTop: 2 }}>
-          <div className="t-display" style={{ fontSize: 28 }}>จัดการระบบ</div>
-          <div className="admin-tabs tabs" style={{ flexWrap: "wrap" }}>
+        <div className="adm-tabs-row">
+          <div className="t-display adm-title">จัดการระบบ</div>
+          <div className="admin-tabs tabs adm-tabs">
             {tabs.map(t => (
               <button key={t.id} className={"tab " + (tab === t.id ? "active" : "")} onClick={() => setTab(t.id)}>
                 <Icon name={t.icon} size={14} /> {t.label}
@@ -47,14 +62,18 @@ function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, set
           </div>
         </div>
       </div>
-      <div style={{ flex: 1, overflow: "auto", padding: "20px 28px 28px" }}>
+      <div className="adm-body">
         {tab === "dashboard" && <AdminDashboard data={data} />}
         {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "audit"     && <AdminAudit />}
-        {tab === "settings"  && <AdminSettings maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "settings"  && <AdminSettings
+          maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
+          maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
+          maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
+          addAudit={addAudit} currentUser={currentUser} />}
       </div>
     </div>
   );
@@ -77,16 +96,34 @@ function AdminDashboard({ data }) {
 
   return (
     <div className="f-col f-gap-4 fade-up">
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
-        <StatCard label="มิเตอร์ทั้งหมด"    value={meterCount.toLocaleString()} delta={4} icon="meter"  accent="purple" />
-        <StatCard label="หม้อแปลงทั้งหมด"   value={trCount.toLocaleString()}    delta={2} icon="tr"     accent="orange" />
-        <StatCard label="กำลังรวม (kVA)"     value={totalKva.toLocaleString()}   delta={6} icon="bolt"  accent="blue" />
-        <StatCard label="ผู้ใช้งาน" value={data.users.length} delta={pending > 0 ? pending : 0} icon="users" accent="green" />
+      <style>{`
+        .db-stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+        .db-mid-grid  { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+        .db-donut-row { display: flex; align-items: center; gap: 20px; }
+        .db-donut-row svg { width: 130px; height: 130px; flex-shrink: 0; }
+        .db-act-row   { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+        @media (max-width: 680px) {
+          .db-stat-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+          .db-mid-grid  { grid-template-columns: 1fr; }
+          .db-donut-row { flex-direction: column; align-items: stretch; gap: 12px; }
+          .db-donut-row svg { width: 110px; height: 110px; align-self: center; }
+          .db-donut-row .db-legend-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+          .db-act-target { display: none; }
+        }
+      `}</style>
+
+      {/* Stat cards — 4 cols desktop, 2×2 mobile */}
+      <div className="db-stat-grid">
+        <StatCard label="มิเตอร์ทั้งหมด"  value={meterCount.toLocaleString()} delta={4} icon="meter"  accent="purple" />
+        <StatCard label="หม้อแปลงทั้งหมด" value={trCount.toLocaleString()}    delta={2} icon="tr"     accent="orange" />
+        <StatCard label="กำลัง (kVA)"      value={totalKva.toLocaleString()}   delta={6} icon="bolt"  accent="blue" />
+        <StatCard label="ผู้ใช้งาน"        value={data.users.length} delta={pending > 0 ? pending : 0} icon="users" accent="green" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }}>
+      {/* Feeder + Donut — side-by-side desktop, stacked mobile */}
+      <div className="db-mid-grid">
         <div className="card card-elev">
-          <div className="f-between" style={{ marginBottom: 18 }}>
+          <div className="f-between" style={{ marginBottom: 16 }}>
             <div>
               <div className="t-eyebrow">การกระจาย</div>
               <div className="text-lg fw-7">มิเตอร์ตาม Feeder</div>
@@ -106,8 +143,8 @@ function AdminDashboard({ data }) {
                       <div className="fw-6 text-sm">{f}</div>
                       <div className="t-mute text-sm">{n.toLocaleString()} รายการ</div>
                     </div>
-                    <div style={{ height: 10, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: "linear-gradient(90deg, var(--pea-purple-600) 0%, var(--pea-orange-500) 100%)", transition: "width 600ms var(--ease-out)" }} />
+                    <div style={{ height: 8, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: "linear-gradient(90deg,var(--pea-purple-600),var(--pea-orange-500))", transition: "width 600ms var(--ease-out)" }} />
                     </div>
                   </div>
                 );
@@ -116,39 +153,38 @@ function AdminDashboard({ data }) {
           )}
         </div>
 
-        <div className="f-col f-gap-4">
-          <div className="card card-elev">
-            <div className="text-lg fw-7" style={{ marginBottom: 14 }}>เจ้าของอุปกรณ์</div>
-            <div className="f-gap-6 flex" style={{ alignItems: "center" }}>
-              <Donut peaMeters={peaMeters} custMeters={custMeters} peaTr={peaTr} custTr={custTr} displayTotal={meterCount + trCount} />
-              <div className="f-col f-gap-2 text-sm">
-                <Legend color="#6b2c91" label="PEA Meter"      value={peaMeters.toLocaleString()} />
-                <Legend color="#b67dee" label="Customer Meter" value={custMeters.toLocaleString()} />
-                <Legend color="#f47b20" label="PEA TR"         value={peaTr.toLocaleString()} />
-                <Legend color="#ffba7a" label="Customer TR"    value={custTr.toLocaleString()} />
-              </div>
+        <div className="card card-elev">
+          <div className="text-lg fw-7" style={{ marginBottom: 14 }}>เจ้าของอุปกรณ์</div>
+          <div className="db-donut-row">
+            <Donut peaMeters={peaMeters} custMeters={custMeters} peaTr={peaTr} custTr={custTr} displayTotal={meterCount + trCount} />
+            <div className="db-legend-list f-col f-gap-2 text-sm">
+              <Legend color="#6b2c91" label="PEA Meter"      value={peaMeters.toLocaleString()} />
+              <Legend color="#b67dee" label="Cust. Meter"    value={custMeters.toLocaleString()} />
+              <Legend color="#f47b20" label="PEA TR"         value={peaTr.toLocaleString()} />
+              <Legend color="#ffba7a" label="Cust. TR"       value={custTr.toLocaleString()} />
             </div>
           </div>
         </div>
       </div>
 
+      {/* Recent activity */}
       <div className="card card-elev">
-        <div className="f-between" style={{ marginBottom: 12 }}>
+        <div className="f-between" style={{ marginBottom: 8 }}>
           <div className="text-lg fw-7">กิจกรรมล่าสุด</div>
           <div className="t-mute text-sm">{recent.length} รายการ</div>
         </div>
-        <div>
-          {recent.map(r => (
-            <div key={r.id} className="f-gap-3 flex" style={{ padding: "12px 0", borderTop: "1px solid var(--line)", alignItems: "center" }}>
-              <div className={"badge " + actionBadge(r.action)}>{actionLabel(r.action)}</div>
-              <div style={{ flex: 1 }}>
-                <div className="text-sm fw-6">{r.detail}</div>
-                <div className="t-mute text-xs">{r.at} · โดย {r.user}</div>
-              </div>
-              <div className="mono text-xs t-mute">{r.target}</div>
+        {recent.length === 0 ? (
+          <div className="t-mute text-sm" style={{ padding: "16px 0" }}>ไม่มีกิจกรรม</div>
+        ) : recent.map(r => (
+          <div key={r.id} className="db-act-row">
+            <div className={"badge " + actionBadge(r.action)} style={{ flexShrink: 0 }}>{actionLabel(r.action)}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="text-sm fw-6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.detail || "—"}</div>
+              <div className="t-mute text-xs">{r.at} · {r.user}</div>
             </div>
-          ))}
-        </div>
+            <div className="mono text-xs t-mute db-act-target" style={{ flexShrink: 0 }}>{r.target}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1007,8 +1043,13 @@ function AdminAudit() {
 }
 
 /* ---------- Settings ---------- */
-function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentUser }) {
+const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
+
+function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser }) {
   const [loading, setLoading] = useStateAd(false);
+  const [savingMsg, setSavingMsg] = useStateAd(false);
+  const [localMsg, setLocalMsg] = useStateAd(maintenanceMessage || DEFAULT_MSG);
+  const [localUntil, setLocalUntil] = useStateAd(maintenanceUntil || "");
   const toast = useToast();
 
   const toggle = async () => {
@@ -1037,6 +1078,29 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentU
     }
   };
 
+  const saveMessage = async () => {
+    setSavingMsg(true);
+    const now = new Date().toISOString();
+    const [r1, r2] = await Promise.all([
+      _supabase.from("settings").update({ value: localMsg, updated_at: now, updated_by: currentUser.username }).eq("key", "maintenance_message"),
+      _supabase.from("settings").update({ value: localUntil, updated_at: now, updated_by: currentUser.username }).eq("key", "maintenance_until"),
+    ]);
+    setSavingMsg(false);
+    if (r1.error || r2.error) {
+      toast?.("เกิดข้อผิดพลาด: " + (r1.error?.message || r2.error?.message), "error");
+    } else {
+      setMaintenanceMessage(localMsg);
+      setMaintenanceUntil(localUntil);
+      addAudit({
+        user:   currentUser.username,
+        action: "update_maintenance_message",
+        target: "system",
+        detail: "อัปเดตข้อความ Maintenance Mode",
+      });
+      toast?.("บันทึกข้อความสำเร็จ", "success");
+    }
+  };
+
   return (
     <div className="f-col f-gap-4 fade-up" style={{ maxWidth: 580 }}>
       <div>
@@ -1044,7 +1108,7 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentU
         <div className="t-display" style={{ fontSize: 24 }}>ตั้งค่าระบบ</div>
       </div>
 
-      {/* Maintenance Mode Card */}
+      {/* Maintenance Mode Toggle Card */}
       <div className="card card-elev">
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
           <div style={{ flex: 1 }}>
@@ -1060,8 +1124,6 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentU
               Admin ยังคงเข้าใช้งานได้ตามปกติ
             </div>
           </div>
-
-          {/* Toggle switch */}
           <button
             onClick={toggle}
             disabled={loading}
@@ -1082,7 +1144,6 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentU
             }} />
           </button>
         </div>
-
         {maintenanceMode && (
           <div className="badge badge-orange fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
             <Icon name="warning" size={15} />
@@ -1095,6 +1156,74 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentU
             ระบบเปิดให้บริการปกติ
           </div>
         )}
+      </div>
+
+      {/* Message & Return Time Card */}
+      <div className="card card-elev">
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="edit" size={16} />
+          ข้อความแจ้งผู้ใช้งาน
+        </div>
+        <div className="t-mute text-sm" style={{ marginBottom: 16, lineHeight: 1.6 }}>
+          ข้อความที่แสดงบนหน้าปิดปรับปรุง หากไม่กรอก จะใช้ข้อความเริ่มต้น
+        </div>
+
+        <div className="f-col f-gap-3">
+          <div>
+            <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>ข้อความ</label>
+            <textarea
+              value={localMsg}
+              onChange={e => setLocalMsg(e.target.value)}
+              rows={4}
+              placeholder={DEFAULT_MSG}
+              style={{
+                width: "100%", resize: "vertical", fontFamily: "inherit",
+                padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                border: "1px solid var(--line)", background: "var(--bg)",
+                color: "var(--text)", lineHeight: 1.6, boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+              <button className="btn btn-ghost text-sm" style={{ padding: "2px 8px", height: 28 }}
+                onClick={() => setLocalMsg(DEFAULT_MSG)}>
+                รีเซ็ตข้อความเริ่มต้น
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
+              วันที่/เวลาที่คาดว่าจะกลับมาให้บริการ <span className="t-mute">(ไม่บังคับ)</span>
+            </label>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="datetime-local"
+                value={localUntil}
+                onChange={e => setLocalUntil(e.target.value)}
+                style={{
+                  flex: 1, padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                  border: "1px solid var(--line)", background: "var(--bg)",
+                  color: "var(--text)", fontFamily: "inherit",
+                }}
+              />
+              {localUntil && (
+                <button className="btn btn-ghost" style={{ height: 42, padding: "0 12px", flexShrink: 0 }}
+                  onClick={() => setLocalUntil("")} title="ล้างวันที่">
+                  <Icon name="close" size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <button
+            className="btn btn-primary"
+            style={{ height: 44, marginTop: 4 }}
+            disabled={savingMsg}
+            onClick={saveMessage}
+          >
+            {savingMsg ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อความ</>}
+          </button>
+        </div>
       </div>
     </div>
   );
