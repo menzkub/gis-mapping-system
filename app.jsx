@@ -369,7 +369,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
         await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
       }
       const { data, error } = await _supabase.auth.mfa.enroll({
-        factorType: "totp", friendlyName: `${currentUser.username}-2fa`,
+        factorType: "totp", friendlyName: `totp-${Date.now()}`,
       });
       if (error) { setErr(error.message); setStep("error"); return; }
       setFactorId(data.id);
@@ -388,6 +388,11 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
       if (chErr) throw chErr;
       const { error: vErr } = await _supabase.auth.mfa.verify({ factorId, challengeId: ch.id, code });
       if (vErr) throw new Error("รหัสไม่ถูกต้อง กรุณาลองใหม่");
+      // cleanup old factors now that we're at AAL2
+      const { data: all } = await _supabase.auth.mfa.listFactors();
+      for (const f of (all?.all || [])) {
+        if (f.id !== factorId) await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+      }
       onComplete();
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
