@@ -47,7 +47,7 @@ function AuthScreen({ initialError }) {
       if (mode === "forgot") {
         const { error } = await _supabase.auth.resetPasswordForEmail(
           forgotEmail.trim().toLowerCase(),
-          { redirectTo: window.location.origin }
+          { redirectTo: "https://menzkub.github.io/gis-mapping-system/" }
         );
         if (error) { setErr(error.message); } else { setForgotDone(true); }
         return;
