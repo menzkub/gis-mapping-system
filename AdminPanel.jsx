@@ -258,14 +258,24 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
   const saveEdit = async () => {
     if (!edit) return;
     setSaving(true);
+
+    // 2FA อัตโนมัติตาม role
+    const auto2fa = edit.role === "admin" ? true : false;
+    const patch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa };
+
     const { error } = await _supabase.from("profiles")
-      .update(fromProfilePatch({ name: edit.name, username: edit.username, role: edit.role, status: edit.status }))
+      .update(fromProfilePatch(patch))
       .eq("id", edit.id);
     setSaving(false);
     if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
-    setData(d => ({ ...d, users: d.users.map(u => u.id === edit.id ? { ...u, ...edit } : u) }));
-    addAudit({ user: currentUser.username, action: "update_user", target: edit.username, detail: `แก้ไขข้อมูล ${edit.username}` });
-    toast?.(`บันทึกผู้ใช้ ${edit.name} แล้ว`, "success");
+    setData(d => ({ ...d, users: d.users.map(u => u.id === edit.id ? { ...u, ...patch } : u) }));
+
+    const roleChanged = edit.role !== data.users.find(u => u.id === edit.id)?.role;
+    const detail = roleChanged
+      ? `แก้ไขข้อมูล ${edit.username} · role → ${edit.role} · 2FA ${auto2fa ? "เปิด" : "ปิด"}อัตโนมัติ`
+      : `แก้ไขข้อมูล ${edit.username}`;
+    addAudit({ user: currentUser.username, action: "update_user", target: edit.username, detail });
+    toast?.(`บันทึก ${edit.name} แล้ว${roleChanged ? ` · 2FA ${auto2fa ? "เปิด" : "ปิด"}อัตโนมัติ` : ""}`, "success");
     setEdit(null);
   };
 

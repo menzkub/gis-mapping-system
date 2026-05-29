@@ -365,8 +365,8 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
     (async () => {
       // Unenroll any pending (unverified) factors first to avoid conflict
       const { data: existing } = await _supabase.auth.mfa.listFactors();
-      for (const f of (existing?.totp || [])) {
-        if (f.status === "unverified") await _supabase.auth.mfa.unenroll({ factorId: f.id });
+      for (const f of (existing?.all || [])) {
+        await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
       }
       const { data, error } = await _supabase.auth.mfa.enroll({
         factorType: "totp", friendlyName: `${currentUser.username}-2fa`,
