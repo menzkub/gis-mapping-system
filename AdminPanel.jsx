@@ -319,14 +319,29 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
 
   return (
     <div className="card card-elev fade-up">
+      <style>{`
+        .au-dt    { display: block; overflow: auto; max-height: 60vh; }
+        .au-cards { display: none; }
+        .au-card  { padding: 14px 2px; border-bottom: 1px solid var(--line); }
+        .au-card:last-child { border-bottom: none; }
+        @media (max-width: 680px) {
+          .au-dt    { display: none !important; }
+          .au-cards { display: block !important; }
+          .au-search { width: 100% !important; }
+        }
+      `}</style>
+
+      {/* Header */}
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
           <div className="text-lg fw-7">ผู้ใช้งาน ({list.length})</div>
           <div className="t-mute text-sm">อนุมัติบัญชีใหม่ · ระงับ · แก้ไขข้อมูล</div>
         </div>
-        <input className="input" style={{ width: 280, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาชื่อ / username / email" />
+        <input className="input au-search" style={{ width: 280, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาชื่อ / username / email" />
       </div>
-      <div style={{ overflow: "auto", maxHeight: "60vh" }}>
+
+      {/* Desktop: table */}
+      <div className="au-dt">
         <table className="table">
           <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
           <tbody>
@@ -334,7 +349,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               <tr key={u.id}>
                 <td>
                   <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: avatarBg(u.username), color: "white", display: "grid", placeItems: "center", fontWeight: 800 }}>{u.name?.[0] || u.username[0]}</div>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: avatarBg(u.username), color: "white", display: "grid", placeItems: "center", fontWeight: 800, flexShrink: 0 }}>{u.name?.[0] || u.username[0]}</div>
                     <div>
                       <div className="fw-6">{u.name}</div>
                       <div className="t-mute text-xs mono">@{u.username}</div>
@@ -348,22 +363,18 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   </span>
                 </td>
                 <td>
-                  <button
-                    title={u.require_2fa ? "ปิด 2FA" : "เปิด 2FA"}
-                    onClick={() => toggle2FA(u)}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 5,
-                      padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
-                      border: `1px solid ${u.require_2fa ? "#16a34a" : "var(--line)"}`,
-                      background: u.require_2fa ? "rgba(22,163,74,0.1)" : "var(--surface-2)",
-                      color: u.require_2fa ? "#16a34a" : "var(--ink-mute)",
-                      cursor: "pointer",
-                    }}>
+                  <button onClick={() => toggle2FA(u)} style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+                    border: `1px solid ${u.require_2fa ? "#16a34a" : "var(--line)"}`,
+                    background: u.require_2fa ? "rgba(22,163,74,0.1)" : "var(--surface-2)",
+                    color: u.require_2fa ? "#16a34a" : "var(--ink-mute)", cursor: "pointer",
+                  }}>
                     <Icon name="lock" size={11} />
                     {u.require_2fa ? "เปิดอยู่" : "ปิดอยู่"}
                   </button>
                 </td>
-                <td className="text-sm t-mute">{u.lastLogin}</td>
+                <td className="text-sm t-mute">{u.lastLogin || "—"}</td>
                 <td>
                   <div className="row-action">
                     {u.status === "pending" && (
@@ -388,6 +399,100 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile: cards */}
+      <div className="au-cards">
+        {list.map(u => {
+          const isPending = u.status === "pending";
+          const isBanned  = u.status === "banned";
+          const isMe      = u.id === currentUser.id;
+          return (
+            <div key={u.id} className="au-card" style={{
+              background: isPending ? "rgba(234,179,8,0.04)" : "transparent",
+              borderRadius: isPending ? 12 : 0,
+              padding: isPending ? "14px 12px" : "14px 2px",
+              border: isPending ? "1px solid rgba(234,179,8,0.2)" : undefined,
+              marginBottom: isPending ? 8 : 0,
+            }}>
+              {/* Row 1: Avatar + name/username + role */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: "50%", flexShrink: 0,
+                  background: isBanned ? "var(--line)" : avatarBg(u.username),
+                  color: "white", display: "grid", placeItems: "center",
+                  fontWeight: 800, fontSize: 16,
+                  opacity: isBanned ? 0.5 : 1,
+                }}>
+                  {(u.name || u.username || "?")[0]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</span>
+                    {isMe && <span style={{ fontSize: 10, background: "var(--pea-purple-500)", color: "white", borderRadius: 4, padding: "1px 5px", flexShrink: 0 }}>คุณ</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>@{u.username}</div>
+                </div>
+                <span className={"badge " + (u.role === "admin" ? "badge-orange" : "badge-blue")} style={{ flexShrink: 0, fontSize: 11 }}>
+                  {u.role}
+                </span>
+              </div>
+
+              {/* Row 2: Status + 2FA + last login */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                <span className={"badge " + (u.status === "active" ? "badge-green" : isBanned ? "badge-red" : "badge-amber")} style={{ fontSize: 11 }}>
+                  {u.status === "active" ? "ใช้งานได้" : isBanned ? "ระงับ" : "รออนุมัติ"}
+                </span>
+                <button onClick={() => toggle2FA(u)} style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  padding: "3px 9px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  border: `1px solid ${u.require_2fa ? "#16a34a" : "var(--line)"}`,
+                  background: u.require_2fa ? "rgba(22,163,74,0.1)" : "transparent",
+                  color: u.require_2fa ? "#16a34a" : "var(--ink-mute)",
+                }}>
+                  <Icon name="lock" size={10} />
+                  2FA {u.require_2fa ? "เปิด" : "ปิด"}
+                </button>
+                {u.lastLogin && (
+                  <span style={{ fontSize: 11, color: "var(--ink-mute)", marginLeft: "auto" }}>
+                    {u.lastLogin}
+                  </span>
+                )}
+              </div>
+
+              {/* Row 3: Action buttons */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {isPending && (
+                  <button className="btn btn-primary btn-sm" style={{ height: 34, fontSize: 12 }}
+                    onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`)}>
+                    <Icon name="check" size={13} /> อนุมัติบัญชี
+                  </button>
+                )}
+                {u.status === "active" && !isMe && (
+                  <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12, color: "var(--red)", borderColor: "rgba(239,68,68,0.4)" }}
+                    onClick={() => banUser(u)}>
+                    <Icon name="lock" size={13} /> ระงับบัญชี
+                  </button>
+                )}
+                {isBanned && (
+                  <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12 }}
+                    onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `ปลดระงับ ${u.username}`, `ปลดระงับ ${u.name}`)}>
+                    <Icon name="check" size={13} /> ปลดระงับ
+                  </button>
+                )}
+                <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12, marginLeft: "auto" }}
+                  onClick={() => setEdit({ ...u })}>
+                  <Icon name="edit" size={13} /> แก้ไข
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {list.length === 0 && (
+          <div style={{ padding: "24px 0", textAlign: "center", color: "var(--ink-mute)", fontSize: 14 }}>
+            ไม่พบผู้ใช้งาน
+          </div>
+        )}
       </div>
 
       <Modal open={!!edit} onClose={() => setEdit(null)} title="แก้ไขข้อมูลผู้ใช้" width={520}
