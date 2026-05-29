@@ -273,10 +273,201 @@ function ProfileView({ currentUser, data, addAudit }) {
   );
 }
 
+// ── MFASetupScreen ────────────────────────────────────────────────────────
+function MFASetupScreen({ currentUser, onComplete, onCancel }) {
+  const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
+  const [step, setStep]       = useStateMFAS("loading"); // loading | scan | error
+  const [factorId, setFactorId] = useStateMFAS("");
+  const [qrSvg, setQrSvg]     = useStateMFAS("");
+  const [secret, setSecret]   = useStateMFAS("");
+  const [code, setCode]       = useStateMFAS("");
+  const [err, setErr]         = useStateMFAS(null);
+  const [busy, setBusy]       = useStateMFAS(false);
+
+  useEffectMFAS(() => {
+    (async () => {
+      // Unenroll any pending (unverified) factors first to avoid conflict
+      const { data: existing } = await _supabase.auth.mfa.listFactors();
+      for (const f of (existing?.totp || [])) {
+        if (f.status === "unverified") await _supabase.auth.mfa.unenroll({ factorId: f.id });
+      }
+      const { data, error } = await _supabase.auth.mfa.enroll({
+        factorType: "totp", friendlyName: `${currentUser.username}-2fa`,
+      });
+      if (error) { setErr(error.message); setStep("error"); return; }
+      setFactorId(data.id);
+      setQrSvg(data.totp.qr_code);
+      setSecret(data.totp.secret);
+      setStep("scan");
+    })();
+  }, []);
+
+  const verify = async (e) => {
+    e?.preventDefault();
+    if (code.length !== 6) { setErr("กรุณากรอก 6 หลัก"); return; }
+    setBusy(true); setErr(null);
+    try {
+      const { data: ch, error: chErr } = await _supabase.auth.mfa.challenge({ factorId });
+      if (chErr) throw chErr;
+      const { error: vErr } = await _supabase.auth.mfa.verify({ factorId, challengeId: ch.id, code });
+      if (vErr) throw new Error("รหัสไม่ถูกต้อง กรุณาลองใหม่");
+      onComplete();
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 460, margin: "0 20px",
+        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid var(--line)",
+          display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+            background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
+            boxShadow: "0 8px 24px rgba(107,44,145,0.4)" }}>
+            <Icon name="lock" size={22} stroke={2} style={{ color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 20 }}>ตั้งค่า 2-Factor Auth</div>
+            <div className="t-mute text-sm">บัญชี <b>{currentUser.username}</b> ต้องเปิดใช้งาน 2FA</div>
+          </div>
+        </div>
+
+        <div style={{ padding: "24px 28px 28px" }}>
+          {step === "loading" && (
+            <div style={{ textAlign: "center", padding: "32px 0", color: "var(--ink-mute)" }}>
+              <div style={{ width: 32, height: 32, margin: "0 auto 12px", borderRadius: "50%",
+                border: "3px solid var(--line)", borderTopColor: "var(--pea-purple-500)",
+                animation: "pea-spin 0.8s linear infinite" }} />
+              กำลังสร้าง QR Code…
+            </div>
+          )}
+
+          {step === "scan" && (
+            <div>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, marginBottom: 4 }}>ขั้นตอนที่ 1 — สแกน QR Code</div>
+                <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
+              </div>
+              <div style={{ background: "white", padding: 14, borderRadius: 12,
+                display: "inline-block", marginBottom: 14, border: "1px solid var(--line)" }}
+                dangerouslySetInnerHTML={{ __html: qrSvg }} />
+              <div style={{ marginBottom: 20 }}>
+                <div className="t-mute text-xs" style={{ marginBottom: 4 }}>หรือกรอก Secret Key ด้วยตนเอง</div>
+                <code style={{ fontFamily: "monospace", fontSize: 11, background: "var(--surface-2)",
+                  padding: "6px 10px", borderRadius: 6, display: "block", wordBreak: "break-all",
+                  letterSpacing: "0.12em", color: "var(--pea-purple-600)" }}>{secret}</code>
+              </div>
+              <div style={{ fontWeight: 700, marginBottom: 10 }}>ขั้นตอนที่ 2 — กรอกรหัส 6 หลักเพื่อยืนยัน</div>
+              <form onSubmit={verify} className="f-col f-gap-3">
+                <input className="input"
+                  style={{ fontSize: 26, letterSpacing: "0.5em", textAlign: "center", fontWeight: 700, height: 58 }}
+                  maxLength={6} inputMode="numeric" autoComplete="one-time-code"
+                  placeholder="000000" value={code}
+                  onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
+                  autoFocus />
+                {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
+                <button type="submit" className="btn btn-primary" style={{ height: 50 }}
+                  disabled={busy || code.length !== 6}>
+                  {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน &amp; เปิดใช้งาน 2FA</>}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {step === "error" && (
+            <div className="badge badge-red" style={{ padding: "10px 14px", marginBottom: 16 }}>
+              <Icon name="close" size={14} /> {err}
+            </div>
+          )}
+
+          <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
+            textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
+            ออกจากระบบแทน
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MFAVerifyScreen ───────────────────────────────────────────────────────
+function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
+  const { useState: useStateMFAV, useEffect: useEffectMFAV } = React;
+  const [factorId, setFactorId] = useStateMFAV("");
+  const [code, setCode]         = useStateMFAV("");
+  const [err, setErr]           = useStateMFAV(null);
+  const [busy, setBusy]         = useStateMFAV(false);
+
+  useEffectMFAV(() => {
+    _supabase.auth.mfa.listFactors().then(({ data }) => {
+      const totp = data?.totp?.find(f => f.status === "verified");
+      if (totp) setFactorId(totp.id);
+    });
+  }, []);
+
+  const verify = async (e) => {
+    e?.preventDefault();
+    if (!factorId) { setErr("ไม่พบ 2FA ที่ตั้งค่าไว้ กรุณาติดต่อ Admin"); return; }
+    setBusy(true); setErr(null);
+    try {
+      const { data: ch, error: chErr } = await _supabase.auth.mfa.challenge({ factorId });
+      if (chErr) throw chErr;
+      const { error: vErr } = await _supabase.auth.mfa.verify({ factorId, challengeId: ch.id, code });
+      if (vErr) throw new Error("รหัสไม่ถูกต้อง กรุณาลองใหม่");
+      onComplete();
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 400, margin: "0 20px",
+        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
+        <div style={{ padding: "28px 32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+              background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
+              boxShadow: "0 8px 24px rgba(107,44,145,0.4)" }}>
+              <Icon name="lock" size={24} stroke={2} style={{ color: "white" }} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 22 }}>ยืนยัน 2FA</div>
+              <div className="t-mute text-sm">สวัสดี, <b>{currentUser.name}</b></div>
+            </div>
+          </div>
+          <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
+            เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักของบัญชีนี้
+          </div>
+          <form onSubmit={verify} className="f-col f-gap-3">
+            <input className="input"
+              style={{ fontSize: 30, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700, height: 68 }}
+              maxLength={6} inputMode="numeric" autoComplete="one-time-code"
+              placeholder="000000" value={code}
+              onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
+              autoFocus />
+            {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
+            <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15 }}
+              disabled={busy || code.length !== 6}>
+              {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน</>}
+            </button>
+          </form>
+          <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
+            textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
+            ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────────────────
 function App() {
   const [appState, setAppState] = useStateApp("checking");
   const [currentUser, setCurrentUser] = useStateApp(null);
+  const [pendingUser, setPendingUser] = useStateApp(null);
   const [data, setData] = useStateApp({
     meters: [], transformers: [],
     users: [], auditLog: [], feeders: [],
@@ -313,6 +504,18 @@ function App() {
         setAppState("unauthed");
         return;
       }
+
+      // ── 2FA check ────────────────────────────────────────────────────────
+      if (myProfile.require_2fa) {
+        const { data: aal } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.currentLevel !== "aal2") {
+          setPendingUser(supabaseUser);
+          setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+          setAppState(aal?.nextLevel === "aal2" ? "mfa_verify" : "mfa_setup");
+          return;
+        }
+      }
+      // ── end 2FA check ────────────────────────────────────────────────────
 
       const [profilesRes, auditRes, feedersRes, statsRes] = await Promise.all([
         _supabase.from("profiles").select("*").order("created_at"),
@@ -435,6 +638,22 @@ function App() {
       </ConfirmProvider></ToastProvider>
     );
   }
+
+  if (appState === "mfa_setup") return (
+    <MFASetupScreen
+      currentUser={currentUser}
+      onComplete={() => loadAppData(pendingUser, false)}
+      onCancel={async () => { await _supabase.auth.signOut(); }}
+    />
+  );
+
+  if (appState === "mfa_verify") return (
+    <MFAVerifyScreen
+      currentUser={currentUser}
+      onComplete={() => loadAppData(pendingUser, false)}
+      onCancel={async () => { await _supabase.auth.signOut(); }}
+    />
+  );
 
   const navItems = [
     { id: "search",  icon: "search",   label: "ค้นหา" },

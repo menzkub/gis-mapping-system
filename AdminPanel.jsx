@@ -210,6 +210,14 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
   const toast   = useToast();
   const list = data.users.filter(u => !q || `${u.username} ${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
 
+  const toggle2FA = (u) => updateUser(
+    u.id,
+    { require_2fa: !u.require_2fa },
+    u.require_2fa ? "disable_2fa" : "enable_2fa",
+    `${u.require_2fa ? "ปิด" : "เปิด"} 2FA สำหรับ ${u.username}`,
+    `${u.require_2fa ? "ปิด" : "เปิด"} 2FA สำหรับ ${u.name} แล้ว`
+  );
+
   const updateUser = async (id, patch, action, detail, toastMsg) => {
     setSaving(true);
     const { error } = await _supabase.from("profiles").update(fromProfilePatch(patch)).eq("id", id);
@@ -256,7 +264,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       </div>
       <div style={{ overflow: "auto", maxHeight: "60vh" }}>
         <table className="table">
-          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
           <tbody>
             {list.map(u => (
               <tr key={u.id}>
@@ -274,6 +282,22 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   <span className={"badge " + (u.status === "active" ? "badge-green" : u.status === "banned" ? "badge-red" : "badge-amber")}>
                     {u.status === "active" ? "ใช้งานได้" : u.status === "banned" ? "ระงับ" : "รออนุมัติ"}
                   </span>
+                </td>
+                <td>
+                  <button
+                    title={u.require_2fa ? "ปิด 2FA" : "เปิด 2FA"}
+                    onClick={() => toggle2FA(u)}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+                      border: `1px solid ${u.require_2fa ? "#16a34a" : "var(--line)"}`,
+                      background: u.require_2fa ? "rgba(22,163,74,0.1)" : "var(--surface-2)",
+                      color: u.require_2fa ? "#16a34a" : "var(--ink-mute)",
+                      cursor: "pointer",
+                    }}>
+                    <Icon name="lock" size={11} />
+                    {u.require_2fa ? "เปิดอยู่" : "ปิดอยู่"}
+                  </button>
                 </td>
                 <td className="text-sm t-mute">{u.lastLogin}</td>
                 <td>
