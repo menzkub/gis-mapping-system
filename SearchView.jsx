@@ -483,27 +483,49 @@ function TrTable({ items, selectedId, onSelect, onNavigate, copyCoords, copied }
 }
 
 /* ============================================================
-   NavigationPanel — in-app turn-by-turn (mock)
+   NavigationPanel — uses device GPS as starting point
    ============================================================ */
 function NavigationPanel({ target, kind, onClose }) {
+  const { useState: useStateNav, useEffect: useEffectNav } = React;
   const isMeter = kind === "meter";
-  const origin = { lat: 19.91683, lng: 99.21574, label: "การไฟฟ้าส่วนภูมิภาคอำเภอฝาง" };
   const dest = { lat: target.LATITUDE, lng: target.LONGITUDE };
-  const R = 6371;
-  const dLat = (dest.lat - origin.lat) * Math.PI / 180;
-  const dLng = (dest.lng - origin.lng) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(origin.lat * Math.PI / 180) * Math.cos(dest.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  const distance = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const drivingDistance = distance * 1.3;
-  const eta = Math.max(1, Math.round((drivingDistance / 40) * 60));
+  const [gpsState, setGpsState] = useStateNav("loading"); // loading | ok | denied
+  const [userPos, setUserPos] = useStateNav(null);
 
-  const steps = [
-    { icon: "🚗", text: `ออกจาก ${origin.label}` },
-    { icon: "→", text: "เลี้ยวขวาเข้าถนนหลัก (ทล. 107)" },
-    { icon: "↑", text: `ตรงไปประมาณ ${(drivingDistance * 0.4).toFixed(1)} กม.` },
-    { icon: "↰", text: "เลี้ยวซ้ายเข้าเส้นทางเชื่อม" },
-    { icon: "📍", text: `ถึงปลายทาง — ${isMeter ? `PEA Meter ${target.PEANO || target.TAG}` : `PEA TR ${target.PEANO_TR || target.TAG}`}` },
-  ];
+  useEffectNav(() => {
+    if (!navigator.geolocation) { setGpsState("denied"); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGpsState("ok");
+      },
+      () => setGpsState("denied"),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+    );
+  }, []);
+
+  const fallback = { lat: 19.91683, lng: 99.21574 };
+  const from = userPos || fallback;
+
+  const R = 6371;
+  const dLat = (dest.lat - from.lat) * Math.PI / 180;
+  const dLng = (dest.lng - from.lng) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(from.lat * Math.PI / 180) * Math.cos(dest.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  const distance = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const eta = Math.max(1, Math.round((distance * 1.3 / 40) * 60));
+
+  const originLabel = gpsState === "loading"
+    ? "กำลังค้นหาตำแหน่ง…"
+    : gpsState === "ok"
+      ? "ตำแหน่งปัจจุบันของคุณ"
+      : "การไฟฟ้าส่วนภูมิภาคอำเภอฝาง (ค่าเริ่มต้น)";
+
+  const googleUrl = userPos
+    ? `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`
+    : `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;
+  const appleUrl = userPos
+    ? `https://maps.apple.com/?saddr=${userPos.lat},${userPos.lng}&daddr=${dest.lat},${dest.lng}&dirflg=d`
+    : `https://maps.apple.com/?daddr=${dest.lat},${dest.lng}&dirflg=d`;
 
   return (
     <div className="fade-in" style={{
@@ -514,6 +536,7 @@ function NavigationPanel({ target, kind, onClose }) {
         width: "100%", maxWidth: 480, background: "var(--surface)",
         borderRadius: 24, boxShadow: "var(--shadow-lg)", overflow: "hidden",
       }}>
+        {/* Header */}
         <div style={{
           padding: "22px 24px 18px",
           background: isMeter
@@ -524,17 +547,26 @@ function NavigationPanel({ target, kind, onClose }) {
           <div style={{ position: "absolute", right: -30, top: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
           <div className="f-between" style={{ marginBottom: 18, position: "relative" }}>
             <div className="t-eyebrow" style={{ color: "rgba(255,255,255,0.85)" }}>ระบบนำทาง</div>
-            <button className="btn-icon" style={{ background: "rgba(255,255,255,0.15)", color: "white", border: 0 }} onClick={onClose}><Icon name="close" size={16} /></button>
+            <button className="btn-icon" style={{ background: "rgba(255,255,255,0.15)", color: "white", border: 0 }} onClick={onClose}>
+              <Icon name="close" size={16} />
+            </button>
           </div>
+
+          {/* Origin → Dest */}
           <div className="f-gap-3 flex" style={{ alignItems: "center", position: "relative" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 12, height: 12, borderRadius: "50%", background: "white", border: "3px solid rgba(255,255,255,0.4)" }} />
+              <div style={{ width: 12, height: 12, borderRadius: "50%", background: gpsState === "ok" ? "#4ade80" : "white", border: "3px solid rgba(255,255,255,0.4)", transition: "background 400ms" }} />
               <div style={{ width: 2, height: 18, background: "rgba(255,255,255,0.5)" }} />
               <Icon name="location" size={18} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, opacity: 0.75 }}>จุดเริ่มต้น</div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{origin.label}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                {gpsState === "loading" && (
+                  <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "white", animation: "pea-spin 0.8s linear infinite" }} />
+                )}
+                {originLabel}
+              </div>
               <div style={{ fontSize: 12, opacity: 0.75, marginTop: 10 }}>ปลายทาง</div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>
                 {isMeter ? `PEA Meter ${target.PEANO || "—"}` : `PEA TR ${target.PEANO_TR || "—"}`}
@@ -544,34 +576,50 @@ function NavigationPanel({ target, kind, onClose }) {
               )}
             </div>
           </div>
+
+          {/* Distance / ETA */}
           <div className="f-between" style={{ marginTop: 18, position: "relative" }}>
             <div>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>ระยะทาง</div>
-              <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>{distance.toFixed(2)} กม.</div>
+              <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
+                {gpsState === "loading" ? "—" : `${distance.toFixed(2)} กม.`}
+              </div>
             </div>
             <div>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>เวลาโดยประมาณ (รถยนต์)</div>
               <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
-                {eta < 60 ? `${eta} นาที` : `${Math.floor(eta / 60)} ชม. ${eta % 60} นาที`}
+                {gpsState === "loading" ? "—" : eta < 60 ? `${eta} นาที` : `${Math.floor(eta / 60)} ชม. ${eta % 60} นาที`}
               </div>
             </div>
           </div>
         </div>
 
-        <div style={{ padding: "16px 8px", maxHeight: 280, overflow: "auto" }}>
-          {steps.map((s, i) => (
-            <div key={i} className="fade-up" style={{ display: "flex", gap: 14, padding: "10px 16px", animationDelay: `${i * 60}ms` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: i === 0 ? "var(--pea-orange-500)" : i === steps.length - 1 ? "var(--green)" : "var(--pea-purple-100)", color: i === 0 || i === steps.length - 1 ? "white" : "var(--pea-purple-700)", display: "grid", placeItems: "center", fontSize: 18, fontWeight: 800 }}>{s.icon}</div>
-              <div style={{ flex: 1, fontSize: 14, color: "var(--ink-2)", display: "flex", alignItems: "center" }}>{s.text}</div>
+        {/* GPS status */}
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--line)" }}>
+          {gpsState === "loading" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-mute)" }}>
+              <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: "50%", border: "2px solid var(--line)", borderTopColor: "var(--pea-purple-500)", animation: "pea-spin 0.8s linear infinite" }} />
+              กำลังค้นหาตำแหน่ง GPS…
             </div>
-          ))}
+          )}
+          {gpsState === "ok" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#16a34a", fontWeight: 600 }}>
+              <span>✓</span> ใช้ตำแหน่ง GPS ปัจจุบัน ({userPos.lat.toFixed(5)}, {userPos.lng.toFixed(5)})
+            </div>
+          )}
+          {gpsState === "denied" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-mute)" }}>
+              <span>⚠</span> ไม่สามารถรับ GPS ได้ — ใช้ตำแหน่งการไฟฟ้าฝางแทน
+            </div>
+          )}
         </div>
 
-        <div style={{ padding: 16, borderTop: "1px solid var(--line)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <button className="btn btn-outline" onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}`, "_blank")}>
+        {/* Map buttons */}
+        <div style={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <button className="btn btn-primary" onClick={() => window.open(googleUrl, "_blank")}>
             <Icon name="map" size={14} /> Google Maps
           </button>
-          <button className="btn btn-outline" onClick={() => window.open(`https://maps.apple.com/?daddr=${dest.lat},${dest.lng}`, "_blank")}>
+          <button className="btn btn-outline" onClick={() => window.open(appleUrl, "_blank")}>
             <Icon name="map" size={14} /> Apple Maps
           </button>
         </div>

@@ -293,7 +293,7 @@ function App() {
   useEffectApp(() => { localStorage.setItem("pea_base", baseMap); }, [baseMap]);
 
   // ── Load app data after auth ─────────────────────────────────────────────
-  const loadAppData = useCallbackApp(async (supabaseUser) => {
+  const loadAppData = useCallbackApp(async (supabaseUser, logLogin = false) => {
     setAppState("loading");
     try {
       const myProfileRes = await _supabase
@@ -325,20 +325,19 @@ function App() {
       const feeders   = (feedersRes.data  || []).map(r => r.feeder).filter(Boolean);
       const dashStats = statsRes.data || {};
 
-      // บันทึก login พร้อม device info
-      const deviceInfo = (navigator.userAgent || "").substring(0, 200);
-      const { data: loginRow } = await _supabase.from("audit_log").insert({
-        user_id:  supabaseUser.id,
-        username: myProfile.username || "",
-        action:   "login",
-        target:   "—",
-        detail:   "เข้าสู่ระบบ",
-        ip:       deviceInfo,
-      }).select().single();
-
-      const auditLog = loginRow
-        ? [toAuditEntry(loginRow), ...(auditRes.data || []).map(toAuditEntry)].slice(0, 500)
-        : (auditRes.data || []).map(toAuditEntry);
+      let auditLog = (auditRes.data || []).map(toAuditEntry);
+      if (logLogin) {
+        const deviceInfo = (navigator.userAgent || "").substring(0, 200);
+        const { data: loginRow } = await _supabase.from("audit_log").insert({
+          user_id:  supabaseUser.id,
+          username: myProfile.username || "",
+          action:   "login",
+          target:   "—",
+          detail:   "เข้าสู่ระบบ",
+          ip:       deviceInfo,
+        }).select().single();
+        if (loginRow) auditLog = [toAuditEntry(loginRow), ...auditLog].slice(0, 500);
+      }
 
       setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
       setData({ meters: [], transformers: [], users, auditLog, feeders, dashStats });
@@ -357,7 +356,7 @@ function App() {
   useEffectApp(() => {
     _supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        loadAppData(session.user);
+        loadAppData(session.user, false); // session restore — ไม่ log login ซ้ำ
       } else {
         setAppState("unauthed");
       }
@@ -365,7 +364,7 @@ function App() {
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        loadAppData(session.user);
+        loadAppData(session.user, true); // login จริง — log ได้
       }
       if (event === "SIGNED_OUT") {
         setCurrentUser(null);
