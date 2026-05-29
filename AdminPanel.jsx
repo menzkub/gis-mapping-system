@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit }) {
+function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, setMaintenanceMode }) {
   const [tab, setTab] = useStateAd("dashboard");
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 
@@ -19,6 +19,7 @@ function AdminPanel({ data, setData, currentUser, addAudit }) {
     { id: "trs",       icon: "tr",        label: "PEA TR" },
     { id: "import",    icon: "upload",    label: "นำเข้าข้อมูล" },
     { id: "audit",     icon: "history",   label: "Audit Log" },
+    { id: "settings",  icon: "settings",  label: "ตั้งค่า" },
   ];
 
   return (
@@ -53,6 +54,7 @@ function AdminPanel({ data, setData, currentUser, addAudit }) {
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "audit"     && <AdminAudit />}
+        {tab === "settings"  && <AdminSettings maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} addAudit={addAudit} currentUser={currentUser} />}
       </div>
     </div>
   );
@@ -1000,6 +1002,100 @@ function AdminAudit() {
             disabled={page >= totalPages - 1 || loading} onClick={() => fetchPage(totalPages - 1, curFilters())}>»</button>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------- Settings ---------- */
+function AdminSettings({ maintenanceMode, setMaintenanceMode, addAudit, currentUser }) {
+  const [loading, setLoading] = useStateAd(false);
+  const toast = useToast();
+
+  const toggle = async () => {
+    setLoading(true);
+    const newVal = !maintenanceMode;
+    const { error } = await _supabase.from("settings")
+      .update({
+        value:      String(newVal),
+        updated_at: new Date().toISOString(),
+        updated_by: currentUser.username,
+      })
+      .eq("key", "maintenance_mode");
+    setLoading(false);
+    if (error) {
+      toast?.("เกิดข้อผิดพลาด: " + error.message, "error");
+    } else {
+      setMaintenanceMode(newVal);
+      addAudit({
+        user:   currentUser.username,
+        action: "toggle_maintenance",
+        target: "system",
+        detail: `${newVal ? "เปิด" : "ปิด"} Maintenance Mode`,
+      });
+      toast?.(newVal ? "⚠️ เปิด Maintenance Mode แล้ว — user ทั่วไปเข้าระบบไม่ได้" : "✅ ปิด Maintenance Mode แล้ว — ระบบกลับมาปกติ",
+        newVal ? "warning" : "success");
+    }
+  };
+
+  return (
+    <div className="f-col f-gap-4 fade-up" style={{ maxWidth: 580 }}>
+      <div>
+        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>System</div>
+        <div className="t-display" style={{ fontSize: 24 }}>ตั้งค่าระบบ</div>
+      </div>
+
+      {/* Maintenance Mode Card */}
+      <div className="card card-elev">
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
+              <Icon name="settings" size={16} />
+              Maintenance Mode
+              {maintenanceMode && (
+                <span className="badge badge-orange" style={{ fontSize: 10 }}>เปิดอยู่</span>
+              )}
+            </div>
+            <div className="t-mute text-sm" style={{ lineHeight: 1.6 }}>
+              เมื่อเปิด ผู้ใช้ทั่วไปจะเห็นหน้า "ระบบปิดปรับปรุง" และเข้าใช้งานไม่ได้<br />
+              Admin ยังคงเข้าใช้งานได้ตามปกติ
+            </div>
+          </div>
+
+          {/* Toggle switch */}
+          <button
+            onClick={toggle}
+            disabled={loading}
+            title={maintenanceMode ? "คลิกเพื่อเปิดระบบ" : "คลิกเพื่อปิดปรับปรุง"}
+            style={{
+              width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
+              background: maintenanceMode ? "var(--pea-orange-500)" : "var(--line)",
+              position: "relative", transition: "background 250ms", border: "none",
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            <div style={{
+              width: 24, height: 24, borderRadius: "50%", background: "white",
+              position: "absolute", top: 4,
+              left: maintenanceMode ? 32 : 4,
+              transition: "left 250ms",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+            }} />
+          </button>
+        </div>
+
+        {maintenanceMode && (
+          <div className="badge badge-orange fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
+            <Icon name="warning" size={15} />
+            ระบบปิดปรับปรุงอยู่ — ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้
+          </div>
+        )}
+        {!maintenanceMode && (
+          <div className="badge badge-green fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
+            <Icon name="check" size={15} />
+            ระบบเปิดให้บริการปกติ
+          </div>
+        )}
+      </div>
     </div>
   );
 }
