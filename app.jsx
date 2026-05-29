@@ -15,15 +15,11 @@ function LoadingScreen({ message = "กำลังโหลดข้อมู�
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
     }}>
       <div style={{ textAlign: "center", color: "white" }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 18, margin: "0 auto 20px",
-          background: "linear-gradient(135deg,#f47b20,#ffba7a)",
-          display: "grid", placeItems: "center",
-          boxShadow: "0 12px 36px rgba(244,123,32,0.4)",
+        <img src="logo.svg" alt="PEA" style={{
+          width: 64, height: 64, borderRadius: 18, margin: "0 auto 20px", display: "block",
+          boxShadow: "0 12px 36px rgba(139,63,196,0.45)",
           animation: "pea-spin 1.4s linear infinite",
-        }}>
-          <Icon name="bolt" size={30} stroke={2.4} />
-        </div>
+        }} />
         <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>PEA Meter &amp; TR</div>
         <div style={{ fontSize: 13, opacity: 0.65 }}>{message}</div>
       </div>
@@ -1023,9 +1019,7 @@ function App() {
           borderRight: "1px solid rgba(255,255,255,0.06)",
         }}>
           <div className="sidebar-brand f-gap-3 flex" style={{ alignItems: "center", padding: "0 6px 8px" }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#f47b20,#ffba7a)", display: "grid", placeItems: "center", boxShadow: "0 8px 24px rgba(244,123,32,0.4)", flexShrink: 0 }}>
-              <Icon name="bolt" size={20} stroke={2.4} />
-            </div>
+            <img src="logo.svg" alt="PEA" style={{ width: 42, height: 42, borderRadius: 12, boxShadow: "0 8px 24px rgba(139,63,196,0.4)", flexShrink: 0 }} />
             <div className="sidebar-brand-text">
               <div style={{ fontSize: 11, letterSpacing: "0.18em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA</div>
               <div style={{ fontWeight: 800, fontSize: 14 }}>Meter &amp; TR</div>
@@ -1105,9 +1099,7 @@ function App() {
 
           {/* Mobile brand */}
           <div className="topbar-mobile-brand">
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-              <Icon name="bolt" size={14} style={{ color: "white" }} />
-            </div>
+            <img src="logo.svg" alt="PEA" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0 }} />
             <span style={{ fontWeight: 800, fontSize: 14 }}>PEA Meter & TR</span>
           </div>
 

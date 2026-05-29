@@ -103,9 +103,7 @@ function AuthScreen({ initialError }) {
         </svg>
 
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,#f47b20,#ffba7a)", display: "grid", placeItems: "center", boxShadow: "0 12px 32px rgba(244,123,32,0.5)" }}>
-            <Icon name="bolt" size={28} stroke={2.4} />
-          </div>
+          <img src="logo.svg" alt="PEA" style={{ width: 56, height: 56, borderRadius: 16, boxShadow: "0 12px 32px rgba(139,63,196,0.5)", flexShrink: 0 }} />
           <div>
             <div className="t-eyebrow" style={{ color: "#ffba7a" }}>PEA</div>
             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em" }}>Meter &amp; TR Search</div>
@@ -147,9 +145,7 @@ function AuthScreen({ initialError }) {
         {/* Mobile-only hero header */}
         <div className="auth-hero">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 50, height: 50, borderRadius: 14, background: "linear-gradient(135deg,#f47b20,#ffba7a)", display: "grid", placeItems: "center", boxShadow: "0 8px 24px rgba(244,123,32,0.45)", flexShrink: 0 }}>
-              <Icon name="bolt" size={24} stroke={2.4} />
-            </div>
+            <img src="logo.svg" alt="PEA" style={{ width: 50, height: 50, borderRadius: 14, boxShadow: "0 8px 24px rgba(139,63,196,0.45)", flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 10, letterSpacing: "0.2em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA FANG</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>Meter &amp; TR Search</div>
