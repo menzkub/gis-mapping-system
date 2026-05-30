@@ -129,6 +129,8 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const [showConfirmPw, setShowConfirmPw] = useStateApp(false);
   const [saving, setSaving]       = useStateApp(false);
   const [err, setErr]             = useStateApp(null);
+  const [pwHistory, setPwHistory]     = useStateApp([]);
+  const [pwHistLoad, setPwHistLoad]   = useStateApp(false);
   const [pwSuccess, setPwSuccess] = useStateApp(false);
   const [mfaStatus, setMfaStatus] = useStateApp(null); // null=loading | true=enrolled | false=not
   const toast = useToast();
@@ -139,6 +141,20 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
       setMfaStatus(d?.totp?.some(f => f.status === "verified") || false);
     });
   }, []);
+
+  useEffectApp(() => {
+    if (tab !== "password") return;
+    setPwHistLoad(true);
+    _supabase.from("password_history")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order("changed_at", { ascending: false })
+      .limit(20)
+      .then(({ data: rows }) => {
+        setPwHistory(rows || []);
+        setPwHistLoad(false);
+      });
+  }, [tab]);
 
   const checks = {
     length:  newPw.length >= 8,
@@ -335,6 +351,86 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
           </form>
         </div>
       )}
+
+      {/* ── Password expiry status + history ── */}
+      {tab === "password" && (() => {
+        const pwDaysLeft = (() => {
+          if (!currentUser.passwordChangedAt) return null;
+          const daysOld = (Date.now() - new Date(currentUser.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24);
+          return Math.ceil(45 - daysOld);
+        })();
+        const isExpired = pwDaysLeft !== null && pwDaysLeft <= 0;
+        const isWarning = pwDaysLeft !== null && pwDaysLeft > 0 && pwDaysLeft <= 7;
+        const statusColor = isExpired ? "#dc2626" : isWarning ? "#d97706" : "#16a34a";
+        const statusLabel = isExpired ? "หมดอายุแล้ว" : pwDaysLeft === null ? "ไม่มีข้อมูล" : `เหลือ ${pwDaysLeft} วัน`;
+        const daysUsed = pwDaysLeft !== null ? Math.min(45, 45 - pwDaysLeft) : 0;
+        const progress = Math.min(100, Math.max(0, (daysUsed / 45) * 100));
+        const actionLabel = a => ({
+          change_password:  "เปลี่ยนรหัสผ่าน",
+          force_change:     "บังคับเปลี่ยน (Admin)",
+          admin_reset:      "รีเซ็ตโดย Admin",
+          unlock_password:  "Admin ปลดล็อค",
+          initial_setup:    "ตั้งรหัสผ่านครั้งแรก",
+        }[a] || a);
+        return (
+          <>
+            {/* Expiry status card */}
+            <div className="card card-elev fade-up" style={{ marginTop: 16, padding: "18px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>สถานะรหัสผ่าน</div>
+                <span style={{ padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44` }}>
+                  {statusLabel}
+                </span>
+              </div>
+              <div style={{ height: 8, borderRadius: 999, background: "var(--line)", overflow: "hidden", marginBottom: 10 }}>
+                <div style={{ height: "100%", width: progress + "%", borderRadius: 999, background: isExpired ? "#dc2626" : isWarning ? "#f59e0b" : "#22c55e", transition: "width 600ms" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                {[
+                  { label: "ใช้ไปแล้ว", value: pwDaysLeft !== null ? `${Math.max(0, daysUsed)} / 45 วัน` : "—" },
+                  { label: "เปลี่ยนล่าสุด", value: currentUser.passwordChangedAt ? currentUser.passwordChangedAt.slice(0, 10) : "—" },
+                  { label: "หมดอายุ", value: currentUser.passwordChangedAt ? (() => { const d = new Date(currentUser.passwordChangedAt); d.setDate(d.getDate() + 45); return d.toISOString().slice(0, 10); })() : "—" },
+                ].map(r => (
+                  <div key={r.label} style={{ background: "var(--surface-2, var(--surface))", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--line)" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-mute)", marginBottom: 4 }}>{r.label}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{r.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Password change history list */}
+            <div className="card card-elev fade-up" style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>ประวัติการเปลี่ยนรหัสผ่าน</div>
+                <span className="badge" style={{ fontSize: 11 }}>{pwHistory.length} รายการ</span>
+              </div>
+              {pwHistLoad ? (
+                <div className="t-mute text-sm" style={{ padding: "20px 0", textAlign: "center" }}>กำลังโหลด…</div>
+              ) : pwHistory.length === 0 ? (
+                <div className="t-mute text-sm" style={{ padding: "20px 0", textAlign: "center" }}>ยังไม่มีประวัติ</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {pwHistory.map((row, i) => (
+                    <div key={row.id || i} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: i < pwHistory.length - 1 ? "1px solid var(--line)" : "none" }}>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", flexShrink: 0, marginTop: 1 }}>
+                        <Icon name="lock" size={14} style={{ color: "white" }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{actionLabel(row.action)}</div>
+                        {row.note && <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 2 }}>{row.note}</div>}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ink-mute)", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {row.changed_at ? row.changed_at.replace("T", " ").slice(0, 16) : "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       {/* ── Activity (login/logout/password/2FA) ── */}
       {tab === "activity" && (() => {
