@@ -839,11 +839,15 @@ function UserGuide({ role }) {
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
               ["แท็บ", "รายละเอียด"],
-              ["ข้อมูล", "ดูและแก้ไขชื่อ, ชื่อผู้ใช้, อีเมล, บทบาท"],
+              ["ข้อมูล", "ดูชื่อ, username, อีเมล, บทบาท, สถานะบัญชี"],
               ["รหัสผ่าน", "เปลี่ยนรหัสผ่าน + เปิด/ปิด 2FA"],
-              ["การใช้งาน", "ประวัติ login/logout พร้อม device info"],
+              ["การใช้งาน", "ประวัติ login/logout/เปลี่ยนรหัส พร้อม device info"],
               ["การค้นหา", "ประวัติค้นหา Meter/TR พร้อม timestamp"],
             ]} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>นโยบายรหัสผ่าน (45 วัน)</div>
+            <UGStep n={1} text="รหัสผ่านมีอายุ 45 วัน — ระบบแจ้งเตือนล่วงหน้า 7/3/1 วัน ด้วย banner สีต่างกัน" />
+            <UGStep n={2} text="หากหมดอายุโดยไม่เปลี่ยน — จะเข้าสู่ระบบไม่ได้ ต้องให้ Admin ปลดล็อค" />
+            <UGStep n={3} text="หลัง Admin ปลดล็อค — ระบบบังคับเปลี่ยนรหัสทันที ก่อนใช้งานระบบ" />
             <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เปิด 2FA (TOTP)</div>
             <UGStep n={1} text="ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'" />
             <UGStep n={2} text="สแกน QR Code ด้วย Google Authenticator หรือ Authy" />
@@ -893,8 +897,18 @@ function UserGuide({ role }) {
                   ["อนุมัติ", "pending → active (ผู้ใช้เข้าระบบได้)"],
                   ["ระงับ", "→ banned (เข้าระบบไม่ได้)"],
                   ["ปลดระงับ", "banned → active"],
-                  ["เปลี่ยน Role", "สลับ user ↔ admin"],
-                  ["บังคับ 2FA", "เปิด/ปิด 2FA ทันที"],
+                  ["เปลี่ยน Role", "สลับ user ↔ admin (2FA เปิด/ปิดอัตโนมัติ)"],
+                  ["บังคับ 2FA", "คลิก toggle 2FA ในแถว"],
+                  ["ปลดล็อครหัสผ่าน", "กดปุ่ม 'ปลดล็อค' → user ต้องเปลี่ยนรหัสเมื่อ login"],
+                ]} />
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>คอลัมน์ "รหัสผ่าน" ในตารางผู้ใช้</div>
+                <UGTable rows={[
+                  ["สีที่แสดง", "ความหมาย"],
+                  ["🟢 เขียว (XX วัน)", "รหัสผ่านยังใช้งานได้ตามปกติ"],
+                  ["🟡 เหลือง (≤7 วัน)", "ใกล้หมดอายุ — ควรเปลี่ยน"],
+                  ["🔴 แดง (≤3 วัน)", "ใกล้หมดอายุมาก"],
+                  ["🔴 หมดอายุ + ปลดล็อค", "รหัสหมดอายุแล้ว — กดปลดล็อคให้ผู้ใช้"],
+                  ["🟡 ต้องเปลี่ยน", "Admin ปลดล็อคแล้ว รอผู้ใช้เข้ามาเปลี่ยน"],
                 ]} />
                 <UGTip>มี pending user — ระบบแสดง badge แดงที่ปุ่ม Bell บน Topbar</UGTip>
               </div>
@@ -940,11 +954,17 @@ function UserGuide({ role }) {
 
             <UGSection icon="settings" title="ตั้งค่าระบบ" badge="admin">
               <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
                 <UGStep n={1} text="เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง" />
                 <UGStep n={2} text="แก้ไขข้อความแจ้งผู้ใช้ แล้วกด 'บันทึกข้อความ'" />
                 <UGStep n={3} text="ตั้งวันเวลาที่คาดว่าจะกลับมา แล้วกด 'บันทึกวันเวลา'" />
-                <UGNote>Admin ยังคงเข้าใช้ระบบได้ปกติในช่วง Maintenance Mode</UGNote>
-                <UGTip>อย่าลืมปิด Maintenance Mode หลังงานเสร็จ</UGTip>
+                <UGNote>Admin ยังคงเข้าใช้ระบบได้ปกติ — จะเห็น banner แจ้งเตือนแดงบน Topbar</UGNote>
+                <UGTip>อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม "เปิดระบบ" ใน banner ได้เลย</UGTip>
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ข้อมูลนักพัฒนาระบบ</div>
+                <UGStep n={1} text="กรอกชื่อ, ตำแหน่ง, หน่วยงาน, สถานที่ ในการ์ด 'ข้อมูลนักพัฒนาระบบ'" />
+                <UGStep n={2} text="เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏที่มุมหน้าจอ" />
+                <UGStep n={3} text="ลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้อัตโนมัติ" />
+                <UGNote>ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด</UGNote>
               </div>
             </UGSection>
           </>
@@ -1797,11 +1817,19 @@ function App() {
           color: "white", padding: "22px 16px", display: "flex", flexDirection: "column", gap: 16,
           borderRight: "1px solid rgba(255,255,255,0.06)",
         }}>
-          <div className="sidebar-brand f-gap-3 flex" style={{ alignItems: "center", padding: "0 6px 8px" }}>
-            <img src="logo.svg" alt="PEA" style={{ width: 42, height: 42, borderRadius: 12, boxShadow: "0 8px 24px rgba(139,63,196,0.4)", flexShrink: 0 }} />
-            <div className="sidebar-brand-text">
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA</div>
-              <div style={{ fontWeight: 800, fontSize: 14 }}>Meter &amp; TR</div>
+          <div className="sidebar-brand" style={{ padding: "4px 6px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <img src="logo.svg" alt="PEA" style={{
+                width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+                boxShadow: "0 12px 32px rgba(139,63,196,0.55), 0 0 0 1px rgba(255,255,255,0.08)",
+              }} />
+              <div className="sidebar-brand-text">
+                <div style={{ fontSize: 10, letterSpacing: "0.22em", fontWeight: 800, color: "#ffba7a", textTransform: "uppercase", marginBottom: 3 }}>
+                  การไฟฟ้าส่วนภูมิภาค
+                </div>
+                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.1, letterSpacing: "-0.01em" }}>Meter &amp; TR</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 4, fontWeight: 500 }}>GIS Mapping System</div>
+              </div>
             </div>
           </div>
           <nav className="sidebar-nav f-col f-gap-2">

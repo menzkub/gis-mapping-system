@@ -506,8 +506,17 @@ function AdminGuide() {
             [s("อนุมัติ", "Approve"), s("เปลี่ยนสถานะจาก pending → active (ผู้ใช้เข้าระบบได้)", "Change status from pending → active (user can log in)")],
             [s("ระงับ", "Suspend"), s("เปลี่ยนสถานะเป็น banned (ผู้ใช้เข้าระบบไม่ได้)", "Change status to banned (user cannot log in)")],
             [s("ปลดระงับ", "Unsuspend"), s("เปลี่ยนสถานะจาก banned → active", "Change status from banned → active")],
-            [s("เปลี่ยน Role", "Change Role"), s("สลับระหว่าง user ↔ admin", "Toggle between user ↔ admin")],
-            [s("บังคับ 2FA", "Force 2FA"), s("เปิดหรือปิด 2FA ให้ผู้ใช้คนนั้นทันที", "Enable or disable 2FA for that user immediately")],
+            [s("เปลี่ยน Role", "Change Role"), s("สลับระหว่าง user ↔ admin (2FA เปิด/ปิดอัตโนมัติตาม role)", "Toggle between user ↔ admin (2FA auto-enabled for admin)")],
+            [s("บังคับ 2FA", "Force 2FA"), s("คลิก toggle 2FA ในแถว — เปลี่ยนทันที", "Click the 2FA toggle in the row — changes immediately")],
+            [s("ปลดล็อครหัสผ่าน", "Unlock Password"), s("กดปุ่ม 'ปลดล็อค' เมื่อรหัสหมดอายุ — ผู้ใช้ต้องเปลี่ยนรหัสเมื่อ login", "Click 'Unlock' when password expired — user must change password on next login")],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("ระบบรหัสผ่านหมดอายุ (45 วัน)", "Password Expiry System (45 days)")}</div>
+          <GuideTable rows={[
+            [s("สถานะ", "Status"), s("ความหมาย", "Meaning")],
+            [s("🟢 XX วัน", "🟢 XX days"), s("รหัสผ่านปกติ ยังใช้ได้", "Password valid, OK")],
+            [s("🟡 ≤ 7 วัน", "🟡 ≤ 7 days"), s("ใกล้หมดอายุ — user เห็น warning banner", "Expiring soon — user sees warning banner")],
+            [s("🔴 หมดอายุ + ปลดล็อค", "🔴 Expired + Unlock"), s("กดปลดล็อค → pw_force_change=true", "Click Unlock → pw_force_change=true")],
+            [s("🟡 ต้องเปลี่ยน", "🟡 Must change"), s("Admin ปลดล็อคแล้ว รอ user เข้ามาเปลี่ยนรหัส", "Admin unlocked — waiting for user to change password")],
           ]} />
           <GuideTip>{s("มีผู้ใช้ pending — ระบบจะแสดง badge จำนวนที่ปุ่ม bell บน Topbar", "Pending users — system shows a badge count on the bell button in Topbar")}</GuideTip>
         </div>
@@ -555,9 +564,10 @@ function AdminGuide() {
             ["search_meter / search_tr", s("ค้นหาข้อมูล", "Search data")],
             ["create / update / delete", s("เพิ่ม แก้ไข ลบ Meter/TR", "Add, edit, delete Meter/TR")],
             ["import_csv / export_csv", s("นำเข้า/ส่งออกข้อมูล", "Import/export data")],
-            ["change_password", s("เปลี่ยนรหัสผ่าน", "Password change")],
+            ["change_password", s("เปลี่ยนรหัสผ่าน (บันทึกใน password_history ด้วย)", "Password change (also recorded in password_history)")],
             ["enable_2fa / disable_2fa", s("เปิด/ปิด 2FA", "Enable/disable 2FA")],
             ["approve_user / ban_user", s("อนุมัติ/ระงับผู้ใช้งาน", "Approve/suspend users")],
+            ["unlock_password", s("Admin ปลดล็อครหัสผ่านหมดอายุ", "Admin unlocked expired password")],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("การกรองข้อมูล", "Filtering")}</div>
           <GuideStep n={1} text={s("กรองตาม user, ประเภท action, หรือช่วงวันที่", "Filter by user, action type, or date range")} />
@@ -573,8 +583,13 @@ function AdminGuide() {
           <GuideStep n={1} text={s("เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้า 'ระบบปิดปรับปรุง'", "Enable 'Maintenance Mode' toggle — regular users will see the maintenance page")} />
           <GuideStep n={2} text={s("แก้ไขข้อความแจ้งผู้ใช้ตามต้องการ แล้วกด 'บันทึกข้อความ'", "Edit the message shown to users, then click 'Save Message'")} />
           <GuideStep n={3} text={s("ตั้งวันเวลาที่คาดว่าจะกลับมาให้บริการ แล้วกด 'บันทึกวันเวลา'", "Set the expected return time, then click 'Save Time'")} />
-          <GuideNote>{s("Admin ยังคงเข้าใช้ระบบได้ปกติในช่วง Maintenance Mode", "Admins can still access the system normally during Maintenance Mode")}</GuideNote>
-          <GuideTip>{s("อย่าลืมปิด Maintenance Mode หลังงานเสร็จ", "Remember to disable Maintenance Mode when the work is done")}</GuideTip>
+          <GuideNote>{s("Admin ยังคงเข้าใช้ระบบได้ปกติ — เห็น banner แจ้งเตือนสีแดงบน Topbar", "Admins can still access the system — a red warning banner appears on the Topbar")}</GuideNote>
+          <GuideTip>{s("อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม 'เปิดระบบ' ใน banner ได้เลย", "Remember to disable Maintenance Mode — click 'Enable System' in the banner")}</GuideTip>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("ข้อมูลนักพัฒนาระบบ", "Developer Info")}</div>
+          <GuideStep n={1} text={s("กรอกชื่อ, ตำแหน่ง, หน่วยงาน, สถานที่ ในการ์ด 'ข้อมูลนักพัฒนาระบบ'", "Fill in name, position, department, location in the Developer Info card")} />
+          <GuideStep n={2} text={s("เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏมุมหน้าจอ", "Enable 'Show Developer Button' — a floating button appears on screen")} />
+          <GuideStep n={3} text={s("ผู้ใช้ทุกคนสามารถลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้", "Any user can drag the button to a preferred position — position is saved")} />
+          <GuideNote>{s("ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด", "Both Maintenance Mode and Developer Info cards can be collapsed/expanded")}</GuideNote>
         </div>
       </GuideSection>
 
@@ -716,11 +731,12 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ตาราง (Tables)</div>
           <GuideTable rows={[
             ["Table", "Primary Key", "คำอธิบาย"],
-            ["profiles", "id (uuid = auth.uid)", "ข้อมูลผู้ใช้: username, name, role, status, last_login"],
+            ["profiles", "id (uuid = auth.uid)", "ผู้ใช้: username, name, role, status, require_2fa, last_login, password_changed_at, pw_force_change"],
             ["meters", "objectid (bigint)", "มิเตอร์: tag, code, route, accountnum, peano, feederid, owner, lat, lng"],
             ["transformers", "objectid (bigint)", "หม้อแปลง: tag, phase, voltage, peano_tr, kva, owner_tr, location, feeder1, lat, lng"],
             ["audit_log", "id (bigserial)", "บันทึก: user_id, username, action, target, detail, ip, at"],
-            ["settings", "key (text)", "ค่าตั้งค่า key-value: maintenance_mode, maintenance_message, maintenance_until"],
+            ["settings", "key (text)", "ค่าตั้งค่า key-value: maintenance_mode, maintenance_message, dev_name, …"],
+            ["password_history", "id (bigserial)", "ประวัติเปลี่ยนรหัส: user_id, username, changed_at, action, note"],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>RPC Functions</div>
           <CodeBlock>{`-- Dashboard stats (meters, transformers, kva, feeders top 8)
@@ -736,6 +752,7 @@ SELECT * FROM get_feeders();`}</CodeBlock>
             ["transformers", "active user", "admin", "admin", "admin"],
             ["audit_log", "admin", "authenticated", "—", "—"],
             ["settings", "active user", "—", "admin", "—"],
+            ["password_history", "เจ้าของ / admin", "เจ้าของ", "—", "—"],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Triggers</div>
           <CodeBlock>{`-- Auto-create profile เมื่อสมัครสมาชิก
@@ -751,15 +768,18 @@ touch_updated_at() →  UPDATE meters/transformers SET updated_at = NOW()`}</Cod
         <div style={{ marginTop: 12 }}>
           <GuideNote>Supabase ใช้ snake_case ส่วน App ใช้ UPPERCASE — mappers แปลงระหว่างสองฝั่ง</GuideNote>
           <CodeBlock>{`// DB → App (อ่านข้อมูล)
-toMeter(row)         // row.feederid   → m.FEEDERID
-toTransformer(row)   // row.peano_tr   → t.PEANO_TR
-toProfile(row)       // row.last_login → u.lastLogin
-toAuditEntry(row)    // row.at         → entry.at (Date object)
+toMeter(row)         // row.feederid        → m.FEEDERID
+toTransformer(row)   // row.peano_tr        → t.PEANO_TR
+toProfile(row)       // row.last_login      → u.lastLogin
+                     // row.password_changed_at → u.passwordChangedAt
+                     // row.pw_force_change → u.pw_force_change
+toAuditEntry(row)    // row.at              → entry.at
 
 // App → DB (เขียนข้อมูล)
-fromMeter(m)         // m.FEEDERID     → row.feederid
-fromTransformer(t)   // t.PEANO_TR     → row.peano_tr
-fromProfilePatch(p)  // selective patch, ไม่ส่ง field ที่ไม่ได้เปลี่ยน
+fromMeter(m)         // m.FEEDERID          → row.feederid
+fromTransformer(t)   // t.PEANO_TR          → row.peano_tr
+fromProfilePatch(p)  // selective patch: name, role, status, username,
+                     //   require_2fa, pw_force_change
 
 // ตัวอย่างการใช้งาน
 const { data } = await _supabase.from("meters").select("*").limit(100);
