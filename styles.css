@@ -425,6 +425,29 @@ a { color: inherit; text-decoration: none; }
 
   /* Show logout button in topbar on mobile */
   .topbar-logout { display: flex !important; }
+
+  /* ProfileView tabs: horizontal scroll on mobile */
+  .pv-tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    gap: 4px !important;
+  }
+  .pv-tabs::-webkit-scrollbar { display: none; }
+  .pv-tabs .tab { flex-shrink: 0 !important; font-size: 12px !important; padding: 0 10px !important; height: 34px !important; }
+
+  /* Password stat grid: collapse to 1 column on mobile */
+  .pv-stat-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ============================================================
+   ProfileView — password stat grid
+   ============================================================ */
+.pv-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
 }
 
 /* ============================================================

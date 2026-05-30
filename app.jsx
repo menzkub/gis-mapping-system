@@ -375,7 +375,7 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         return (
           <>
             {/* Expiry status card */}
-            <div className="card card-elev fade-up" style={{ marginTop: 16, padding: "18px 20px" }}>
+            <div className="card card-elev fade-up" style={{ marginTop: 16, padding: "18px 20px", maxWidth: 480 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>สถานะรหัสผ่าน</div>
                 <span style={{ padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44` }}>
@@ -385,13 +385,13 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
               <div style={{ height: 8, borderRadius: 999, background: "var(--line)", overflow: "hidden", marginBottom: 10 }}>
                 <div style={{ height: "100%", width: progress + "%", borderRadius: 999, background: isExpired ? "#dc2626" : isWarning ? "#f59e0b" : "#22c55e", transition: "width 600ms" }} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <div className="pv-stat-grid">
                 {[
-                  { label: "ใช้ไปแล้ว", value: pwDaysLeft !== null ? `${Math.max(0, daysUsed)} / 45 วัน` : "—" },
+                  { label: "ใช้ไปแล้ว",    value: pwDaysLeft !== null ? `${Math.max(0, daysUsed)} / 45 วัน` : "—" },
                   { label: "เปลี่ยนล่าสุด", value: currentUser.passwordChangedAt ? currentUser.passwordChangedAt.slice(0, 10) : "—" },
-                  { label: "หมดอายุ", value: currentUser.passwordChangedAt ? (() => { const d = new Date(currentUser.passwordChangedAt); d.setDate(d.getDate() + 45); return d.toISOString().slice(0, 10); })() : "—" },
+                  { label: "หมดอายุ",       value: currentUser.passwordChangedAt ? (() => { const d = new Date(currentUser.passwordChangedAt); d.setDate(d.getDate() + 45); return d.toISOString().slice(0, 10); })() : "—" },
                 ].map(r => (
-                  <div key={r.label} style={{ background: "var(--surface-2, var(--surface))", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--line)" }}>
+                  <div key={r.label} style={{ background: "var(--soft)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--line)" }}>
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-mute)", marginBottom: 4 }}>{r.label}</div>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{r.value}</div>
                   </div>
@@ -400,7 +400,7 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
             </div>
 
             {/* Password change history list */}
-            <div className="card card-elev fade-up" style={{ marginTop: 14 }}>
+            <div className="card card-elev fade-up" style={{ marginTop: 14, maxWidth: 480 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>ประวัติการเปลี่ยนรหัสผ่าน</div>
                 <span className="badge" style={{ fontSize: 11 }}>{pwHistory.length} รายการ</span>
