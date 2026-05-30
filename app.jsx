@@ -782,8 +782,11 @@ function formatUntil(until) {
 /* ============================================================
    UserGuide — role-aware manual (user sees user sections, admin sees all)
    ============================================================ */
-function UGSection({ icon, title, badge, children }) {
+function UGSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateApp(false);
+  useEffectApp(() => {
+    if (expandSignal && expandSignal.count > 0) setOpen(expandSignal.open);
+  }, [expandSignal]);
   return (
     <div style={{ borderRadius: 16, border: "1px solid var(--line)", overflow: "hidden", marginBottom: 10 }}>
       <button onClick={() => setOpen(o => !o)} style={{
@@ -858,6 +861,9 @@ function UGTable({ rows }) {
 function UserGuide({ role }) {
   const isAdmin = role === "admin";
   const guideRef = React.useRef(null);
+  const [expandSig, setExpandSig] = useStateApp({ count: 0, open: false });
+  const expandAll  = () => setExpandSig(s => ({ count: s.count + 1, open: true }));
+  const collapseAll = () => setExpandSig(s => ({ count: s.count + 1, open: false }));
 
   function downloadGuide() {
     const el = guideRef.current;
@@ -910,8 +916,16 @@ function UserGuide({ role }) {
             ))}
           </div>
 
-          {/* Download button */}
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+          {/* Expand/Collapse + Download buttons */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+                <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+              </button>
+              <button onClick={collapseAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+                <Icon name="chevRight" size={13} /> ยุบทั้งหมด
+              </button>
+            </div>
             <button onClick={downloadGuide} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
               <Icon name="download" size={14} /> ดาวน์โหลดคู่มือ
             </button>
@@ -919,7 +933,7 @@ function UserGuide({ role }) {
         </div>
 
         {/* ─── เข้าสู่ระบบ ─── */}
-        <UGSection icon="lock" title="การเข้าสู่ระบบ & สมัครสมาชิก">
+        <UGSection icon="lock" title="การเข้าสู่ระบบ & สมัครสมาชิก" expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>สมัครสมาชิก</div>
             <UGStep n={1} text="คลิก 'สมัครสมาชิก' บนหน้า Login" />
@@ -935,7 +949,7 @@ function UserGuide({ role }) {
         </UGSection>
 
         {/* ─── ค้นหา ─── */}
-        <UGSection icon="search" title="ค้นหาข้อมูล Meter / Transformer">
+        <UGSection icon="search" title="ค้นหาข้อมูล Meter / Transformer" expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>ค้นหา PEA มิเตอร์</div>
             <UGStep n={1} text="เลือกแท็บ 'PEA Meter' ในหน้าค้นหา" />
@@ -953,7 +967,7 @@ function UserGuide({ role }) {
         </UGSection>
 
         {/* ─── แผนที่ ─── */}
-        <UGSection icon="map" title="แผนที่และการนำทาง GPS">
+        <UGSection icon="map" title="แผนที่และการนำทาง GPS" expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
               ["ฟีเจอร์", "วิธีใช้"],
@@ -972,7 +986,7 @@ function UserGuide({ role }) {
         </UGSection>
 
         {/* ─── โปรไฟล์ ─── */}
-        <UGSection icon="user" title="โปรไฟล์ & ความปลอดภัยส่วนตัว">
+        <UGSection icon="user" title="โปรไฟล์ & ความปลอดภัยส่วนตัว" expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
               ["แท็บ", "รายละเอียด"],
@@ -994,7 +1008,7 @@ function UserGuide({ role }) {
         </UGSection>
 
         {/* ─── UI ─── */}
-        <UGSection icon="sun" title="การตั้งค่า UI">
+        <UGSection icon="sun" title="การตั้งค่า UI" expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
               ["ปุ่ม", "ตำแหน่ง", "ฟังก์ชัน"],
@@ -1014,7 +1028,7 @@ function UserGuide({ role }) {
               <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
             </div>
 
-            <UGSection icon="dashboard" title="Dashboard" badge="admin">
+            <UGSection icon="dashboard" title="Dashboard" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
                   ["การ์ด", "ข้อมูลที่แสดง"],
@@ -1027,7 +1041,7 @@ function UserGuide({ role }) {
               </div>
             </UGSection>
 
-            <UGSection icon="users" title="จัดการผู้ใช้งาน" badge="admin">
+            <UGSection icon="users" title="จัดการผู้ใช้งาน" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
                   ["Action", "ผลลัพธ์"],
@@ -1051,7 +1065,7 @@ function UserGuide({ role }) {
               </div>
             </UGSection>
 
-            <UGSection icon="meter" title="จัดการ PEA มิเตอร์ & หม้อแปลง" badge="admin">
+            <UGSection icon="meter" title="จัดการ PEA มิเตอร์ & หม้อแปลง" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
                   ["Action", "วิธีใช้"],
@@ -1065,7 +1079,7 @@ function UserGuide({ role }) {
               </div>
             </UGSection>
 
-            <UGSection icon="upload" title="นำเข้าข้อมูล CSV" badge="admin">
+            <UGSection icon="upload" title="นำเข้าข้อมูล CSV" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGStep n={1} text="เลือกประเภท: PEA Meter หรือ PEA Transformer" />
                 <UGStep n={2} text="ลากหรือคลิกเพื่ออัปโหลดไฟล์ CSV (UTF-8)" />
@@ -1075,7 +1089,7 @@ function UserGuide({ role }) {
               </div>
             </UGSection>
 
-            <UGSection icon="history" title="Audit Log" badge="admin">
+            <UGSection icon="history" title="Audit Log" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
                   ["Action ที่บันทึก", "ตัวอย่าง"],
@@ -1089,7 +1103,7 @@ function UserGuide({ role }) {
               </div>
             </UGSection>
 
-            <UGSection icon="settings" title="ตั้งค่าระบบ" badge="admin">
+            <UGSection icon="settings" title="ตั้งค่าระบบ" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
                 <UGStep n={1} text="เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง" />

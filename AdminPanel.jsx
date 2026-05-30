@@ -303,8 +303,11 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
 }
 
 /* ---------- Guide ---------- */
-function GuideSection({ icon, title, badge, children }) {
+function GuideSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateAd(false);
+  useEffectAd(() => {
+    if (expandSignal && expandSignal.count > 0) setOpen(expandSignal.open);
+  }, [expandSignal]);
   return (
     <div style={{ borderRadius: 16, border: "1px solid var(--line)", overflow: "hidden", marginBottom: 10 }}>
       <button onClick={() => setOpen(o => !o)} style={{
@@ -397,7 +400,7 @@ function AdminGuide() {
       </div>
 
       {/* ─── SECTION: บทบาทผู้ใช้งาน ─── */}
-      <GuideSection icon="users" title={s("บทบาทผู้ใช้งาน (Role)", "User Roles")} badge={s("ภาพรวม", "Overview")}>
+      <GuideSection icon="users" title={s("บทบาทผู้ใช้งาน (Role)", "User Roles")} badge={s("ภาพรวม", "Overview")} expandSignal={expandSig}>
         <div style={{ marginTop: 10 }}>
           <GuideTable rows={[
             ["Role", s("สิทธิ์การใช้งาน", "Permissions"), s("สถานะที่เข้าได้", "Allowed Status")],
@@ -414,7 +417,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: เข้าสู่ระบบ ─── */}
-      <GuideSection icon="lock" title={s("การเข้าสู่ระบบ & สมัครสมาชิก", "Login & Registration")} badge="user · admin">
+      <GuideSection icon="lock" title={s("การเข้าสู่ระบบ & สมัครสมาชิก", "Login & Registration")} badge="user · admin" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>{s("สมัครสมาชิก", "Register")}</div>
           <GuideStep n={1} text={s("คลิก 'สมัครสมาชิก' บนหน้า Login", "Click 'Register' on the Login page")} />
@@ -430,7 +433,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: ค้นหาข้อมูล ─── */}
-      <GuideSection icon="search" title={s("ค้นหาข้อมูล Meter / Transformer", "Search Meter / Transformer")} badge="user · admin">
+      <GuideSection icon="search" title={s("ค้นหาข้อมูล Meter / Transformer", "Search Meter / Transformer")} badge="user · admin" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>{s("ค้นหา PEA มิเตอร์", "Search PEA Meter")}</div>
           <GuideStep n={1} text={s("เลือกแท็บ 'PEA Meter' ในหน้าค้นหา", "Select the 'PEA Meter' tab on the Search page")} />
@@ -448,7 +451,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: แผนที่ ─── */}
-      <GuideSection icon="map" title={s("แผนที่และการนำทาง GPS", "Map & GPS Navigation")} badge="user · admin">
+      <GuideSection icon="map" title={s("แผนที่และการนำทาง GPS", "Map & GPS Navigation")} badge="user · admin" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             [s("ฟีเจอร์", "Feature"), s("วิธีใช้", "How to use")],
@@ -467,7 +470,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: โปรไฟล์ ─── */}
-      <GuideSection icon="user" title={s("โปรไฟล์ & ความปลอดภัยส่วนตัว", "Profile & Security")} badge="user · admin">
+      <GuideSection icon="user" title={s("โปรไฟล์ & ความปลอดภัยส่วนตัว", "Profile & Security")} badge="user · admin" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             [s("แท็บ", "Tab"), s("รายละเอียด", "Details")],
@@ -485,7 +488,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: Dashboard ─── */}
-      <GuideSection icon="dashboard" title="Dashboard (Admin)" badge="admin only">
+      <GuideSection icon="dashboard" title="Dashboard (Admin)" badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             [s("การ์ด", "Card"), s("ข้อมูลที่แสดง", "Displayed Data")],
@@ -499,7 +502,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: จัดการผู้ใช้งาน ─── */}
-      <GuideSection icon="users" title={s("จัดการผู้ใช้งาน (Admin)", "User Management (Admin)")} badge="admin only">
+      <GuideSection icon="users" title={s("จัดการผู้ใช้งาน (Admin)", "User Management (Admin)")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Action", s("ผลลัพธ์", "Result")],
@@ -523,7 +526,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: จัดการ Meter/TR ─── */}
-      <GuideSection icon="meter" title={s("จัดการ PEA มิเตอร์ & หม้อแปลง (Admin)", "Manage PEA Meters & Transformers (Admin)")} badge="admin only">
+      <GuideSection icon="meter" title={s("จัดการ PEA มิเตอร์ & หม้อแปลง (Admin)", "Manage PEA Meters & Transformers (Admin)")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Action", s("วิธีใช้", "How to use")],
@@ -538,7 +541,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: Import CSV ─── */}
-      <GuideSection icon="upload" title={s("นำเข้าข้อมูล CSV (Admin)", "Import CSV Data (Admin)")} badge="admin only">
+      <GuideSection icon="upload" title={s("นำเข้าข้อมูล CSV (Admin)", "Import CSV Data (Admin)")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideStep n={1} text={s("เลือกประเภทข้อมูล: PEA Meter หรือ PEA Transformer", "Select data type: PEA Meter or PEA Transformer")} />
           <GuideStep n={2} text={s("ลากหรือคลิกเพื่ออัปโหลดไฟล์ CSV (UTF-8)", "Drag or click to upload a CSV file (UTF-8 encoding)")} />
@@ -556,7 +559,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: Audit Log ─── */}
-      <GuideSection icon="history" title="Audit Log (Admin)" badge="admin only">
+      <GuideSection icon="history" title="Audit Log (Admin)" badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             [s("Action ที่บันทึก", "Recorded Actions"), s("ตัวอย่าง", "Example")],
@@ -577,7 +580,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: ตั้งค่าระบบ ─── */}
-      <GuideSection icon="settings" title={s("ตั้งค่าระบบ (Admin)", "System Settings (Admin)")} badge="admin only">
+      <GuideSection icon="settings" title={s("ตั้งค่าระบบ (Admin)", "System Settings (Admin)")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
           <GuideStep n={1} text={s("เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้า 'ระบบปิดปรับปรุง'", "Enable 'Maintenance Mode' toggle — regular users will see the maintenance page")} />
@@ -594,7 +597,7 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: UI ─── */}
-      <GuideSection icon="sun" title={s("การตั้งค่า UI", "UI Settings")} badge="user · admin">
+      <GuideSection icon="sun" title={s("การตั้งค่า UI", "UI Settings")} badge="user · admin" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             [s("ปุ่ม", "Button"), s("ตำแหน่ง", "Location"), s("ฟังก์ชัน", "Function")],
@@ -655,6 +658,10 @@ function AdminDevGuide() {
     document.body.removeChild(a); URL.revokeObjectURL(url);
   }
 
+  const [expandSig, setExpandSig] = useStateAd({ count: 0, open: false });
+  const expandAll   = () => setExpandSig(s => ({ count: s.count + 1, open: true }));
+  const collapseAll = () => setExpandSig(s => ({ count: s.count + 1, open: false }));
+
   return (
     <div ref={guideRef} style={{ maxWidth: 860, margin: "0 auto" }}>
       {/* Hero */}
@@ -698,8 +705,16 @@ function AdminDevGuide() {
           ))}
         </div>
 
-        {/* Download button */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+        {/* Expand/Collapse + Download buttons */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={expandAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+              <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+            </button>
+            <button onClick={collapseAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+              <Icon name="chevRight" size={13} /> ยุบทั้งหมด
+            </button>
+          </div>
           <button onClick={downloadGuide} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
             <Icon name="download" size={14} /> ดาวน์โหลดเอกสาร
           </button>
@@ -707,7 +722,7 @@ function AdminDevGuide() {
       </div>
 
       {/* ─── SECTION: Architecture ─── */}
-      <GuideSection icon="cpu" title="สถาปัตยกรรมระบบ (Architecture)">
+      <GuideSection icon="cpu" title="สถาปัตยกรรมระบบ (Architecture)" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTip>ระบบนี้ไม่มี build step — แก้ไขไฟล์ .jsx แล้ว git push ได้เลย ไม่ต้อง npm install หรือ webpack</GuideTip>
           <CodeBlock>{`Browser
@@ -742,7 +757,7 @@ function AdminDevGuide() {
       </GuideSection>
 
       {/* ─── SECTION: Files ─── */}
-      <GuideSection icon="package" title="ไฟล์และหน้าที่">
+      <GuideSection icon="package" title="ไฟล์และหน้าที่" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["ไฟล์", "บทบาท", "ขนาด"],
@@ -761,7 +776,7 @@ function AdminDevGuide() {
       </GuideSection>
 
       {/* ─── SECTION: Database ─── */}
-      <GuideSection icon="database" title="ฐานข้อมูล Supabase">
+      <GuideSection icon="database" title="ฐานข้อมูล Supabase" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>การเชื่อมต่อ</div>
           <CodeBlock>{`// config.js
@@ -805,7 +820,7 @@ touch_updated_at() →  UPDATE meters/transformers SET updated_at = NOW()`}</Cod
       </GuideSection>
 
       {/* ─── SECTION: Row Mappers ─── */}
-      <GuideSection icon="arrowRight" title="Row Mappers — DB ↔ App (config.js)">
+      <GuideSection icon="arrowRight" title="Row Mappers — DB ↔ App (config.js)" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideNote>Supabase ใช้ snake_case ส่วน App ใช้ UPPERCASE — mappers แปลงระหว่างสองฝั่ง</GuideNote>
           <CodeBlock>{`// DB → App (อ่านข้อมูล)
@@ -845,7 +860,7 @@ const allMeters = (await loadAll("meters")).map(toMeter);`}</CodeBlock>
       </GuideSection>
 
       {/* ─── SECTION: Components API ─── */}
-      <GuideSection icon="grid" title="Shared Components API (components.jsx)">
+      <GuideSection icon="grid" title="Shared Components API (components.jsx)" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
 
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Icon <DevBadge color="blue">global</DevBadge></div>
@@ -895,7 +910,7 @@ if (ok) { /* ดำเนินการต่อ */ }`}</CodeBlock>
       </GuideSection>
 
       {/* ─── SECTION: Helpers ─── */}
-      <GuideSection icon="key" title="Utility Functions">
+      <GuideSection icon="key" title="Utility Functions" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Function", "ที่อยู่", "การใช้งาน"],
@@ -919,7 +934,7 @@ formatThaiDate(new Date()); // "2025-05-30 14:32:00"`}</CodeBlock>
       </GuideSection>
 
       {/* ─── SECTION: i18n ─── */}
-      <GuideSection icon="book" title="ระบบภาษา i18n (lang.jsx)">
+      <GuideSection icon="book" title="ระบบภาษา i18n (lang.jsx)" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <CodeBlock>{`// 1. ใน component — ดึง t() จาก useLang
 const { t } = useLang();
@@ -941,7 +956,7 @@ t("myNewKey")  // แสดงตามภาษาปัจจุบัน`}</C
       </GuideSection>
 
       {/* ─── SECTION: CSS ─── */}
-      <GuideSection icon="sun" title="CSS Design System (styles.css)">
+      <GuideSection icon="sun" title="CSS Design System (styles.css)" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Color Tokens</div>
           <CodeBlock>{`/* Brand Colors */
@@ -999,7 +1014,7 @@ localStorage.setItem("pea_theme", theme);`}</CodeBlock>
       </GuideSection>
 
       {/* ─── SECTION: MapView API ─── */}
-      <GuideSection icon="map" title="MapView Props API">
+      <GuideSection icon="map" title="MapView Props API" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Prop", "Type", "Default", "คำอธิบาย"],
@@ -1026,7 +1041,7 @@ localStorage.setItem("pea_theme", theme);`}</CodeBlock>
       </GuideSection>
 
       {/* ─── SECTION: Adding Features ─── */}
-      <GuideSection icon="plus" title="วิธีเพิ่มฟีเจอร์ใหม่">
+      <GuideSection icon="plus" title="วิธีเพิ่มฟีเจอร์ใหม่" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>เพิ่ม Admin Tab ใหม่</div>
           <GuideStep n={1} text="เพิ่ม key ใน lang.jsx (ทั้ง th และ en): admMyTab: 'ชื่อแท็บ'" />
@@ -1080,7 +1095,7 @@ addAudit({
       </GuideSection>
 
       {/* ─── SECTION: Deploy ─── */}
-      <GuideSection icon="link" title="Deploy & การพัฒนา">
+      <GuideSection icon="link" title="Deploy & การพัฒนา" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Task", "Command / วิธี"],
@@ -1107,7 +1122,7 @@ addAudit({
       </GuideSection>
 
       {/* ─── SECTION: GitHub ─── */}
-      <GuideSection icon="link" title="GitHub — Source Code & Deployment">
+      <GuideSection icon="link" title="GitHub — Source Code & Deployment" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
 
           <div style={{ fontWeight: 700, marginBottom: 8 }}>โครงสร้าง Repository</div>
@@ -1183,7 +1198,7 @@ git log --oneline   # copy 7 ตัวแรก เช่น a1b2c3d`}</CodeBloc
       </GuideSection>
 
       {/* ─── SECTION: Supabase Ops & Troubleshooting ─── */}
-      <GuideSection icon="database" title="การจัดการ & แก้ปัญหา Supabase">
+      <GuideSection icon="database" title="การจัดการ & แก้ปัญหา Supabase" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
 
           {/* ── ลำดับการโหลดข้อมูล ── */}
