@@ -2080,10 +2080,9 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
       ["dev_show_btn",   String(!!localDev.showBtn)],
     ];
     const results = await Promise.all(pairs.map(([key, value]) =>
-      _supabase.from("settings").upsert(
-        { key, value, updated_at: now, updated_by: currentUser.username },
-        { onConflict: "key" }
-      )
+      _supabase.from("settings")
+        .update({ value, updated_at: now, updated_by: currentUser.username })
+        .eq("key", key)
     ));
     setSavingDev(false);
     const err = results.find(r => r.error)?.error;
