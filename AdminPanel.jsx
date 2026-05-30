@@ -1669,12 +1669,13 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
           const dl         = pwDaysLeft(u);
           const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;
           return (
-            <div key={u.id} className="au-card" style={{
+            <div key={u.id} className="au-card" onClick={() => openPwHistory(u)} style={{
               background: isPending ? "rgba(234,179,8,0.04)" : isPwExpired ? "rgba(220,38,38,0.03)" : "transparent",
               borderRadius: (isPending || isPwExpired) ? 12 : 0,
               padding: (isPending || isPwExpired) ? "14px 12px" : "14px 2px",
               border: isPending ? "1px solid rgba(234,179,8,0.2)" : isPwExpired ? "1px solid rgba(220,38,38,0.2)" : undefined,
               marginBottom: (isPending || isPwExpired) ? 8 : 0,
+              cursor: "pointer",
             }}>
               {/* Row 1: Avatar + name/username + role */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -1700,7 +1701,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               </div>
 
               {/* Row 2: Status + 2FA + pw status + last login */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
                 <span className={"badge " + (u.status === "active" ? "badge-green" : isBanned ? "badge-red" : "badge-amber")} style={{ fontSize: 11 }}>
                   {u.status === "active" ? "ใช้งานได้" : isBanned ? "ระงับ" : "รออนุมัติ"}
                 </span>
@@ -1731,7 +1732,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               </div>
 
               {/* Row 3: Action buttons */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
                 {isPending && (
                   <button className="btn btn-primary btn-sm" style={{ height: 34, fontSize: 12 }}
                     onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`)}>
