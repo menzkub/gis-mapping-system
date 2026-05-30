@@ -2172,8 +2172,10 @@ function App() {
     { id: "search",    icon: "search",   label: t("navSearch")    },
     { id: "profile",   icon: "user",     label: t("navProfile")   },
     { id: "guide",     icon: "book",     label: t("navGuide")     },
-    { id: "changelog", icon: "bolt",     label: "อัปเดต"          },
-    ...(isAdmin ? [{ id: "admin", icon: "settings", label: t("navAdmin") }] : []),
+    ...(isAdmin ? [
+      { id: "changelog", icon: "bolt",     label: "อัปเดต"          },
+      { id: "admin",     icon: "settings", label: t("navAdmin")     },
+    ] : []),
   ];
   const ADMIN_NAV = [
     { id: "dashboard", icon: "dashboard", label: t("admDashboard") },
@@ -2498,7 +2500,7 @@ function App() {
           {route === "guide" && (
             <UserGuide role={currentUser.role} />
           )}
-          {route === "changelog" && (
+          {route === "changelog" && currentUser.role === "admin" && (
             <ChangelogView />
           )}
           {route === "admin" && currentUser.role === "admin" && (
