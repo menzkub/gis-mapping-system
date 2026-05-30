@@ -761,9 +761,24 @@ function UGTable({ rows }) {
 
 function UserGuide({ role }) {
   const isAdmin = role === "admin";
+  const guideRef = React.useRef(null);
+
+  function downloadGuide() {
+    const el = guideRef.current;
+    if (!el) return;
+    const css = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f4f6;margin:0;padding:0;color:#1a1a2e;}*{box-sizing:border-box;}`;
+    const html = `<!DOCTYPE html>\n<html lang="th">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>คู่มือการใช้งาน GIS Meter &amp; Transformer</title>\n<style>${css}</style>\n</head>\n<body>${el.innerHTML}</body>\n</html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "UserGuide-GIS.html";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 20px 40px" }}>
+      <div ref={guideRef} style={{ maxWidth: 820, margin: "0 auto", padding: "24px 20px 40px" }}>
         {/* Hero */}
         <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
@@ -778,6 +793,32 @@ function UserGuide({ role }) {
                 {isAdmin ? "สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Feature" : "สำหรับผู้ใช้งานทั่วไป"}
               </div>
             </div>
+          </div>
+
+          {/* Stat cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
+            {[
+              { label: "หัวข้อ",   value: isAdmin ? 11 : 5, icon: "book",    sub: "sections" },
+              { label: "ขั้นตอน", value: isAdmin ? 35 : 16, icon: "check",   sub: "steps" },
+              { label: "ฟีเจอร์",  value: 8,                icon: "bolt",    sub: "features" },
+              { label: "เคล็ดลับ", value: isAdmin ? 14 : 7, icon: "warning", sub: "tips & notes" },
+            ].map(({ label, value, icon, sub }) => (
+              <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <Icon name={icon} size={13} />
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>{label}</span>
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Download button */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+            <button onClick={downloadGuide} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
+              <Icon name="download" size={14} /> ดาวน์โหลดคู่มือ
+            </button>
           </div>
         </div>
 

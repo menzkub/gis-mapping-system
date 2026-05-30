@@ -640,8 +640,23 @@ function DevBadge({ color, children }) {
 }
 
 function AdminDevGuide() {
+  const guideRef = React.useRef(null);
+
+  function downloadGuide() {
+    const el = guideRef.current;
+    if (!el) return;
+    const css = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0714;margin:0;padding:0;color:#e2d9f3;}*{box-sizing:border-box;}pre,code{font-family:'Fira Code','Cascadia Code',monospace;}`;
+    const html = `<!DOCTYPE html>\n<html lang="th">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>Developer Guide — GIS Meter &amp; Transformer</title>\n<style>${css}</style>\n</head>\n<body>${el.innerHTML}</body>\n</html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "DevGuide-GIS.html";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+    <div ref={guideRef} style={{ maxWidth: 860, margin: "0 auto" }}>
       {/* Hero */}
       <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#1b0926 0%,#321148 50%,#4f1e6e 100%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden", border: "1px solid rgba(139,63,196,0.3)" }}>
         <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(139,63,196,0.12)", pointerEvents: "none" }} />
@@ -656,12 +671,38 @@ function AdminDevGuide() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
-          {[["React 18","purple"],["Babel Standalone","orange"],["Supabase","green"],["Leaflet 1.9","blue"],["GitHub Pages","gray"]].map(([label, color]) => (
+          {["React 18","Babel Standalone","Supabase","Leaflet 1.9","GitHub Pages"].map(label => (
             <span key={label} style={{
               padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
               background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)"
             }}>{label}</span>
           ))}
+        </div>
+
+        {/* Stat cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
+          {[
+            { label: "หัวข้อ",       value: 10, icon: "book",     sub: "sections" },
+            { label: "ไฟล์ระบบ",    value: 10, icon: "package",  sub: "source files" },
+            { label: "ตาราง DB",    value: 6,  icon: "database", sub: "tables" },
+            { label: "ตัวอย่างโค้ด", value: 15, icon: "code",     sub: "code blocks" },
+          ].map(({ label, value, icon, sub }) => (
+            <div key={label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                <Icon name={icon} size={13} style={{ color: "rgba(255,255,255,0.5)" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>{label}</span>
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{value}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>{sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Download button */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+          <button onClick={downloadGuide} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
+            <Icon name="download" size={14} /> ดาวน์โหลดเอกสาร
+          </button>
         </div>
       </div>
 
