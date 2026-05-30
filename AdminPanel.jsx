@@ -253,6 +253,48 @@ function Donut({ peaMeters, custMeters, peaTr, custTr, displayTotal }) {
   );
 }
 
+function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
+  const { t } = useLang();
+  if (!open) return null;
+  return (
+    <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(14,10,22,0.55)", backdropFilter: "blur(8px)", display: "grid", placeItems: "center", padding: 20 }} onClick={onClose}>
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 440, background: "var(--surface)", borderRadius: 24, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
+        <div style={{ padding: "22px 24px 18px", background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 60%,#f47b20 130%)", color: "white", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", right: -30, top: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+          <div className="t-eyebrow" style={{ color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>{t("confirmExportTitle")}</div>
+          <div style={{ fontWeight: 800, fontSize: 20, lineHeight: 1.2 }}>Export {label}</div>
+        </div>
+        <div style={{ padding: "20px 24px 24px" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "14px 16px", background: "var(--soft)", borderRadius: 14, marginBottom: 16, border: "1px solid var(--soft-border)" }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", color: "white", flexShrink: 0, boxShadow: "0 8px 22px rgba(107,44,145,0.35)" }}>
+              <Icon name="download" size={22} />
+            </div>
+            <div>
+              <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em" }}>{count.toLocaleString()}</div>
+              <div className="t-mute" style={{ fontSize: 13, marginTop: 2 }}>{t("itemsToExport")}</div>
+            </div>
+          </div>
+          <div className="t-mute" style={{ fontSize: 13, marginBottom: 14 }}>
+            {t("exportAsCSV")} · <span className="mono" style={{ fontSize: 12 }}>{filename}</span>
+          </div>
+          {count >= 500 && (
+            <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "#ffe7d4", border: "1px solid #f9b27a", marginBottom: 14 }}>
+              <Icon name="warning" size={14} style={{ color: "var(--pea-orange-600)", flexShrink: 0, marginTop: 1 }} />
+              <span style={{ fontSize: 12, color: "var(--pea-orange-700)", lineHeight: 1.5 }}>{t("exportCap500")}</span>
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+            <button className="btn btn-outline" style={{ height: 48 }} onClick={onClose}>{t("cancel")}</button>
+            <button className="btn btn-primary" style={{ height: 48 }} onClick={onConfirm}>
+              <Icon name="download" size={15} /> {t("exportLabel")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function actionLabel(a) {
   const m = {
     login: "Login", logout: "Logout",
@@ -566,6 +608,7 @@ function AdminMeters({ addAudit, currentUser }) {
   const [searching, setSearching] = useStateAd(false);
   const [edit, setEdit]       = useStateAd(null);
   const [saving, setSaving]   = useStateAd(false);
+  const [showExport, setShowExport] = useStateAd(false);
   const confirm = useConfirm();
   const toast   = useToast();
 
@@ -643,7 +686,7 @@ function AdminMeters({ addAudit, currentUser }) {
         </div>
         <div className="adm-tb">
           <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, ACCOUNTNUM…" />
-          <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => downloadCSV(`pea-meter-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
+          <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => setShowExport(true)}><Icon name="download" size={14} /> Export</button>
           <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", CODE: "AFAG", ROUTE: "", ACCOUNTNUM: "", PEANO: "", FEEDERID: "", OWNER: "PEA", INSTALLATI: "", LATITUDE: 19.86, LONGITUDE: 99.18 })}>
             <Icon name="plus" size={14} /> เพิ่ม
           </button>
@@ -706,6 +749,14 @@ function AdminMeters({ addAudit, currentUser }) {
           </div>
         )}
       </Modal>
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        onConfirm={() => { downloadCSV("pea-meter-export.csv", list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ` }); setShowExport(false); }}
+        count={list.length}
+        filename="pea-meter-export.csv"
+        label="PEA Meter"
+      />
     </div>
   );
 }
@@ -726,6 +777,7 @@ function AdminTrs({ addAudit, currentUser }) {
   const [searching, setSearching] = useStateAd(false);
   const [edit, setEdit]     = useStateAd(null);
   const [saving, setSaving] = useStateAd(false);
+  const [showExport, setShowExport] = useStateAd(false);
   const confirm = useConfirm();
   const toast   = useToast();
 
@@ -795,7 +847,7 @@ function AdminTrs({ addAudit, currentUser }) {
         </div>
         <div className="adm-tb">
           <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, สถานที่…" />
-          <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => downloadCSV(`pea-tr-export.csv`, list)}><Icon name="download" size={14} /> Export</button>
+          <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => setShowExport(true)}><Icon name="download" size={14} /> Export</button>
           <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", PHASE: "หม้อแปลง 3 Phase", VOLTAGE: "22 kV", PEANO_TR: "", INSTALL_PHASE: "ABC", KVA: 100, OWNER_TR: "PEA", LOCATION: "", FEEDER1: "", LATITUDE: 19.86, LONGITUDE: 99.18, PEA_METER: "" })}>
             <Icon name="plus" size={14} /> เพิ่ม
           </button>
@@ -863,6 +915,14 @@ function AdminTrs({ addAudit, currentUser }) {
           </div>
         )}
       </Modal>
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        onConfirm={() => { downloadCSV("pea-tr-export.csv", list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ` }); setShowExport(false); }}
+        count={list.length}
+        filename="pea-tr-export.csv"
+        label="PEA Transformer"
+      />
     </div>
   );
 }
@@ -1015,6 +1075,7 @@ function AdminAudit() {
   const [page, setPage]       = useStateAd(0);
   const [loading, setLoading] = useStateAd(true);
   const [userList, setUserList] = useStateAd([]);
+  const [showExport, setShowExport] = useStateAd(false);
 
   const [q, setQ]             = useStateAd("");
   const [userF, setUserF]     = useStateAd("");
@@ -1080,7 +1141,7 @@ function AdminAudit() {
               </button>
             )}
             <button className="btn btn-outline" style={{ height: 36, fontSize: 12 }}
-              onClick={() => downloadCSV("audit-log.csv", logs)}>
+              onClick={() => setShowExport(true)}>
               <Icon name="download" size={14} /> Export หน้านี้
             </button>
           </div>
@@ -1176,6 +1237,14 @@ function AdminAudit() {
             disabled={page >= totalPages - 1 || loading} onClick={() => fetchPage(totalPages - 1, curFilters())}>»</button>
         </div>
       )}
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        onConfirm={() => { downloadCSV("audit-log.csv", logs); setShowExport(false); }}
+        count={logs.length}
+        filename="audit-log.csv"
+        label="Audit Log"
+      />
     </div>
   );
 }
