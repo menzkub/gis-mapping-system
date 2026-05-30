@@ -1284,9 +1284,10 @@ function parseDeviceAd(ua = "") {
 
 /* ---------- Users ---------- */
 function AdminUsers({ data, setData, addAudit, currentUser }) {
-  const [q, setQ]       = useStateAd("");
-  const [edit, setEdit] = useStateAd(null);
-  const [saving, setSaving] = useStateAd(false);
+  const [q, setQ]             = useStateAd("");
+  const [edit, setEdit]       = useStateAd(null);
+  const [saving, setSaving]   = useStateAd(false);
+  const [pwModal, setPwModal] = useStateAd(null); // { user, history, loading }
   const confirm = useConfirm();
   const toast   = useToast();
   const list = data.users.filter(u => !q || `${u.username} ${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
@@ -1339,6 +1340,17 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     if (!u.passwordChangedAt) return null;
     const daysOld = (Date.now() - new Date(u.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24);
     return Math.ceil(45 - daysOld);
+  };
+
+  const openPwHistory = async (u) => {
+    setPwModal({ user: u, history: [], loading: true });
+    const { data: rows } = await _supabase
+      .from("password_history")
+      .select("*")
+      .eq("user_id", u.id)
+      .order("changed_at", { ascending: false })
+      .limit(50);
+    setPwModal({ user: u, history: rows || [], loading: false });
   };
 
   const saveEdit = async () => {
@@ -1570,6 +1582,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                         <Icon name="check" size={14} />
                       </button>
                     )}
+                    <button className="btn-icon" title="ประวัติรหัสผ่าน" onClick={() => openPwHistory(u)}><Icon name="history" size={14} /></button>
                     <button className="btn-icon" title="แก้ไข" onClick={() => setEdit({ ...u })}><Icon name="edit" size={14} /></button>
                   </div>
                 </td>
@@ -1676,6 +1689,10 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     <Icon name="check" size={13} /> ปลดล็อครหัสผ่าน
                   </button>
                 )}
+                <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12 }}
+                  onClick={() => openPwHistory(u)}>
+                  <Icon name="history" size={13} /> ประวัติรหัสผ่าน
+                </button>
                 <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12, marginLeft: "auto" }}
                   onClick={() => setEdit({ ...u })}>
                   <Icon name="edit" size={13} /> แก้ไข
@@ -1720,6 +1737,133 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         )}
       </Modal>
       </div>
+
+      {/* ── Password History Modal ── */}
+      {pwModal && (() => {
+        const u    = pwModal.user;
+        const dl   = pwDaysLeft(u);
+        const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;
+        const pct  = dl !== null ? Math.max(0, Math.min(100, Math.round((dl / 45) * 100))) : null;
+        const barColor = isPwExpired ? "#dc2626" : dl <= 3 ? "#dc2626" : dl <= 7 ? "#d97706" : "#10b981";
+        const actionLabel = (a) => ({
+          change_password: "เปลี่ยนรหัสผ่าน",
+          force_change: "บังคับเปลี่ยน (Admin)",
+          reset: "รีเซ็ตรหัสผ่าน",
+        }[a] || a);
+
+        return (
+          <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(14,10,22,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+            onClick={() => setPwModal(null)}>
+            <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 520, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+
+              {/* Header */}
+              <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: avatarBg(u.username), display: "grid", placeItems: "center", fontWeight: 800, fontSize: 18, color: "white", flexShrink: 0 }}>
+                    {(u.name || u.username || "?")[0]}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: "white" }}>{u.name}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>@{u.username} · {u.role}</div>
+                  </div>
+                </div>
+                <button onClick={() => setPwModal(null)} style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer", flexShrink: 0 }}>
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+
+              <div style={{ padding: "20px 24px", overflow: "auto", flex: 1 }}>
+
+                {/* Expiry status card */}
+                <div style={{ borderRadius: 16, border: `2px solid ${isPwExpired ? "rgba(220,38,38,0.35)" : u.pw_force_change ? "rgba(217,119,6,0.35)" : "rgba(16,185,129,0.25)"}`, background: isPwExpired ? "rgba(220,38,38,0.06)" : u.pw_force_change ? "rgba(217,119,6,0.06)" : "rgba(16,185,129,0.05)", padding: "18px 20px", marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-mute)", marginBottom: 4 }}>สถานะรหัสผ่าน</div>
+                      {u.pw_force_change ? (
+                        <div style={{ fontSize: 22, fontWeight: 900, color: "#d97706" }}>ต้องเปลี่ยนรหัสผ่าน</div>
+                      ) : isPwExpired ? (
+                        <div style={{ fontSize: 22, fontWeight: 900, color: "#dc2626" }}>หมดอายุแล้ว</div>
+                      ) : dl !== null ? (
+                        <div style={{ fontSize: 22, fontWeight: 900, color: barColor }}>เหลือ {dl} วัน</div>
+                      ) : (
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--ink-mute)" }}>ไม่มีข้อมูล</div>
+                      )}
+                    </div>
+                    {dl !== null && !isPwExpired && !u.pw_force_change && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 11, color: "var(--ink-mute)", marginBottom: 2 }}>ใช้ไปแล้ว</div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "var(--ink-mute)" }}>{45 - dl}<span style={{ fontSize: 12, marginLeft: 2 }}>/{45} วัน</span></div>
+                      </div>
+                    )}
+                  </div>
+                  {pct !== null && (
+                    <div>
+                      <div style={{ height: 10, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 999, background: barColor, width: `${pct}%`, transition: "width 600ms ease" }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 11, color: "var(--ink-mute)" }}>
+                        <span>เปลี่ยนล่าสุด: {u.passwordChangedAt ? new Date(u.passwordChangedAt).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }) : "—"}</span>
+                        <span>ครบ 45 วัน: {u.passwordChangedAt ? new Date(new Date(u.passwordChangedAt).getTime() + 45*24*60*60*1000).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }) : "—"}</span>
+                      </div>
+                    </div>
+                  )}
+                  {isPwExpired && (
+                    <button className="btn btn-primary" style={{ marginTop: 14, width: "100%", height: 40, fontSize: 13 }} onClick={() => { setPwModal(null); unlockPw(u); }}>
+                      <Icon name="check" size={14} /> ปลดล็อค — บังคับให้เปลี่ยนรหัสผ่านเมื่อ Login
+                    </button>
+                  )}
+                </div>
+
+                {/* Password history */}
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="history" size={15} style={{ color: "var(--pea-orange-500)" }} />
+                  ประวัติการเปลี่ยนรหัสผ่าน
+                </div>
+
+                {pwModal.loading ? (
+                  <div style={{ padding: "28px 0", textAlign: "center", color: "var(--ink-mute)" }}>
+                    <div style={{ width: 28, height: 28, margin: "0 auto 10px", borderRadius: "50%", border: "3px solid var(--line)", borderTopColor: "var(--pea-purple-500)", animation: "pea-spin 0.8s linear infinite" }} />
+                    กำลังโหลด…
+                  </div>
+                ) : pwModal.history.length === 0 ? (
+                  <div style={{ padding: "24px 0", textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "var(--soft)", borderRadius: 12 }}>
+                    ยังไม่มีประวัติการเปลี่ยนรหัสผ่าน
+                  </div>
+                ) : (
+                  <div style={{ border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden" }}>
+                    {pwModal.history.map((h, i) => (
+                      <div key={h.id} style={{ padding: "12px 16px", borderBottom: i < pwModal.history.length - 1 ? "1px solid var(--line)" : "none", display: "flex", alignItems: "center", gap: 12, background: i === 0 ? "rgba(16,185,129,0.04)" : "transparent" }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: h.action === "force_change" ? "rgba(217,119,6,0.15)" : "rgba(16,185,129,0.12)", display: "grid", placeItems: "center" }}>
+                          <Icon name="lock" size={14} style={{ color: h.action === "force_change" ? "#d97706" : "#10b981" }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                            {actionLabel(h.action)}
+                            {i === 0 && <span style={{ fontSize: 10, background: "rgba(16,185,129,0.15)", color: "#059669", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>ล่าสุด</span>}
+                          </div>
+                          {h.note && <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 2 }}>{h.note}</div>}
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)" }}>
+                            {new Date(h.changed_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}
+                          </div>
+                          <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>
+                            {new Date(h.changed_at).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding: "14px 24px", borderTop: "1px solid var(--line)", flexShrink: 0 }}>
+                <button className="btn btn-outline" style={{ width: "100%", height: 40 }} onClick={() => setPwModal(null)}>ปิด</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
