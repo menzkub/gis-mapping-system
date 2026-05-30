@@ -1304,11 +1304,12 @@ function App() {
     />
   );
 
+  const isAdmin = currentUser.role === "admin";
   const navItems = [
     { id: "search",  icon: "search",   label: t("navSearch")  },
     { id: "profile", icon: "user",     label: t("navProfile") },
     { id: "guide",   icon: "book",     label: t("navGuide")   },
-    ...(currentUser.role === "admin" ? [{ id: "admin", icon: "settings", label: t("navAdmin") }] : []),
+    ...(isAdmin ? [{ id: "admin", icon: "settings", label: t("navAdmin") }] : []),
   ];
   const ADMIN_NAV = [
     { id: "dashboard", icon: "dashboard", label: t("admDashboard") },
@@ -1319,7 +1320,7 @@ function App() {
     { id: "audit",     icon: "history",   label: t("admAudit")     },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
-    { id: "dev",       icon: "code",      label: t("admDev")       },
+    ...(isAdmin ? [{ id: "dev", icon: "code", label: t("admDev") }] : []),
   ];
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 

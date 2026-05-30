@@ -97,7 +97,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
           addAudit={addAudit} currentUser={currentUser} />}
         {tab === "guide"     && <AdminGuide />}
-        {tab === "dev"       && <AdminDevGuide />}
+        {tab === "dev"       && currentUser.role === "admin" && <AdminDevGuide />}
       </div>
     </div>
   );
