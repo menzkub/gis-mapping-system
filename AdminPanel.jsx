@@ -8,19 +8,74 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil }) {
   const NAV_LABELS = { dashboard:"Dashboard", users:"ผู้ใช้งาน", meters:"PEA มิเตอร์", trs:"PEA หม้อแปลง", import:"นำเข้าข้อมูล", audit:"Audit Log", settings:"ตั้งค่า" };
+  const pendingCount = data.users.filter(u => u.status === "pending").length;
+  const MOB_NAV = [
+    { id:"dashboard", icon:"dashboard", label:"Dashboard"    },
+    { id:"users",     icon:"users",     label:"ผู้ใช้งาน"    },
+    { id:"meters",    icon:"meter",     label:"มิเตอร์"      },
+    { id:"trs",       icon:"tr",        label:"หม้อแปลง"     },
+    { id:"import",    icon:"upload",    label:"นำเข้า"       },
+    { id:"audit",     icon:"history",   label:"Audit"        },
+    { id:"settings",  icon:"settings",  label:"ตั้งค่า"      },
+  ];
 
   return (
     <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
       <style>{`
         .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; }
-        @media (max-width: 680px) { .adm-body { padding: 12px 14px 24px; } }
+        /* Mobile admin tab bar */
+        .adm-mob-tabs { display: none; }
+        @media (max-width: 640px) {
+          .adm-body { padding: 10px 12px 20px; }
+          .adm-mob-tabs {
+            display: flex; overflow-x: auto; gap: 4px;
+            padding: 8px 12px; border-bottom: 1px solid var(--line);
+            scrollbar-width: none; flex-shrink: 0;
+          }
+          .adm-mob-tabs::-webkit-scrollbar { display: none; }
+          .adm-mob-tab {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 6px 12px; border-radius: 10px; flex-shrink: 0;
+            font-size: 11px; font-weight: 700;
+            color: var(--ink-mute); border: 1px solid transparent;
+            cursor: pointer; white-space: nowrap; position: relative;
+            transition: all 140ms;
+          }
+          .adm-mob-tab.on {
+            background: linear-gradient(135deg,rgba(244,123,32,0.14),rgba(139,63,196,0.14));
+            border-color: rgba(244,123,32,0.35); color: var(--ink);
+          }
+          .adm-mob-badge {
+            position: absolute; top: 3px; right: 5px;
+            background: var(--pea-orange-500); color: white;
+            border-radius: 99px; min-width: 14px; height: 14px;
+            font-size: 8px; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; padding: 0 3px;
+          }
+        }
       `}</style>
-      <div style={{ padding: "16px 20px 0", flexShrink: 0 }}>
+
+      {/* Header */}
+      <div style={{ padding: "14px 20px 0", flexShrink: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--pea-orange-500)", letterSpacing: "0.14em", textTransform: "uppercase" }}>Admin</div>
         <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{NAV_LABELS[tab] || "จัดการระบบ"}</div>
       </div>
+
+      {/* Mobile-only horizontal tab bar */}
+      <div className="adm-mob-tabs">
+        {MOB_NAV.map(n => (
+          <button key={n.id} className={"adm-mob-tab" + (tab === n.id ? " on" : "")} onClick={() => setTab(n.id)}>
+            <Icon name={n.icon} size={16} />
+            {n.label}
+            {n.id === "users" && pendingCount > 0 && (
+              <span className="adm-mob-badge">{pendingCount}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
       <div className="adm-body">
         {tab === "dashboard" && <AdminDashboard data={data} />}
         {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
@@ -39,6 +94,13 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, maintenanceMode
 }
 
 /* ---------- Dashboard — all stats from data.dashStats (server aggregates) ---------- */
+function fmtStat(n) {
+  if (n >= 1e8) return (n / 1e6).toFixed(0) + "ล.";
+  if (n >= 1e7) return (n / 1e6).toFixed(1) + "ล.";
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + "ล.";
+  return n.toLocaleString();
+}
+
 function AdminDashboard({ data }) {
   const s = data.dashStats || {};
   const meterCount = +(s.meter_count  || 0);
@@ -73,10 +135,10 @@ function AdminDashboard({ data }) {
 
       {/* Stat cards — 4 cols desktop, 2×2 mobile */}
       <div className="db-stat-grid">
-        <StatCard label="มิเตอร์ทั้งหมด"  value={meterCount.toLocaleString()} delta={4} icon="meter"  accent="purple" />
-        <StatCard label="หม้อแปลงทั้งหมด" value={trCount.toLocaleString()}    delta={2} icon="tr"     accent="orange" />
-        <StatCard label="กำลัง (kVA)"      value={totalKva.toLocaleString()}   delta={6} icon="bolt"  accent="blue" />
-        <StatCard label="ผู้ใช้งาน"        value={data.users.length} delta={pending > 0 ? pending : 0} icon="users" accent="green" />
+        <StatCard label="มิเตอร์ทั้งหมด"  value={fmtStat(meterCount)} delta={4} icon="meter"  accent="purple" />
+        <StatCard label="หม้อแปลงทั้งหมด" value={fmtStat(trCount)}    delta={2} icon="tr"     accent="orange" />
+        <StatCard label="กำลัง (kVA)"      value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue" />
+        <StatCard label="ผู้ใช้งาน"        value={fmtStat(data.users.length)} delta={pending > 0 ? pending : 0} icon="users" accent="green" />
       </div>
 
       {/* Feeder + Donut — side-by-side desktop, stacked mobile */}

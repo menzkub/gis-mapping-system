@@ -162,7 +162,7 @@ function StatCard({ label, value, delta, icon, accent = "purple" }) {
         )}
       </div>
       <div className="t-mute text-xs fw-6" style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-      <div className="text-3xl fw-8 t-display" style={{ marginTop: 4, color: "var(--ink)" }}>{value}</div>
+      <div className="fw-8 t-display" style={{ marginTop: 4, color: "var(--ink)", fontSize: String(value).length <= 7 ? 30 : String(value).length <= 10 ? 24 : 18, lineHeight: 1.15, letterSpacing: String(value).length > 7 ? "-0.02em" : 0 }}>{value}</div>
     </div>
   );
 }

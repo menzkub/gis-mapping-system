@@ -411,6 +411,9 @@ a { color: inherit; text-decoration: none; }
   .admin-tabs::-webkit-scrollbar { display: none; }
   .admin-tabs .tab { flex-shrink: 0; font-size: 12px !important; padding: 0 10px !important; height: 36px !important; }
 
+  /* Admin: hide sidebar sub-nav on mobile (shown inside content instead) */
+  .adm-subnav { display: none !important; }
+
   /* Show logout button in topbar on mobile */
   .topbar-logout { display: flex !important; }
 }
