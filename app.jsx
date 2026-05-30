@@ -1319,6 +1319,7 @@ function App() {
     { id: "audit",     icon: "history",   label: t("admAudit")     },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
+    { id: "dev",       icon: "code",      label: t("admDev")       },
   ];
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 

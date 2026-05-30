@@ -14,6 +14,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
     trs: t("admTrs"), import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
     guide: t("admGuide"),
+    dev: t("admDev"),
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
   const MOB_NAV = [
@@ -25,6 +26,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"audit",     icon:"history",   label:t("admMobAudit")   },
     { id:"settings",  icon:"settings",  label:t("admSettings")   },
     { id:"guide",     icon:"book",      label:t("admMobGuide")   },
+    { id:"dev",       icon:"code",      label:t("admMobDev")     },
   ];
 
   return (
@@ -95,6 +97,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
           addAudit={addAudit} currentUser={currentUser} />}
         {tab === "guide"     && <AdminGuide />}
+        {tab === "dev"       && <AdminDevGuide />}
       </div>
     </div>
   );
@@ -582,6 +585,459 @@ function AdminGuide() {
             ["🔄 Refresh", "Topbar ขวา", "โหลดข้อมูลใหม่โดยไม่ต้อง reload หน้า"],
             ["🔔 Bell", "Topbar ขวา", "แจ้งเตือน pending users + กิจกรรมล่าสุด"],
           ]} />
+        </div>
+      </GuideSection>
+    </div>
+  );
+}
+
+/* ---------- Developer Documentation ---------- */
+function CodeBlock({ children }) {
+  return (
+    <pre style={{
+      background: "var(--ink-2)", color: "#e2d9f3", borderRadius: 10,
+      padding: "12px 16px", fontSize: 12, lineHeight: 1.7,
+      overflowX: "auto", margin: "10px 0", fontFamily: "'IBM Plex Mono',monospace",
+      border: "1px solid var(--line-2)",
+    }}>{children}</pre>
+  );
+}
+
+function DevBadge({ color, children }) {
+  const colors = {
+    purple: { bg: "rgba(139,63,196,0.12)", border: "rgba(139,63,196,0.3)", text: "var(--pea-purple-600)" },
+    orange: { bg: "rgba(244,123,32,0.12)", border: "rgba(244,123,32,0.3)", text: "var(--pea-orange-600)" },
+    green:  { bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.3)", text: "#047857" },
+    blue:   { bg: "rgba(59,130,246,0.10)", border: "rgba(59,130,246,0.3)", text: "#1d4ed8" },
+    gray:   { bg: "rgba(107,102,133,0.10)", border: "rgba(107,102,133,0.2)", text: "var(--ink-mute)" },
+  };
+  const c = colors[color] || colors.gray;
+  return (
+    <span style={{ display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700,
+      background:c.bg, border:`1px solid ${c.border}`, color:c.text, marginLeft:4, verticalAlign:"middle" }}>
+      {children}
+    </span>
+  );
+}
+
+function AdminDevGuide() {
+  return (
+    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      {/* Hero */}
+      <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#1b0926 0%,#321148 50%,#4f1e6e 100%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden", border: "1px solid rgba(139,63,196,0.3)" }}>
+        <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(139,63,196,0.12)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="code" size={26} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Developer Documentation</div>
+            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>คู่มือสำหรับนักพัฒนา — โครงสร้างโค้ด, ฐานข้อมูล, API และ Helpers</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+          {[["React 18","purple"],["Babel Standalone","orange"],["Supabase","green"],["Leaflet 1.9","blue"],["GitHub Pages","gray"]].map(([label, color]) => (
+            <span key={label} style={{
+              padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)"
+            }}>{label}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── SECTION: Architecture ─── */}
+      <GuideSection icon="cpu" title="สถาปัตยกรรมระบบ (Architecture)">
+        <div style={{ marginTop: 12 }}>
+          <GuideTip>ระบบนี้ไม่มี build step — แก้ไขไฟล์ .jsx แล้ว git push ได้เลย ไม่ต้อง npm install หรือ webpack</GuideTip>
+          <CodeBlock>{`Browser
+  ├── index.html          ← entry point, โหลด CDN ทุกตัวตามลำดับ
+  ├── CDN (head)
+  │    ├── Leaflet CSS/JS
+  │    ├── React 18 (production UMD)
+  │    ├── ReactDOM 18 (production UMD)
+  │    ├── Babel Standalone  ← compile JSX ใน browser runtime
+  │    └── Supabase JS v2
+  └── Scripts (body)
+       ├── config.js       ← global: _supabase, mappers, loadAll
+       ├── lang.jsx        ← global: LangProvider, useLang
+       ├── components.jsx  ← global: Icon, Modal, Toast, Confirm…
+       ├── MapView.jsx     ← component: <MapView>
+       ├── AuthScreen.jsx  ← component: <AuthScreen>
+       ├── SearchView.jsx  ← component: <SearchView>
+       ├── AdminPanel.jsx  ← component: <AdminPanel>
+       └── app.jsx         ← ReactDOM.render(<App>)`}</CodeBlock>
+          <GuideNote>Babel Standalone compile JSX ทุกครั้งที่โหลดหน้า — เหมาะกับ dev/internal app ขนาดเล็ก ถ้าต้องการเร็วขึ้นอีกควรย้ายไปใช้ Vite หรือ Next.js</GuideNote>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>การไหลของข้อมูล</div>
+          <CodeBlock>{`App (app.jsx)
+  ├── โหลด session จาก Supabase Auth
+  ├── โหลด data: users, dashStats จาก Supabase
+  ├── ส่ง data ลงไปยัง child components
+  │
+  ├── <SearchView>   ← query Supabase โดยตรง (server-side search)
+  ├── <MapView>      ← รับ points[] จาก SearchView, render Leaflet
+  ├── <AdminPanel>   ← รับ data + setData, query/mutate Supabase
+  └── <ProfileView>  ← อยู่ใน app.jsx, query Supabase Auth`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Files ─── */}
+      <GuideSection icon="package" title="ไฟล์และหน้าที่">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["ไฟล์", "บทบาท", "ขนาด"],
+            ["config.js", "Supabase client + row mappers (to/from DB)", "~150 บรรทัด"],
+            ["lang.jsx", "ระบบ i18n ไทย/อังกฤษ — LangProvider + useLang()", "~340 บรรทัด"],
+            ["components.jsx", "Shared UI: Icon, Modal, Toast, Confirm, StatCard, downloadCSV", "~326 บรรทัด"],
+            ["MapView.jsx", "Leaflet map wrapper — cluster, heatmap, GPS, measure", "~364 บรรทัด"],
+            ["AuthScreen.jsx", "Login, Signup, Forgot password + canvas animation background", "~775 บรรทัด"],
+            ["SearchView.jsx", "ค้นหา Meter/TR (server-side), filters, export, map integration", "~653 บรรทัด"],
+            ["AdminPanel.jsx", "Dashboard, Users, Meters, TRs, Import, Audit, Settings, Guide, Dev", "~1730 บรรทัด"],
+            ["app.jsx", "App root, routing, auth state, ProfileView, MaintenanceScreen", "~1600 บรรทัด"],
+            ["data.js", "Static fallback data (meters/TR/users จาก Fang, Chiang Mai)", "~43 บรรทัด"],
+            ["styles.css", "CSS variables (light/dark theme), component styles, utilities", "~529 บรรทัด"],
+          ]} />
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Database ─── */}
+      <GuideSection icon="database" title="ฐานข้อมูล Supabase">
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>การเชื่อมต่อ</div>
+          <CodeBlock>{`// config.js
+const SUPABASE_URL  = "https://<PROJECT_ID>.supabase.co";
+const SUPABASE_ANON = "<ANON_KEY>";
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+// _supabase ถูก attach ไว้ที่ window — เรียกใช้ได้ทุกไฟล์`}</CodeBlock>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ตาราง (Tables)</div>
+          <GuideTable rows={[
+            ["Table", "Primary Key", "คำอธิบาย"],
+            ["profiles", "id (uuid = auth.uid)", "ข้อมูลผู้ใช้: username, name, role, status, last_login"],
+            ["meters", "objectid (bigint)", "มิเตอร์: tag, code, route, accountnum, peano, feederid, owner, lat, lng"],
+            ["transformers", "objectid (bigint)", "หม้อแปลง: tag, phase, voltage, peano_tr, kva, owner_tr, location, feeder1, lat, lng"],
+            ["audit_log", "id (bigserial)", "บันทึก: user_id, username, action, target, detail, ip, at"],
+            ["settings", "key (text)", "ค่าตั้งค่า key-value: maintenance_mode, maintenance_message, maintenance_until"],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>RPC Functions</div>
+          <CodeBlock>{`-- Dashboard stats (meters, transformers, kva, feeders top 8)
+SELECT * FROM get_dashboard_stats();
+
+-- Unique feeders list
+SELECT * FROM get_feeders();`}</CodeBlock>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>RLS Policy สรุป</div>
+          <GuideTable rows={[
+            ["Table", "SELECT", "INSERT", "UPDATE", "DELETE"],
+            ["profiles", "เจ้าของ / admin", "—", "เจ้าของ / admin", "—"],
+            ["meters", "active user", "admin", "admin", "admin"],
+            ["transformers", "active user", "admin", "admin", "admin"],
+            ["audit_log", "admin", "authenticated", "—", "—"],
+            ["settings", "active user", "—", "admin", "—"],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Triggers</div>
+          <CodeBlock>{`-- Auto-create profile เมื่อสมัครสมาชิก
+handle_new_user()  →  INSERT INTO profiles (id, email, role='user', status='pending')
+
+-- Auto-update updated_at
+touch_updated_at() →  UPDATE meters/transformers SET updated_at = NOW()`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Row Mappers ─── */}
+      <GuideSection icon="arrowRight" title="Row Mappers — DB ↔ App (config.js)">
+        <div style={{ marginTop: 12 }}>
+          <GuideNote>Supabase ใช้ snake_case ส่วน App ใช้ UPPERCASE — mappers แปลงระหว่างสองฝั่ง</GuideNote>
+          <CodeBlock>{`// DB → App (อ่านข้อมูล)
+toMeter(row)         // row.feederid   → m.FEEDERID
+toTransformer(row)   // row.peano_tr   → t.PEANO_TR
+toProfile(row)       // row.last_login → u.lastLogin
+toAuditEntry(row)    // row.at         → entry.at (Date object)
+
+// App → DB (เขียนข้อมูล)
+fromMeter(m)         // m.FEEDERID     → row.feederid
+fromTransformer(t)   // t.PEANO_TR     → row.peano_tr
+fromProfilePatch(p)  // selective patch, ไม่ส่ง field ที่ไม่ได้เปลี่ยน
+
+// ตัวอย่างการใช้งาน
+const { data } = await _supabase.from("meters").select("*").limit(100);
+const meters = data.map(toMeter);  // แปลงก่อนใช้ใน component`}</CodeBlock>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>loadAll — bypass Supabase 1000-row limit</div>
+          <CodeBlock>{`// config.js — paginate จนได้ทุก row
+async function loadAll(table) {
+  let all = [], from = 0;
+  while (true) {
+    const { data } = await _supabase.from(table).select("*")
+      .order("id").range(from, from + 999);
+    if (!data?.length) break;
+    all = [...all, ...data];
+    if (data.length < 1000) break;
+    from += 1000;
+  }
+  return all;
+}
+// ใช้งาน
+const allMeters = (await loadAll("meters")).map(toMeter);`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Components API ─── */}
+      <GuideSection icon="grid" title="Shared Components API (components.jsx)">
+        <div style={{ marginTop: 12 }}>
+
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Icon <DevBadge color="blue">global</DevBadge></div>
+          <CodeBlock>{`<Icon name="search" size={18} style={{ color: "red" }} />
+// Icons ที่มี: search, map, meter, tr, user, settings, dashboard, users,
+// upload, history, book, code, database, cpu, link, package, key,
+// download, refresh, bell, filter, close, plus, edit, trash, warning,
+// check, info, tip, sun, moon, layers, navigation, location, lock,
+// mail, logout, copy, arrowRight, menu, chevDown, chevRight, chevLeft,
+// flame, grid, table, ruler, eyeOff, eye`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 6px" }}>useToast <DevBadge color="green">hook</DevBadge></div>
+          <CodeBlock>{`const toast = useToast();
+toast("บันทึกสำเร็จ", "success");   // ✓ สีเขียว
+toast("เกิดข้อผิดพลาด", "error");  // ✗ สีแดง
+toast("กำลังโหลด...", "info");      // ℹ สีฟ้า
+// auto-dismiss หลัง 3.2 วินาที`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 6px" }}>useConfirm <DevBadge color="green">hook</DevBadge></div>
+          <CodeBlock>{`const confirm = useConfirm();
+const ok = await confirm({
+  title: "ลบข้อมูล?",
+  message: "การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  tone: "danger",   // "danger" | "warning" | "info"
+  confirmText: "ลบ",
+  cancelText: "ยกเลิก",
+});
+if (ok) { /* ดำเนินการต่อ */ }`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 6px" }}>Modal <DevBadge color="purple">component</DevBadge></div>
+          <CodeBlock>{`<Modal open={showModal} onClose={() => setShowModal(false)}
+  title="แก้ไขข้อมูล" width={560}
+  footer={<button className="btn btn-primary">บันทึก</button>}>
+  {/* content */}
+</Modal>`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 6px" }}>StatCard <DevBadge color="purple">component</DevBadge></div>
+          <CodeBlock>{`<StatCard label="มิเตอร์ทั้งหมด" value={1234}
+  icon="meter" accent="purple"
+  delta="+12 เดือนนี้" />`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 6px" }}>ExportDialog <DevBadge color="orange">AdminPanel only</DevBadge></div>
+          <CodeBlock>{`<ExportDialog open={showExport} onClose={() => setShowExport(false)}
+  onConfirm={() => { downloadCSV("file.csv", rows); setShowExport(false); }}
+  count={rows.length} filename="file.csv" label="PEA Meter" />`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Helpers ─── */}
+      <GuideSection icon="key" title="Utility Functions">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["Function", "ที่อยู่", "การใช้งาน"],
+            ["downloadCSV(filename, rows)", "components.jsx", "แปลง Array → CSV แล้ว download อัตโนมัติ"],
+            ["formatThaiDate(d)", "components.jsx", "Date → 'YYYY-MM-DD HH:MM:SS'"],
+            ["loadAll(table)", "config.js", "ดึงข้อมูลทุก row โดย bypass 1000-row limit"],
+            ["toMeter / fromMeter", "config.js", "แปลง DB row ↔ App object สำหรับมิเตอร์"],
+            ["toTransformer / fromTransformer", "config.js", "แปลง DB row ↔ App object สำหรับหม้อแปลง"],
+            ["toProfile / fromProfilePatch", "config.js", "แปลง DB row ↔ App object สำหรับ user"],
+            ["toAuditEntry", "config.js", "แปลง DB row → Audit log entry พร้อม Date"],
+          ]} />
+          <CodeBlock>{`// downloadCSV — รองรับ value ที่มี comma หรือ newline
+downloadCSV("export.csv", [
+  { TAG: "MT001", PEANO: "123", OWNER: "PEA" },
+  { TAG: "MT002", PEANO: "456", OWNER: "Customer" },
+]);
+
+// formatThaiDate
+formatThaiDate(new Date()); // "2025-05-30 14:32:00"`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: i18n ─── */}
+      <GuideSection icon="book" title="ระบบภาษา i18n (lang.jsx)">
+        <div style={{ marginTop: 12 }}>
+          <CodeBlock>{`// 1. ใน component — ดึง t() จาก useLang
+const { t } = useLang();
+<div>{t("navSearch")}</div>  // → "ค้นหา" หรือ "Search"
+
+// 2. เพิ่ม translation key ใหม่ใน lang.jsx
+// หา TRANSLATIONS object → เพิ่มใน th: { ... } และ en: { ... }
+th: {
+  myNewKey: "ข้อความภาษาไทย",
+},
+en: {
+  myNewKey: "English text",
+}
+
+// 3. เรียกใช้
+t("myNewKey")  // แสดงตามภาษาปัจจุบัน`}</CodeBlock>
+          <GuideNote>Translation keys ใช้ prefix เพื่อจัดหมวดหมู่: nav* (navigation), adm* (admin), db* (dashboard), auth* (auth screen), act* (activity log)</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: CSS ─── */}
+      <GuideSection icon="sun" title="CSS Design System (styles.css)">
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Color Tokens</div>
+          <CodeBlock>{`/* Brand Colors */
+--pea-purple-900: #1b0926   /* พื้นหลัง Sidebar */
+--pea-purple-800: #321148   /* Gradient เข้ม */
+--pea-purple-600: #6b2c91   /* Gradient หลัก */
+--pea-purple-500: #8b3fc4   /* สีหลัก, accent */
+--pea-orange-500: #f47b20   /* สีส้ม, CTA */
+--pea-orange-300: #ffba7a   /* ข้อความบน Sidebar */
+
+/* Semantic (เปลี่ยนตาม light/dark) */
+--ink            /* ข้อความหลัก */
+--ink-mute       /* ข้อความรอง */
+--surface        /* พื้นหลัง card */
+--soft           /* พื้นหลัง input/tag */
+--line           /* เส้น border */
+--bg             /* พื้นหลังหน้า */
+
+/* Status */
+--green: #10b981  --red: #ef4444  --amber: #f59e0b  --blue: #3b82f6`}</CodeBlock>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Utility Classes</div>
+          <CodeBlock>{`/* Layout */
+.f-col        → flex-direction: column
+.f-between    → flex + justify-content: space-between
+.f-gap-2/3/4  → gap: 8px / 12px / 16px
+.f-wrap       → flex-wrap: wrap
+
+/* Typography */
+.text-sm / .text-lg  → font-size 12px / 18px
+.fw-6 / .fw-7        → font-weight 600 / 700
+.t-mute              → color: var(--ink-mute)
+.t-eyebrow           → uppercase tracking label
+.mono                → font-family IBM Plex Mono
+
+/* Components */
+.btn .btn-primary .btn-outline .btn-sm
+.input          → styled text input
+.card .card-elev → card with optional elevation
+.badge .badge-purple .badge-orange .badge-green
+.table          → styled data table
+.fade-in / .fade-up → CSS animations`}</CodeBlock>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Dark Mode</div>
+          <CodeBlock>{`/* styles.css — dark mode ทำงานผ่าน data attribute */
+[data-theme="dark"] {
+  --ink: #f3eefa;
+  --surface: #1a1330;
+  --bg: #0e0a16;
+  /* ... */
+}
+
+// app.jsx — toggle
+document.documentElement.dataset.theme = theme; // "light" | "dark"
+localStorage.setItem("pea_theme", theme);`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: MapView API ─── */}
+      <GuideSection icon="map" title="MapView Props API">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["Prop", "Type", "Default", "คำอธิบาย"],
+            ["points", "Array", "[]", "รายการ marker — ต้องมี LATITUDE, LONGITUDE, OBJECTID"],
+            ["kind", "string", "'meter'", "'meter' หรือ 'tr' — ส่งผลต่อสี icon และ popup"],
+            ["selectedId", "number|null", "null", "OBJECTID ที่ถูก highlight"],
+            ["onSelect", "fn(point)", "—", "callback เมื่อกด marker หรือ item ใน cluster popup"],
+            ["onNavigate", "fn(point)", "—", "callback เมื่อกดปุ่มนำทางใน popup"],
+            ["baseMap", "string", "'satellite'", "'street' หรือ 'satellite'"],
+            ["showHeatmap", "boolean", "false", "แสดง heatmap overlay"],
+            ["showCluster", "boolean", "true", "รวมกลุ่ม marker เมื่อซูมออก"],
+          ]} />
+          <CodeBlock>{`<MapView
+  points={results}          // Array ของ meter หรือ transformer objects
+  kind="meter"              // ชนิดของ marker
+  selectedId={selected?.OBJECTID}
+  onSelect={(p) => setSelected(p)}
+  onNavigate={(p) => startNavigation(p)}
+  baseMap={baseMap}         // "street" | "satellite"
+  showHeatmap={heatmap}
+  showCluster={cluster}
+/>`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Adding Features ─── */}
+      <GuideSection icon="plus" title="วิธีเพิ่มฟีเจอร์ใหม่">
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>เพิ่ม Admin Tab ใหม่</div>
+          <GuideStep n={1} text="เพิ่ม key ใน lang.jsx (ทั้ง th และ en): admMyTab: 'ชื่อแท็บ'" />
+          <GuideStep n={2} text="เพิ่มใน NAV_LABELS และ MOB_NAV ใน AdminPanel.jsx" />
+          <GuideStep n={3} text="เพิ่มใน ADMIN_NAV ใน app.jsx (ซ้าย sidebar)" />
+          <GuideStep n={4} text="เพิ่ม {tab === 'myTab' && <MyComponent />} ใน return ของ AdminPanel" />
+          <GuideStep n={5} text="สร้าง function MyComponent() { } ใน AdminPanel.jsx" />
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Query Supabase</div>
+          <CodeBlock>{`// SELECT
+const { data, error } = await _supabase
+  .from("meters")
+  .select("*")
+  .ilike("tag", \`%\${q}%\`)
+  .limit(100);
+
+// INSERT
+const { error } = await _supabase
+  .from("meters")
+  .insert(fromMeter(newMeter));
+
+// UPDATE
+const { error } = await _supabase
+  .from("meters")
+  .update(fromMeter(edited))
+  .eq("objectid", edited.OBJECTID);
+
+// DELETE
+const { error } = await _supabase
+  .from("meters")
+  .delete()
+  .eq("objectid", id);`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เพิ่ม Icon ใหม่</div>
+          <CodeBlock>{`// components.jsx — เพิ่มใน paths object
+myIcon: <path d="..." />,  // SVG path ขนาด 24x24 viewBox
+// แล้วใช้งาน
+<Icon name="myIcon" size={18} />`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Audit Log ทุก Action สำคัญ</div>
+          <CodeBlock>{`// addAudit ส่งมาจาก App ผ่าน props
+addAudit({
+  user: currentUser.username,
+  action: "create_meter",        // snake_case action name
+  target: \`TAG \${meter.TAG}\`,   // สิ่งที่ถูก action
+  detail: \`เพิ่มมิเตอร์ใหม่\`,   // รายละเอียดเพิ่มเติม
+});`}</CodeBlock>
+
+          <GuideTip>Commit message ควรอธิบาย "ทำอะไร" ให้ชัดเจน เช่น "Add feeder filter to transformer search" เพื่อให้ git log อ่านง่าย</GuideTip>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Deploy ─── */}
+      <GuideSection icon="link" title="Deploy & การพัฒนา">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["Task", "Command / วิธี"],
+            ["Push code", "git add . → git commit -m '...' → git push origin main"],
+            ["ทดสอบ local", "python3 -m http.server 8080 แล้วเปิด localhost:8080"],
+            ["ดู error", "เปิด DevTools (F12) → Console → ดู JS errors"],
+            ["Reset Schema", "Supabase SQL Editor → รัน schema.sql ใหม่"],
+            ["เพิ่ม Admin", "Supabase Table Editor → profiles → แก้ role='admin', status='active'"],
+            ["Environment", "GitHub Pages (static) — ไม่มี server-side code"],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Dependencies ที่โหลดจาก CDN</div>
+          <GuideTable rows={[
+            ["Library", "Version", "CDN", "ใช้ทำอะไร"],
+            ["React", "18.3.1", "unpkg.com", "UI framework"],
+            ["ReactDOM", "18.3.1", "unpkg.com", "Render React ลง DOM"],
+            ["Babel Standalone", "7.29.0", "unpkg.com", "Compile JSX → JS ใน browser"],
+            ["Leaflet", "1.9.4", "unpkg.com", "Interactive map"],
+            ["Supabase JS", "2.x", "cdn.jsdelivr.net", "Database client + Auth"],
+            ["IBM Plex Sans Thai", "—", "Google Fonts", "Font หลัก (ไทย/EN)"],
+            ["IBM Plex Mono", "—", "Google Fonts", "Font mono สำหรับ code/ID"],
+          ]} />
+          <GuideNote>ไม่มี package.json, node_modules, หรือ build pipeline — เพิ่ม dependency ใหม่ได้โดยเพิ่ม script tag ใน index.html</GuideNote>
         </div>
       </GuideSection>
     </div>
