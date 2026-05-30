@@ -84,24 +84,27 @@ function fromTransformer(t) {
 
 function toProfile(row) {
   return {
-    id:         row.id,
-    username:   row.username   || "",
-    name:       row.name       || "",
-    email:      row.email      || "",
-    role:       row.role       || "user",
-    status:     row.status     || "pending",
-    require_2fa: row.require_2fa || false,
-    created:    row.created_at  ? row.created_at.slice(0, 10) : "",
-    lastLogin:  row.last_login  ? row.last_login.replace("T", " ").slice(0, 16) : "—",
+    id:                row.id,
+    username:          row.username          || "",
+    name:              row.name              || "",
+    email:             row.email             || "",
+    role:              row.role              || "user",
+    status:            row.status            || "pending",
+    require_2fa:       row.require_2fa       || false,
+    created:           row.created_at        ? row.created_at.slice(0, 10) : "",
+    lastLogin:         row.last_login        ? row.last_login.replace("T", " ").slice(0, 16) : "—",
+    passwordChangedAt: row.password_changed_at || null,
+    pw_force_change:   row.pw_force_change   || false,
   };
 }
 function fromProfilePatch(patch) {
   const out = {};
-  if (patch.name        !== undefined) out.name        = patch.name;
-  if (patch.role        !== undefined) out.role        = patch.role;
-  if (patch.status      !== undefined) out.status      = patch.status;
-  if (patch.username    !== undefined) out.username    = patch.username;
-  if (patch.require_2fa !== undefined) out.require_2fa = patch.require_2fa;
+  if (patch.name              !== undefined) out.name               = patch.name;
+  if (patch.role              !== undefined) out.role               = patch.role;
+  if (patch.status            !== undefined) out.status             = patch.status;
+  if (patch.username          !== undefined) out.username           = patch.username;
+  if (patch.require_2fa       !== undefined) out.require_2fa        = patch.require_2fa;
+  if (patch.pw_force_change   !== undefined) out.pw_force_change    = patch.pw_force_change;
   return out;
 }
 

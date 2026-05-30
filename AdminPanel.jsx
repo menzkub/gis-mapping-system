@@ -1300,6 +1300,27 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     if (ok) await updateUser(u.id, { status: "banned" }, "ban_user", `ระงับบัญชี ${u.username}`, `ระงับบัญชี ${u.name}`);
   };
 
+  const unlockPw = async (u) => {
+    const ok = await confirm({
+      title: "ปลดล็อครหัสผ่านหมดอายุ",
+      message: <>ปลดล็อคให้ <b>{u.name}</b> เข้าสู่ระบบได้ชั่วคราว — ระบบจะบังคับให้เปลี่ยนรหัสผ่านทันที</>,
+      target: `@${u.username}`,
+      confirmText: "ปลดล็อค",
+      tone: "primary",
+    });
+    if (ok) await updateUser(
+      u.id, { pw_force_change: true },
+      "unlock_password", `ปลดล็อครหัสผ่านหมดอายุ ${u.username}`,
+      `ปลดล็อค ${u.name} แล้ว — ผู้ใช้ต้องเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบ`
+    );
+  };
+
+  const pwDaysLeft = (u) => {
+    if (!u.passwordChangedAt) return null;
+    const daysOld = (Date.now() - new Date(u.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24);
+    return Math.ceil(45 - daysOld);
+  };
+
   const saveEdit = async () => {
     if (!edit) return;
     setSaving(true);
@@ -1331,6 +1352,11 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
   const banned  = users.filter(u => u.status === "banned").length;
   const admins  = users.filter(u => u.role === "admin").length;
   const with2fa = users.filter(u => u.require_2fa).length;
+  const pwExpired = users.filter(u => {
+    if (u.pw_force_change) return false;
+    const d = pwDaysLeft(u);
+    return d !== null && d <= 0;
+  }).length;
   const pct = (n) => total ? Math.round(n / total * 100) : 0;
 
   return (
@@ -1340,17 +1366,17 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         .au-cards { display: none; }
         .au-card  { padding: 14px 2px; border-bottom: 1px solid var(--line); }
         .au-card:last-child { border-bottom: none; }
-        .au-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .au-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         .au-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 900px) {
+          .au-stat-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
         @media (max-width: 680px) {
           .au-dt    { display: none !important; }
           .au-cards { display: block !important; }
           .au-search { width: 100% !important; }
           .au-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .au-breakdown { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 400px) {
-          .au-stat-grid { grid-template-columns: 1fr 1fr !important; }
         }
       `}</style>
 
@@ -1362,12 +1388,13 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         {/* Stat cards row */}
         <div className="au-stat-grid" style={{ marginBottom: 14 }}>
           {[
-            { label: "ทั้งหมด",   value: total,   icon: "users",   color: "#6b2c91", bg: "rgba(107,44,145,0.1)" },
-            { label: "ใช้งานได้",  value: active,  icon: "check",   color: "#10b981", bg: "rgba(16,185,129,0.1)" },
-            { label: "รออนุมัติ", value: pending, icon: "bell",    color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-            { label: "ระงับ",     value: banned,  icon: "close",   color: "#ef4444", bg: "rgba(239,68,68,0.1)"  },
-            { label: "Admin",     value: admins,  icon: "settings",color: "#f47b20", bg: "rgba(244,123,32,0.1)" },
-            { label: "เปิด 2FA",  value: with2fa, icon: "lock",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
+            { label: "ทั้งหมด",       value: total,     icon: "users",   color: "#6b2c91", bg: "rgba(107,44,145,0.1)" },
+            { label: "ใช้งานได้",    value: active,    icon: "check",   color: "#10b981", bg: "rgba(16,185,129,0.1)" },
+            { label: "รออนุมัติ",   value: pending,   icon: "bell",    color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
+            { label: "ระงับ",       value: banned,    icon: "close",   color: "#ef4444", bg: "rgba(239,68,68,0.1)"  },
+            { label: "Admin",       value: admins,    icon: "settings",color: "#f47b20", bg: "rgba(244,123,32,0.1)" },
+            { label: "เปิด 2FA",    value: with2fa,   icon: "lock",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
+            { label: "รหัสผ่านหมดอายุ", value: pwExpired, icon: "warning", color: "#dc2626", bg: "rgba(220,38,38,0.1)" },
           ].map(({ label, value, icon, color, bg }) => (
             <div key={label} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1447,9 +1474,12 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       {/* Desktop: table */}
       <div className="au-dt">
         <table className="table">
-          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "รหัสผ่าน", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
           <tbody>
-            {list.map(u => (
+            {list.map(u => {
+              const dl = pwDaysLeft(u);
+              const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;
+              return (
               <tr key={u.id}>
                 <td>
                   <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
@@ -1478,6 +1508,30 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     {u.require_2fa ? "เปิดอยู่" : "ปิดอยู่"}
                   </button>
                 </td>
+                <td>
+                  {u.pw_force_change ? (
+                    <span className="badge badge-amber" style={{ fontSize: 10 }}>ต้องเปลี่ยน</span>
+                  ) : isPwExpired ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span className="badge badge-red" style={{ fontSize: 10 }}>หมดอายุ</span>
+                      <button onClick={() => unlockPw(u)} style={{
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, cursor: "pointer",
+                        border: "1px solid rgba(107,44,145,0.4)", background: "rgba(107,44,145,0.1)",
+                        color: "var(--pea-purple-600)", whiteSpace: "nowrap",
+                      }}>
+                        <Icon name="check" size={10} /> ปลดล็อค
+                      </button>
+                    </div>
+                  ) : dl !== null ? (
+                    <span style={{ fontSize: 11, fontWeight: 700,
+                      color: dl <= 3 ? "#dc2626" : dl <= 7 ? "#d97706" : "#10b981" }}>
+                      {dl} วัน
+                    </span>
+                  ) : (
+                    <span className="t-mute" style={{ fontSize: 11 }}>—</span>
+                  )}
+                </td>
                 <td className="text-sm t-mute">{u.lastLogin || "—"}</td>
                 <td>
                   <div className="row-action">
@@ -1500,7 +1554,8 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -1508,16 +1563,18 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       {/* Mobile: cards */}
       <div className="au-cards">
         {list.map(u => {
-          const isPending = u.status === "pending";
-          const isBanned  = u.status === "banned";
-          const isMe      = u.id === currentUser.id;
+          const isPending  = u.status === "pending";
+          const isBanned   = u.status === "banned";
+          const isMe       = u.id === currentUser.id;
+          const dl         = pwDaysLeft(u);
+          const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;
           return (
             <div key={u.id} className="au-card" style={{
-              background: isPending ? "rgba(234,179,8,0.04)" : "transparent",
-              borderRadius: isPending ? 12 : 0,
-              padding: isPending ? "14px 12px" : "14px 2px",
-              border: isPending ? "1px solid rgba(234,179,8,0.2)" : undefined,
-              marginBottom: isPending ? 8 : 0,
+              background: isPending ? "rgba(234,179,8,0.04)" : isPwExpired ? "rgba(220,38,38,0.03)" : "transparent",
+              borderRadius: (isPending || isPwExpired) ? 12 : 0,
+              padding: (isPending || isPwExpired) ? "14px 12px" : "14px 2px",
+              border: isPending ? "1px solid rgba(234,179,8,0.2)" : isPwExpired ? "1px solid rgba(220,38,38,0.2)" : undefined,
+              marginBottom: (isPending || isPwExpired) ? 8 : 0,
             }}>
               {/* Row 1: Avatar + name/username + role */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -1542,7 +1599,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                 </span>
               </div>
 
-              {/* Row 2: Status + 2FA + last login */}
+              {/* Row 2: Status + 2FA + pw status + last login */}
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
                 <span className={"badge " + (u.status === "active" ? "badge-green" : isBanned ? "badge-red" : "badge-amber")} style={{ fontSize: 11 }}>
                   {u.status === "active" ? "ใช้งานได้" : isBanned ? "ระงับ" : "รออนุมัติ"}
@@ -1557,6 +1614,15 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   <Icon name="lock" size={10} />
                   2FA {u.require_2fa ? "เปิด" : "ปิด"}
                 </button>
+                {u.pw_force_change && (
+                  <span className="badge badge-amber" style={{ fontSize: 10 }}>ต้องเปลี่ยนรหัส</span>
+                )}
+                {!u.pw_force_change && dl !== null && (
+                  <span style={{ fontSize: 11, fontWeight: 700,
+                    color: dl <= 0 ? "#dc2626" : dl <= 3 ? "#dc2626" : dl <= 7 ? "#d97706" : "#10b981" }}>
+                    {dl <= 0 ? "รหัสผ่านหมดอายุ" : `รหัสผ่าน ${dl} วัน`}
+                  </span>
+                )}
                 {u.lastLogin && (
                   <span style={{ fontSize: 11, color: "var(--ink-mute)", marginLeft: "auto" }}>
                     {u.lastLogin}
@@ -1582,6 +1648,12 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12 }}
                     onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `ปลดระงับ ${u.username}`, `ปลดระงับ ${u.name}`)}>
                     <Icon name="check" size={13} /> ปลดระงับ
+                  </button>
+                )}
+                {isPwExpired && (
+                  <button className="btn btn-sm" style={{ height: 34, fontSize: 12, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", color: "white" }}
+                    onClick={() => unlockPw(u)}>
+                    <Icon name="check" size={13} /> ปลดล็อครหัสผ่าน
                   </button>
                 )}
                 <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12, marginLeft: "auto" }}

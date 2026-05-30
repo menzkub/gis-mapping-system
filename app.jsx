@@ -120,7 +120,7 @@ function NotifPanel({ data, currentUser }) {
 }
 
 // ── ProfileView ───────────────────────────────────────────────────────────
-function ProfileView({ currentUser, data, addAudit }) {
+function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const { t } = useLang();
   const [tab, setTabPV]           = useStateApp("info");
   const [newPw, setNewPw]         = useStateApp("");
@@ -172,14 +172,22 @@ function ProfileView({ currentUser, data, addAudit }) {
     if (!ok) return;
     setSaving(true);
     const { error } = await _supabase.auth.updateUser({ password: newPw });
-    setSaving(false);
     if (error) {
+      setSaving(false);
       setErr(error.message);
     } else {
+      const now = new Date().toISOString();
+      await _supabase.from("profiles").update({ password_changed_at: now }).eq("id", currentUser.id);
+      await _supabase.from("password_history").insert({
+        user_id: currentUser.id, username: currentUser.username,
+        changed_at: now, action: "change_password", note: "เปลี่ยนรหัสผ่านด้วยตนเอง",
+      });
       await addAudit({
         user: currentUser.username, action: "change_password",
         target: currentUser.username, detail: "เปลี่ยนรหัสผ่านสำเร็จ",
       });
+      setSaving(false);
+      onPasswordChanged?.();
       toast?.(t("pwSuccessMsg"), "success");
       setPwSuccess(true);
       setNewPw(""); setConfirmPw("");
@@ -1037,6 +1045,228 @@ function MaintenanceScreen({ currentUser, message, until, onLogout }) {
   );
 }
 
+// ── PasswordExpiredScreen ─────────────────────────────────────────────────
+function PasswordExpiredScreen({ currentUser, onLogout }) {
+  const initials = (currentUser?.name || currentUser?.username || "?")[0].toUpperCase();
+  const firstName = (currentUser?.name || currentUser?.username || "").split(" ")[0];
+  return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)", padding: "0 16px" }}>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 500,
+        background: "var(--surface)", borderRadius: 24, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(135deg,#991b1b 0%,#dc2626 60%,#ef4444 100%)",
+          padding: "22px 28px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 12, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", right: -40, top: -40, width: 160, height: 160,
+            borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+              background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center" }}>
+              <Icon name="lock" size={24} stroke={2} style={{ color: "white" }} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 20, color: "white", lineHeight: 1.2 }}>รหัสผ่านหมดอายุ</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>Password Expired</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, position: "relative" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>สวัสดี</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "white" }}>{firstName}</div>
+            </div>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+              background: "rgba(255,255,255,0.25)", border: "2px solid rgba(255,255,255,0.5)",
+              display: "grid", placeItems: "center", fontWeight: 800, fontSize: 16, color: "white" }}>
+              {initials}
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: "24px 28px 28px" }}>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>รหัสผ่านของคุณหมดอายุแล้ว</div>
+          <div className="t-mute" style={{ fontSize: 14, lineHeight: 1.75, marginBottom: 20 }}>
+            รหัสผ่านมีอายุ 45 วัน คุณไม่สามารถเข้าสู่ระบบได้จนกว่าผู้ดูแลระบบจะปลดล็อค<br />
+            กรุณาติดต่อผู้ดูแลระบบเพื่อขอรีเซ็ตสถานะรหัสผ่าน
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px",
+            borderRadius: 12, marginBottom: 20, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <Icon name="warning" size={16} style={{ color: "#dc2626", flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.6 }}>
+              เมื่อผู้ดูแลระบบปลดล็อคแล้ว ระบบจะพาคุณไปยังหน้าเปลี่ยนรหัสผ่านทันที
+            </div>
+          </div>
+          <button className="btn btn-outline" style={{ width: "100%", height: 46 }} onClick={onLogout}>
+            <Icon name="logout" size={14} /> ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ForcePasswordChangeScreen ─────────────────────────────────────────────
+function ForcePasswordChangeScreen({ currentUser, supabaseUser, onComplete }) {
+  const [newPw, setNewPw]         = useStateApp("");
+  const [confirmPw, setConfirmPw] = useStateApp("");
+  const [showNew, setShowNew]     = useStateApp(false);
+  const [showConf, setShowConf]   = useStateApp(false);
+  const [err, setErr]             = useStateApp(null);
+  const [saving, setSaving]       = useStateApp(false);
+
+  const checks = {
+    length:  newPw.length >= 8,
+    upper:   /[A-Z]/.test(newPw),
+    lower:   /[a-z]/.test(newPw),
+    number:  /[0-9]/.test(newPw),
+    special: /[^A-Za-z0-9]/.test(newPw),
+  };
+  const strength = Object.values(checks).filter(Boolean).length;
+  const sColors = ["", "#ef4444", "#f97316", "#eab308", "#22c55e", "#16a34a"];
+  const confirmOk  = confirmPw.length > 0 && confirmPw === newPw;
+  const confirmBad = confirmPw.length > 0 && confirmPw !== newPw;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(null);
+    if (!Object.values(checks).every(Boolean)) { setErr("รหัสผ่านต้องผ่านทุกเงื่อนไข"); return; }
+    if (newPw !== confirmPw) { setErr("รหัสผ่านไม่ตรงกัน"); return; }
+    setSaving(true);
+    try {
+      const { error: pwErr } = await _supabase.auth.updateUser({ password: newPw });
+      if (pwErr) throw pwErr;
+      const now = new Date().toISOString();
+      await _supabase.from("profiles").update({ password_changed_at: now, pw_force_change: false }).eq("id", supabaseUser.id);
+      await _supabase.from("password_history").insert({
+        user_id: supabaseUser.id, username: currentUser.username,
+        changed_at: now, action: "force_change", note: "เปลี่ยนรหัสผ่านหลังถูกบังคับโดยผู้ดูแลระบบ",
+      });
+      await _supabase.from("audit_log").insert({
+        user_id: supabaseUser.id, username: currentUser.username,
+        action: "change_password", target: currentUser.username,
+        detail: "เปลี่ยนรหัสผ่าน (บังคับ — ผู้ดูแลระบบปลดล็อค)",
+        ip: (navigator.userAgent || "").substring(0, 200),
+      });
+      onComplete();
+    } catch (e2) {
+      setErr(e2.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
+      padding: "0 16px", overflow: "auto" }}>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 460, margin: "20px auto",
+        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", padding: "24px 28px 20px",
+          color: "white", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", right: -40, top: -40, width: 160, height: 160,
+            borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+              background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center" }}>
+              <Icon name="lock" size={22} stroke={2} style={{ color: "white" }} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 20, lineHeight: 1.2 }}>ตั้งรหัสผ่านใหม่</div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 3 }}>สวัสดี, <b>{currentUser.name || currentUser.username}</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: "24px 28px 28px" }}>
+          <div style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 20,
+            background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.2)",
+            display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <Icon name="warning" size={16} style={{ color: "var(--pea-orange-500)", flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+              ผู้ดูแลระบบกำหนดให้คุณต้องเปลี่ยนรหัสผ่าน — คุณจะใช้งานระบบได้หลังตั้งรหัสผ่านใหม่เท่านั้น
+            </div>
+          </div>
+
+          <form className="f-col f-gap-4" onSubmit={submit}>
+            <div className="field">
+              <label className="field-label">รหัสผ่านใหม่</label>
+              <div style={{ position: "relative" }}>
+                <input className="input" type={showNew ? "text" : "password"}
+                  style={{ paddingLeft: 42, paddingRight: 44 }}
+                  value={newPw} onChange={e => { setNewPw(e.target.value); setErr(null); }}
+                  placeholder="รหัสผ่านใหม่" autoComplete="new-password" autoFocus />
+                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}>
+                  <Icon name="lock" size={18} />
+                </div>
+                <button type="button" onClick={() => setShowNew(s => !s)}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
+                  <Icon name={showNew ? "eyeOff" : "eye"} size={18} />
+                </button>
+              </div>
+              {newPw.length > 0 && (
+                <>
+                  <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= strength ? sColors[strength] : "var(--line)", transition: "background 300ms" }} />
+                    ))}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginTop: 8 }}>
+                    {[
+                      { ok: checks.length,  label: "ตัวอักษร ≥ 8" },
+                      { ok: checks.upper,   label: "ตัวพิมพ์ใหญ่" },
+                      { ok: checks.lower,   label: "ตัวพิมพ์เล็ก" },
+                      { ok: checks.number,  label: "ตัวเลข" },
+                      { ok: checks.special, label: "อักขระพิเศษ" },
+                    ].map(r => (
+                      <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11,
+                        color: r.ok ? "#16a34a" : "var(--ink-mute)", fontWeight: r.ok ? 700 : 400 }}>
+                        <span>{r.ok ? "✓" : "○"}</span>{r.label}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="field">
+              <label className="field-label">ยืนยันรหัสผ่าน</label>
+              <div style={{ position: "relative" }}>
+                <input className="input" type={showConf ? "text" : "password"}
+                  style={{ paddingLeft: 42, paddingRight: 44,
+                    borderColor: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : undefined }}
+                  value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
+                  placeholder="ยืนยันรหัสผ่านอีกครั้ง" autoComplete="new-password" />
+                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none",
+                  color: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : "var(--ink-mute)" }}>
+                  <Icon name={confirmOk ? "check" : "lock"} size={18} />
+                </div>
+                <button type="button" onClick={() => setShowConf(s => !s)}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
+                  <Icon name={showConf ? "eyeOff" : "eye"} size={18} />
+                </button>
+              </div>
+              {confirmBad && <div style={{ marginTop: 5, fontSize: 11, color: "var(--red)", fontWeight: 600 }}>รหัสผ่านไม่ตรงกัน</div>}
+              {confirmOk  && <div style={{ marginTop: 5, fontSize: 11, color: "#16a34a", fontWeight: 600 }}>รหัสผ่านตรงกัน ✓</div>}
+            </div>
+
+            {err && (
+              <div className="badge badge-red" style={{ padding: "8px 12px", alignSelf: "flex-start" }}>
+                <Icon name="close" size={14} /> {err}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary" style={{ height: 48 }} disabled={saving || !confirmOk}>
+              {saving ? "กำลังบันทึก…" : <><Icon name="check" size={14} /> ตั้งรหัสผ่านใหม่</>}
+            </button>
+          </form>
+
+          <button onClick={async () => { await _supabase.auth.signOut(); }}
+            style={{ marginTop: 14, width: "100%", padding: 10, textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
+            ออกจากระบบแทน
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── DevInfo floating button & modal ───────────────────────────────────────
 function DevInfoModal({ devInfo, onClose }) {
   const [expanded, setExpanded] = useStateApp(false);
@@ -1245,6 +1475,7 @@ function App() {
     database: "", stack: "", systems: "",
     version: "1.0.0", footer: "", showBtn: false,
   });
+  const [daysUntilExpiry, setDaysUntilExpiry] = useStateApp(null);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -1299,6 +1530,29 @@ function App() {
         setAppState("maintenance");
         return;
       }
+
+      // ── Password expiry check ─────────────────────────────────────────────
+      if (myProfile.pw_force_change) {
+        setPendingUser(supabaseUser);
+        setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+        setAppState("pw_force_change");
+        return;
+      }
+      const pwChangedAt = myProfile.password_changed_at ? new Date(myProfile.password_changed_at) : null;
+      if (pwChangedAt) {
+        const daysOld  = (Date.now() - pwChangedAt.getTime()) / (1000 * 60 * 60 * 24);
+        const daysLeft = Math.ceil(45 - daysOld);
+        if (daysLeft <= 0) {
+          setPendingUser(supabaseUser);
+          setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+          setAppState("pw_expired");
+          return;
+        }
+        setDaysUntilExpiry(daysLeft);
+      } else {
+        setDaysUntilExpiry(null);
+      }
+      // ── end password expiry check ─────────────────────────────────────────
 
       // ── 2FA check ────────────────────────────────────────────────────────
       if (myProfile.require_2fa) {
@@ -1482,6 +1736,21 @@ function App() {
       </ConfirmProvider></ToastProvider>
     );
   }
+
+  if (appState === "pw_expired") return (
+    <PasswordExpiredScreen
+      currentUser={currentUser}
+      onLogout={async () => { await _supabase.auth.signOut(); }}
+    />
+  );
+
+  if (appState === "pw_force_change") return (
+    <ForcePasswordChangeScreen
+      currentUser={currentUser}
+      supabaseUser={pendingUser}
+      onComplete={() => loadAppData(pendingUser, false)}
+    />
+  );
 
   if (appState === "mfa_setup") return (
     <MFASetupScreen
@@ -1738,6 +2007,41 @@ function App() {
           </button>
         </header>
 
+        {/* Password Expiry Warning Banner */}
+        {daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "10px 20px",
+            background: daysUntilExpiry <= 1
+              ? "linear-gradient(90deg,#7c2d12,#9a3412)"
+              : daysUntilExpiry <= 3
+              ? "linear-gradient(90deg,#78350f,#92400e)"
+              : "linear-gradient(90deg,#1e3a5f,#1d4ed8)",
+            color: "white", flexShrink: 0, flexWrap: "wrap",
+            borderBottom: "2px solid rgba(255,255,255,0.15)",
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+              <Icon name="warning" size={16} />
+              {daysUntilExpiry <= 1
+                ? "⚠️ รหัสผ่านหมดอายุพรุ่งนี้!"
+                : `⚠️ รหัสผ่านหมดอายุใน ${daysUntilExpiry} วัน`}
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.9, flex: 1 }}>
+              กรุณาเปลี่ยนรหัสผ่านก่อนหมดอายุ มิฉะนั้นจะไม่สามารถเข้าสู่ระบบได้
+            </span>
+            <button
+              onClick={() => setRoute("profile")}
+              style={{
+                padding: "5px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.5)",
+                background: "rgba(255,255,255,0.15)", color: "white",
+                cursor: "pointer", fontSize: 12, fontWeight: 700, flexShrink: 0,
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              <Icon name="lock" size={12} /> เปลี่ยนรหัสผ่าน
+            </button>
+          </div>
+        )}
+
         {/* Maintenance Mode Warning Banner — admin only */}
         {maintenanceMode && currentUser.role === "admin" && (
           <div style={{
@@ -1780,7 +2084,8 @@ function App() {
             />
           )}
           {route === "profile" && (
-            <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} />
+            <ProfileView currentUser={currentUser} data={data} addAudit={addAudit}
+              onPasswordChanged={() => setDaysUntilExpiry(45)} />
           )}
           {route === "guide" && (
             <UserGuide role={currentUser.role} />
