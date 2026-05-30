@@ -1738,6 +1738,37 @@ function App() {
           </button>
         </header>
 
+        {/* Maintenance Mode Warning Banner — admin only */}
+        {maintenanceMode && currentUser.role === "admin" && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "10px 20px",
+            background: "linear-gradient(90deg,#7c2d12,#9a3412,#c2410c)",
+            color: "white", flexShrink: 0, flexWrap: "wrap",
+            borderBottom: "2px solid rgba(255,255,255,0.15)",
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+              <Icon name="warning" size={16} />
+              ⚠️ ระบบปิดปรับปรุงอยู่
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.9, flex: 1 }}>
+              ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้ในขณะนี้
+              {maintenanceUntil && ` · คาดว่าเปิดให้บริการ: ${new Date(maintenanceUntil).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+            </span>
+            <button
+              onClick={() => { setRoute("admin"); setAdminTab("settings"); }}
+              style={{
+                padding: "5px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.5)",
+                background: "rgba(255,255,255,0.15)", color: "white",
+                cursor: "pointer", fontSize: 12, fontWeight: 700, flexShrink: 0,
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              <Icon name="settings" size={12} /> เปิดระบบ
+            </button>
+          </div>
+        )}
+
         {/* Main */}
         <main className="app-main">
           {route === "search" && (
