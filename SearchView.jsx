@@ -25,6 +25,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
   const [view, setView]             = useStateS(() => window.innerWidth <= 640 ? "map" : "split");
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
+  const [showExportDialog, setShowExportDialog] = useStateS(false);
   const toast = useToast();
 
   // Use refs so the effect can always read the latest callbacks
@@ -97,7 +98,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
     });
   };
 
-  const handleExport = () => {
+  const doExport = () => {
     downloadCSV(`pea-${tab}-${Date.now()}.csv`, results);
     toast?.(`ส่งออก ${results.length} รายการ`, "success");
     onLogSearch?.({
@@ -106,9 +107,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
       action: "export_csv",
       target: tab === "meter" ? "PEA Meter" : "PEA TR",
       detail: `ส่งออก ${results.length} รายการ • query="${query || "—"}"`,
-      ip: "10.0.12.32",
+      ip: (navigator.userAgent || "").substring(0, 200),
     });
+    setShowExportDialog(false);
   };
+  const handleExport = () => setShowExportDialog(true);
 
   const totalCount = tab === "meter"
     ? +(data.dashStats?.meter_count || 0)
@@ -118,15 +121,30 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
   return (
     <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
       <style>{`
-        .sv-header { display: flex; flex-direction: column; gap: 10px; padding: 16px 24px 0; }
+        .sv-header { display: flex; flex-direction: column; gap: 10px; padding: 16px 28px 0; }
+        .sv-body { padding: 16px 28px 20px; }
         .sv-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
         .sv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .sv-tabs::-webkit-scrollbar { display: none; }
         .sv-controls { display: flex; align-items: center; gap: 8px; }
         .sv-search-wrap { flex: 1; min-width: 0; position: relative; }
         .sv-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        @media (min-width: 1440px) {
+          .sv-header { padding: 20px 36px 0; }
+          .sv-body { padding: 20px 36px 24px; }
+          .sv-search-title { font-size: 32px !important; }
+          .input-lg { height: 60px !important; font-size: 17px !important; }
+          .search-filter-btn { height: 58px !important; border-radius: 18px !important; }
+          .search-export-btn { height: 58px !important; border-radius: 18px !important; }
+          .search-view-switcher .tab { height: 50px !important; padding: 0 18px !important; }
+        }
+        @media (max-width: 1023px) and (min-width: 641px) {
+          .sv-header { padding: 14px 18px 0; }
+          .sv-body { padding: 12px 18px 16px; }
+        }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
+          .sv-body { padding: 10px 12px 14px; }
           .sv-title-row { flex-direction: column; gap: 6px; align-items: flex-start; }
           .sv-search-title { font-size: 20px !important; }
           .sv-tabs .tab { font-size: 12px !important; padding: 0 12px !important; height: 34px !important; white-space: nowrap; }
@@ -138,7 +156,6 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
           .search-view-switcher .tab { height: 36px !important; padding: 0 10px !important; font-size: 12px !important; white-space: nowrap; }
           .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
           .input-lg { height: 48px !important; }
-          .sv-content { padding: 10px 14px 14px !important; }
         }
       `}</style>
 
@@ -204,7 +221,6 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
               {[
                 { id: "split", icon: "layers", label: "Split" },
                 { id: "map",   icon: "map",    label: "แผนที่" },
-                { id: "table", icon: "table",  label: "ตาราง" },
               ].map(v => (
                 <button key={v.id} className={"tab " + (view === v.id ? "active" : "")} style={{ height: 46, padding: "0 14px" }} onClick={() => setView(v.id)}>
                   <Icon name={v.icon} size={14} /> {v.label}
@@ -258,7 +274,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
       </div>
 
       {/* Content */}
-      <div className="search-content-area" style={{ flex: 1, padding: "16px 28px 24px", overflow: "hidden" }}>
+      <div className="sv-body" style={{ flex: 1, overflow: "hidden" }}>
         {!hasSearched ? (
           /* Empty start state */
           <div className="card" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -292,15 +308,14 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
             <EmptyState title="ไม่พบข้อมูลที่ค้นหา" hint="ลองพิมพ์รหัสบางส่วน หรือเปลี่ยน/ล้างตัวกรอง" />
           </div>
         ) : (
-          <div style={{ height: "100%", display: "grid", gridTemplateColumns: view === "split" ? "minmax(0, 420px) 1fr" : "1fr", gap: 16 }}>
-            {(view === "split" || view === "table") && (
+          <div style={{ height: "100%", display: "grid", gridTemplateColumns: view === "split" ? "clamp(300px, 38%, 520px) 1fr" : "1fr", gap: 16 }}>
+            {view === "split" && (
               <ResultList
                 kind={tab}
                 items={results}
                 selectedId={selectedId}
                 onSelect={(p) => setSelectedId(p.OBJECTID)}
                 onNavigate={(p) => setNavTarget(p)}
-                fullWidth={view === "table"}
                 capped={results.length >= 500}
                 copyCoords={copyCoords}
                 copied={copied}
@@ -324,6 +339,44 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
         )}
       </div>
 
+      {showExportDialog && (
+        <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 8000, background: "rgba(14,10,22,0.55)", backdropFilter: "blur(8px)", display: "grid", placeItems: "center", padding: 20 }} onClick={() => setShowExportDialog(false)}>
+          <div className="fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 440, background: "var(--surface)", borderRadius: 24, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
+            <div style={{ padding: "22px 24px 18px", background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 60%,#f47b20 130%)", color: "white", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", right: -30, top: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+              <div className="t-eyebrow" style={{ color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>ยืนยันการส่งออก</div>
+              <div style={{ fontWeight: 800, fontSize: 20, lineHeight: 1.2 }}>Export {tab === "meter" ? "PEA มิเตอร์" : "PEA หม้อแปลง"}</div>
+            </div>
+            <div style={{ padding: "20px 24px 24px" }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "14px 16px", background: "var(--soft)", borderRadius: 14, marginBottom: 16, border: "1px solid var(--soft-border)" }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", color: "white", flexShrink: 0, boxShadow: "0 8px 22px rgba(107,44,145,0.35)" }}>
+                  <Icon name="download" size={22} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em" }}>{results.length.toLocaleString()}</div>
+                  <div className="t-mute" style={{ fontSize: 13, marginTop: 2 }}>รายการที่จะส่งออก</div>
+                </div>
+              </div>
+              <div className="t-mute" style={{ fontSize: 13, marginBottom: 14 }}>
+                บันทึกเป็นไฟล์ CSV · <span className="mono" style={{ fontSize: 12 }}>pea-{tab}-export.csv</span>
+              </div>
+              {results.length >= 500 && (
+                <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "#ffe7d4", border: "1px solid #f9b27a", marginBottom: 14 }}>
+                  <Icon name="warning" size={14} style={{ color: "var(--pea-orange-600)", flexShrink: 0, marginTop: 1 }} />
+                  <span style={{ fontSize: 12, color: "var(--pea-orange-700)", lineHeight: 1.5 }}>ผลลัพธ์ถูกจำกัดที่ 500 รายการ — พิมพ์คำค้นหาเพิ่มเพื่อลดจำนวน</span>
+                </div>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                <button className="btn btn-outline" style={{ height: 48 }} onClick={() => setShowExportDialog(false)}>ยกเลิก</button>
+                <button className="btn btn-primary" style={{ height: 48 }} onClick={doExport}>
+                  <Icon name="download" size={15} /> ส่งออก
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {navTarget && <NavigationPanel target={navTarget} kind={tab} onClose={() => setNavTarget(null)} />}
     </div>
   );
@@ -344,17 +397,7 @@ function FilterSelect({ label, value, options, onChange }) {
 /* ============================================================
    ResultList — left rail / fullscreen table
    ============================================================ */
-function ResultList({ kind, items, selectedId, onSelect, onNavigate, fullWidth, capped, copyCoords, copied }) {
-  if (fullWidth) {
-    return (
-      <div className="surface" style={{ overflow: "auto", height: "100%" }}>
-        {kind === "meter"
-          ? <MeterTable items={items} selectedId={selectedId} onSelect={onSelect} onNavigate={onNavigate} copyCoords={copyCoords} copied={copied} />
-          : <TrTable    items={items} selectedId={selectedId} onSelect={onSelect} onNavigate={onNavigate} copyCoords={copyCoords} copied={copied} />}
-        {capped && <CappedNote count={items.length} />}
-      </div>
-    );
-  }
+function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, copyCoords, copied }) {
   return (
     <div className="surface" style={{ overflow: "auto", height: "100%" }}>
       {items.map((p, i) => (
@@ -444,70 +487,6 @@ function ResultCard({ item: p, kind, selected, onClick, onNavigate, index, copyC
   );
 }
 
-function MeterTable({ items, selectedId, onSelect, onNavigate, copyCoords, copied }) {
-  return (
-    <table className="table">
-      <thead><tr>
-        {["TAG", "CODE", "ROUTE", "ACCOUNTNUM", "PEANO", "FEEDER", "OWNER", "พิกัด", ""].map(h => <th key={h}>{h}</th>)}
-      </tr></thead>
-      <tbody>
-        {items.map(p => (
-          <tr key={p.OBJECTID} style={{ background: p.OBJECTID === selectedId ? "var(--soft)" : "" }} onClick={() => onSelect(p)}>
-            <td className="mono fw-6">{p.TAG}</td>
-            <td>{p.CODE}</td>
-            <td>{p.ROUTE}</td>
-            <td className="mono">{p.ACCOUNTNUM}</td>
-            <td className="mono">{p.PEANO}</td>
-            <td><span className="badge badge-purple">{p.FEEDERID || "—"}</span></td>
-            <td><span className={"badge " + (p.OWNER === "Customer" ? "badge-orange" : "badge-purple")}>{p.OWNER || "—"}</span></td>
-            <td>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span className="mono text-xs">{p.LATITUDE.toFixed(4)}, {p.LONGITUDE.toFixed(4)}</span>
-                <button className="btn-icon" title="คัดลอกพิกัด" style={{ width: 28, height: 28, color: copied === p.OBJECTID ? "var(--green)" : undefined }} onClick={(e) => { e.stopPropagation(); copyCoords(p.LATITUDE, p.LONGITUDE, p.OBJECTID); }}>
-                  <Icon name={copied === p.OBJECTID ? "check" : "copy"} size={12} />
-                </button>
-              </div>
-            </td>
-            <td><button className="btn-icon" onClick={(e) => { e.stopPropagation(); onNavigate(p); }}><Icon name="navigation" size={14} /></button></td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-function TrTable({ items, selectedId, onSelect, onNavigate, copyCoords, copied }) {
-  return (
-    <table className="table">
-      <thead><tr>
-        {["TAG", "PEANO", "ระบบเฟส", "แรงดัน", "kVA", "เจ้าของ", "สถานที่", "Feeder", "พิกัด", ""].map(h => <th key={h}>{h}</th>)}
-      </tr></thead>
-      <tbody>
-        {items.map(p => (
-          <tr key={p.OBJECTID} style={{ background: p.OBJECTID === selectedId ? "var(--soft)" : "" }} onClick={() => onSelect(p)}>
-            <td className="mono fw-6">{p.TAG}</td>
-            <td className="mono">{p.PEANO_TR}</td>
-            <td>{p.PHASE}</td>
-            <td>{p.VOLTAGE}</td>
-            <td className="fw-7" style={{ color: "var(--pea-orange-600)" }}>{p.KVA}</td>
-            <td><span className={"badge " + (p.OWNER_TR === "Customer" ? "badge-orange" : "badge-purple")}>{p.OWNER_TR}</span></td>
-            <td style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.LOCATION}</td>
-            <td><span className="badge">{p.FEEDER1}</span></td>
-            <td>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span className="mono text-xs">{p.LATITUDE.toFixed(4)}, {p.LONGITUDE.toFixed(4)}</span>
-                <button className="btn-icon" title="คัดลอกพิกัด" style={{ width: 28, height: 28, color: copied === p.OBJECTID ? "var(--green)" : undefined }} onClick={(e) => { e.stopPropagation(); copyCoords(p.LATITUDE, p.LONGITUDE, p.OBJECTID); }}>
-                  <Icon name={copied === p.OBJECTID ? "check" : "copy"} size={12} />
-                </button>
-              </div>
-            </td>
-            <td><button className="btn-icon" onClick={(e) => { e.stopPropagation(); onNavigate(p); }}><Icon name="navigation" size={14} /></button></td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 /* ============================================================
    NavigationPanel — uses device GPS as starting point
@@ -519,7 +498,9 @@ function NavigationPanel({ target, kind, onClose }) {
   const [gpsState, setGpsState] = useStateNav("loading"); // loading | ok | denied
   const [userPos, setUserPos] = useStateNav(null);
 
-  useEffectNav(() => {
+  const doGPS = () => {
+    setGpsState("loading");
+    setUserPos(null);
     if (!navigator.geolocation) { setGpsState("denied"); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -527,25 +508,30 @@ function NavigationPanel({ target, kind, onClose }) {
         setGpsState("ok");
       },
       () => setGpsState("denied"),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
-  }, []);
+  };
 
-  const fallback = { lat: 19.91683, lng: 99.21574 };
-  const from = userPos || fallback;
+  useEffectNav(() => { doGPS(); }, []);
 
-  const R = 6371;
-  const dLat = (dest.lat - from.lat) * Math.PI / 180;
-  const dLng = (dest.lng - from.lng) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(from.lat * Math.PI / 180) * Math.cos(dest.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  const distance = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const eta = Math.max(1, Math.round((distance * 1.3 / 40) * 60));
+  // Only calculate distance when we have actual GPS — never use hardcoded fallback
+  const from = userPos;
+  const distance = from
+    ? (() => {
+        const R = 6371;
+        const dLat = (dest.lat - from.lat) * Math.PI / 180;
+        const dLng = (dest.lng - from.lng) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(from.lat*Math.PI/180)*Math.cos(dest.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+        return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      })()
+    : null;
+  const eta = distance ? Math.max(1, Math.round((distance * 1.3 / 40) * 60)) : null;
 
   const originLabel = gpsState === "loading"
     ? "กำลังค้นหาตำแหน่ง…"
     : gpsState === "ok"
-      ? "ตำแหน่งปัจจุบันของคุณ"
-      : "การไฟฟ้าส่วนภูมิภาคอำเภอฝาง (ค่าเริ่มต้น)";
+      ? `ตำแหน่งปัจจุบัน (${userPos.lat.toFixed(4)}, ${userPos.lng.toFixed(4)})`
+      : "ไม่ทราบตำแหน่ง — กด ลองอีกครั้ง";
 
   const googleUrl = userPos
     ? `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`
@@ -582,7 +568,8 @@ function NavigationPanel({ target, kind, onClose }) {
           {/* Origin → Dest */}
           <div className="f-gap-3 flex" style={{ alignItems: "center", position: "relative" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 12, height: 12, borderRadius: "50%", background: gpsState === "ok" ? "#4ade80" : "white", border: "3px solid rgba(255,255,255,0.4)", transition: "background 400ms" }} />
+              <div style={{ width: 12, height: 12, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.4)", transition: "background 400ms",
+                background: gpsState === "ok" ? "#4ade80" : gpsState === "denied" ? "#f87171" : "rgba(255,255,255,0.5)" }} />
               <div style={{ width: 2, height: 18, background: "rgba(255,255,255,0.5)" }} />
               <Icon name="location" size={18} />
             </div>
@@ -609,13 +596,13 @@ function NavigationPanel({ target, kind, onClose }) {
             <div>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>ระยะทาง</div>
               <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
-                {gpsState === "loading" ? "—" : `${distance.toFixed(2)} กม.`}
+                {distance != null ? `${distance.toFixed(2)} กม.` : "—"}
               </div>
             </div>
             <div>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>เวลาโดยประมาณ (รถยนต์)</div>
               <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
-                {gpsState === "loading" ? "—" : eta < 60 ? `${eta} นาที` : `${Math.floor(eta / 60)} ชม. ${eta % 60} นาที`}
+                {eta != null ? (eta < 60 ? `${eta} นาที` : `${Math.floor(eta/60)} ชม. ${eta%60} นาที`) : "—"}
               </div>
             </div>
           </div>
@@ -631,12 +618,16 @@ function NavigationPanel({ target, kind, onClose }) {
           )}
           {gpsState === "ok" && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#16a34a", fontWeight: 600 }}>
-              <span>✓</span> ใช้ตำแหน่ง GPS ปัจจุบัน ({userPos.lat.toFixed(5)}, {userPos.lng.toFixed(5)})
+              <span>✓</span> ได้รับตำแหน่ง GPS แล้ว — ระยะทางคำนวณจากตำแหน่งปัจจุบัน
             </div>
           )}
           {gpsState === "denied" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-mute)" }}>
-              <span>⚠</span> ไม่สามารถรับ GPS ได้ — ใช้ตำแหน่งการไฟฟ้าฝางแทน
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, flexWrap: "wrap" }}>
+              <span style={{ color: "#f97316" }}>⚠</span>
+              <span style={{ color: "var(--ink-mute)", flex: 1 }}>ไม่สามารถรับ GPS ได้ — กรุณาอนุญาตการเข้าถึงตำแหน่ง</span>
+              <button onClick={doGPS} className="btn btn-outline" style={{ fontSize: 12, padding: "4px 12px", height: 30, flexShrink: 0 }}>
+                <Icon name="refresh" size={12} /> ลองอีกครั้ง
+              </button>
             </div>
           )}
         </div>

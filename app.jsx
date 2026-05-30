@@ -57,7 +57,7 @@ function NotifPanel({ data, currentUser }) {
   const pendingUsers = currentUser?.role === "admin"
     ? data.users.filter(u => u.status === "pending") : [];
   const recentLog = data.auditLog
-    .filter(r => currentUser?.role === "admin" || r.user === currentUser?.username)
+    .filter(r => r.user === currentUser?.username)
     .slice(0, 7);
 
   return (
@@ -767,12 +767,16 @@ function App() {
   });
   const [route, setRoute] = useStateApp("search");
   const [theme, setTheme] = useStateApp(() => localStorage.getItem("pea_theme") || "light");
-  const [baseMap, setBaseMap] = useStateApp(() => localStorage.getItem("pea_base") || "satellite");
+  const [baseMap, setBaseMap] = useStateApp(() => {
+    const saved = localStorage.getItem("pea_base") || "satellite";
+    return saved === "dark" ? "satellite" : saved;
+  });
   const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
   const [maintenanceMessage, setMaintenanceMessage] = useStateApp("");
   const [maintenanceUntil, setMaintenanceUntil] = useStateApp("");
   const [showNotif, setShowNotif] = useStateApp(false);
   const [refreshing, setRefreshing] = useStateApp(false);
+  const [refreshMsg, setRefreshMsg] = useStateApp(null); // null | "loading" | "done" | "error"
   const [adminTab, setAdminTab] = useStateApp("dashboard");
 
   useEffectApp(() => {
@@ -950,6 +954,7 @@ function App() {
   const handleRefresh = useCallbackApp(async () => {
     if (refreshing) return;
     setRefreshing(true);
+    setRefreshMsg("loading");
     try {
       const [profilesRes, auditRes, statsRes] = await Promise.all([
         _supabase.from("profiles").select("*").order("created_at"),
@@ -962,6 +967,11 @@ function App() {
         auditLog: (auditRes.data   || []).map(toAuditEntry),
         dashStats: statsRes.data?.[0] || d.dashStats,
       }));
+      setRefreshMsg("done");
+      setTimeout(() => setRefreshMsg(null), 2500);
+    } catch {
+      setRefreshMsg("error");
+      setTimeout(() => setRefreshMsg(null), 2500);
     } finally {
       setRefreshing(false);
     }
@@ -1142,23 +1152,30 @@ function App() {
 
           {/* Map layer switcher */}
           <div className="topbar-mapswitcher tabs" style={{ padding: 4 }}>
-            {Object.entries(TILE_LAYERS).map(([k, v]) => (
+            {Object.entries(TILE_LAYERS).filter(([k]) => k !== "dark").map(([k, v]) => (
               <button key={k} className={"tab " + (baseMap === k ? "active" : "")} style={{ height: 36, padding: "0 14px", fontSize: 12 }} onClick={() => setBaseMap(k)}>
-                <Icon name={k === "satellite" ? "layers" : k === "dark" ? "moon" : "map"} size={12} /> {v.label}
+                <Icon name={k === "satellite" ? "layers" : "map"} size={12} /> {v.label}
               </button>
             ))}
           </div>
 
-          {/* Refresh */}
-          <button className="btn-icon" title="รีเฟรชข้อมูล" onClick={handleRefresh} disabled={refreshing}
-            style={{ color: refreshing ? "var(--pea-purple-500)" : undefined }}>
-            <Icon name="refresh" size={18} style={{ animation: refreshing ? "pea-spin 0.8s linear infinite" : "none" }} />
-          </button>
-
-          {/* Theme toggle */}
-          <button className="btn-icon" title={theme === "dark" ? "Light mode" : "Dark mode"} onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
-            <Icon name={theme === "dark" ? "sun" : "moon"} />
-          </button>
+          {/* Refresh + feedback */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="btn-icon" title="รีเฟรชข้อมูล" onClick={handleRefresh} disabled={refreshing}
+              style={{ color: refreshing ? "var(--pea-purple-500)" : undefined }}>
+              <Icon name="refresh" size={18} style={{ animation: refreshing ? "pea-spin 0.8s linear infinite" : "none" }} />
+            </button>
+            {refreshMsg && (
+              <div className="fade-in" style={{
+                padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
+                background: refreshMsg === "done" ? "rgba(16,185,129,0.12)" : refreshMsg === "error" ? "rgba(239,68,68,0.1)" : "rgba(139,63,196,0.1)",
+                color: refreshMsg === "done" ? "#047857" : refreshMsg === "error" ? "var(--red)" : "var(--pea-purple-500)",
+                border: `1px solid ${refreshMsg === "done" ? "rgba(16,185,129,0.3)" : refreshMsg === "error" ? "rgba(239,68,68,0.25)" : "rgba(139,63,196,0.25)"}`,
+              }}>
+                {refreshMsg === "loading" ? "กำลังรีเฟรช…" : refreshMsg === "done" ? "✓ อัปเดตแล้ว" : "✕ เกิดข้อผิดพลาด"}
+              </div>
+            )}
+          </div>
 
           {/* Bell notification */}
           <div style={{ position: "relative" }}>
