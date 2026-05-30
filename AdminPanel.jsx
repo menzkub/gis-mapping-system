@@ -1044,6 +1044,192 @@ addAudit({
           <GuideNote>ไม่มี package.json, node_modules, หรือ build pipeline — เพิ่ม dependency ใหม่ได้โดยเพิ่ม script tag ใน index.html</GuideNote>
         </div>
       </GuideSection>
+
+      {/* ─── SECTION: GitHub ─── */}
+      <GuideSection icon="link" title="GitHub — Source Code & Deployment">
+        <div style={{ marginTop: 12 }}>
+
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>โครงสร้าง Repository</div>
+          <CodeBlock>{`Repository: github.com/menzkub/gis-mapping-system
+Branch:     main  ← เดียวเท่านั้น (GitHub Pages serve จาก root ของ main)
+Hosting:    GitHub Pages (static) — ไม่มี server, ไม่มี CI/CD
+
+ไฟล์ทั้งหมดอยู่ที่ root:
+  index.html   config.js   styles.css   logo.svg
+  *.jsx        data.js`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ขั้นตอน Deploy (push = deploy)</div>
+          <GuideStep n={1} text="แก้ไขไฟล์ .jsx หรือ .css บนเครื่อง" />
+          <GuideStep n={2} text='git add <ชื่อไฟล์>   (หรือ git add . ถ้าแน่ใจ)' />
+          <GuideStep n={3} text='git commit -m "อธิบายสิ่งที่เปลี่ยน"' />
+          <GuideStep n={4} text="git push origin main" />
+          <GuideStep n={5} text="รอ ~30 วินาที → GitHub Pages อัปเดตอัตโนมัติ" />
+          <GuideTip>หลัง push ให้ Hard Refresh (Ctrl+Shift+R หรือ Cmd+Shift+R) เพื่อเคลียร์ browser cache</GuideTip>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Personal Access Token (PAT)</div>
+          <CodeBlock>{`# ต้องใช้ PAT เมื่อ push จาก remote environment (เช่น Claude Code)
+git remote set-url origin https://<TOKEN>@github.com/menzkub/gis-mapping-system.git
+git push origin main
+
+# สร้าง Token: GitHub → Settings → Developer Settings
+# → Personal Access Tokens → Tokens (classic) → scope: repo
+# หมดอายุ: ตรวจสอบที่ github.com/settings/tokens
+
+⚠ ลบ Token ออกจาก remote URL หลัง push ทุกครั้ง:
+git remote set-url origin https://github.com/menzkub/gis-mapping-system.git`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>GitHub Pages — ข้อจำกัด</div>
+          <GuideTable rows={[
+            ["รายการ", "ขีดจำกัด / หมายเหตุ"],
+            ["ที่เก็บไฟล์", "1 GB ต่อ repo"],
+            ["Bandwidth", "100 GB / เดือน (ส่วนใหญ่เกินไม่ได้)"],
+            ["ไฟล์ใหญ่สุด", "100 MB ต่อไฟล์"],
+            ["Build time", "ไม่มี — static files โดยตรง"],
+            ["Custom domain", "รองรับ — ตั้งใน Settings → Pages → Custom domain"],
+            ["HTTPS", "บังคับอัตโนมัติ"],
+            ["index.html", "ต้องอยู่ที่ root ของ branch เท่านั้น"],
+          ]} />
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Error ที่พบบ่อยและวิธีแก้</div>
+          <GuideTable rows={[
+            ["อาการ", "สาเหตุ", "วิธีแก้"],
+            ["หน้าไม่อัปเดตหลัง push", "Browser cache", "Hard Refresh: Ctrl+Shift+R"],
+            ["404 Not Found", "index.html ไม่ได้อยู่ที่ root", "ตรวจว่าไฟล์อยู่ที่ root ไม่ใช่ใน subfolder"],
+            ["push rejected (authentication)", "Token หมดอายุหรือไม่มีสิทธิ์", "สร้าง Token ใหม่ที่ github.com/settings/tokens"],
+            ["push rejected (non-fast-forward)", "มี commit ที่ remote ที่ local ไม่มี", "git pull origin main แล้ว push ใหม่"],
+            ["Pages ไม่ build", "GitHub Actions disabled", "Settings → Pages → ตรวจ Source = Deploy from branch: main"],
+            ["JS error หลัง deploy", "แก้ไขไฟล์ผิด หรือ syntax error", "เปิด DevTools Console ดู error แล้วแก้"],
+          ]} />
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ตรวจสอบสถานะ & Rollback</div>
+          <CodeBlock>{`# ดู commit ล่าสุด
+git log --oneline -10
+
+# เปรียบเทียบ code ที่เปลี่ยนไป
+git diff HEAD~1 HEAD
+
+# Rollback — กู้ไฟล์คืนจาก commit ก่อนหน้า
+git checkout <commit-hash> -- <ชื่อไฟล์>
+git add <ชื่อไฟล์>
+git commit -m "revert: คืนค่า <ชื่อไฟล์> เนื่องจาก..."
+git push origin main
+
+# ดู commit hash
+git log --oneline   # copy 7 ตัวแรก เช่น a1b2c3d`}</CodeBlock>
+          <GuideNote>อย่าใช้ git push --force บน main เพราะจะลบ history ทั้งหมด — ถ้าจำเป็นให้ใช้ git revert แทน</GuideNote>
+
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Supabase Ops & Troubleshooting ─── */}
+      <GuideSection icon="database" title="การจัดการ & แก้ปัญหา Supabase">
+        <div style={{ marginTop: 12 }}>
+
+          {/* ── ลำดับการโหลดข้อมูล ── */}
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>ลำดับการโหลดข้อมูลเมื่อ Login</div>
+          <CodeBlock>{`1. Supabase Auth → ยืนยัน session / JWT
+2. profiles → ดึงข้อมูล user ปัจจุบัน (role, status, require_2fa)
+3. settings  → maintenance_mode, dev_info และค่าต่างๆ
+4. profiles  → ดึง user ทั้งหมด (admin เท่านั้น)
+5. audit_log → 500 รายการล่าสุด (admin เท่านั้น)
+6. get_feeders() RPC → รายการ feeder ไม่ซ้ำ
+7. get_dashboard_stats() RPC → สถิติรวม
+
+⚠ meters และ transformers ไม่โหลดตอน login
+   → โหลดเฉพาะเมื่อผู้ใช้กดค้นหา (server-side search)`}</CodeBlock>
+
+          {/* ── Operations per table ── */}
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>การทำงานแต่ละตาราง</div>
+          <GuideTable rows={[
+            ["Table", "SELECT", "INSERT", "UPDATE", "DELETE", "ใครทำได้"],
+            ["profiles", "เจ้าของ / admin", "Trigger อัตโนมัติ", "เจ้าของ / admin", "—", "RLS ควบคุม"],
+            ["meters", "active user", "admin", "admin", "admin", "ค้นหา / แก้ไข"],
+            ["transformers", "active user", "admin", "admin", "admin", "ค้นหา / แก้ไข"],
+            ["audit_log", "admin เท่านั้น", "ทุก auth user", "—", "—", "อ่านได้เฉพาะ admin"],
+            ["settings", "active user", "— (SQL เท่านั้น)", "admin", "—", "INSERT ผ่าน SQL Editor"],
+          ]} />
+
+          {/* ── ขีดจำกัด ── */}
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ขีดจำกัด Supabase Free Tier</div>
+          <GuideTable rows={[
+            ["รายการ", "ขีดจำกัด", "หมายเหตุ"],
+            ["ฐานข้อมูล (PostgreSQL)", "500 MB", "ดูได้ที่ Dashboard → Settings → Usage"],
+            ["Bandwidth", "5 GB / เดือน", "นับรวม query ทุกครั้ง"],
+            ["Auth users", "50,000 คน", "เกินต้อง upgrade"],
+            ["Row limit per query", "1,000 rows", "ใช้ loadAll() เพื่อ bypass"],
+            ["Edge Functions", "500,000 req/เดือน", "ไม่ได้ใช้ในระบบนี้"],
+            ["File Storage", "1 GB", "ไม่ได้ใช้ในระบบนี้"],
+          ]} />
+          <GuideTip>ดูการใช้งานจริงได้ที่ Supabase Dashboard → Settings → Usage & Billing</GuideTip>
+
+          {/* ── ข้อมูลเยอะเกิน ── */}
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>⚠ ข้อมูลเยอะเกินไป — อาการและวิธีแก้</div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {[
+              ["ค้นหาช้า / timeout", "เพิ่ม index ใน Supabase SQL Editor\nเช่น: CREATE INDEX ON meters(tag); CREATE INDEX ON meters(peano);"],
+              ["โหลดแรกช้า (Dashboard)", "get_dashboard_stats() ทำงาน COUNT ทั้งตาราง\n→ เพิ่ม index บน updated_at หรือเพิ่ม cache ใน settings table"],
+              ["ข้อมูล > 1000 rows ต่อ query", "ใช้ loadAll() ใน config.js ซึ่ง paginate อัตโนมัติ\nหรือค้นหาให้แคบลงด้วย .ilike() .eq() ก่อน"],
+              ["DB ใกล้เต็ม 500 MB", "ลบ audit_log เก่า: DELETE FROM audit_log WHERE at < NOW() - INTERVAL '90 days'\nหรือ upgrade เป็น Pro plan ($25/เดือน)"],
+            ].map(([title, detail]) => (
+              <div key={title} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(244,123,32,0.06)", border: "1px solid rgba(244,123,32,0.2)" }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, color: "var(--pea-orange-500)" }}>{title}</div>
+                <pre style={{ margin: 0, fontSize: 12, fontFamily: "inherit", whiteSpace: "pre-wrap", lineHeight: 1.7, color: "var(--text)" }}>{detail}</pre>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Error ที่พบบ่อย ── */}
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Error ที่พบบ่อยและวิธีแก้</div>
+          <GuideTable rows={[
+            ["Error Message", "สาเหตุ", "วิธีแก้"],
+            ["row-level security policy violation", "RLS บล็อก INSERT เพราะ row ยังไม่มีในตาราง", "รัน INSERT ... ON CONFLICT DO NOTHING ใน SQL Editor ก่อน"],
+            ["JWT expired", "Token หมดอายุ (1 ชม.)", "ระบบ refresh อัตโนมัติ — ถ้าไม่หาย ให้ logout แล้ว login ใหม่"],
+            ["relation does not exist", "รัน SQL ผิด Project ใน Supabase", "ตรวจสอบว่าเลือก Project ถูกต้องที่ด้านบน"],
+            ["Failed to fetch", "ไม่มีอินเทอร์เน็ต หรือ Supabase down", "ตรวจสอบ network / เช็ค status.supabase.com"],
+            ["infinite recursion in RLS", "Policy อ้างอิงตัวเองวนซ้ำ", "แก้ Policy ใน Supabase → Auth → Policies"],
+            ["permission denied for table", "User ไม่มีสิทธิ์ตาม RLS", "ตรวจสอบ role และ status ใน profiles table"],
+          ]} />
+
+          {/* ── SQL ที่ Admin ควรรู้ ── */}
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>SQL ที่ Admin ควรรู้ (รันใน Supabase SQL Editor)</div>
+          <CodeBlock>{`-- ดูขนาดแต่ละตาราง
+SELECT relname AS table,
+       pg_size_pretty(pg_total_relation_size(relid)) AS size
+FROM pg_catalog.pg_statio_user_tables
+ORDER BY pg_total_relation_size(relid) DESC;
+
+-- นับ rows แต่ละตาราง
+SELECT 'meters' AS tbl, COUNT(*) FROM meters
+UNION ALL SELECT 'transformers', COUNT(*) FROM transformers
+UNION ALL SELECT 'audit_log',    COUNT(*) FROM audit_log
+UNION ALL SELECT 'profiles',     COUNT(*) FROM profiles;
+
+-- ล้าง audit_log เก่ากว่า 90 วัน (ประหยัด storage)
+DELETE FROM audit_log WHERE at < NOW() - INTERVAL '90 days';
+
+-- เพิ่ม Index เพื่อเร่งความเร็วค้นหา
+CREATE INDEX IF NOT EXISTS idx_meters_tag    ON meters(tag);
+CREATE INDEX IF NOT EXISTS idx_meters_peano  ON meters(peano);
+CREATE INDEX IF NOT EXISTS idx_tr_tag        ON transformers(tag);
+CREATE INDEX IF NOT EXISTS idx_tr_peano      ON transformers(peano_tr);
+
+-- ดู query ที่ช้าที่สุด (ต้องเปิด pg_stat_statements ก่อน)
+SELECT query, mean_exec_time, calls
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC LIMIT 10;`}</CodeBlock>
+
+          {/* ── ขั้นตอนแก้ปัญหา ── */}
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ขั้นตอนแก้ปัญหาเมื่อระบบโหลดช้า</div>
+          <GuideStep n={1} text="เปิด DevTools (F12) → Network tab → ดูว่า request ไหนใช้เวลานาน" />
+          <GuideStep n={2} text="เปิด Supabase Dashboard → Database → Query Performance → ดู slow queries" />
+          <GuideStep n={3} text="เพิ่ม Index ด้วย SQL ข้างต้น แล้วทดสอบความเร็วใหม่" />
+          <GuideStep n={4} text="ถ้า audit_log > 100,000 rows ให้ล้างข้อมูลเก่าออก" />
+          <GuideStep n={5} text="ถ้า storage > 400 MB ควรเตรียม upgrade หรือ archive ข้อมูลเก่า" />
+          <GuideStep n={6} text="เปิด Maintenance Mode ระหว่างแก้ไข เพื่อไม่ให้ user ใช้งานพร้อมกัน" />
+          <GuideTip>เปิด Maintenance Mode ได้ที่ Admin → ตั้งค่า → Maintenance Mode — user ทั่วไปจะเห็นหน้า "ระบบปิดปรับปรุง" ขณะที่ admin ยังเข้าได้ปกติ</GuideTip>
+
+        </div>
+      </GuideSection>
     </div>
   );
 }
