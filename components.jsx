@@ -45,6 +45,9 @@ const Icon = ({ name, size = 18, stroke = 2 }) => {
     table:    <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18M15 3v18" /></>,
     copy:     <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
     arrowRight:<path d="M5 12h14m-6-6 6 6-6 6" />,
+    menu:     <path d="M4 6h16M4 12h16M4 18h16" />,
+    refresh:  <><path d="M3 12a9 9 0 0 1 15.75-6.5L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.75 6.5L3 16" /><path d="M3 21v-5h5" /></>,
+    warning:  <><path d="M10.3 3.3 1.6 18a2 2 0 0 0 1.7 3h17.4a2 2 0 0 0 1.7-3L13.7 3.3a2 2 0 0 0-3.4 0Z" /><path d="M12 9v5" /><circle cx="12" cy="17" r=".5" fill="currentColor" /></>,
   };
   return <svg {...p} aria-hidden="true">{paths[name] || null}</svg>;
 };

@@ -9,71 +9,236 @@ const {
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
 function AdminPanel({ data, setData, currentUser, addAudit, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil }) {
-  const [tab, setTab] = useStateAd("dashboard");
+  const [tab,         setTab]         = useStateAd("dashboard");
+  const [collapsed,   setCollapsed]   = useStateAd(false);
+  const [mobileOpen,  setMobileOpen]  = useStateAd(false);
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 
-  const tabs = [
-    { id: "dashboard", icon: "dashboard", label: "Dashboard" },
-    { id: "users",     icon: "users",     label: "ผู้ใช้งาน" },
-    { id: "meters",    icon: "meter",     label: "PEA Meter" },
-    { id: "trs",       icon: "tr",        label: "PEA TR" },
+  const NAV = [
+    { id: "dashboard", icon: "dashboard", label: "Dashboard"    },
+    { id: "users",     icon: "users",     label: "ผู้ใช้งาน"    },
+    { id: "meters",    icon: "meter",     label: "PEA มิเตอร์"  },
+    { id: "trs",       icon: "tr",        label: "PEA หม้อแปลง" },
     { id: "import",    icon: "upload",    label: "นำเข้าข้อมูล" },
-    { id: "audit",     icon: "history",   label: "Audit Log" },
-    { id: "settings",  icon: "settings",  label: "ตั้งค่า" },
+    { id: "audit",     icon: "history",   label: "Audit Log"    },
+    { id: "settings",  icon: "settings",  label: "ตั้งค่า"      },
   ];
+  const activeNav = NAV.find(n => n.id === tab);
+
+  const goTab = (id) => { setTab(id); setMobileOpen(false); };
 
   return (
-    <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", position: "relative" }}>
       <style>{`
-        .adm-header { padding: 16px 20px 0; }
-        .adm-tabs-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-        .adm-title { font-size: 28px; }
-        .adm-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-        .adm-tabs::-webkit-scrollbar { display: none; }
+        /* ── Sidebar shell ── */
+        .adm-sb {
+          width: 224px; flex-shrink: 0;
+          display: flex; flex-direction: column;
+          background: var(--surface);
+          border-right: 1px solid var(--line);
+          overflow: hidden;
+          transition: width 230ms cubic-bezier(.4,0,.2,1);
+        }
+        .adm-sb.sb-col { width: 58px; }
+
+        /* Header */
+        .adm-sb-head {
+          display: flex; align-items: center; gap: 10px;
+          padding: 14px 10px 12px; min-height: 62px;
+          border-bottom: 1px solid var(--line); flex-shrink: 0;
+        }
+        .adm-sb-logo {
+          width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+          overflow: hidden;
+        }
+
+        /* Nav */
+        .adm-nav {
+          flex: 1; padding: 8px 6px;
+          display: flex; flex-direction: column; gap: 2px;
+          overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+        }
+        .adm-nav::-webkit-scrollbar { display: none; }
+        .adm-nb {
+          display: flex; align-items: center; gap: 11px;
+          padding: 9px 10px; border-radius: 10px;
+          font-size: 13.5px; font-weight: 600;
+          color: var(--ink-mute); border: 1px solid transparent;
+          white-space: nowrap; overflow: hidden;
+          cursor: pointer; position: relative; text-align: left; width: 100%;
+          transition: background 140ms, color 140ms, border-color 140ms;
+        }
+        .adm-nb:hover { background: var(--hover); color: var(--ink); }
+        .adm-nb.on {
+          background: linear-gradient(135deg,rgba(244,123,32,0.13),rgba(139,63,196,0.13));
+          border-color: rgba(244,123,32,0.32); color: var(--ink);
+        }
+        .adm-ni { flex-shrink: 0; width: 18px; display: grid; place-items: center; }
+        .adm-nlabel { flex: 1; min-width: 0; }
+        .adm-nbadge {
+          background: var(--pea-orange-500); color: #fff;
+          border-radius: 999px; min-width: 18px; height: 18px;
+          display: inline-flex; align-items: center; justify-content: center;
+          font-size: 10px; font-weight: 800; padding: 0 5px; flex-shrink: 0;
+        }
+        .adm-ndot {
+          position: absolute; top: 5px; right: 7px;
+          width: 7px; height: 7px; border-radius: 50%;
+          background: var(--pea-orange-500);
+          border: 1.5px solid var(--surface);
+        }
+
+        /* Collapse button */
+        .adm-col-btn {
+          width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+          display: grid; place-items: center;
+          color: var(--ink-mute); border: 1px solid var(--line);
+          cursor: pointer; transition: all 140ms; margin-left: auto;
+        }
+        .adm-col-btn:hover { background: var(--hover); color: var(--ink); }
+
+        /* Footer */
+        .adm-sb-foot {
+          padding: 8px 6px 12px;
+          border-top: 1px solid var(--line); flex-shrink: 0;
+        }
+        .adm-sb-user {
+          display: flex; align-items: center; gap: 10px;
+          padding: 8px 8px; border-radius: 10px; overflow: hidden;
+        }
+        .adm-sb-av {
+          width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+          background: linear-gradient(135deg,#8b3fc4,#321148);
+          display: grid; place-items: center;
+          font-weight: 800; font-size: 14px; color: white;
+        }
+
+        /* Content */
+        .adm-content { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .adm-ct-head {
+          display: flex; align-items: center; gap: 10px;
+          padding: 16px 20px 0; flex-shrink: 0;
+        }
+        .adm-mob-toggle {
+          display: none; width: 36px; height: 36px; border-radius: 10px;
+          align-items: center; justify-content: center;
+          color: var(--ink-mute); border: 1px solid var(--line);
+          cursor: pointer; flex-shrink: 0;
+        }
         .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; }
+
+        /* Mobile overlay */
+        .adm-overlay {
+          position: fixed; inset: 0; z-index: 498;
+          background: rgba(0,0,0,0.45);
+          pointer-events: none; opacity: 0;
+          transition: opacity 250ms;
+        }
+        .adm-overlay.vis { pointer-events: auto; opacity: 1; }
+
+        /* Mobile: sidebar becomes fixed drawer */
         @media (max-width: 680px) {
-          .adm-header { padding: 12px 16px 0; }
-          .adm-title { font-size: 22px !important; }
-          .adm-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; }
-          .adm-tabs .tab { font-size: 12px !important; padding: 0 10px !important; height: 32px !important; white-space: nowrap; }
+          .adm-sb {
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: 248px !important; z-index: 499;
+            transform: translateX(-100%);
+            transition: transform 260ms cubic-bezier(.4,0,.2,1);
+            box-shadow: none;
+          }
+          .adm-sb.mob-open {
+            transform: translateX(0);
+            box-shadow: 6px 0 32px rgba(0,0,0,0.28);
+          }
+          .adm-col-btn { display: none !important; }
+          .adm-mob-toggle { display: flex !important; }
+          .adm-ct-head { padding: 12px 14px 0; }
           .adm-body { padding: 12px 14px 24px; }
         }
       `}</style>
-      <div className="adm-header">
-        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>Admin</div>
-        <div className="adm-tabs-row">
-          <div className="t-display adm-title">จัดการระบบ</div>
-          <div className="admin-tabs tabs adm-tabs">
-            {tabs.map(t => (
-              <button key={t.id} className={"tab " + (tab === t.id ? "active" : "")} onClick={() => setTab(t.id)}>
-                <Icon name={t.icon} size={14} /> {t.label}
-                {t.id === "users" && pendingCount > 0 && (
-                  <span style={{
-                    background: "var(--pea-orange-500)", color: "white",
-                    borderRadius: 999, minWidth: 18, height: 18,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 10, fontWeight: 800, padding: "0 5px", marginLeft: 2,
-                  }}>
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-            ))}
+
+      {/* ── Overlay (mobile) ── */}
+      <div className={"adm-overlay" + (mobileOpen ? " vis" : "")} onClick={() => setMobileOpen(false)} />
+
+      {/* ── Sidebar ── */}
+      <div className={"adm-sb" + (collapsed ? " sb-col" : "") + (mobileOpen ? " mob-open" : "")}>
+
+        {/* Header */}
+        <div className="adm-sb-head">
+          <div className="adm-sb-logo">
+            <img src="logo.svg" alt="PEA" style={{ width: 36, height: 36 }} />
+          </div>
+          {!collapsed && (
+            <div style={{ overflow: "hidden", flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--pea-orange-500)", letterSpacing: "0.14em", textTransform: "uppercase" }}>Admin</div>
+              <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap" }}>จัดการระบบ</div>
+            </div>
+          )}
+          <button className="adm-col-btn" onClick={() => setCollapsed(c => !c)} title={collapsed ? "ขยาย" : "ย่อ"}>
+            <Icon name={collapsed ? "chevRight" : "chevLeft"} size={14} />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="adm-nav">
+          {NAV.map(n => (
+            <button key={n.id} className={"adm-nb" + (tab === n.id ? " on" : "")}
+              onClick={() => goTab(n.id)} title={collapsed ? n.label : undefined}>
+              <span className="adm-ni"><Icon name={n.icon} size={18} /></span>
+              {!collapsed && <span className="adm-nlabel">{n.label}</span>}
+              {!collapsed && n.id === "users" && pendingCount > 0 && (
+                <span className="adm-nbadge">{pendingCount}</span>
+              )}
+              {collapsed && n.id === "users" && pendingCount > 0 && (
+                <span className="adm-ndot" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Footer: current user */}
+        <div className="adm-sb-foot">
+          <div className="adm-sb-user">
+            <div className="adm-sb-av">
+              {(currentUser?.name || "A")[0].toUpperCase()}
+            </div>
+            {!collapsed && (
+              <div style={{ overflow: "hidden", flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {currentUser?.name || "Admin"}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>Administrator</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      <div className="adm-body">
-        {tab === "dashboard" && <AdminDashboard data={data} />}
-        {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
-        {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
-        {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
-        {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
-        {tab === "audit"     && <AdminAudit />}
-        {tab === "settings"  && <AdminSettings
-          maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
-          maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
-          maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
-          addAudit={addAudit} currentUser={currentUser} />}
+
+      {/* ── Content ── */}
+      <div className="adm-content">
+        <div className="adm-ct-head">
+          {/* Mobile hamburger */}
+          <button className="adm-mob-toggle" onClick={() => setMobileOpen(true)} title="เมนู">
+            <Icon name="menu" size={18} />
+          </button>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--pea-orange-500)", letterSpacing: "0.14em", textTransform: "uppercase" }}>Admin</div>
+            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>{activeNav?.label || "จัดการระบบ"}</div>
+          </div>
+        </div>
+
+        <div className="adm-body">
+          {tab === "dashboard" && <AdminDashboard data={data} />}
+          {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+          {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+          {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+          {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+          {tab === "audit"     && <AdminAudit />}
+          {tab === "settings"  && <AdminSettings
+            maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
+            maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
+            maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
+            addAudit={addAudit} currentUser={currentUser} />}
+        </div>
       </div>
     </div>
   );
