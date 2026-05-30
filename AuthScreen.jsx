@@ -432,16 +432,26 @@ function AuthScreen({ initialError }) {
           <div style={{ fontSize: 13, color: "#c4b5fd" }}>{t("authBrandTitle3")} · {t("authBrandTag")}</div>
         </div>
 
+        {/* Language toggle — segmented pill above card */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+          <div style={{ display: "flex", background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 999, padding: 3, gap: 2 }}>
+            {["th", "en"].map(l => (
+              <button key={l} onClick={() => setLang(l)} title={t("switchLang")} style={{
+                padding: "5px 16px", borderRadius: 999, border: "none", cursor: "pointer",
+                fontSize: 12, fontWeight: 800, letterSpacing: "0.06em",
+                transition: "all 180ms",
+                background: lang === l ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
+                color: lang === l ? "white" : "var(--ink-mute)",
+                boxShadow: lang === l ? "0 2px 8px rgba(107,44,145,0.3)" : "none",
+              }}>
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Form card */}
         <div className="auth-card">
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-            <button onClick={() => setLang(l => l === "th" ? "en" : "th")} title={t("switchLang")}
-              style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 11px", borderRadius: 999,
-                fontSize: 12, fontWeight: 700, background: "rgba(139,63,196,0.1)",
-                border: "1px solid rgba(139,63,196,0.25)", color: "var(--pea-purple-600)", cursor: "pointer" }}>
-              {lang === "th" ? "EN" : "TH"}
-            </button>
-          </div>
 
           {/* ── Forgot password ───────────────────────────── */}
           {mode === "forgot" ? (

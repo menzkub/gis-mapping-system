@@ -598,10 +598,11 @@ function AdminGuide() {
 function CodeBlock({ children }) {
   return (
     <pre style={{
-      background: "var(--ink-2)", color: "#e2d9f3", borderRadius: 10,
+      background: "#150f24", color: "#d4bbf7", borderRadius: 10,
       padding: "12px 16px", fontSize: 12, lineHeight: 1.7,
-      overflowX: "auto", margin: "10px 0", fontFamily: "'IBM Plex Mono',monospace",
-      border: "1px solid var(--line-2)",
+      overflowX: "auto", margin: "10px 0", fontFamily: "'IBM Plex Mono','Courier New',monospace",
+      border: "1px solid rgba(139,63,196,0.35)",
+      whiteSpace: "pre-wrap", wordBreak: "break-word",
     }}>{children}</pre>
   );
 }
@@ -1355,6 +1356,8 @@ function avatarBg(seed) {
 
 /* ---------- Meters CRUD — server-side search ---------- */
 function AdminMeters({ addAudit, currentUser }) {
+  const { lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
   const [q, setQ]             = useStateAd("");
   const [list, setList]       = useStateAd([]);
   const [searching, setSearching] = useStateAd(false);
@@ -1434,13 +1437,13 @@ function AdminMeters({ addAudit, currentUser }) {
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
           <div className="text-lg fw-7">PEA Meter {searching ? "…" : `(${list.length}${list.length >= 100 ? "+" : ""})`}</div>
-          <div className="t-mute text-sm">เพิ่ม/แก้ไข/ลบข้อมูลมิเตอร์ · ค้นหาเพื่อกรองผลลัพธ์</div>
+          <div className="t-mute text-sm">{s("เพิ่ม/แก้ไข/ลบข้อมูลมิเตอร์ · ค้นหาเพื่อกรองผลลัพธ์", "Add / edit / delete meter records · search to filter")}</div>
         </div>
         <div className="adm-tb">
-          <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, ACCOUNTNUM…" />
+          <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder={s("ค้นหา TAG, PEANO, ACCOUNTNUM…", "Search TAG, PEANO, ACCOUNTNUM…")} />
           <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => setShowExport(true)}><Icon name="download" size={14} /> Export</button>
           <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", CODE: "AFAG", ROUTE: "", ACCOUNTNUM: "", PEANO: "", FEEDERID: "", OWNER: "PEA", INSTALLATI: "", LATITUDE: 19.86, LONGITUDE: 99.18 })}>
-            <Icon name="plus" size={14} /> เพิ่ม
+            <Icon name="plus" size={14} /> {s("เพิ่ม", "Add")}
           </button>
         </div>
       </div>
@@ -1470,13 +1473,13 @@ function AdminMeters({ addAudit, currentUser }) {
         </table>
         {list.length >= 100 && (
           <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>
-            แสดง {list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์
+            {s(`แสดง ${list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์`, `Showing ${list.length} records — type to narrow results`)}
           </div>
         )}
       </div>
 
-      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? "แก้ไขมิเตอร์" : "เพิ่มมิเตอร์"} width={640}
-        footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>ยกเลิก</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? "กำลังบันทึก…" : "บันทึก"}</button></>}>
+      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? s("แก้ไขมิเตอร์","Edit Meter") : s("เพิ่มมิเตอร์","Add Meter")} width={640}
+        footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>{s("ยกเลิก","Cancel")}</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}</button></>}>
         {edit && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="TAG"        v={edit.TAG}        onC={v => setEdit({ ...edit, TAG: v })} />
@@ -1524,6 +1527,8 @@ function Field({ label, v, onC, type = "text" }) {
 
 /* ---------- TRs CRUD — server-side search ---------- */
 function AdminTrs({ addAudit, currentUser }) {
+  const { lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
   const [q, setQ]           = useStateAd("");
   const [list, setList]     = useStateAd([]);
   const [searching, setSearching] = useStateAd(false);
@@ -1595,13 +1600,13 @@ function AdminTrs({ addAudit, currentUser }) {
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
           <div className="text-lg fw-7">PEA Transformer {searching ? "…" : `(${list.length}${list.length >= 100 ? "+" : ""})`}</div>
-          <div className="t-mute text-sm">เพิ่ม/แก้ไข/ลบข้อมูลหม้อแปลง · ค้นหาเพื่อกรองผลลัพธ์</div>
+          <div className="t-mute text-sm">{s("เพิ่ม/แก้ไข/ลบข้อมูลหม้อแปลง · ค้นหาเพื่อกรองผลลัพธ์", "Add / edit / delete transformer records · search to filter")}</div>
         </div>
         <div className="adm-tb">
-          <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา TAG, PEANO, สถานที่…" />
+          <input className="input" style={{ width: 220, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder={s("ค้นหา TAG, PEANO, สถานที่…", "Search TAG, PEANO, location…")} />
           <button className="btn btn-outline btn-sm" style={{ flexShrink: 0 }} onClick={() => setShowExport(true)}><Icon name="download" size={14} /> Export</button>
           <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={() => setEdit({ OBJECTID: Date.now(), TAG: "", PHASE: "หม้อแปลง 3 Phase", VOLTAGE: "22 kV", PEANO_TR: "", INSTALL_PHASE: "ABC", KVA: 100, OWNER_TR: "PEA", LOCATION: "", FEEDER1: "", LATITUDE: 19.86, LONGITUDE: 99.18, PEA_METER: "" })}>
-            <Icon name="plus" size={14} /> เพิ่ม
+            <Icon name="plus" size={14} /> {s("เพิ่ม", "Add")}
           </button>
         </div>
       </div>
@@ -1631,13 +1636,13 @@ function AdminTrs({ addAudit, currentUser }) {
         </table>
         {list.length >= 100 && (
           <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>
-            แสดง {list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์
+            {s(`แสดง ${list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์`, `Showing ${list.length} records — type to narrow results`)}
           </div>
         )}
       </div>
 
-      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? "แก้ไขหม้อแปลง" : "เพิ่มหม้อแปลง"} width={680}
-        footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>ยกเลิก</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? "กำลังบันทึก…" : "บันทึก"}</button></>}>
+      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? s("แก้ไขหม้อแปลง","Edit Transformer") : s("เพิ่มหม้อแปลง","Add Transformer")} width={680}
+        footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>{s("ยกเลิก","Cancel")}</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}</button></>}>
         {edit && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="TAG"              v={edit.TAG}          onC={v => setEdit({ ...edit, TAG: v })} />
