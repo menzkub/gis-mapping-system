@@ -926,9 +926,11 @@ function UserGuide({ role }) {
                 <Icon name="chevRight" size={13} /> ยุบทั้งหมด
               </button>
             </div>
-            <button onClick={downloadGuide} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
-              <Icon name="download" size={14} /> ดาวน์โหลดคู่มือ
-            </button>
+            {isAdmin && (
+              <button onClick={downloadGuide} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
+                <Icon name="download" size={14} /> ดาวน์โหลดคู่มือ
+              </button>
+            )}
           </div>
         </div>
 
