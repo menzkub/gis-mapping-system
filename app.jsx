@@ -1114,10 +1114,10 @@ function UserGuide({ role }) {
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
             {[
-              { label: "หัวข้อ",   value: isAdmin ? 11 : 5, icon: "book",    sub: "sections" },
-              { label: "ขั้นตอน", value: isAdmin ? 35 : 16, icon: "check",   sub: "steps" },
-              { label: "ฟีเจอร์",  value: 8,                icon: "bolt",    sub: "features" },
-              { label: "เคล็ดลับ", value: isAdmin ? 14 : 7, icon: "warning", sub: "tips & notes" },
+              { label: "หัวข้อ",   value: isAdmin ? 12 : 5, icon: "book",    sub: "sections" },
+              { label: "ขั้นตอน", value: isAdmin ? 38 : 16, icon: "check",   sub: "steps" },
+              { label: "ฟีเจอร์",  value: isAdmin ? 10 : 8, icon: "bolt",    sub: "features" },
+              { label: "เคล็ดลับ", value: isAdmin ? 15 : 7, icon: "warning", sub: "tips & notes" },
             ].map(({ label, value, icon, sub }) => (
               <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -1336,7 +1336,8 @@ function UserGuide({ role }) {
                 <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
                 <UGStep n={1} text="เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง" />
                 <UGStep n={2} text="แก้ไขข้อความแจ้งผู้ใช้ แล้วกด 'บันทึกข้อความ'" />
-                <UGStep n={3} text="ตั้งวันเวลาที่คาดว่าจะกลับมา แล้วกด 'บันทึกวันเวลา'" />
+                <UGStep n={3} text="เลือกวันที่/เวลาที่คาดว่าจะกลับมาผ่านปฏิทินไทย — กดปุ่มนาฬิกาเพื่อเปิด" />
+                <UGStep n={4} text="นำทางเดือนด้วยปุ่ม ← → เลือกวัน จากนั้นปรับชั่วโมง/นาที แล้วกด 'ยืนยัน'" />
                 <UGNote>Admin ยังคงเข้าใช้ระบบได้ปกติ — จะเห็น banner แจ้งเตือนแดงบน Topbar</UGNote>
                 <UGTip>อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม "เปิดระบบ" ใน banner ได้เลย</UGTip>
                 <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ข้อมูลนักพัฒนาระบบ</div>
@@ -1344,6 +1345,21 @@ function UserGuide({ role }) {
                 <UGStep n={2} text="เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏที่มุมหน้าจอ" />
                 <UGStep n={3} text="ลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้อัตโนมัติ" />
                 <UGNote>ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด</UGNote>
+              </div>
+            </UGSection>
+
+            <UGSection icon="bolt" title="ประวัติการปรับปรุง UX/UI" badge="admin" expandSignal={expandSig}>
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  ["รายการ", "รายละเอียด"],
+                  ["ตำแหน่ง", "Sidebar (desktop) / Bottom nav (mobile) — ไอคอน ⚡ 'อัปเดต'"],
+                  ["สิทธิ์", "Admin เท่านั้น"],
+                  ["ข้อมูล", "Timeline ทุก version พร้อมวันที่, category chip, stat summary"],
+                ]} />
+                <UGStep n={1} text="กดแท็บ 'อัปเดต ⚡' ใน sidebar — timeline แสดงทุก version ตั้งแต่ v2.0" />
+                <UGStep n={2} text="แต่ละรายการมี chip บอกประเภท: ใหม่ / UX/UI / แก้ไข" />
+                <UGStep n={3} text="การ์ด hero ด้านบนสรุปจำนวน version, ฟีเจอร์ใหม่, UX, แก้ไขทั้งหมด" />
+                <UGTip>ข้อมูลใน Changelog อัปเดตพร้อมกับการ deploy แต่ละครั้ง</UGTip>
               </div>
             </UGSection>
           </>

@@ -606,7 +606,8 @@ function AdminGuide() {
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
           <GuideStep n={1} text={s("เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้า 'ระบบปิดปรับปรุง'", "Enable 'Maintenance Mode' toggle — regular users will see the maintenance page")} />
           <GuideStep n={2} text={s("แก้ไขข้อความแจ้งผู้ใช้ตามต้องการ แล้วกด 'บันทึกข้อความ'", "Edit the message shown to users, then click 'Save Message'")} />
-          <GuideStep n={3} text={s("ตั้งวันเวลาที่คาดว่าจะกลับมาให้บริการ แล้วกด 'บันทึกวันเวลา'", "Set the expected return time, then click 'Save Time'")} />
+          <GuideStep n={3} text={s("กดปุ่มปฏิทิน → เลือกวันด้วยปฏิทินไทย (พ.ศ.) นำทาง ← → เดือน", "Click calendar button → pick date in Thai calendar (BE), navigate ← → months")} />
+          <GuideStep n={4} text={s("ปรับชั่วโมง/นาทีด้วยปุ่ม +/− (นาทีเพิ่มทีละ 5) → กด 'ยืนยัน'", "Adjust hour/minute with +/− buttons (minute steps by 5) → click 'Confirm'")} />
           <GuideNote>{s("Admin ยังคงเข้าใช้ระบบได้ปกติ — เห็น banner แจ้งเตือนสีแดงบน Topbar", "Admins can still access the system — a red warning banner appears on the Topbar")}</GuideNote>
           <GuideTip>{s("อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม 'เปิดระบบ' ใน banner ได้เลย", "Remember to disable Maintenance Mode — click 'Enable System' in the banner")}</GuideTip>
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("ข้อมูลนักพัฒนาระบบ", "Developer Info")}</div>
@@ -614,6 +615,22 @@ function AdminGuide() {
           <GuideStep n={2} text={s("เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏมุมหน้าจอ", "Enable 'Show Developer Button' — a floating button appears on screen")} />
           <GuideStep n={3} text={s("ผู้ใช้ทุกคนสามารถลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้", "Any user can drag the button to a preferred position — position is saved")} />
           <GuideNote>{s("ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด", "Both Maintenance Mode and Developer Info cards can be collapsed/expanded")}</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: ประวัติ UX/UI ─── */}
+      <GuideSection icon="bolt" title={s("ประวัติการปรับปรุง UX/UI", "UX/UI Changelog")} badge="admin only" expandSignal={expandSig}>
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            [s("รายการ", "Item"), s("รายละเอียด", "Details")],
+            [s("ตำแหน่ง", "Location"), s("Sidebar ไอคอน ⚡ 'อัปเดต' — เฉพาะ Admin", "Sidebar ⚡ 'อัปเดต' icon — Admin only")],
+            [s("ข้อมูล", "Data"), s("Timeline ทุก version พร้อมวันที่และ category chip", "Timeline of all versions with dates and category chips")],
+            [s("Category", "Category"), s("ใหม่ (เขียว) / UX/UI (ม่วง) / แก้ไข (น้ำเงิน)", "new (green) / UX/UI (purple) / fix (blue)")],
+          ]} />
+          <GuideStep n={1} text={s("กดแท็บ 'อัปเดต ⚡' ใน sidebar — เห็นได้เฉพาะ Admin", "Click 'อัปเดต ⚡' in sidebar — visible to Admin only")} />
+          <GuideStep n={2} text={s("Hero card สรุปจำนวน: version, ฟีเจอร์ใหม่, UX, แก้ไข", "Hero card summarizes: versions, new features, UX, fixes")} />
+          <GuideStep n={3} text={s("Timeline dot สี = สีประจำ version — ล่าสุดมี badge 'ล่าสุด' สีเขียว", "Timeline dot color = version color — latest has green 'ล่าสุด' badge")} />
+          <GuideTip>{s("เพิ่ม version ใหม่ได้ในอาร์เรย์ CHANGELOG ใน app.jsx", "Add new versions in the CHANGELOG array in app.jsx")}</GuideTip>
         </div>
       </GuideSection>
 
@@ -1058,6 +1075,42 @@ localStorage.setItem("pea_theme", theme);`}</CodeBlock>
   showHeatmap={heatmap}
   showCluster={cluster}
 />`}</CodeBlock>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Custom Components ─── */}
+      <GuideSection icon="bolt" title="Custom Components (DateTimePicker · ChangelogView)" expandSignal={expandSig}>
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>DateTimePicker <DevBadge color="purple">AdminPanel.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["Prop", "Type", "คำอธิบาย"],
+            ["value", "string", "datetime-local format 'YYYY-MM-DDTHH:MM' หรือ ''"],
+            ["onChange", "fn(string)", "callback รับค่า string รูปแบบเดิม หรือ '' เมื่อล้าง"],
+          ]} />
+          <CodeBlock>{`<DateTimePicker
+  value={localUntil}        // "2026-05-30T08:30" หรือ ""
+  onChange={setLocalUntil}  // setState รับ string ใหม่
+/>`}</CodeBlock>
+          <GuideTip>ปฏิทินแสดงชื่อเดือนภาษาไทยพร้อม พ.ศ. — นาทีเพิ่มทีละ 5 — กด X ในช่องเพื่อล้างค่า</GuideTip>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ChangelogView + CHANGELOG <DevBadge color="purple">app.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["ส่วน", "คำอธิบาย"],
+            ["CHANGELOG", "Array ของ version object — แก้ไขเพื่ออัปเดต changelog"],
+            ["CAT_META", "config สี/label ของ category chip (new · ux · fix · perf)"],
+            ["ChangelogView", "Component ไม่รับ props — render จาก CHANGELOG โดยตรง"],
+          ]} />
+          <CodeBlock>{`// เพิ่ม version ใหม่ใน CHANGELOG array (app.jsx)
+CHANGELOG.unshift({
+  version: "v2.7", date: "1 มิ.ย. 2569", tag: "UX",
+  tagColor: "#8b3fc4",
+  items: [
+    { cat: "new", text: "ฟีเจอร์ใหม่ที่เพิ่มเข้ามา" },
+    { cat: "ux",  text: "ปรับ UI ให้สวยงามขึ้น"    },
+    { cat: "fix", text: "แก้ bug ที่พบ"             },
+  ],
+});`}</CodeBlock>
+          <GuideNote>แท็บ 'อัปเดต ⚡' ใน sidebar — เห็นเฉพาะ Admin · route = "changelog"</GuideNote>
         </div>
       </GuideSection>
 
