@@ -165,7 +165,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
 
     if (showCluster && points.length > 5) {
       const z = map.getZoom();
-      const gridSize = z >= 15 ? 0.001 : z >= 13 ? 0.005 : z >= 11 ? 0.02 : 0.08;
+      const gridSize = z >= 15 ? 0.0006 : z >= 13 ? 0.002 : z >= 11 ? 0.008 : 0.035;
       const cells = new Map();
       points.forEach(p => {
         const key = `${Math.floor(p.LATITUDE / gridSize)}_${Math.floor(p.LONGITUDE / gridSize)}`;
@@ -183,10 +183,52 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             html: `<div class="cluster-marker">${group.length}</div>`,
             iconSize: [44, 44],
             iconAnchor: [22, 22],
+            popupAnchor: [0, -24],
           });
           const m = L.marker([lat, lng], { icon, riseOnHover: true });
-          m.on("click", () => {
-            map.flyTo([lat, lng], Math.min(z + 2, 18), { duration: 0.6 });
+
+          // Build cluster popup listing up to 5 items
+          const preview = group.slice(0, 5);
+          const extra = group.length - preview.length;
+          const isMeter = kind === "meter";
+          const accent = isMeter ? "#6b2c91" : "#f47b20";
+          const rows = preview.map((p, i) => `
+            <div data-cluster-item="${i}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background 140ms" onmouseover="this.style.background='var(--soft)'" onmouseout="this.style.background='transparent'">
+              <div style="width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,${accent},${isMeter ? "#8b3fc4" : "#d96512"});display:grid;place-items:center;color:white;font-weight:800;font-size:11px;flex-shrink:0">${isMeter ? "M" : "T"}</div>
+              <div style="min-width:0">
+                <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.TAG}</div>
+                <div style="font-size:11px;color:var(--ink-mute)">${isMeter ? (p.PEANO || "—") : (p.PEANO_TR || "—")}</div>
+              </div>
+            </div>`).join("");
+
+          const popupContent = `
+            <div style="padding:10px 12px 8px;min-width:230px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,${accent},${isMeter?"#8b3fc4":"#d96512"});display:grid;place-items:center;color:white;font-weight:800;font-size:13px">${group.length}</div>
+                <div style="font-weight:700;font-size:13px;color:var(--ink)">${isMeter ? "PEA Meter" : "PEA Transformer"}</div>
+              </div>
+              <div style="font-size:11px;color:var(--ink-mute);margin-bottom:6px">กดรายการเพื่อดูข้อมูล</div>
+              ${rows}
+              ${extra > 0 ? `<div style="text-align:center;font-size:11px;color:var(--ink-mute);padding:4px 0">+ อีก ${extra} รายการ</div>` : ""}
+              <button data-zoom-cluster style="margin-top:8px;width:100%;height:32px;border-radius:8px;background:linear-gradient(135deg,${accent},${isMeter?"#8b3fc4":"#d96512"});color:white;font-weight:700;font-size:12px;border:0;cursor:pointer">ซูมเข้าดูทั้งหมด</button>
+            </div>`;
+
+          m.bindPopup(popupContent, { maxWidth: 280, closeButton: true, autoPanPadding: [40, 40] });
+          m.on("popupopen", (ev) => {
+            const root = ev.popup.getElement();
+            if (!root) return;
+            root.querySelectorAll("[data-cluster-item]").forEach((el, i) => {
+              el.onclick = () => {
+                map.closePopup();
+                onSelect?.(preview[i]);
+                map.flyTo([preview[i].LATITUDE, preview[i].LONGITUDE], Math.max(z + 3, 16), { duration: 0.7 });
+              };
+            });
+            const zoomBtn = root.querySelector("[data-zoom-cluster]");
+            if (zoomBtn) zoomBtn.onclick = () => {
+              map.closePopup();
+              map.flyTo([lat, lng], Math.min(z + 3, 18), { duration: 0.6 });
+            };
           });
           m.addTo(layer);
         }
