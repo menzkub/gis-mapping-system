@@ -487,10 +487,14 @@ function AdminGuide() {
           <GuideTable rows={[
             [s("แท็บ", "Tab"), s("รายละเอียด", "Details")],
             [s("ข้อมูล", "Info"), s("ดูชื่อ, ชื่อผู้ใช้, อีเมล, บทบาท, วันที่สมัคร — แก้ไขชื่อได้", "View name, username, email, role, join date — name editable")],
-            [s("รหัสผ่าน", "Password"), s("เปลี่ยนรหัสผ่าน (ต้องกรอกรหัสเดิม) + เปิด/ปิด 2FA", "Change password + enable/disable 2FA")],
+            [s("รหัสผ่าน", "Password"), s("สถานะรหัสผ่าน (progress bar + วันหมดอายุ) · ประวัติการเปลี่ยนรหัส · เปิด/ปิด 2FA", "Password status (progress bar + expiry) · change history · enable/disable 2FA")],
             [s("การใช้งาน", "Activity"), s("ประวัติ login/logout, เปลี่ยนรหัส, 2FA พร้อม device info", "Login/logout history, password changes, 2FA with device info")],
             [s("การค้นหา", "Search"), s("ประวัติค้นหา Meter/TR พร้อม timestamp", "Meter/TR search history with timestamps")],
           ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("แท็บ \"รหัสผ่าน\" — รายละเอียด", "Password Tab — Details")}</div>
+          <GuideStep n={1} text={s("การ์ดสถานะแสดง progress bar (วันที่ใช้ไปจาก 45 วัน), วันที่เปลี่ยนล่าสุด, วันหมดอายุ", "Status card shows progress bar (days used of 45), last changed date, expiry date")} />
+          <GuideStep n={2} text={s("รายการ 'ประวัติการเปลี่ยนรหัสผ่าน' แสดงทุกครั้งที่มีการเปลี่ยน พร้อมวันที่และหมายเหตุ", "Password history list shows every change with date and notes")} />
+          <GuideStep n={3} text={s("สีการ์ดเปลี่ยนตามสถานะ: เขียว (ปกติ) → เหลือง (≤7 วัน) → แดง (≤3 วัน / หมดอายุ)", "Card color changes by status: green (normal) → yellow (≤7 days) → red (≤3 days / expired)")} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("เปิด 2FA (TOTP)", "Enable 2FA (TOTP)")}</div>
           <GuideStep n={1} text={s("ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'", "Go to Profile → Password tab → click 'Enable 2FA'")} />
           <GuideStep n={2} text={s("สแกน QR Code ด้วย Google Authenticator หรือ Authy", "Scan QR Code with Google Authenticator or Authy")} />
@@ -518,6 +522,7 @@ function AdminGuide() {
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Action", s("ผลลัพธ์", "Result")],
+            [s("คลิกแถวผู้ใช้", "Click user row"), s("เปิด popup ข้อมูลส่วนตัว + สถานะรหัสผ่าน + ประวัติการเปลี่ยนรหัส", "Opens popup: personal info + password status + change history")],
             [s("อนุมัติ", "Approve"), s("เปลี่ยนสถานะจาก pending → active (ผู้ใช้เข้าระบบได้)", "Change status from pending → active (user can log in)")],
             [s("ระงับ", "Suspend"), s("เปลี่ยนสถานะเป็น banned (ผู้ใช้เข้าระบบไม่ได้)", "Change status to banned (user cannot log in)")],
             [s("ปลดระงับ", "Unsuspend"), s("เปลี่ยนสถานะจาก banned → active", "Change status from banned → active")],
@@ -525,6 +530,10 @@ function AdminGuide() {
             [s("บังคับ 2FA", "Force 2FA"), s("คลิก toggle 2FA ในแถว — เปลี่ยนทันที", "Click the 2FA toggle in the row — changes immediately")],
             [s("ปลดล็อครหัสผ่าน", "Unlock Password"), s("กดปุ่ม 'ปลดล็อค' เมื่อรหัสหมดอายุ — ผู้ใช้ต้องเปลี่ยนรหัสเมื่อ login", "Click 'Unlock' when password expired — user must change password on next login")],
           ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("Popup ข้อมูลผู้ใช้ (คลิกแถว)", "User Detail Popup (click row)")}</div>
+          <GuideStep n={1} text={s("คลิกที่แถวใดก็ได้ในตาราง — popup แสดงอีเมล, สถานะ, บทบาท, 2FA, เข้าล่าสุด, วันสมัคร", "Click any row — popup shows email, status, role, 2FA, last login, join date")} />
+          <GuideStep n={2} text={s("การ์ดสถานะรหัสผ่านแสดง progress bar + วันใช้ไป/45 วัน + วันหมดอายุ", "Password status card shows progress bar + days used/45 + expiry date")} />
+          <GuideStep n={3} text={s("รายการประวัติการเปลี่ยนรหัสผ่านแสดงครบทุกครั้งพร้อมวันที่", "Full password change history list with dates")} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("ระบบรหัสผ่านหมดอายุ (45 วัน)", "Password Expiry System (45 days)")}</div>
           <GuideTable rows={[
             [s("สถานะ", "Status"), s("ความหมาย", "Meaning")],
