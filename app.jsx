@@ -1449,7 +1449,7 @@ function DevInfoModal({ devInfo, onClose }) {
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(14,10,22,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      className="pea-modal-overlay" style={{ zIndex: 9000 }}
     >
       <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: "var(--surface)", borderRadius: 24, width: "100%", maxWidth: 420, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
         {/* Gradient header */}
@@ -2285,7 +2285,7 @@ function App() {
 
         {/* Logout confirm dialog */}
         {showLogoutConfirm && (
-          <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(14,10,22,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowLogoutConfirm(false)}>
+          <div className="fade-in pea-modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
             <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 420, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
               <div style={{ padding: "24px 24px 18px", background: "linear-gradient(135deg,#f47b20 0%,#d96512 60%,#6b2c91 130%)", color: "white", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", right: -30, top: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />

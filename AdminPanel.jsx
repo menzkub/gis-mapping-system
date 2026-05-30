@@ -264,7 +264,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
   const { t } = useLang();
   if (!open) return null;
   return (
-    <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(14,10,22,0.55)", backdropFilter: "blur(8px)", display: "grid", placeItems: "center", padding: 20 }} onClick={onClose}>
+    <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 440, background: "var(--surface)", borderRadius: 24, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
         <div style={{ padding: "22px 24px 18px", background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 60%,#f47b20 130%)", color: "white", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", right: -30, top: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
@@ -1820,9 +1820,9 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         }[a] || a);
 
         return (
-          <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(14,10,22,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          <div className="fade-in pea-modal-overlay"
             onClick={() => setPwModal(null)}>
-            <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 580, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+            <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 580, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "86vh", display: "flex", flexDirection: "column" }}>
 
               {/* Header */}
               <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>

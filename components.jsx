@@ -108,13 +108,7 @@ function Modal({ open, onClose, title, children, footer, width = 520 }) {
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fade-in" style={{
-      position: "fixed", top: 0, right: 0, bottom: 0, left: 0,
-      zIndex: 9000, background: "rgba(14, 10, 22, 0.55)",
-      backdropFilter: "blur(6px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 20,
-    }} onClick={onClose}>
+    <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{
         background: "var(--surface)", borderRadius: 20, width: "100%", maxWidth: width,
         maxHeight: "92vh", display: "flex", flexDirection: "column",
@@ -253,11 +247,7 @@ function ConfirmProvider({ children }) {
     <ConfirmCtx.Provider value={confirm}>
       {children}
       {state && (
-        <div className="fade-in" style={{
-          position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 9500,
-          background: "rgba(14, 10, 22, 0.55)", backdropFilter: "blur(8px)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-        }} onClick={() => close(false)}>
+        <div className="fade-in pea-modal-overlay" onClick={() => close(false)}>
           <div className="fade-up" onClick={e => e.stopPropagation()} style={{
             background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 460,
             boxShadow: "var(--shadow-lg)", border: "1px solid var(--line)", overflow: "hidden",
