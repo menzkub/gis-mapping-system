@@ -773,6 +773,7 @@ function App() {
   const [maintenanceUntil, setMaintenanceUntil] = useStateApp("");
   const [showNotif, setShowNotif] = useStateApp(false);
   const [refreshing, setRefreshing] = useStateApp(false);
+  const [adminTab, setAdminTab] = useStateApp("dashboard");
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -1008,6 +1009,16 @@ function App() {
     { id: "profile", icon: "user",     label: "บัญชีฉัน" },
     ...(currentUser.role === "admin" ? [{ id: "admin", icon: "settings", label: "Admin" }] : []),
   ];
+  const ADMIN_NAV = [
+    { id: "dashboard", icon: "dashboard", label: "Dashboard"    },
+    { id: "users",     icon: "users",     label: "ผู้ใช้งาน"    },
+    { id: "meters",    icon: "meter",     label: "PEA มิเตอร์"  },
+    { id: "trs",       icon: "tr",        label: "PEA หม้อแปลง" },
+    { id: "import",    icon: "upload",    label: "นำเข้าข้อมูล" },
+    { id: "audit",     icon: "history",   label: "Audit Log"    },
+    { id: "settings",  icon: "settings",  label: "ตั้งค่า"      },
+  ];
+  const pendingCount = data.users.filter(u => u.status === "pending").length;
 
   return (
     <ToastProvider><ConfirmProvider>
@@ -1027,22 +1038,48 @@ function App() {
           </div>
           <nav className="sidebar-nav f-col f-gap-2">
             {navItems.map(it => (
-              <button
-                key={it.id}
-                className={"sidebar-nav-btn" + (route === it.id ? " sidebar-nav-btn--active" : "")}
-                onClick={() => setRoute(it.id)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                  borderRadius: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 14,
-                  background: route === it.id ? "linear-gradient(135deg, rgba(244,123,32,0.25), rgba(139,63,196,0.25))" : "transparent",
-                  border: route === it.id ? "1px solid rgba(244,123,32,0.5)" : "1px solid transparent",
-                  boxShadow: route === it.id ? "0 8px 20px rgba(244,123,32,0.18)" : "none",
-                  textAlign: "left", transition: "all 180ms var(--ease-out)",
-                }}
-              >
-                <Icon name={it.icon} size={18} />
-                <span className="sidebar-nav-label">{it.label}</span>
-              </button>
+              <React.Fragment key={it.id}>
+                <button
+                  className={"sidebar-nav-btn" + (route === it.id ? " sidebar-nav-btn--active" : "")}
+                  onClick={() => setRoute(it.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                    borderRadius: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 14,
+                    background: route === it.id ? "linear-gradient(135deg, rgba(244,123,32,0.25), rgba(139,63,196,0.25))" : "transparent",
+                    border: route === it.id ? "1px solid rgba(244,123,32,0.5)" : "1px solid transparent",
+                    boxShadow: route === it.id ? "0 8px 20px rgba(244,123,32,0.18)" : "none",
+                    textAlign: "left", transition: "all 180ms var(--ease-out)",
+                  }}
+                >
+                  <Icon name={it.icon} size={18} />
+                  <span className="sidebar-nav-label">{it.label}</span>
+                </button>
+
+                {/* Admin sub-nav — expands inline when Admin route is active */}
+                {it.id === "admin" && route === "admin" && (
+                  <div className="sidebar-nav-label" style={{ marginLeft: 10, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,0.10)", display: "flex", flexDirection: "column", gap: 1 }}>
+                    {ADMIN_NAV.map(sub => (
+                      <button key={sub.id} onClick={() => setAdminTab(sub.id)} style={{
+                        display: "flex", alignItems: "center", gap: 9,
+                        padding: "7px 10px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                        color: adminTab === sub.id ? "white" : "rgba(255,255,255,0.58)",
+                        background: adminTab === sub.id ? "rgba(244,123,32,0.20)" : "transparent",
+                        border: adminTab === sub.id ? "1px solid rgba(244,123,32,0.32)" : "1px solid transparent",
+                        cursor: "pointer", textAlign: "left", transition: "all 140ms",
+                        position: "relative",
+                      }}>
+                        <Icon name={sub.icon} size={15} />
+                        {sub.label}
+                        {sub.id === "users" && pendingCount > 0 && (
+                          <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, minWidth: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, padding: "0 4px", marginLeft: "auto" }}>
+                            {pendingCount}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </nav>
 
@@ -1193,6 +1230,7 @@ function App() {
           )}
           {route === "admin" && currentUser.role === "admin" && (
             <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit}
+              tab={adminTab} setTab={setAdminTab}
               maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
               maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
               maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil} />
