@@ -14,14 +14,14 @@ function LoadingScreen({ message = "กำลังโหลดข้อมู�
       height: "100vh", display: "grid", placeItems: "center",
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)",
     }}>
-      <div style={{ textAlign: "center", color: "white" }}>
+      <div style={{ textAlign: "center", color: "white", padding: "0 20px" }}>
         <img src="logo.svg" alt="PEA" style={{
-          width: 64, height: 64, borderRadius: 18, margin: "0 auto 20px", display: "block",
-          boxShadow: "0 12px 36px rgba(139,63,196,0.45)",
+          width: 96, height: 96, borderRadius: 28, margin: "0 auto 28px", display: "block",
+          boxShadow: "0 20px 60px rgba(139,63,196,0.55)",
           animation: "pea-spin 1.4s linear infinite",
         }} />
-        <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>PEA Meter &amp; TR</div>
-        <div style={{ fontSize: 13, opacity: 0.65 }}>{message}</div>
+        <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 10, letterSpacing: "-0.01em" }}>PEA Meter &amp; TR</div>
+        <div style={{ fontSize: 15, opacity: 0.65 }}>{message}</div>
       </div>
       <style>{`@keyframes pea-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -675,6 +675,277 @@ function formatUntil(until) {
   } catch { return null; }
 }
 
+/* ============================================================
+   UserGuide — role-aware manual (user sees user sections, admin sees all)
+   ============================================================ */
+function UGSection({ icon, title, badge, children }) {
+  const [open, setOpen] = useStateApp(false);
+  return (
+    <div style={{ borderRadius: 16, border: "1px solid var(--line)", overflow: "hidden", marginBottom: 10 }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 12,
+        padding: "14px 18px", background: open ? "linear-gradient(135deg,rgba(139,63,196,0.07),rgba(244,123,32,0.05))" : "var(--surface)",
+        border: "none", cursor: "pointer", textAlign: "left", transition: "background 180ms",
+      }}>
+        <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", color: "white", flexShrink: 0 }}>
+          <Icon name={icon} size={16} />
+        </span>
+        <span style={{ flex: 1, fontWeight: 700, fontSize: 15 }}>{title}</span>
+        {badge && <span className="badge badge-purple" style={{ fontSize: 11 }}>{badge}</span>}
+        <Icon name={open ? "chevDown" : "chevRight"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+      </button>
+      {open && (
+        <div style={{ padding: "4px 18px 18px 18px", borderTop: "1px solid var(--line)", background: "var(--soft)" }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UGStep({ n, text }) {
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+      <span style={{ minWidth: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#f47b20)", color: "white", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center", flexShrink: 0, marginTop: 1 }}>{n}</span>
+      <span style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink)" }}>{text}</span>
+    </div>
+  );
+}
+
+function UGTip({ children }) {
+  return (
+    <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.2)", marginTop: 10 }}>
+      <Icon name="tip" size={15} style={{ color: "var(--pea-orange-500)", flexShrink: 0, marginTop: 2 }} />
+      <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}>{children}</span>
+    </div>
+  );
+}
+
+function UGNote({ children }) {
+  return (
+    <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(139,63,196,0.07)", border: "1px solid rgba(139,63,196,0.18)", marginTop: 10 }}>
+      <Icon name="info" size={15} style={{ color: "var(--pea-purple-500)", flexShrink: 0, marginTop: 2 }} />
+      <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}>{children}</span>
+    </div>
+  );
+}
+
+function UGTable({ rows }) {
+  return (
+    <div style={{ overflowX: "auto", marginTop: 10 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <thead>
+          <tr style={{ background: "rgba(139,63,196,0.08)" }}>
+            {rows[0].map((h, i) => <th key={i} style={{ padding: "7px 12px", textAlign: "left", fontWeight: 700, borderBottom: "1px solid var(--line)", whiteSpace: "nowrap" }}>{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(1).map((row, r) => (
+            <tr key={r} style={{ borderBottom: "1px solid var(--line)" }}>
+              {row.map((cell, c) => <td key={c} style={{ padding: "7px 12px", lineHeight: 1.5 }}>{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UserGuide({ role }) {
+  const isAdmin = role === "admin";
+  return (
+    <div style={{ height: "100%", overflow: "auto" }}>
+      <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 20px 40px" }}>
+        {/* Hero */}
+        <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.15)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <Icon name="book" size={26} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>คู่มือการใช้งาน</div>
+              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>
+                {isAdmin ? "สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Feature" : "สำหรับผู้ใช้งานทั่วไป"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── เข้าสู่ระบบ ─── */}
+        <UGSection icon="lock" title="การเข้าสู่ระบบ & สมัครสมาชิก">
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>สมัครสมาชิก</div>
+            <UGStep n={1} text="คลิก 'สมัครสมาชิก' บนหน้า Login" />
+            <UGStep n={2} text="กรอกชื่อ-นามสกุล, ชื่อผู้ใช้, อีเมล, และรหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)" />
+            <UGStep n={3} text="กด 'สมัครสมาชิก' — บัญชีจะอยู่ในสถานะ 'รออนุมัติ' จนกว่า Admin จะอนุมัติ" />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เข้าสู่ระบบ</div>
+            <UGStep n={1} text="กรอกอีเมลและรหัสผ่าน แล้วกด 'เข้าสู่ระบบ'" />
+            <UGStep n={2} text="หากเปิด 2FA ไว้ — ระบบจะขอรหัส 6 หลักจาก Authenticator App" />
+            <UGStep n={3} text="ติ๊ก 'จดจำฉันไว้ 7 วัน' เพื่อไม่ต้องล็อกอินบ่อย" />
+            <UGTip>ลืมรหัสผ่าน? กดลิงก์ 'ลืมรหัสผ่าน' ระบบจะส่ง link รีเซ็ตไปยังอีเมล</UGTip>
+            <UGNote>ระบบออกจากระบบอัตโนมัติหลังไม่ใช้งาน 30 นาที</UGNote>
+          </div>
+        </UGSection>
+
+        {/* ─── ค้นหา ─── */}
+        <UGSection icon="search" title="ค้นหาข้อมูล Meter / Transformer">
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>ค้นหา PEA มิเตอร์</div>
+            <UGStep n={1} text="เลือกแท็บ 'PEA Meter' ในหน้าค้นหา" />
+            <UGStep n={2} text="พิมพ์คำค้นหา: TAG, PEANO, ACCOUNTNUM, หรือ Feeder ID — ระบบค้นหาอัตโนมัติ" />
+            <UGStep n={3} text="กรองเพิ่มเติม: เลือก Feeder, เจ้าของ (PEA/Customer), หรือ CODE" />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ค้นหา PEA หม้อแปลง</div>
+            <UGStep n={1} text="เลือกแท็บ 'PEA Transformer'" />
+            <UGStep n={2} text="พิมพ์คำค้นหา: TAG, PEANO, สถานที่, หรือ Feeder" />
+            <UGStep n={3} text="กรองเพิ่มเติม: ระบบเฟส, แรงดัน (22/33 kV), kVA ต่ำสุด-สูงสุด" />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Export ผลการค้นหา</div>
+            <UGStep n={1} text="กดปุ่ม 'Export' — Dialog แสดงจำนวนรายการที่จะส่งออก" />
+            <UGStep n={2} text="กด 'Export' อีกครั้งเพื่อดาวน์โหลดเป็นไฟล์ CSV" />
+            <UGTip>ผลลัพธ์ถูกจำกัดสูงสุด 500 รายการ — พิมพ์คำค้นหาเพิ่มเพื่อลดจำนวน</UGTip>
+          </div>
+        </UGSection>
+
+        {/* ─── แผนที่ ─── */}
+        <UGSection icon="map" title="แผนที่และการนำทาง GPS">
+          <div style={{ marginTop: 12 }}>
+            <UGTable rows={[
+              ["ฟีเจอร์", "วิธีใช้"],
+              ["สลับ Street/Satellite", "กดปุ่ม Street หรือ Satellite บน Topbar"],
+              ["Cluster", "กดปุ่ม Cluster บนแผนที่ — รวมกลุ่ม marker"],
+              ["Heatmap", "กดปุ่ม Heatmap — แสดงความหนาแน่นพื้นที่"],
+              ["Split View", "กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน"],
+              ["คัดลอกพิกัด", "คลิก marker → กดปุ่ม Copy lat/lng"],
+            ]} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>นำทาง GPS</div>
+            <UGStep n={1} text="คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง" />
+            <UGStep n={2} text="ระบบขอสิทธิ์ตำแหน่งปัจจุบัน — กด 'Allow'" />
+            <UGStep n={3} text="ระบบคำนวณระยะทางและเวลาโดยประมาณ" />
+            <UGStep n={4} text="กด 'นำทาง' เพื่อเปิด Google Maps หรือ Apple Maps" />
+          </div>
+        </UGSection>
+
+        {/* ─── โปรไฟล์ ─── */}
+        <UGSection icon="user" title="โปรไฟล์ & ความปลอดภัยส่วนตัว">
+          <div style={{ marginTop: 12 }}>
+            <UGTable rows={[
+              ["แท็บ", "รายละเอียด"],
+              ["ข้อมูล", "ดูและแก้ไขชื่อ, ชื่อผู้ใช้, อีเมล, บทบาท"],
+              ["รหัสผ่าน", "เปลี่ยนรหัสผ่าน + เปิด/ปิด 2FA"],
+              ["การใช้งาน", "ประวัติ login/logout พร้อม device info"],
+              ["การค้นหา", "ประวัติค้นหา Meter/TR พร้อม timestamp"],
+            ]} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เปิด 2FA (TOTP)</div>
+            <UGStep n={1} text="ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'" />
+            <UGStep n={2} text="สแกน QR Code ด้วย Google Authenticator หรือ Authy" />
+            <UGStep n={3} text="กรอกรหัส 6 หลักเพื่อยืนยัน" />
+            <UGTip>แนะนำให้เปิด 2FA เสมอเพื่อความปลอดภัยของบัญชี</UGTip>
+          </div>
+        </UGSection>
+
+        {/* ─── UI ─── */}
+        <UGSection icon="sun" title="การตั้งค่า UI">
+          <div style={{ marginTop: 12 }}>
+            <UGTable rows={[
+              ["ปุ่ม", "ตำแหน่ง", "ฟังก์ชัน"],
+              ["🌙 / ☀️", "Topbar ขวา", "สลับโหมดมืด/สว่าง (จำค่าไว้)"],
+              ["TH / EN", "Topbar ขวา", "สลับภาษาไทย/อังกฤษ"],
+              ["🔄 Refresh", "Topbar ขวา", "โหลดข้อมูลใหม่"],
+            ]} />
+          </div>
+        </UGSection>
+
+        {/* ─── Admin-only sections ─── */}
+        {isAdmin && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "20px 0 14px" }}>
+              <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+              <span className="badge badge-orange" style={{ fontSize: 12, padding: "4px 12px" }}>Admin เท่านั้น</span>
+              <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+            </div>
+
+            <UGSection icon="dashboard" title="Dashboard" badge="admin">
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  ["การ์ด", "ข้อมูลที่แสดง"],
+                  ["มิเตอร์ทั้งหมด", "จำนวน PEA Meter ในระบบ"],
+                  ["หม้อแปลงทั้งหมด", "จำนวน PEA Transformer ในระบบ"],
+                  ["กำลัง (kVA)", "ผลรวม kVA ของหม้อแปลงทั้งหมด"],
+                  ["ผู้ใช้งาน", "จำนวน user ทั้งหมด (active + pending)"],
+                ]} />
+                <UGNote>กด Refresh บน Topbar เพื่ออัปเดตข้อมูล Dashboard</UGNote>
+              </div>
+            </UGSection>
+
+            <UGSection icon="users" title="จัดการผู้ใช้งาน" badge="admin">
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  ["Action", "ผลลัพธ์"],
+                  ["อนุมัติ", "pending → active (ผู้ใช้เข้าระบบได้)"],
+                  ["ระงับ", "→ banned (เข้าระบบไม่ได้)"],
+                  ["ปลดระงับ", "banned → active"],
+                  ["เปลี่ยน Role", "สลับ user ↔ admin"],
+                  ["บังคับ 2FA", "เปิด/ปิด 2FA ทันที"],
+                ]} />
+                <UGTip>มี pending user — ระบบแสดง badge แดงที่ปุ่ม Bell บน Topbar</UGTip>
+              </div>
+            </UGSection>
+
+            <UGSection icon="meter" title="จัดการ PEA มิเตอร์ & หม้อแปลง" badge="admin">
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  ["Action", "วิธีใช้"],
+                  ["ค้นหา", "พิมพ์ในช่อง search — โหลดสูงสุด 100 รายการแรก"],
+                  ["เพิ่ม", "กด '+เพิ่ม' → กรอกข้อมูล → บันทึก"],
+                  ["แก้ไข", "กดปุ่มดินสอในแถว → แก้ไข → บันทึก"],
+                  ["ลบ", "กดถังขยะ → ยืนยันใน Confirm Dialog"],
+                  ["Export CSV", "กด Export → Dialog แสดงจำนวน → กด Export"],
+                ]} />
+                <UGNote>ทุกการเปลี่ยนแปลงถูกบันทึกใน Audit Log อัตโนมัติ</UGNote>
+              </div>
+            </UGSection>
+
+            <UGSection icon="upload" title="นำเข้าข้อมูล CSV" badge="admin">
+              <div style={{ marginTop: 12 }}>
+                <UGStep n={1} text="เลือกประเภท: PEA Meter หรือ PEA Transformer" />
+                <UGStep n={2} text="ลากหรือคลิกเพื่ออัปโหลดไฟล์ CSV (UTF-8)" />
+                <UGStep n={3} text="ตรวจสอบ Preview 10 แถวแรก — ตรวจสอบหัวคอลัมน์" />
+                <UGStep n={4} text="กด 'นำเข้าข้อมูล' — ระบบ upsert ตาม OBJECTID (500 rows/รอบ)" />
+                <UGTip>ถ้า OBJECTID ซ้ำ ระบบจะ update ข้อมูลเดิม ไม่สร้างรายการใหม่</UGTip>
+              </div>
+            </UGSection>
+
+            <UGSection icon="history" title="Audit Log" badge="admin">
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  ["Action ที่บันทึก", "ตัวอย่าง"],
+                  ["login / logout", "เข้า-ออกระบบ"],
+                  ["search_meter / search_tr", "ค้นหาข้อมูล"],
+                  ["create / update / delete", "เพิ่ม แก้ไข ลบ Meter/TR"],
+                  ["import_csv / export_csv", "นำเข้า/ส่งออกข้อมูล"],
+                  ["approve_user / ban_user", "อนุมัติ/ระงับผู้ใช้งาน"],
+                ]} />
+                <UGNote>Audit Log แบ่งหน้า 50 รายการต่อหน้า — กรองตาม user, action, วันที่ได้</UGNote>
+              </div>
+            </UGSection>
+
+            <UGSection icon="settings" title="ตั้งค่าระบบ" badge="admin">
+              <div style={{ marginTop: 12 }}>
+                <UGStep n={1} text="เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง" />
+                <UGStep n={2} text="แก้ไขข้อความแจ้งผู้ใช้ แล้วกด 'บันทึกข้อความ'" />
+                <UGStep n={3} text="ตั้งวันเวลาที่คาดว่าจะกลับมา แล้วกด 'บันทึกวันเวลา'" />
+                <UGNote>Admin ยังคงเข้าใช้ระบบได้ปกติในช่วง Maintenance Mode</UGNote>
+                <UGTip>อย่าลืมปิด Maintenance Mode หลังงานเสร็จ</UGTip>
+              </div>
+            </UGSection>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MaintenanceScreen({ currentUser, message, until, onLogout }) {
   const displayMsg = (message || "").trim() || DEFAULT_MAINTENANCE_MSG;
   const untilStr = formatUntil(until);
@@ -1036,6 +1307,7 @@ function App() {
   const navItems = [
     { id: "search",  icon: "search",   label: t("navSearch")  },
     { id: "profile", icon: "user",     label: t("navProfile") },
+    { id: "guide",   icon: "book",     label: t("navGuide")   },
     ...(currentUser.role === "admin" ? [{ id: "admin", icon: "settings", label: t("navAdmin") }] : []),
   ];
   const ADMIN_NAV = [
@@ -1046,6 +1318,7 @@ function App() {
     { id: "import",    icon: "upload",    label: t("admImport")    },
     { id: "audit",     icon: "history",   label: t("admAudit")     },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
+    { id: "guide",     icon: "book",      label: t("admGuide")     },
   ];
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 
@@ -1280,6 +1553,9 @@ function App() {
           )}
           {route === "profile" && (
             <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} />
+          )}
+          {route === "guide" && (
+            <UserGuide role={currentUser.role} />
           )}
           {route === "admin" && currentUser.role === "admin" && (
             <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit}

@@ -13,6 +13,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
     trs: t("admTrs"), import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
+    guide: t("admGuide"),
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
   const MOB_NAV = [
@@ -23,6 +24,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"import",    icon:"upload",    label:t("admMobImport")  },
     { id:"audit",     icon:"history",   label:t("admMobAudit")   },
     { id:"settings",  icon:"settings",  label:t("admSettings")   },
+    { id:"guide",     icon:"book",      label:t("admMobGuide")   },
   ];
 
   return (
@@ -92,6 +94,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
           maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
           addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "guide"     && <AdminGuide />}
       </div>
     </div>
   );
@@ -291,6 +294,296 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Guide ---------- */
+function GuideSection({ icon, title, badge, children }) {
+  const [open, setOpen] = useStateAd(false);
+  return (
+    <div style={{ borderRadius: 16, border: "1px solid var(--line)", overflow: "hidden", marginBottom: 10 }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 12,
+        padding: "14px 18px", background: open ? "linear-gradient(135deg,rgba(139,63,196,0.07),rgba(244,123,32,0.05))" : "var(--surface)",
+        border: "none", cursor: "pointer", textAlign: "left", transition: "background 180ms",
+      }}>
+        <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", color: "white", flexShrink: 0 }}>
+          <Icon name={icon} size={16} />
+        </span>
+        <span style={{ flex: 1, fontWeight: 700, fontSize: 15 }}>{title}</span>
+        {badge && <span className="badge badge-purple" style={{ fontSize: 11 }}>{badge}</span>}
+        <Icon name={open ? "chevDown" : "chevRight"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+      </button>
+      {open && (
+        <div style={{ padding: "4px 18px 18px 18px", borderTop: "1px solid var(--line)", background: "var(--soft)" }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GuideStep({ n, text }) {
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+      <span style={{ minWidth: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#f47b20)", color: "white", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center", flexShrink: 0, marginTop: 1 }}>{n}</span>
+      <span style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink)" }}>{text}</span>
+    </div>
+  );
+}
+
+function GuideTip({ children }) {
+  return (
+    <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.2)", marginTop: 10 }}>
+      <Icon name="tip" size={15} style={{ color: "var(--pea-orange-500)", flexShrink: 0, marginTop: 2 }} />
+      <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}>{children}</span>
+    </div>
+  );
+}
+
+function GuideNote({ children }) {
+  return (
+    <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(139,63,196,0.07)", border: "1px solid rgba(139,63,196,0.18)", marginTop: 10 }}>
+      <Icon name="info" size={15} style={{ color: "var(--pea-purple-500)", flexShrink: 0, marginTop: 2 }} />
+      <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}>{children}</span>
+    </div>
+  );
+}
+
+function GuideTable({ rows }) {
+  return (
+    <div style={{ overflowX: "auto", marginTop: 10 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <thead>
+          <tr style={{ background: "rgba(139,63,196,0.08)" }}>
+            {rows[0].map((h, i) => <th key={i} style={{ padding: "7px 12px", textAlign: "left", fontWeight: 700, borderBottom: "1px solid var(--line)", whiteSpace: "nowrap" }}>{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(1).map((row, r) => (
+            <tr key={r} style={{ borderBottom: "1px solid var(--line)" }}>
+              {row.map((cell, c) => <td key={c} style={{ padding: "7px 12px", lineHeight: 1.5 }}>{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AdminGuide() {
+  return (
+    <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      {/* Hero */}
+      <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.15)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="book" size={26} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>คู่มือการใช้งานระบบ</div>
+            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Role และทุก Feature</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── SECTION: บทบาทผู้ใช้งาน ─── */}
+      <GuideSection icon="users" title="บทบาทผู้ใช้งาน (Role)" badge="ภาพรวม">
+        <div style={{ marginTop: 10 }}>
+          <GuideTable rows={[
+            ["Role", "สิทธิ์การใช้งาน", "สถานะที่เข้าได้"],
+            ["user", "ค้นหา Meter/TR · ดูแผนที่ · GPS นำทาง · โปรไฟล์ตัวเอง · Export CSV", "active เท่านั้น"],
+            ["admin", "ทุกอย่างของ user + จัดการข้อมูล + ผู้ใช้งาน + นำเข้า + Audit + ตั้งค่า", "active เท่านั้น"],
+          ]} />
+          <GuideTable rows={[
+            ["สถานะบัญชี", "ความหมาย"],
+            ["pending", "รอ Admin อนุมัติ — ยังเข้าระบบไม่ได้"],
+            ["active", "ใช้งานได้ปกติ"],
+            ["banned", "ถูกระงับ — เข้าระบบไม่ได้"],
+          ]} />
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: เข้าสู่ระบบ ─── */}
+      <GuideSection icon="lock" title="การเข้าสู่ระบบ & สมัครสมาชิก" badge="user · admin">
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>สมัครสมาชิก</div>
+          <GuideStep n={1} text="คลิก 'สมัครสมาชิก' บนหน้า Login" />
+          <GuideStep n={2} text="กรอกชื่อ-นามสกุล, ชื่อผู้ใช้, อีเมล, และรหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)" />
+          <GuideStep n={3} text="กด 'สมัครสมาชิก' — บัญชีจะมีสถานะ 'pending' รอ Admin อนุมัติ" />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เข้าสู่ระบบ</div>
+          <GuideStep n={1} text="กรอกอีเมลและรหัสผ่าน แล้วกด 'เข้าสู่ระบบ'" />
+          <GuideStep n={2} text="หากเปิด 2FA ไว้ — ระบบจะขอรหัส 6 หลักจาก Authenticator App" />
+          <GuideStep n={3} text="ติ๊ก 'จดจำฉันไว้ 7 วัน' เพื่อไม่ต้องล็อกอินบ่อย" />
+          <GuideTip>ลืมรหัสผ่าน? กดลิงก์ 'ลืมรหัสผ่าน' ระบบจะส่ง link รีเซ็ตไปยังอีเมล</GuideTip>
+          <GuideNote>ระบบออกจากระบบอัตโนมัติหลังไม่ใช้งาน 30 นาที</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: ค้นหาข้อมูล ─── */}
+      <GuideSection icon="search" title="ค้นหาข้อมูล Meter / Transformer" badge="user · admin">
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>ค้นหา PEA มิเตอร์</div>
+          <GuideStep n={1} text="เลือกแท็บ 'PEA Meter' ในหน้าค้นหา" />
+          <GuideStep n={2} text="พิมพ์คำค้นหา: TAG, PEANO, ACCOUNTNUM, หรือ Feeder ID — ระบบค้นหาอัตโนมัติ" />
+          <GuideStep n={3} text="กรองเพิ่มเติม: เลือก Feeder, เจ้าของ (PEA/Customer), หรือ CODE" />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ค้นหา PEA หม้อแปลง</div>
+          <GuideStep n={1} text="เลือกแท็บ 'PEA Transformer'" />
+          <GuideStep n={2} text="พิมพ์คำค้นหา: TAG, PEANO, สถานที่, หรือ Feeder" />
+          <GuideStep n={3} text="กรองเพิ่มเติม: ระบบเฟส, แรงดัน (22/33 kV), kVA ต่ำสุด-สูงสุด" />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Export ผลการค้นหา</div>
+          <GuideStep n={1} text="กดปุ่ม 'Export' — Dialog จะแสดงจำนวนรายการที่จะส่งออก" />
+          <GuideStep n={2} text="กด 'Export' อีกครั้งเพื่อดาวน์โหลดเป็นไฟล์ CSV" />
+          <GuideTip>ผลลัพธ์ถูกจำกัดสูงสุด 500 รายการ — พิมพ์คำค้นหาเพิ่มเพื่อลดจำนวน</GuideTip>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: แผนที่ ─── */}
+      <GuideSection icon="map" title="แผนที่และการนำทาง GPS" badge="user · admin">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["ฟีเจอร์", "วิธีใช้"],
+            ["สลับ Map/Satellite", "กดปุ่ม Street/Satellite บน Topbar"],
+            ["Cluster", "กดปุ่ม Cluster บนแผนที่ — รวมกลุ่ม marker ให้ดูง่าย"],
+            ["Heatmap", "กดปุ่ม Heatmap — แสดงความหนาแน่นพื้นที่"],
+            ["Split View", "กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน"],
+            ["คัดลอกพิกัด", "คลิกที่ marker → กดปุ่ม Copy พิกัด lat/lng"],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>นำทาง GPS</div>
+          <GuideStep n={1} text="คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง" />
+          <GuideStep n={2} text="ระบบขอสิทธิ์ตำแหน่งปัจจุบันจาก browser — กด 'Allow'" />
+          <GuideStep n={3} text="ระบบคำนวณระยะทางและเวลาโดยประมาณ" />
+          <GuideStep n={4} text="กด 'นำทาง' เพื่อเปิด Google Maps หรือ Apple Maps" />
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: โปรไฟล์ ─── */}
+      <GuideSection icon="user" title="โปรไฟล์ & ความปลอดภัยส่วนตัว" badge="user · admin">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["แท็บ", "รายละเอียด"],
+            ["ข้อมูล", "ดูชื่อ, ชื่อผู้ใช้, อีเมล, บทบาท, วันที่สมัคร — แก้ไขชื่อได้"],
+            ["รหัสผ่าน", "เปลี่ยนรหัสผ่าน (ต้องกรอกรหัสเดิม) + เปิด/ปิด 2FA"],
+            ["การใช้งาน", "ประวัติ login/logout, เปลี่ยนรหัส, 2FA พร้อม device info"],
+            ["การค้นหา", "ประวัติค้นหา Meter/TR พร้อม timestamp"],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เปิด 2FA (TOTP)</div>
+          <GuideStep n={1} text="ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'" />
+          <GuideStep n={2} text="สแกน QR Code ด้วย Google Authenticator หรือ Authy" />
+          <GuideStep n={3} text="กรอกรหัส 6 หลักเพื่อยืนยัน — 2FA เปิดใช้งานทันที" />
+          <GuideTip>แนะนำให้เปิด 2FA เสมอ โดยเฉพาะบัญชี Admin เพื่อความปลอดภัย</GuideTip>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Dashboard ─── */}
+      <GuideSection icon="dashboard" title="Dashboard (Admin)" badge="admin only">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["การ์ด", "ข้อมูลที่แสดง"],
+            ["มิเตอร์ทั้งหมด", "จำนวน PEA Meter ในระบบ"],
+            ["หม้อแปลงทั้งหมด", "จำนวน PEA Transformer ในระบบ"],
+            ["กำลัง (kVA)", "ผลรวม kVA ของหม้อแปลงทั้งหมด"],
+            ["ผู้ใช้งาน", "จำนวน user ทั้งหมด (active + pending)"],
+          ]} />
+          <GuideNote>ข้อมูล Dashboard โหลดจาก Supabase RPC ทุกครั้งที่กด Refresh หรือเข้าหน้า Dashboard</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: จัดการผู้ใช้งาน ─── */}
+      <GuideSection icon="users" title="จัดการผู้ใช้งาน (Admin)" badge="admin only">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["Action", "ผลลัพธ์"],
+            ["อนุมัติ", "เปลี่ยนสถานะจาก pending → active (ผู้ใช้เข้าระบบได้)"],
+            ["ระงับ", "เปลี่ยนสถานะเป็น banned (ผู้ใช้เข้าระบบไม่ได้)"],
+            ["ปลดระงับ", "เปลี่ยนสถานะจาก banned → active"],
+            ["เปลี่ยน Role", "สลับระหว่าง user ↔ admin"],
+            ["บังคับ 2FA", "เปิดหรือปิด 2FA ให้ผู้ใช้คนนั้นทันที"],
+          ]} />
+          <GuideTip>มีผู้ใช้ pending — ระบบจะแสดง badge จำนวนที่ปุ่ม bell บน Topbar</GuideTip>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: จัดการ Meter/TR ─── */}
+      <GuideSection icon="meter" title="จัดการ PEA มิเตอร์ & หม้อแปลง (Admin)" badge="admin only">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["Action", "วิธีใช้"],
+            ["ค้นหา", "พิมพ์ในช่อง search — ระบบโหลดสูงสุด 100 รายการแรก"],
+            ["เพิ่ม", "กดปุ่ม '+เพิ่ม' — กรอกข้อมูลในฟอร์ม แล้วกด 'บันทึก'"],
+            ["แก้ไข", "กดปุ่มดินสอในแถวนั้น — แก้ไขแล้วกด 'บันทึก'"],
+            ["ลบ", "กดปุ่มถังขยะ — ยืนยันใน Confirm Dialog ก่อนลบ"],
+            ["Export CSV", "กดปุ่ม Export — Dialog แสดงจำนวน แล้วกด Export เพื่อดาวน์โหลด"],
+          ]} />
+          <GuideNote>ทุกการเปลี่ยนแปลงถูกบันทึกใน Audit Log อัตโนมัติ</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Import CSV ─── */}
+      <GuideSection icon="upload" title="นำเข้าข้อมูล CSV (Admin)" badge="admin only">
+        <div style={{ marginTop: 12 }}>
+          <GuideStep n={1} text="เลือกประเภทข้อมูล: PEA Meter หรือ PEA Transformer" />
+          <GuideStep n={2} text="ลากหรือคลิกเพื่ออัปโหลดไฟล์ CSV (UTF-8)" />
+          <GuideStep n={3} text="ตรวจสอบ Preview 10 แถวแรก — ตรวจสอบหัวคอลัมน์ให้ถูกต้อง" />
+          <GuideStep n={4} text="กด 'นำเข้าข้อมูล' เพื่อยืนยัน — ระบบ upsert ตาม OBJECTID (500 rows/รอบ)" />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>หัวคอลัมน์ CSV ที่รองรับ</div>
+          <div style={{ background: "var(--surface)", borderRadius: 10, padding: "10px 14px", fontFamily: "monospace", fontSize: 12, lineHeight: 1.8, border: "1px solid var(--line)" }}>
+            <div style={{ color: "var(--pea-purple-500)", fontWeight: 700 }}>Meter:</div>
+            <div>OBJECTID, TAG, CODE, ROUTE, ACCOUNTNUM, PEANO, FEEDERID, OWNER, INSTALLATI, LATITUDE, LONGITUDE</div>
+            <div style={{ color: "var(--pea-purple-500)", fontWeight: 700, marginTop: 6 }}>Transformer:</div>
+            <div>OBJECTID, TAG, PHASE, VOLTAGE, PEANO_TR, INSTALL_PHASE, KVA, OWNER_TR, LOCATION, FEEDER1, LATITUDE, LONGITUDE, PEA_METER</div>
+          </div>
+          <GuideTip>ถ้า OBJECTID ซ้ำ ระบบจะ update ข้อมูลเดิม (upsert) ไม่ได้สร้างรายการใหม่</GuideTip>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Audit Log ─── */}
+      <GuideSection icon="history" title="Audit Log (Admin)" badge="admin only">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["Action ที่บันทึก", "ตัวอย่าง"],
+            ["login / logout", "เข้า-ออกระบบ"],
+            ["search_meter / search_tr", "ค้นหาข้อมูล"],
+            ["create / update / delete", "เพิ่ม แก้ไข ลบ Meter/TR"],
+            ["import_csv / export_csv", "นำเข้า/ส่งออกข้อมูล"],
+            ["change_password", "เปลี่ยนรหัสผ่าน"],
+            ["enable_2fa / disable_2fa", "เปิด/ปิด 2FA"],
+            ["approve_user / ban_user", "อนุมัติ/ระงับผู้ใช้งาน"],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>การกรองข้อมูล</div>
+          <GuideStep n={1} text="กรองตาม user, ประเภท action, หรือช่วงวันที่" />
+          <GuideStep n={2} text="กด Export เพื่อดาวน์โหลด log หน้านั้นเป็น CSV" />
+          <GuideNote>Audit Log แบ่งหน้า 50 รายการต่อหน้า — ใช้ปุ่มลูกศรเลื่อนหน้า</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: ตั้งค่าระบบ ─── */}
+      <GuideSection icon="settings" title="ตั้งค่าระบบ (Admin)" badge="admin only">
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
+          <GuideStep n={1} text="เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้า 'ระบบปิดปรับปรุง'" />
+          <GuideStep n={2} text="แก้ไขข้อความแจ้งผู้ใช้ตามต้องการ แล้วกด 'บันทึกข้อความ'" />
+          <GuideStep n={3} text="ตั้งวันเวลาที่คาดว่าจะกลับมาให้บริการ แล้วกด 'บันทึกวันเวลา'" />
+          <GuideNote>Admin ยังคงเข้าใช้ระบบได้ปกติในช่วง Maintenance Mode</GuideNote>
+          <GuideTip>อย่าลืมปิด Maintenance Mode หลังงานเสร็จ</GuideTip>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: UI ─── */}
+      <GuideSection icon="sun" title="การตั้งค่า UI" badge="user · admin">
+        <div style={{ marginTop: 12 }}>
+          <GuideTable rows={[
+            ["ปุ่ม", "ตำแหน่ง", "ฟังก์ชัน"],
+            ["🌙 / ☀️", "Topbar ขวา", "สลับโหมดมืด/สว่าง (จำค่าไว้ใน browser)"],
+            ["TH / EN", "Topbar ขวา", "สลับภาษาไทย/อังกฤษ"],
+            ["🔄 Refresh", "Topbar ขวา", "โหลดข้อมูลใหม่โดยไม่ต้อง reload หน้า"],
+            ["🔔 Bell", "Topbar ขวา", "แจ้งเตือน pending users + กิจกรรมล่าสุด"],
+          ]} />
+        </div>
+      </GuideSection>
     </div>
   );
 }

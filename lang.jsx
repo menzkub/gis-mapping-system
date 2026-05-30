@@ -20,7 +20,7 @@ const TRANSLATIONS = {
     caution: "ระวัง", allUsers: "ทุก user",
 
     // ── Navigation ─────────────────────────────────────────
-    navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin",
+    navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin", navGuide: "คู่มือการใช้งาน",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "วันนี้ •", greeting: "สวัสดี",
@@ -120,6 +120,7 @@ const TRANSLATIONS = {
     admDashboard: "Dashboard", admUsers: "ผู้ใช้งาน",
     admMeters: "PEA มิเตอร์", admTrs: "PEA หม้อแปลง",
     admImport: "นำเข้าข้อมูล", admAudit: "Audit Log", admSettings: "ตั้งค่า",
+    admGuide: "คู่มือการใช้งาน", admMobGuide: "คู่มือ",
     admMobMeters: "มิเตอร์", admMobTrs: "หม้อแปลง",
     admMobImport: "นำเข้า", admMobAudit: "Audit",
     dbMeters: "มิเตอร์ทั้งหมด", dbTrs: "หม้อแปลงทั้งหมด",
@@ -170,7 +171,7 @@ const TRANSLATIONS = {
     caution: "Caution", allUsers: "All users",
 
     // ── Navigation ─────────────────────────────────────────
-    navSearch: "Search", navProfile: "My Account", navAdmin: "Admin",
+    navSearch: "Search", navProfile: "My Account", navAdmin: "Admin", navGuide: "User Manual",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "Today •", greeting: "Hello",
@@ -270,6 +271,7 @@ const TRANSLATIONS = {
     admDashboard: "Dashboard", admUsers: "Users",
     admMeters: "PEA Meters", admTrs: "PEA Transformers",
     admImport: "Import Data", admAudit: "Audit Log", admSettings: "Settings",
+    admGuide: "User Manual", admMobGuide: "Manual",
     admMobMeters: "Meters", admMobTrs: "TRs",
     admMobImport: "Import", admMobAudit: "Audit",
     dbMeters: "Total Meters", dbTrs: "Total Transformers",
