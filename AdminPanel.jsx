@@ -2629,6 +2629,218 @@ function AdminAudit() {
   );
 }
 
+/* ---------- Modern DateTime Picker ---------- */
+const TH_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const TH_DAYS   = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+
+function DateTimePicker({ value, onChange }) {
+  /* value = "YYYY-MM-DDTHH:MM" or "" */
+  const [open, setOpen] = useStateAd(false);
+  const ref = React.useRef(null);
+
+  /* Parse value */
+  const parsed = React.useMemo(() => {
+    if (!value) return null;
+    const d = new Date(value);
+    return isNaN(d) ? null : d;
+  }, [value]);
+
+  const now = new Date();
+  const [viewYear,  setViewYear]  = useStateAd(parsed ? parsed.getFullYear()  : now.getFullYear());
+  const [viewMonth, setViewMonth] = useStateAd(parsed ? parsed.getMonth()     : now.getMonth());
+  const [selDate,   setSelDate]   = useStateAd(parsed ? parsed.toISOString().slice(0,10) : "");
+  const [selHour,   setSelHour]   = useStateAd(parsed ? parsed.getHours()   : 8);
+  const [selMin,    setSelMin]    = useStateAd(parsed ? parsed.getMinutes() : 0);
+
+  /* Close on outside click */
+  useEffectAd(() => {
+    if (!open) return;
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  /* Sync external value changes */
+  useEffectAd(() => {
+    if (!value) { setSelDate(""); return; }
+    const d = new Date(value);
+    if (isNaN(d)) return;
+    setSelDate(d.toISOString().slice(0,10));
+    setSelHour(d.getHours());
+    setSelMin(d.getMinutes());
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
+  }, [value]);
+
+  function confirm(date, h, m) {
+    if (!date) return;
+    const hh = String(h).padStart(2,"0");
+    const mm = String(m).padStart(2,"0");
+    onChange(`${date}T${hh}:${mm}`);
+    setOpen(false);
+  }
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  }
+
+  /* Calendar grid */
+  const firstDay  = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMon = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMon; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const todayStr = now.toISOString().slice(0,10);
+  const selYM    = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}`;
+
+  /* Display string */
+  const displayVal = parsed
+    ? parsed.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" }) +
+      " " + String(parsed.getHours()).padStart(2,"0") + ":" + String(parsed.getMinutes()).padStart(2,"0")
+    : "";
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 10,
+          padding: "11px 14px", borderRadius: 12,
+          border: open ? "1px solid var(--pea-purple-500)" : "1px solid var(--line)",
+          background: "var(--bg)", cursor: "pointer", textAlign: "left",
+          boxShadow: open ? "0 0 0 3px rgba(139,63,196,0.15)" : "none",
+          transition: "all 150ms",
+        }}
+      >
+        <Icon name="history" size={16} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
+        <span style={{ flex: 1, fontSize: 14, color: displayVal ? "var(--text)" : "var(--ink-mute)", fontFamily: "inherit" }}>
+          {displayVal || "เลือกวันที่และเวลา…"}
+        </span>
+        {value && (
+          <span
+            onMouseDown={e => { e.stopPropagation(); onChange(""); setSelDate(""); }}
+            style={{ padding: "2px 4px", borderRadius: 6, cursor: "pointer", color: "var(--ink-mute)", display: "flex", alignItems: "center" }}
+          >
+            <Icon name="close" size={13} />
+          </span>
+        )}
+        <Icon name={open ? "chevUp" : "chevDown"} size={14} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="fade-up" style={{
+          position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0,
+          background: "var(--surface)", borderRadius: 16, zIndex: 999,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--line)",
+          overflow: "hidden", minWidth: 280,
+        }}>
+          {/* Month nav */}
+          <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 8px", gap: 6 }}>
+            <button type="button" onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <Icon name="chevLeft" size={14} />
+            </button>
+            <div style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 14 }}>
+              {TH_MONTHS[viewMonth]} {viewYear + 543}
+            </div>
+            <button type="button" onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <Icon name="chevRight" size={14} />
+            </button>
+          </div>
+
+          {/* Day headers */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px", gap: 2 }}>
+            {TH_DAYS.map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", padding: "4px 0" }}>{d}</div>
+            ))}
+          </div>
+
+          {/* Day cells */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px 10px", gap: 2 }}>
+            {cells.map((day, idx) => {
+              if (!day) return <div key={idx} />;
+              const ds = `${selYM}-${String(day).padStart(2,"0")}`;
+              const isToday = ds === todayStr;
+              const isSel   = ds === selDate;
+              return (
+                <button
+                  key={idx} type="button"
+                  onClick={() => setSelDate(ds)}
+                  style={{
+                    height: 34, borderRadius: 8, border: "none", cursor: "pointer",
+                    fontSize: 13, fontWeight: isSel || isToday ? 700 : 400,
+                    background: isSel ? "var(--pea-purple-500)" : isToday ? "rgba(139,63,196,0.12)" : "transparent",
+                    color: isSel ? "white" : isToday ? "var(--pea-purple-500)" : "var(--text)",
+                    outline: isToday && !isSel ? "1px solid rgba(139,63,196,0.35)" : "none",
+                    transition: "background 100ms",
+                  }}
+                >{day}</button>
+              );
+            })}
+          </div>
+
+          {/* Time selector */}
+          <div style={{ borderTop: "1px solid var(--line)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+            <Icon name="history" size={14} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-mute)", flexShrink: 0 }}>เวลา</span>
+            {/* Hour */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+              <button type="button" onClick={() => setSelHour(h => (h - 1 + 24) % 24)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Icon name="chevLeft" size={12} />
+              </button>
+              <div style={{ width: 34, textAlign: "center", fontWeight: 700, fontSize: 15, fontFamily: "monospace" }}>
+                {String(selHour).padStart(2,"0")}
+              </div>
+              <button type="button" onClick={() => setSelHour(h => (h + 1) % 24)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Icon name="chevRight" size={12} />
+              </button>
+            </div>
+            <span style={{ fontWeight: 700, color: "var(--ink-mute)" }}>:</span>
+            {/* Minute */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <button type="button" onClick={() => setSelMin(m => (m - 5 + 60) % 60)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Icon name="chevLeft" size={12} />
+              </button>
+              <div style={{ width: 34, textAlign: "center", fontWeight: 700, fontSize: 15, fontFamily: "monospace" }}>
+                {String(selMin).padStart(2,"0")}
+              </div>
+              <button type="button" onClick={() => setSelMin(m => (m + 5) % 60)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <Icon name="chevRight" size={12} />
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm */}
+          <div style={{ padding: "0 12px 14px", display: "flex", gap: 8 }}>
+            <button type="button" onClick={() => setOpen(false)} style={{ flex: 1, height: 38, borderRadius: 10, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink-mute)" }}>
+              ยกเลิก
+            </button>
+            <button
+              type="button" disabled={!selDate}
+              onClick={() => confirm(selDate, selHour, selMin)}
+              style={{ flex: 2, height: 38, borderRadius: 10, border: "none", cursor: selDate ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700,
+                background: selDate ? "linear-gradient(135deg,#8b3fc4,#6b2c91)" : "var(--line)",
+                color: selDate ? "white" : "var(--ink-mute)",
+              }}
+            >
+              <Icon name="check" size={14} style={{ marginRight: 6 }} /> ยืนยัน
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Settings ---------- */
 const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
 
@@ -2806,15 +3018,7 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
                   <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
                     วันที่/เวลาที่คาดว่าจะกลับมาให้บริการ <span className="t-mute">(ไม่บังคับ)</span>
                   </label>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input type="datetime-local" value={localUntil} onChange={e => setLocalUntil(e.target.value)}
-                      style={{ flex: 1, padding: "10px 12px", borderRadius: 10, fontSize: 14,
-                        border: "1px solid var(--line)", background: "var(--bg)", color: "var(--text)", fontFamily: "inherit" }} />
-                    {localUntil && (
-                      <button className="btn btn-ghost" style={{ height: 42, padding: "0 12px", flexShrink: 0 }}
-                        onClick={() => setLocalUntil("")} title="ล้างวันที่"><Icon name="close" size={14} /></button>
-                    )}
-                  </div>
+                  <DateTimePicker value={localUntil} onChange={setLocalUntil} />
                 </div>
                 <button className="btn btn-primary" style={{ height: 44 }} disabled={savingMsg} onClick={saveMessage}>
                   {savingMsg ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อความ</>}

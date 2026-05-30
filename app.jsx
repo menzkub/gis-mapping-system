@@ -780,6 +780,220 @@ function formatUntil(until) {
 }
 
 /* ============================================================
+   ChangelogView — UX/UI improvement history
+   ============================================================ */
+const CHANGELOG = [
+  {
+    version: "v2.6", date: "30 พ.ค. 2569", tag: "ล่าสุด",
+    tagColor: "#10b981", items: [
+      { cat: "new",  text: "เพิ่มหน้าประวัติการปรับปรุง UX/UI (หน้านี้)" },
+      { cat: "fix",  text: "Audit Log: เพิ่ม action change_password, enable/disable_2fa, unlock_password" },
+      { cat: "fix",  text: "AdminGuide: เพิ่มเอกสาร popup ข้อมูลผู้ใช้เมื่อคลิกแถว" },
+    ],
+  },
+  {
+    version: "v2.5", date: "28 พ.ค. 2569", tag: "UX",
+    tagColor: "#8b3fc4", items: [
+      { cat: "new",  text: "โปรไฟล์ แท็บรหัสผ่าน: การ์ดสถานะ progress bar + วันหมดอายุ + ประวัติการเปลี่ยนรหัส" },
+      { cat: "new",  text: "Admin ตารางผู้ใช้: คลิกแถวเปิด popup ข้อมูลส่วนตัว + สถานะรหัสผ่าน + ประวัติ" },
+      { cat: "new",  text: "คู่มือ: ปุ่มยุบ/ขยายทั้งหมด และ ปุ่มดาวน์โหลด (เฉพาะ Admin)" },
+      { cat: "new",  text: "คู่มือ: Stat cards แสดงจำนวนหัวข้อ / ขั้นตอน / ฟีเจอร์ / เคล็ดลับ" },
+      { cat: "ux",   text: "แท็บโปรไฟล์: ความกว้างเท่ากันทุกแท็บ (CSS Grid)" },
+      { cat: "ux",   text: "Popup บนมือถือ: กลางจอ ชดเชย Topbar 56px + Bottom nav 64px" },
+      { cat: "ux",   text: "Sidebar: โลโก้ขนาดใหญ่ขึ้น + ข้อความ 'GIS Mapping System'" },
+    ],
+  },
+  {
+    version: "v2.4", date: "20 พ.ค. 2569", tag: "Security",
+    tagColor: "#ef4444", items: [
+      { cat: "new",  text: "ระบบรหัสผ่านหมดอายุ 45 วัน พร้อม progress bar" },
+      { cat: "new",  text: "Warning banner แจ้งเตือนล่วงหน้า 7 / 3 / 1 วัน" },
+      { cat: "new",  text: "Admin: ปลดล็อครหัสผ่านหมดอายุ (unlock_password)" },
+      { cat: "new",  text: "บังคับเปลี่ยนรหัสผ่านทันทีหลัง Admin ปลดล็อค" },
+      { cat: "new",  text: "ตาราง password_history บันทึกประวัติทุกครั้งที่เปลี่ยน" },
+      { cat: "fix",  text: "อัปเดตคู่มือการใช้งานให้ครอบคลุมทุก Feature" },
+    ],
+  },
+  {
+    version: "v2.3", date: "10 พ.ค. 2569", tag: "2FA",
+    tagColor: "#f59e0b", items: [
+      { cat: "new",  text: "ยืนยันตัวตน 2 ขั้นตอน (TOTP) รองรับ Google Authenticator / Authy" },
+      { cat: "new",  text: "จัดการผู้ใช้: อนุมัติ / ระงับ / เปลี่ยน Role" },
+      { cat: "new",  text: "Audit Log บันทึกทุก action (login, search, CRUD, import, export)" },
+      { cat: "ux",   text: "Badge แจ้งเตือน pending user ที่ปุ่ม Bell บน Topbar" },
+    ],
+  },
+  {
+    version: "v2.2", date: "1 พ.ค. 2569", tag: "Map",
+    tagColor: "#3b82f6", items: [
+      { cat: "new",  text: "แผนที่: Cluster, Heatmap, Split View" },
+      { cat: "new",  text: "นำทาง GPS พร้อมคำนวณระยะทางและเวลา" },
+      { cat: "new",  text: "Export CSV ผลการค้นหา (สูงสุด 500 รายการ)" },
+      { cat: "ux",   text: "Popup marker แสดงข้อมูล + ปุ่ม Copy พิกัด" },
+    ],
+  },
+  {
+    version: "v2.1", date: "15 เม.ย. 2569", tag: "Admin",
+    tagColor: "#f47b20", items: [
+      { cat: "new",  text: "Dashboard: การ์ดสถิติ มิเตอร์ / หม้อแปลง / kVA / ผู้ใช้" },
+      { cat: "new",  text: "นำเข้าข้อมูล CSV แบบ upsert ตาม OBJECTID (500 rows/รอบ)" },
+      { cat: "ux",   text: "Dark / Light Mode — จำค่าใน browser" },
+      { cat: "ux",   text: "รองรับภาษาไทย / อังกฤษ สลับได้ทันที" },
+    ],
+  },
+  {
+    version: "v2.0", date: "1 เม.ย. 2569", tag: "เปิดตัว",
+    tagColor: "#6b2c91", items: [
+      { cat: "new",  text: "เปิดตัวระบบ GIS Meter & Transformer Mapping System" },
+      { cat: "new",  text: "ค้นหา PEA Meter และ Transformer พร้อมตัวกรอง" },
+      { cat: "new",  text: "แผนที่ Street และ Satellite" },
+      { cat: "new",  text: "ระบบล็อกอิน / สมัครสมาชิก / ลืมรหัสผ่าน" },
+    ],
+  },
+];
+
+const CAT_META = {
+  new:  { label: "ใหม่",      bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#047857" },
+  ux:   { label: "UX/UI",     bg: "rgba(139,63,196,0.12)",  border: "rgba(139,63,196,0.3)",  text: "var(--pea-purple-600)" },
+  fix:  { label: "แก้ไข",    bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  text: "#1d4ed8" },
+  perf: { label: "ประสิทธิภาพ", bg: "rgba(244,123,32,0.12)", border: "rgba(244,123,32,0.3)", text: "var(--pea-orange-600)" },
+};
+
+function ChangelogView() {
+  return (
+    <div style={{ height: "100%", overflow: "auto" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 20px 48px" }}>
+
+        {/* Hero */}
+        <div style={{
+          borderRadius: 20,
+          background: "linear-gradient(135deg,#1b0926 0%,#321148 50%,#6b2c91 100%)",
+          color: "white", padding: "24px 28px", marginBottom: 24,
+          position: "relative", overflow: "hidden",
+          border: "1px solid rgba(139,63,196,0.35)",
+        }}>
+          <div style={{ position: "absolute", right: -50, top: -50, width: 200, height: 200, borderRadius: "50%", background: "rgba(244,123,32,0.08)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(244,123,32,0.2)", display: "grid", placeItems: "center", flexShrink: 0, border: "1px solid rgba(244,123,32,0.3)" }}>
+              <Icon name="bolt" size={26} style={{ color: "#ffba7a" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Release Notes</div>
+              <div style={{ fontSize: 22, fontWeight: 800 }}>ประวัติการปรับปรุง UX/UI</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>
+                บันทึกการพัฒนาและปรับปรุงระบบทั้งหมด — อัปเดตโดย Claude AI
+              </div>
+            </div>
+          </div>
+
+          {/* Summary chips */}
+          <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
+            {[
+              { label: "เวอร์ชัน", value: CHANGELOG.length, icon: "package" },
+              { label: "ฟีเจอร์ใหม่", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "new").length, 0), icon: "bolt" },
+              { label: "UX/UI", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "ux").length, 0), icon: "sun" },
+              { label: "แก้ไข", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "fix").length, 0), icon: "check" },
+            ].map(({ label, value, icon }) => (
+              <div key={label} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 14px", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name={icon} size={13} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
+                <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+          {Object.entries(CAT_META).map(([k, m]) => (
+            <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: m.bg, border: `1px solid ${m.border}`, color: m.text }}>
+              {m.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Timeline */}
+        <div style={{ position: "relative" }}>
+          {/* Vertical line */}
+          <div style={{ position: "absolute", left: 19, top: 0, bottom: 0, width: 2, background: "var(--line)", borderRadius: 2 }} />
+
+          {CHANGELOG.map((ver, vi) => (
+            <div key={ver.version} style={{ position: "relative", paddingLeft: 52, marginBottom: vi < CHANGELOG.length - 1 ? 28 : 0 }}>
+              {/* Dot */}
+              <div style={{
+                position: "absolute", left: 10, top: 14, width: 20, height: 20, borderRadius: "50%",
+                background: ver.tagColor, border: "3px solid var(--bg)",
+                boxShadow: `0 0 0 2px ${ver.tagColor}55`,
+                zIndex: 1,
+              }} />
+
+              {/* Card */}
+              <div style={{
+                background: "var(--surface)", borderRadius: 16, border: "1px solid var(--line)",
+                overflow: "hidden", boxShadow: vi === 0 ? `0 4px 24px ${ver.tagColor}22` : "none",
+              }}>
+                {/* Card header */}
+                <div style={{
+                  padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
+                  borderBottom: "1px solid var(--line)",
+                  background: vi === 0 ? `linear-gradient(135deg, ${ver.tagColor}18, transparent)` : "transparent",
+                }}>
+                  <div style={{
+                    fontFamily: "'IBM Plex Mono','Courier New',monospace",
+                    fontSize: 16, fontWeight: 800, color: ver.tagColor, letterSpacing: "-0.02em",
+                  }}>{ver.version}</div>
+                  <span style={{
+                    display: "inline-block", padding: "2px 8px", borderRadius: 6, fontSize: 10,
+                    fontWeight: 700, background: `${ver.tagColor}20`, color: ver.tagColor,
+                    border: `1px solid ${ver.tagColor}40`,
+                  }}>{ver.tag}</span>
+                  {vi === 0 && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px",
+                      borderRadius: 6, fontSize: 10, fontWeight: 700,
+                      background: "rgba(16,185,129,0.15)", color: "#047857",
+                      border: "1px solid rgba(16,185,129,0.3)",
+                    }}>
+                      <Icon name="check" size={10} /> ล่าสุด
+                    </span>
+                  )}
+                  <div style={{ marginLeft: "auto", fontSize: 12, color: "var(--ink-mute)", fontWeight: 500 }}>{ver.date}</div>
+                </div>
+
+                {/* Items */}
+                <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  {ver.items.map((item, ii) => {
+                    const m = CAT_META[item.cat] || CAT_META.new;
+                    return (
+                      <div key={ii} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <span style={{
+                          display: "inline-block", padding: "2px 7px", borderRadius: 6, fontSize: 10,
+                          fontWeight: 700, flexShrink: 0, marginTop: 1,
+                          background: m.bg, border: `1px solid ${m.border}`, color: m.text,
+                        }}>{m.label}</span>
+                        <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>{item.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{ marginTop: 32, padding: "16px 20px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)", display: "flex", alignItems: "center", gap: 12 }}>
+          <Icon name="info" size={16} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.5 }}>
+            ประวัตินี้บันทึกการพัฒนาโดย Claude AI — หากพบปัญหาหรือต้องการปรับปรุงเพิ่มเติม กรุณาติดต่อนักพัฒนาระบบ
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    UserGuide — role-aware manual (user sees user sections, admin sees all)
    ============================================================ */
 function UGSection({ icon, title, badge, children, expandSignal }) {
@@ -1955,9 +2169,10 @@ function App() {
 
   const isAdmin = currentUser.role === "admin";
   const navItems = [
-    { id: "search",  icon: "search",   label: t("navSearch")  },
-    { id: "profile", icon: "user",     label: t("navProfile") },
-    { id: "guide",   icon: "book",     label: t("navGuide")   },
+    { id: "search",    icon: "search",   label: t("navSearch")    },
+    { id: "profile",   icon: "user",     label: t("navProfile")   },
+    { id: "guide",     icon: "book",     label: t("navGuide")     },
+    { id: "changelog", icon: "bolt",     label: "อัปเดต"          },
     ...(isAdmin ? [{ id: "admin", icon: "settings", label: t("navAdmin") }] : []),
   ];
   const ADMIN_NAV = [
@@ -2282,6 +2497,9 @@ function App() {
           )}
           {route === "guide" && (
             <UserGuide role={currentUser.role} />
+          )}
+          {route === "changelog" && (
+            <ChangelogView />
           )}
           {route === "admin" && currentUser.role === "admin" && (
             <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit}
