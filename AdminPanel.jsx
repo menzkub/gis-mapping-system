@@ -1580,7 +1580,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               const dl = pwDaysLeft(u);
               const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;
               return (
-              <tr key={u.id}>
+              <tr key={u.id} onClick={() => openPwHistory(u)} style={{ cursor: "pointer" }}>
                 <td>
                   <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "50%", background: avatarBg(u.username), color: "white", display: "grid", placeItems: "center", fontWeight: 800, flexShrink: 0 }}>{u.name?.[0] || u.username[0]}</div>
@@ -1633,7 +1633,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   )}
                 </td>
                 <td className="text-sm t-mute">{u.lastLogin || "—"}</td>
-                <td>
+                <td onClick={e => e.stopPropagation()}>
                   <div className="row-action">
                     {u.status === "pending" && (
                       <button className="btn-icon" title="อนุมัติ" onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`)}>
@@ -1650,7 +1650,6 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                         <Icon name="check" size={14} />
                       </button>
                     )}
-                    <button className="btn-icon" title="ประวัติรหัสผ่าน" onClick={() => openPwHistory(u)}><Icon name="history" size={14} /></button>
                     <button className="btn-icon" title="แก้ไข" onClick={() => setEdit({ ...u })}><Icon name="edit" size={14} /></button>
                   </div>
                 </td>
@@ -1822,7 +1821,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         return (
           <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(14,10,22,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
             onClick={() => setPwModal(null)}>
-            <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 520, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+            <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 580, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
 
               {/* Header */}
               <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -1841,6 +1840,32 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               </div>
 
               <div style={{ padding: "20px 24px", overflow: "auto", flex: 1 }}>
+
+                {/* Personal info grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+                  {[
+                    { label: "อีเมล",       value: u.email || "—",     icon: "mail" },
+                    { label: "สถานะบัญชี",  value: u.status,           icon: "check",
+                      chip: { active: { bg: "rgba(16,185,129,0.12)", color: "#059669", text: "ใช้งานได้" },
+                               pending: { bg: "rgba(217,119,6,0.12)", color: "#d97706", text: "รออนุมัติ" },
+                               banned:  { bg: "rgba(220,38,38,0.12)", color: "#dc2626", text: "ระงับ" } }[u.status] },
+                    { label: "บทบาท",       value: u.role,             icon: "settings" },
+                    { label: "2FA",          value: u.require_2fa ? "เปิดใช้งาน" : "ปิด", icon: "lock" },
+                    { label: "เข้าใช้ล่าสุด", value: u.lastLogin || "—", icon: "history" },
+                    { label: "สมัครเมื่อ",   value: u.created || "—",  icon: "user" },
+                  ].map(r => (
+                    <div key={r.label} style={{ background: "var(--soft)", borderRadius: 10, padding: "10px 12px", border: "1px solid var(--line)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-mute)", marginBottom: 5, display: "flex", alignItems: "center", gap: 5 }}>
+                        <Icon name={r.icon} size={11} />{r.label}
+                      </div>
+                      {r.chip ? (
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: r.chip.bg, color: r.chip.color }}>{r.chip.text}</span>
+                      ) : (
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{r.value}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
                 {/* Expiry status card */}
                 <div style={{ borderRadius: 16, border: `2px solid ${isPwExpired ? "rgba(220,38,38,0.35)" : u.pw_force_change ? "rgba(217,119,6,0.35)" : "rgba(16,185,129,0.25)"}`, background: isPwExpired ? "rgba(220,38,38,0.06)" : u.pw_force_change ? "rgba(217,119,6,0.06)" : "rgba(16,185,129,0.05)", padding: "18px 20px", marginBottom: 20 }}>
