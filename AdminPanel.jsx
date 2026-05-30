@@ -1324,20 +1324,117 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     setEdit(null);
   };
 
+  const users = data.users;
+  const total   = users.length;
+  const active  = users.filter(u => u.status === "active").length;
+  const pending = users.filter(u => u.status === "pending").length;
+  const banned  = users.filter(u => u.status === "banned").length;
+  const admins  = users.filter(u => u.role === "admin").length;
+  const with2fa = users.filter(u => u.require_2fa).length;
+  const pct = (n) => total ? Math.round(n / total * 100) : 0;
+
   return (
-    <div className="card card-elev fade-up">
+    <div className="f-col f-gap-4 fade-up">
       <style>{`
         .au-dt    { display: block; overflow: auto; max-height: 60vh; }
         .au-cards { display: none; }
         .au-card  { padding: 14px 2px; border-bottom: 1px solid var(--line); }
         .au-card:last-child { border-bottom: none; }
+        .au-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .au-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 680px) {
           .au-dt    { display: none !important; }
           .au-cards { display: block !important; }
           .au-search { width: 100% !important; }
+          .au-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .au-breakdown { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 400px) {
+          .au-stat-grid { grid-template-columns: 1fr 1fr !important; }
         }
       `}</style>
 
+      {/* ── User Stats Dashboard ── */}
+      <div>
+        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)", marginBottom: 4 }}>Overview</div>
+        <div className="text-lg fw-7" style={{ marginBottom: 14 }}>สถิติผู้ใช้งาน</div>
+
+        {/* Stat cards row */}
+        <div className="au-stat-grid" style={{ marginBottom: 14 }}>
+          {[
+            { label: "ทั้งหมด",   value: total,   icon: "users",   color: "#6b2c91", bg: "rgba(107,44,145,0.1)" },
+            { label: "ใช้งานได้",  value: active,  icon: "check",   color: "#10b981", bg: "rgba(16,185,129,0.1)" },
+            { label: "รออนุมัติ", value: pending, icon: "bell",    color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
+            { label: "ระงับ",     value: banned,  icon: "close",   color: "#ef4444", bg: "rgba(239,68,68,0.1)"  },
+            { label: "Admin",     value: admins,  icon: "settings",color: "#f47b20", bg: "rgba(244,123,32,0.1)" },
+            { label: "เปิด 2FA",  value: with2fa, icon: "lock",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
+          ].map(({ label, value, icon, color, bg }) => (
+            <div key={label} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="text-sm t-mute" style={{ fontWeight: 600 }}>{label}</span>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: bg, display: "grid", placeItems: "center" }}>
+                  <Icon name={icon} size={15} style={{ color }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color }}>{value}</div>
+              <div style={{ height: 4, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+                <div style={{ height: "100%", borderRadius: 999, background: color, width: `${pct(value)}%`, transition: "width 600ms ease" }} />
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{pct(value)}% ของทั้งหมด</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Role & 2FA breakdown */}
+        <div className="au-breakdown">
+          {/* Role donut-style */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 14, padding: "16px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <Icon name="users" size={14} /> สัดส่วน Role
+            </div>
+            {[
+              { label: "User", value: total - admins, color: "#8b3fc4" },
+              { label: "Admin", value: admins,         color: "#f47b20" },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span className="text-sm" style={{ fontWeight: 600 }}>{label}</span>
+                  <span className="text-sm t-mute">{value} คน · {pct(value)}%</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 999, background: color, width: `${pct(value)}%`, transition: "width 600ms ease" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 2FA & Status */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 14, padding: "16px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <Icon name="lock" size={14} /> สถานะ 2FA & การเข้าถึง
+            </div>
+            {[
+              { label: "เปิด 2FA",   value: with2fa,        color: "#3b82f6" },
+              { label: "ไม่มี 2FA",  value: total - with2fa, color: "#94a3b8" },
+              { label: "ใช้งานได้",  value: active,          color: "#10b981" },
+              { label: "รออนุมัติ", value: pending,         color: "#f59e0b" },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span className="text-sm" style={{ fontWeight: 600 }}>{label}</span>
+                  <span className="text-sm t-mute">{value} คน</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 999, background: color, width: `${pct(value)}%`, transition: "width 600ms ease" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── User Table Card ── */}
+      <div className="card card-elev">
       {/* Header */}
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
@@ -1530,6 +1627,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
           </div>
         )}
       </Modal>
+      </div>
     </div>
   );
 }
@@ -2202,6 +2300,8 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
   const [localUntil, setLocalUntil] = useStateAd(maintenanceUntil || "");
   const [localDev, setLocalDev] = useStateAd(devInfo || {});
   const [savingDev, setSavingDev] = useStateAd(false);
+  const [openMaint, setOpenMaint] = useStateAd(true);
+  const [openDev, setOpenDev] = useStateAd(false);
   const toast = useToast();
 
   const setDev = (key, val) => setLocalDev(d => ({ ...d, [key]: val }));
@@ -2293,213 +2393,176 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
         <div className="t-display" style={{ fontSize: 24 }}>ตั้งค่าระบบ</div>
       </div>
 
-      {/* Maintenance Mode Toggle Card */}
-      <div className="card card-elev">
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
+      {/* Maintenance Mode — Collapsible Card */}
+      <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
+        {/* Header (always visible) */}
+        <button
+          onClick={() => setOpenMaint(o => !o)}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+        >
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: maintenanceMode ? "rgba(244,123,32,0.12)" : "rgba(139,63,196,0.10)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="settings" size={18} style={{ color: maintenanceMode ? "var(--pea-orange-500)" : "var(--pea-purple-500)" }} />
+          </div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
-              <Icon name="settings" size={16} />
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15 }}>
               Maintenance Mode
-              {maintenanceMode && (
-                <span className="badge badge-orange" style={{ fontSize: 10 }}>เปิดอยู่</span>
-              )}
+              {maintenanceMode
+                ? <span className="badge badge-orange" style={{ fontSize: 10 }}>⚠ เปิดอยู่</span>
+                : <span className="badge badge-green" style={{ fontSize: 10 }}>ปกติ</span>}
             </div>
-            <div className="t-mute text-sm" style={{ lineHeight: 1.6 }}>
-              เมื่อเปิด ผู้ใช้ทั่วไปจะเห็นหน้า "ระบบปิดปรับปรุง" และเข้าใช้งานไม่ได้<br />
-              Admin ยังคงเข้าใช้งานได้ตามปกติ
+            <div className="t-mute text-sm">ปิด/เปิดการเข้าใช้งานของผู้ใช้ทั่วไป</div>
+          </div>
+          <Icon name={openMaint ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+        </button>
+
+        {/* Collapsible body */}
+        {openMaint && (
+          <div className="fade-up" style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
+            {/* Toggle row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, paddingTop: 16 }}>
+              <div className="t-mute text-sm" style={{ lineHeight: 1.6 }}>
+                เมื่อเปิด ผู้ใช้ทั่วไปจะเห็นหน้า "ระบบปิดปรับปรุง" และเข้าใช้งานไม่ได้<br />
+                Admin ยังคงเข้าใช้งานได้ตามปกติ
+              </div>
+              <button onClick={toggle} disabled={loading}
+                title={maintenanceMode ? "คลิกเพื่อเปิดระบบ" : "คลิกเพื่อปิดปรับปรุง"}
+                style={{ width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
+                  background: maintenanceMode ? "var(--pea-orange-500)" : "var(--line)",
+                  position: "relative", transition: "background 250ms", border: "none", opacity: loading ? 0.6 : 1 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "white",
+                  position: "absolute", top: 4, left: maintenanceMode ? 32 : 4,
+                  transition: "left 250ms", boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }} />
+              </button>
             </div>
-          </div>
-          <button
-            onClick={toggle}
-            disabled={loading}
-            title={maintenanceMode ? "คลิกเพื่อเปิดระบบ" : "คลิกเพื่อปิดปรับปรุง"}
-            style={{
-              width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
-              background: maintenanceMode ? "var(--pea-orange-500)" : "var(--line)",
-              position: "relative", transition: "background 250ms", border: "none",
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            <div style={{
-              width: 24, height: 24, borderRadius: "50%", background: "white",
-              position: "absolute", top: 4,
-              left: maintenanceMode ? 32 : 4,
-              transition: "left 250ms",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-            }} />
-          </button>
-        </div>
-        {maintenanceMode && (
-          <div className="badge badge-orange fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
-            <Icon name="warning" size={15} />
-            ระบบปิดปรับปรุงอยู่ — ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้
-          </div>
-        )}
-        {!maintenanceMode && (
-          <div className="badge badge-green fade-up" style={{ marginTop: 16, padding: "10px 14px", width: "100%", display: "flex", gap: 8 }}>
-            <Icon name="check" size={15} />
-            ระบบเปิดให้บริการปกติ
+
+            {/* Status badge */}
+            {maintenanceMode ? (
+              <div className="badge badge-orange fade-up" style={{ marginTop: 14, padding: "10px 14px", width: "100%", display: "flex", gap: 8, boxSizing: "border-box" }}>
+                <Icon name="warning" size={15} /> ระบบปิดปรับปรุงอยู่ — ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้
+              </div>
+            ) : (
+              <div className="badge badge-green fade-up" style={{ marginTop: 14, padding: "10px 14px", width: "100%", display: "flex", gap: 8, boxSizing: "border-box" }}>
+                <Icon name="check" size={15} /> ระบบเปิดให้บริการปกติ
+              </div>
+            )}
+
+            {/* Message & time */}
+            <div style={{ marginTop: 20, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="edit" size={14} /> ข้อความแจ้งผู้ใช้งาน
+              </div>
+              <div className="f-col f-gap-3">
+                <div>
+                  <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>ข้อความ</label>
+                  <textarea value={localMsg} onChange={e => setLocalMsg(e.target.value)} rows={3} placeholder={DEFAULT_MSG}
+                    style={{ width: "100%", resize: "vertical", fontFamily: "inherit", padding: "10px 12px", borderRadius: 10,
+                      fontSize: 14, border: "1px solid var(--line)", background: "var(--bg)", color: "var(--text)",
+                      lineHeight: 1.6, boxSizing: "border-box" }} />
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+                    <button className="btn btn-ghost text-sm" style={{ padding: "2px 8px", height: 28 }}
+                      onClick={() => setLocalMsg(DEFAULT_MSG)}>รีเซ็ตข้อความเริ่มต้น</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
+                    วันที่/เวลาที่คาดว่าจะกลับมาให้บริการ <span className="t-mute">(ไม่บังคับ)</span>
+                  </label>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input type="datetime-local" value={localUntil} onChange={e => setLocalUntil(e.target.value)}
+                      style={{ flex: 1, padding: "10px 12px", borderRadius: 10, fontSize: 14,
+                        border: "1px solid var(--line)", background: "var(--bg)", color: "var(--text)", fontFamily: "inherit" }} />
+                    {localUntil && (
+                      <button className="btn btn-ghost" style={{ height: 42, padding: "0 12px", flexShrink: 0 }}
+                        onClick={() => setLocalUntil("")} title="ล้างวันที่"><Icon name="close" size={14} /></button>
+                    )}
+                  </div>
+                </div>
+                <button className="btn btn-primary" style={{ height: 44 }} disabled={savingMsg} onClick={saveMessage}>
+                  {savingMsg ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อความ</>}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Message & Return Time Card */}
-      <div className="card card-elev">
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
-          <Icon name="edit" size={16} />
-          ข้อความแจ้งผู้ใช้งาน
-        </div>
-        <div className="t-mute text-sm" style={{ marginBottom: 16, lineHeight: 1.6 }}>
-          ข้อความที่แสดงบนหน้าปิดปรับปรุง หากไม่กรอก จะใช้ข้อความเริ่มต้น
-        </div>
+      {/* Developer Info — Collapsible Card */}
+      <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
+        <button
+          onClick={() => setOpenDev(o => !o)}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+        >
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(107,44,145,0.1)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="code" size={18} style={{ color: "var(--pea-purple-500)" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15 }}>
+              ข้อมูลนักพัฒนาระบบ
+              {localDev.showBtn
+                ? <span className="badge badge-purple" style={{ fontSize: 10 }}>แสดงปุ่ม</span>
+                : <span className="badge" style={{ fontSize: 10 }}>ซ่อนปุ่ม</span>}
+            </div>
+            <div className="t-mute text-sm">แสดงปุ่ม "พัฒนาโดย" มุมขวาล่างของหน้าจอ</div>
+          </div>
+          <Icon name={openDev ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+        </button>
 
-        <div className="f-col f-gap-3">
-          <div>
-            <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>ข้อความ</label>
-            <textarea
-              value={localMsg}
-              onChange={e => setLocalMsg(e.target.value)}
-              rows={4}
-              placeholder={DEFAULT_MSG}
-              style={{
-                width: "100%", resize: "vertical", fontFamily: "inherit",
-                padding: "10px 12px", borderRadius: 10, fontSize: 14,
-                border: "1px solid var(--line)", background: "var(--bg)",
-                color: "var(--text)", lineHeight: 1.6, boxSizing: "border-box",
-              }}
-            />
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
-              <button className="btn btn-ghost text-sm" style={{ padding: "2px 8px", height: 28 }}
-                onClick={() => setLocalMsg(DEFAULT_MSG)}>
-                รีเซ็ตข้อความเริ่มต้น
+        {openDev && (
+          <div className="fade-up" style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
+            {/* Show button toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, paddingTop: 16, marginBottom: 16 }}>
+              <span className="text-sm t-mute">แสดงปุ่ม "พัฒนาโดย" บนหน้าจอ</span>
+              <button onClick={() => setDev("showBtn", !localDev.showBtn)}
+                title={localDev.showBtn ? "คลิกเพื่อซ่อนปุ่ม" : "คลิกเพื่อแสดงปุ่ม"}
+                style={{ width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
+                  background: localDev.showBtn ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "var(--line)",
+                  position: "relative", transition: "background 250ms", border: "none" }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "white",
+                  position: "absolute", top: 4, left: localDev.showBtn ? 32 : 4,
+                  transition: "left 250ms", boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }} />
+              </button>
+            </div>
+
+            <div className="f-col f-gap-3">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  ["ชื่อ-นามสกุล", "name", "ธนพล ใจดี"],
+                  ["ตำแหน่ง", "position", "นักพัฒนาระบบ"],
+                  ["แผนก/ฝ่าย", "department", "ฝ่ายสารสนเทศ"],
+                  ["สถานที่/สาขา", "location", "กฟจ. เชียงใหม่"],
+                  ["เวอร์ชัน", "version", "1.0.0"],
+                ].map(([label, key, ph]) => (
+                  <div key={key}>
+                    <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
+                    <input type="text" value={localDev[key] || ""} onChange={e => setDev(key, e.target.value)} placeholder={ph}
+                      style={{ width: "100%", padding: "9px 11px", borderRadius: 10, fontSize: 13,
+                        border: "1px solid var(--line)", background: "var(--bg)", color: "var(--text)",
+                        fontFamily: "inherit", boxSizing: "border-box" }} />
+                  </div>
+                ))}
+              </div>
+              {[
+                ["ฐานข้อมูล", "database", "Supabase (PostgreSQL), PostGIS"],
+                ["Tech Stack", "stack", "React 18, Leaflet.js, Babel Standalone"],
+                ["ระบบ/การเชื่อมต่อ", "systems", "GIS, RLS, Row-Level Security"],
+                ["ข้อความท้าย (Footer)", "footer", "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)"],
+              ].map(([label, key, ph]) => (
+                <div key={key}>
+                  <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
+                  <textarea value={localDev[key] || ""} onChange={e => setDev(key, e.target.value)} rows={2} placeholder={ph}
+                    style={{ width: "100%", resize: "vertical", fontFamily: "inherit", padding: "9px 11px", borderRadius: 10,
+                      fontSize: 13, border: "1px solid var(--line)", background: "var(--bg)", color: "var(--text)",
+                      lineHeight: 1.6, boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <button className="btn btn-primary"
+                style={{ height: 44, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", boxShadow: "0 8px 22px rgba(107,44,145,0.35)" }}
+                disabled={savingDev} onClick={saveDev}>
+                {savingDev ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อมูลนักพัฒนา</>}
               </button>
             </div>
           </div>
-
-          <div>
-            <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
-              วันที่/เวลาที่คาดว่าจะกลับมาให้บริการ <span className="t-mute">(ไม่บังคับ)</span>
-            </label>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="datetime-local"
-                value={localUntil}
-                onChange={e => setLocalUntil(e.target.value)}
-                style={{
-                  flex: 1, padding: "10px 12px", borderRadius: 10, fontSize: 14,
-                  border: "1px solid var(--line)", background: "var(--bg)",
-                  color: "var(--text)", fontFamily: "inherit",
-                }}
-              />
-              {localUntil && (
-                <button className="btn btn-ghost" style={{ height: 42, padding: "0 12px", flexShrink: 0 }}
-                  onClick={() => setLocalUntil("")} title="ล้างวันที่">
-                  <Icon name="close" size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <button
-            className="btn btn-primary"
-            style={{ height: 44, marginTop: 4 }}
-            disabled={savingMsg}
-            onClick={saveMessage}
-          >
-            {savingMsg ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อความ</>}
-          </button>
-        </div>
-      </div>
-
-      {/* Developer Info Card */}
-      <div className="card card-elev">
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, marginBottom: 20 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
-              <Icon name="code" size={16} />
-              ข้อมูลนักพัฒนาระบบ
-            </div>
-            <div className="t-mute text-sm" style={{ lineHeight: 1.6 }}>
-              แสดงปุ่ม "พัฒนาโดย" มุมขวาล่างของหน้าจอ ผู้ใช้ทุกคนสามารถดูข้อมูลได้
-            </div>
-          </div>
-          <button
-            onClick={() => setDev("showBtn", !localDev.showBtn)}
-            title={localDev.showBtn ? "คลิกเพื่อซ่อนปุ่ม" : "คลิกเพื่อแสดงปุ่ม"}
-            style={{
-              width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
-              background: localDev.showBtn ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "var(--line)",
-              position: "relative", transition: "background 250ms", border: "none",
-            }}
-          >
-            <div style={{
-              width: 24, height: 24, borderRadius: "50%", background: "white",
-              position: "absolute", top: 4,
-              left: localDev.showBtn ? 32 : 4,
-              transition: "left 250ms",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-            }} />
-          </button>
-        </div>
-
-        <div className="f-col f-gap-3">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {[
-              ["ชื่อ-นามสกุล", "name", "text", "ธนพล ใจดี"],
-              ["ตำแหน่ง", "position", "text", "นักพัฒนาระบบ"],
-              ["แผนก/ฝ่าย", "department", "text", "ฝ่ายสารสนเทศ"],
-              ["สถานที่/สาขา", "location", "text", "กฟจ. เชียงใหม่"],
-              ["เวอร์ชัน", "version", "text", "1.0.0"],
-            ].map(([label, key, type, ph]) => (
-              <div key={key}>
-                <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
-                <input
-                  type={type}
-                  value={localDev[key] || ""}
-                  onChange={e => setDev(key, e.target.value)}
-                  placeholder={ph}
-                  style={{
-                    width: "100%", padding: "9px 11px", borderRadius: 10, fontSize: 13,
-                    border: "1px solid var(--line)", background: "var(--bg)",
-                    color: "var(--text)", fontFamily: "inherit", boxSizing: "border-box",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {[
-            ["ฐานข้อมูล", "database", "Supabase (PostgreSQL), PostGIS"],
-            ["Tech Stack", "stack", "React 18, Leaflet.js, Babel Standalone"],
-            ["ระบบ/การเชื่อมต่อ", "systems", "GIS, RLS, Row-Level Security"],
-            ["ข้อความท้าย (Footer)", "footer", "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)"],
-          ].map(([label, key, ph]) => (
-            <div key={key}>
-              <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
-              <textarea
-                value={localDev[key] || ""}
-                onChange={e => setDev(key, e.target.value)}
-                rows={2}
-                placeholder={ph}
-                style={{
-                  width: "100%", resize: "vertical", fontFamily: "inherit",
-                  padding: "9px 11px", borderRadius: 10, fontSize: 13,
-                  border: "1px solid var(--line)", background: "var(--bg)",
-                  color: "var(--text)", lineHeight: 1.6, boxSizing: "border-box",
-                }}
-              />
-            </div>
-          ))}
-
-          <button
-            className="btn btn-primary"
-            style={{ height: 44, marginTop: 4, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", boxShadow: "0 8px 22px rgba(107,44,145,0.35)" }}
-            disabled={savingDev}
-            onClick={saveDev}
-          >
-            {savingDev ? "กำลังบันทึก…" : <><Icon name="save" size={15} /> บันทึกข้อมูลนักพัฒนา</>}
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
