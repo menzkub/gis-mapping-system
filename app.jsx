@@ -1037,6 +1037,184 @@ function MaintenanceScreen({ currentUser, message, until, onLogout }) {
   );
 }
 
+// ── DevInfo floating button & modal ───────────────────────────────────────
+function DevInfoModal({ devInfo, onClose }) {
+  const [expanded, setExpanded] = useStateApp(false);
+  const initials = (devInfo.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const hasDetails = devInfo.database || devInfo.stack || devInfo.systems;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(14,10,22,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+    >
+      <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: "var(--surface)", borderRadius: 24, width: "100%", maxWidth: 420, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
+        {/* Gradient header */}
+        <div style={{ background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 50%,#f47b20 130%)", padding: "28px 24px 24px", color: "white", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", left: -20, bottom: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.75, marginBottom: 16, position: "relative" }}>DEVELOPED BY</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, position: "relative" }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.2)", border: "2px solid rgba(255,255,255,0.35)", display: "grid", placeItems: "center", fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
+              {initials}
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.2 }}>{devInfo.name || "—"}</div>
+              {devInfo.position && <div style={{ fontSize: 13, opacity: 0.85, marginTop: 3 }}>{devInfo.position}</div>}
+              {devInfo.department && <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>{devInfo.department}</div>}
+            </div>
+          </div>
+          {devInfo.location && (
+            <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.18)", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 600, position: "relative" }}>
+              <Icon name="location" size={12} /> {devInfo.location}
+            </div>
+          )}
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "20px 24px" }}>
+          {hasDetails && (
+            <div>
+              <button
+                onClick={() => setExpanded(e => !e)}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--soft)", cursor: "pointer", fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 12, justifyContent: "space-between" }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}><Icon name="info" size={14} /> รายละเอียดเพิ่มเติม</span>
+                <Icon name={expanded ? "chevUp" : "chevDown"} size={14} />
+              </button>
+
+              {expanded && (
+                <div className="fade-up f-col f-gap-2" style={{ marginBottom: 12 }}>
+                  {devInfo.database && (
+                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
+                        <Icon name="database" size={13} /> ฐานข้อมูล
+                      </div>
+                      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.database}</div>
+                    </div>
+                  )}
+                  {devInfo.stack && (
+                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
+                        <Icon name="cpu" size={13} /> Tech Stack
+                      </div>
+                      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.stack}</div>
+                    </div>
+                  )}
+                  {devInfo.systems && (
+                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
+                        <Icon name="link" size={13} /> ระบบ/การเชื่อมต่อ
+                      </div>
+                      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.systems}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+            <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{devInfo.footer || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)"}</div>
+            {devInfo.version && (
+              <span className="badge" style={{ fontSize: 10, background: "rgba(107,44,145,0.12)", color: "#6b2c91", borderRadius: 999, padding: "3px 9px", fontWeight: 700 }}>v{devInfo.version}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DevInfoButton({ devInfo }) {
+  const [open, setOpen] = useStateApp(false);
+  const getSavedPos = () => {
+    try {
+      const s = localStorage.getItem("pea_devbtn_pos");
+      if (s) return JSON.parse(s);
+    } catch (_) {}
+    return { x: window.innerWidth - 160, y: window.innerHeight - 60 };
+  };
+  const [pos, setPos] = useStateApp(getSavedPos);
+  const dragging = React.useRef(false);
+  const moved = React.useRef(false);
+  const offset = React.useRef({ x: 0, y: 0 });
+
+  useEffectApp(() => {
+    const clamp = (p) => ({
+      x: Math.min(Math.max(0, p.x), window.innerWidth  - 160),
+      y: Math.min(Math.max(0, p.y), window.innerHeight - 60),
+    });
+
+    const onMove = (cx, cy) => {
+      if (!dragging.current) return;
+      moved.current = true;
+      const next = clamp({ x: cx - offset.current.x, y: cy - offset.current.y });
+      setPos(next);
+    };
+    const onUp = () => { dragging.current = false; };
+
+    const onMouseMove = e => onMove(e.clientX, e.clientY);
+    const onTouchMove = e => { if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY); };
+    const onResize = () => setPos(p => clamp(p));
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup",   onUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend",  onUp);
+    window.addEventListener("resize",    onResize);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup",   onUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend",  onUp);
+      window.removeEventListener("resize",    onResize);
+    };
+  }, []);
+
+  useEffectApp(() => {
+    try { localStorage.setItem("pea_devbtn_pos", JSON.stringify(pos)); } catch (_) {}
+  }, [pos.x, pos.y]);
+
+  if (!devInfo.showBtn || !devInfo.name) return null;
+  const firstName = devInfo.name.split(" ")[0];
+
+  const startDrag = (cx, cy) => {
+    dragging.current = true;
+    moved.current = false;
+    offset.current = { x: cx - pos.x, y: cy - pos.y };
+  };
+
+  return (
+    <>
+      <button
+        onMouseDown={e => startDrag(e.clientX, e.clientY)}
+        onTouchStart={e => { if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
+        onClick={() => { if (!moved.current) setOpen(true); }}
+        style={{
+          position: "fixed", left: pos.x, top: pos.y, zIndex: 800,
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "8px 14px 8px 10px", borderRadius: 999,
+          background: "linear-gradient(135deg,#6b2c91,#8b3fc4)",
+          color: "white", border: "none", cursor: "grab",
+          boxShadow: "0 4px 20px rgba(107,44,145,0.45)",
+          fontSize: 13, fontWeight: 700, userSelect: "none",
+          touchAction: "none",
+        }}
+      >
+        <span style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center" }}>
+          <Icon name="code" size={14} />
+        </span>
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontSize: 9, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>พัฒนาโดย</div>
+          <div style={{ fontSize: 13 }}>{firstName}</div>
+        </div>
+      </button>
+      {open && <DevInfoModal devInfo={devInfo} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────────────────
 function App() {
   const { t, lang, setLang } = useLang();
@@ -1062,6 +1240,11 @@ function App() {
   const [refreshMsg, setRefreshMsg] = useStateApp(null); // null | "loading" | "done" | "error"
   const [adminTab, setAdminTab] = useStateApp("dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
+  const [devInfo, setDevInfo] = useStateApp({
+    name: "", position: "", department: "", location: "",
+    database: "", stack: "", systems: "",
+    version: "1.0.0", footer: "", showBtn: false,
+  });
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -1099,6 +1282,18 @@ function App() {
       setMaintenanceMode(isMaintenance);
       setMaintenanceMessage(settingsMap["maintenance_message"] || "");
       setMaintenanceUntil(settingsMap["maintenance_until"] || "");
+      setDevInfo({
+        name:       settingsMap["dev_name"]       || "",
+        position:   settingsMap["dev_position"]   || "",
+        department: settingsMap["dev_department"] || "",
+        location:   settingsMap["dev_location"]   || "",
+        database:   settingsMap["dev_database"]   || "",
+        stack:      settingsMap["dev_stack"]      || "",
+        systems:    settingsMap["dev_systems"]    || "",
+        version:    settingsMap["dev_version"]    || "1.0.0",
+        footer:     settingsMap["dev_footer"]     || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
+        showBtn:    settingsMap["dev_show_btn"]   === "true",
+      });
       if (isMaintenance && myProfile.role !== "admin") {
         setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
         setAppState("maintenance");
@@ -1564,9 +1759,12 @@ function App() {
               tab={adminTab} setTab={setAdminTab}
               maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
               maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
-              maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil} />
+              maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
+              devInfo={devInfo} setDevInfo={setDevInfo} />
           )}
         </main>
+
+        <DevInfoButton devInfo={devInfo} />
 
         {/* Logout confirm dialog */}
         {showLogoutConfirm && (

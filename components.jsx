@@ -32,6 +32,7 @@ const Icon = ({ name, size = 18, stroke = 2 }) => {
     sun:      <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
     ruler:    <path d="m21 3-2 2-2-2-2 2-2-2-2 2-2-2-2 2-2-2-2 2v2l16 16h2v-2L5 5l2-2" />,
     chevDown: <path d="m6 9 6 6 6-6" />,
+    chevUp:   <path d="m6 15 6-6 6 6" />,
     chevRight:<path d="m9 6 6 6-6 6" />,
     chevLeft: <path d="m15 6-6 6 6 6" />,
     navigation: <path d="m3 11 19-8-8 19-2-9-9-2Z" />,
