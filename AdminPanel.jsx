@@ -382,6 +382,9 @@ function GuideTable({ rows }) {
 function AdminGuide() {
   const { lang } = useLang();
   const s = (th, en) => lang === "en" ? en : th;
+  const [expandSig, setExpandSig] = useStateAd({ count: 0, open: false });
+  const expandAll   = () => setExpandSig(s => ({ count: s.count + 1, open: true }));
+  const collapseAll = () => setExpandSig(s => ({ count: s.count + 1, open: false }));
   return (
     <div style={{ maxWidth: 820, margin: "0 auto" }}>
       {/* Hero */}
@@ -396,6 +399,15 @@ function AdminGuide() {
             <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>{s("สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Role และทุก Feature", "For administrators — covers all roles and features")}</div>
           </div>
+        </div>
+        {/* Expand/Collapse buttons */}
+        <div style={{ display: "flex", gap: 6, marginTop: 16 }}>
+          <button onClick={expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+            <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+          </button>
+          <button onClick={collapseAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+            <Icon name="chevRight" size={13} /> ยุบทั้งหมด
+          </button>
         </div>
       </div>
 
