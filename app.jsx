@@ -1192,6 +1192,15 @@ function App() {
             {lang === "th" ? "EN" : "TH"}
           </button>
 
+          {/* Theme toggle */}
+          <button
+            className="btn-icon"
+            onClick={() => setTheme(t => t === "light" ? "dark" : "light")}
+            title={theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}
+          >
+            <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
+          </button>
+
           {/* Refresh + feedback */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <button className="btn-icon" title={t("refreshData")} onClick={handleRefresh} disabled={refreshing}
