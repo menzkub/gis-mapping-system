@@ -2625,6 +2625,7 @@ function App() {
     const saved = localStorage.getItem("pea_base") || "satellite";
     return saved === "dark" ? "satellite" : saved;
   });
+  const [sidebarExpanded, setSidebarExpanded] = useStateApp(false);
   const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
   const [maintenanceMessage, setMaintenanceMessage] = useStateApp("");
   const [maintenanceUntil, setMaintenanceUntil] = useStateApp("");
@@ -3027,7 +3028,7 @@ function App() {
 
   return (
     <ToastProvider><ConfirmProvider>
-      <div className="app-root">
+      <div className={"app-root" + (sidebarExpanded ? " sidebar-expanded" : "")}>
 
         {/* ── Idle-logout warning banner ── */}
         {idleWarnSecs !== null && (
@@ -3062,6 +3063,11 @@ function App() {
               {lang === "en" ? "Stay" : "ยังอยู่"}
             </button>
           </div>
+        )}
+
+        {/* Sidebar backdrop — tablet only, closes sidebar on outside click */}
+        {sidebarExpanded && (
+          <div className="sidebar-backdrop" onClick={() => setSidebarExpanded(false)} />
         )}
 
         {/* Sidebar */}
@@ -3165,6 +3171,11 @@ function App() {
             .topbar-mobile-user:hover { background: rgba(139,63,196,0.2); }
             .topbar-util-btn  { display: flex; }
             .topbar-util-dots { display: none !important; }
+            .sidebar-hamburger { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; flex-shrink: 0; }
+            .sidebar-hamburger:hover { background: rgba(139,63,196,0.12); border-color: var(--pea-purple-400); color: var(--pea-purple-600); }
+            @media (min-width: 641px) and (max-width: 1024px) {
+              .sidebar-hamburger { display: flex !important; }
+            }
             @media (max-width: 680px) {
               .topbar-greeting       { display: none !important; }
               .topbar-mapswitcher    { display: none !important; }
@@ -3175,6 +3186,12 @@ function App() {
               .topbar-util-dots      { display: flex !important; }
             }
           `}</style>
+
+          {/* Hamburger — tablet only */}
+          <button className="sidebar-hamburger" onClick={() => setSidebarExpanded(e => !e)}
+            title={sidebarExpanded ? "ยุบ Sidebar" : "ขยาย Sidebar"}>
+            <Icon name={sidebarExpanded ? "close" : "menu"} size={18} />
+          </button>
 
           {/* Desktop greeting */}
           <div className="topbar-greeting" style={{ flex: 1 }}>
