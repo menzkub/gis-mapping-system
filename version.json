@@ -1,7 +1,7 @@
 {
-  "commit": "932cbb062bbe20ab735eec0f86fce2ec918eb4d9",
-  "shortCommit": "932cbb0",
-  "message": "fix: PKCE recovery for regular users + log forgot-password history",
-  "date": "2026-05-31T06:58:21+00:00",
+  "commit": "867ce82742dfb999e0dfd42cc608b937e0eb5eef",
+  "shortCommit": "867ce82",
+  "message": "feat: deployment status panel in Changelog (admin)",
+  "date": "2026-05-31T07:03:04+00:00",
   "branch": "main"
 }
