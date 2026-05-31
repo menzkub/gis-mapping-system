@@ -1,7 +1,7 @@
 {
-  "commit": "7042939",
-  "shortCommit": "7042939",
-  "message": "fix: deploy popup full-width on mobile with word-wrap",
-  "date": "2026-05-31T09:30:00+00:00",
+  "commit": "8023742",
+  "shortCommit": "8023742",
+  "message": "style: make btn-icon circular transparent — cleaner topbar icons",
+  "date": "2026-05-31T09:40:00+00:00",
   "branch": "main"
 }
