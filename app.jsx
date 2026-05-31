@@ -803,7 +803,18 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
-    version: "v2.6", date: "30 พ.ค. 2569", tag: "ล่าสุด",
+    version: "v2.7", date: "31 พ.ค. 2569", tag: "Deploy",
+    tagColor: "#3b82f6", items: [
+      { cat: "new",  text: "Deploy Status Dot ใน Topbar: admin คลิกเพื่อดู popup สถานะ deploy ทันที (🟢/🟡/⚫)" },
+      { cat: "new",  text: "Deployment Status card ใน Changelog: เปรียบเทียบ hash ที่รันบนเว็บกับ commit ล่าสุดบน GitHub" },
+      { cat: "new",  text: "version.json: ไฟล์ที่ root repo บันทึก commit hash ที่ deploy จริง" },
+      { cat: "fix",  text: "Forgot Password: ลิงก์รีเซ็ตในอีเมลพาไปหน้าตั้งรหัสผ่านใหม่ทันที ทั้ง user และ admin (แก้ PKCE race condition)" },
+      { cat: "new",  text: "Audit Log: เพิ่ม action reset_password_initiated, reset_password_failed" },
+      { cat: "fix",  text: "Modal popup ผู้ใช้: กึ่งกลาง content area จริง ทุก breakpoint (desktop/tablet/mobile)" },
+    ],
+  },
+  {
+    version: "v2.6", date: "30 พ.ค. 2569", tag: "Changelog",
     tagColor: "#10b981", items: [
       { cat: "new",  text: "เพิ่มหน้าประวัติการปรับปรุง UX/UI (หน้านี้)" },
       { cat: "fix",  text: "Audit Log: เพิ่ม action change_password, enable/disable_2fa, unlock_password" },
@@ -1360,10 +1371,10 @@ function UserGuide({ role }) {
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
             {[
-              { label: "หัวข้อ",   value: isAdmin ? 12 : 5, icon: "book",    sub: "sections" },
-              { label: "ขั้นตอน", value: isAdmin ? 38 : 16, icon: "check",   sub: "steps" },
-              { label: "ฟีเจอร์",  value: isAdmin ? 10 : 8, icon: "bolt",    sub: "features" },
-              { label: "เคล็ดลับ", value: isAdmin ? 15 : 7, icon: "warning", sub: "tips & notes" },
+              { label: "หัวข้อ",   value: isAdmin ? 12 : 5,  icon: "book",    sub: "sections" },
+              { label: "ขั้นตอน", value: isAdmin ? 41 : 16, icon: "check",   sub: "steps" },
+              { label: "ฟีเจอร์",  value: isAdmin ? 12 : 8,  icon: "bolt",    sub: "features" },
+              { label: "เคล็ดลับ", value: isAdmin ? 16 : 7,  icon: "warning", sub: "tips & notes" },
             ].map(({ label, value, icon, sub }) => (
               <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -1569,6 +1580,8 @@ function UserGuide({ role }) {
                   ["create / update / delete", "เพิ่ม แก้ไข ลบ Meter/TR"],
                   ["import_csv / export_csv", "นำเข้า/ส่งออกข้อมูล"],
                   ["change_password", "เปลี่ยนรหัสผ่าน (บันทึกใน password_history ด้วย)"],
+                  ["reset_password_initiated", "เปิดหน้ารีเซ็ตรหัสผ่านผ่านลิงก์อีเมล"],
+                  ["reset_password_failed", "รีเซ็ตรหัสผ่านไม่สำเร็จ (มี error)"],
                   ["enable_2fa / disable_2fa", "เปิด/ปิด 2FA"],
                   ["approve_user / ban_user", "อนุมัติ/ระงับผู้ใช้งาน"],
                   ["unlock_password", "Admin ปลดล็อครหัสผ่านหมดอายุ"],
@@ -1601,11 +1614,13 @@ function UserGuide({ role }) {
                   ["ตำแหน่ง", "Sidebar (desktop) / Bottom nav (mobile) — ไอคอน ⚡ 'อัปเดต'"],
                   ["สิทธิ์", "Admin เท่านั้น"],
                   ["ข้อมูล", "Timeline ทุก version พร้อมวันที่, category chip, stat summary"],
+                  ["Deploy Status dot", "จุดสีใน Topbar — 🟢 ปัจจุบัน / 🟡 รอ Deploy / ⚫ กำลังโหลด"],
                 ]} />
                 <UGStep n={1} text="กดแท็บ 'อัปเดต ⚡' ใน sidebar — timeline แสดงทุก version ตั้งแต่ v2.0" />
-                <UGStep n={2} text="แต่ละรายการมี chip บอกประเภท: ใหม่ / UX/UI / แก้ไข" />
-                <UGStep n={3} text="การ์ด hero ด้านบนสรุปจำนวน version, ฟีเจอร์ใหม่, UX, แก้ไขทั้งหมด" />
-                <UGTip>ข้อมูลใน Changelog อัปเดตพร้อมกับการ deploy แต่ละครั้ง</UGTip>
+                <UGStep n={2} text="การ์ด Deployment Status ด้านบน timeline — เปรียบเทียบ hash ที่รันกับ GitHub latest" />
+                <UGStep n={3} text="แต่ละรายการมี chip บอกประเภท: ใหม่ / UX/UI / แก้ไข / ประสิทธิภาพ" />
+                <UGStep n={4} text="กดจุดสีใน Topbar เพื่อดู popup สถานะ deploy ได้ทันทีโดยไม่ต้องเปิดหน้า อัปเดต" />
+                <UGTip>หลังจาก push โค้ดขึ้น GitHub Pages ใช้เวลา 1–3 นาที — สถานะจะเปลี่ยนเป็น 🟢 โดยอัตโนมัติ</UGTip>
               </div>
             </UGSection>
           </>

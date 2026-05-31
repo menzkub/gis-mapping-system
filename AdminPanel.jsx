@@ -589,6 +589,8 @@ function AdminGuide() {
             ["create / update / delete", s("เพิ่ม แก้ไข ลบ Meter/TR", "Add, edit, delete Meter/TR")],
             ["import_csv / export_csv", s("นำเข้า/ส่งออกข้อมูล", "Import/export data")],
             ["change_password", s("เปลี่ยนรหัสผ่าน (บันทึกใน password_history ด้วย)", "Password change (also recorded in password_history)")],
+            ["reset_password_initiated", s("เปิดหน้ารีเซ็ตรหัสผ่านผ่านลิงก์อีเมล", "Opened reset page via email link")],
+            ["reset_password_failed", s("รีเซ็ตรหัสผ่านไม่สำเร็จ", "Password reset failed")],
             ["enable_2fa / disable_2fa", s("เปิด/ปิด 2FA", "Enable/disable 2FA")],
             ["approve_user / ban_user", s("อนุมัติ/ระงับผู้ใช้งาน", "Approve/suspend users")],
             ["unlock_password", s("Admin ปลดล็อครหัสผ่านหมดอายุ", "Admin unlocked expired password")],
@@ -625,12 +627,15 @@ function AdminGuide() {
             [s("รายการ", "Item"), s("รายละเอียด", "Details")],
             [s("ตำแหน่ง", "Location"), s("Sidebar ไอคอน ⚡ 'อัปเดต' — เฉพาะ Admin", "Sidebar ⚡ 'อัปเดต' icon — Admin only")],
             [s("ข้อมูล", "Data"), s("Timeline ทุก version พร้อมวันที่และ category chip", "Timeline of all versions with dates and category chips")],
-            [s("Category", "Category"), s("ใหม่ (เขียว) / UX/UI (ม่วง) / แก้ไข (น้ำเงิน)", "new (green) / UX/UI (purple) / fix (blue)")],
+            [s("Category", "Category"), s("ใหม่ (เขียว) / UX/UI (ม่วง) / แก้ไข (น้ำเงิน) / ประสิทธิภาพ (ส้ม)", "new · UX/UI · fix · perf")],
+            [s("Deploy Status dot", "Deploy Status dot"), s("จุดสีใน Topbar คลิกดู popup: 🟢 ปัจจุบัน / 🟡 รอ Deploy / ⚫ โหลด", "Colored dot in Topbar: 🟢 up-to-date / 🟡 pending / ⚫ loading")],
+            [s("Deployment Status card", "Deployment Status card"), s("การ์ดเปรียบเทียบ hash ที่รันบนเว็บ vs GitHub latest", "Card comparing deployed hash vs GitHub latest commit")],
           ]} />
           <GuideStep n={1} text={s("กดแท็บ 'อัปเดต ⚡' ใน sidebar — เห็นได้เฉพาะ Admin", "Click 'อัปเดต ⚡' in sidebar — visible to Admin only")} />
-          <GuideStep n={2} text={s("Hero card สรุปจำนวน: version, ฟีเจอร์ใหม่, UX, แก้ไข", "Hero card summarizes: versions, new features, UX, fixes")} />
-          <GuideStep n={3} text={s("Timeline dot สี = สีประจำ version — ล่าสุดมี badge 'ล่าสุด' สีเขียว", "Timeline dot color = version color — latest has green 'ล่าสุด' badge")} />
-          <GuideTip>{s("เพิ่ม version ใหม่ได้ในอาร์เรย์ CHANGELOG ใน app.jsx", "Add new versions in the CHANGELOG array in app.jsx")}</GuideTip>
+          <GuideStep n={2} text={s("การ์ด Deployment Status ด้านบน timeline แสดงสถานะ deploy ปัจจุบัน", "Deployment Status card above timeline shows current deploy state")} />
+          <GuideStep n={3} text={s("กดจุดสีใน Topbar ดู popup สถานะ deploy ได้ทันทีโดยไม่ต้องเปิดหน้า อัปเดต", "Click the status dot in Topbar to see deploy status popup instantly")} />
+          <GuideStep n={4} text={s("Timeline dot สี = สีประจำ version — ล่าสุดมี badge 'ล่าสุด' สีเขียว", "Timeline dot color = version color — latest has green 'ล่าสุด' badge")} />
+          <GuideTip>{s("เพิ่ม version ใหม่ใน CHANGELOG array (app.jsx) + อัปเดต version.json ทุกครั้งที่ push", "Add new version in CHANGELOG array (app.jsx) + update version.json on every push")}</GuideTip>
         </div>
       </GuideSection>
 
@@ -642,6 +647,7 @@ function AdminGuide() {
             ["🌙 / ☀️", s("Topbar ขวา", "Topbar right"), s("สลับโหมดมืด/สว่าง (จำค่าไว้ใน browser)", "Toggle dark/light mode (saved in browser)")],
             ["TH / EN", s("Topbar ขวา", "Topbar right"), s("สลับภาษาไทย/อังกฤษ", "Switch Thai/English language")],
             ["🔄 Refresh", s("Topbar ขวา", "Topbar right"), s("โหลดข้อมูลใหม่โดยไม่ต้อง reload หน้า", "Reload data without refreshing the page")],
+            [s("⚫/🟢/🟡 dot", "⚫/🟢/🟡 dot"), s("Topbar ขวา (admin only)", "Topbar right (admin only)"), s("คลิกดูสถานะ deploy — ปัจจุบัน / รอ Deploy / โหลด", "Click to see deploy status — current / pending / loading")],
             ["🔔 Bell", s("Topbar ขวา", "Topbar right"), s("แจ้งเตือน pending users + กิจกรรมล่าสุด", "Notifications for pending users + recent activity")],
           ]} />
         </div>
@@ -1111,6 +1117,33 @@ CHANGELOG.unshift({
   ],
 });`}</CodeBlock>
           <GuideNote>แท็บ 'อัปเดต ⚡' ใน sidebar — เห็นเฉพาะ Admin · route = "changelog"</GuideNote>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>useDeployStatus() hook + DeployStatusDot <DevBadge color="blue">app.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["Symbol", "คำอธิบาย"],
+            ["useDeployStatus()", "Custom hook — fetch version.json + GitHub API คืน { deployed, ghCommit, deployedHash, ghHash, inSync, isLoading }"],
+            ["DeployStatusDot", "Component ใน Topbar (admin only) — dot สีคลิกแล้วเปิด popup สถานะ"],
+            ["DeploymentStatus", "Component การ์ดเต็มใน ChangelogView — ใช้ useDeployStatus เช่นกัน"],
+          ]} />
+          <CodeBlock>{`// useDeployStatus คืนค่า:
+const {
+  deployed,      // object จาก version.json ({ commit, shortCommit, message, date })
+  ghCommit,      // object จาก GitHub API (/commits/main)
+  deployedHash,  // short commit hash ที่รันอยู่
+  ghHash,        // short commit hash ล่าสุดบน GitHub
+  isLoading,     // true ขณะรอ fetch ทั้งสอง
+  inSync,        // true = hash ตรงกัน (ระบบเป็นปัจจุบัน)
+} = useDeployStatus();
+
+// version.json (root repo) — อัปเดตทุกครั้งที่ push
+{
+  "commit":      "8acf87eb...",
+  "shortCommit": "8acf87e",
+  "message":     "feat: deploy status dot...",
+  "date":        "2026-05-31T07:20:48+00:00",
+  "branch":      "main"
+}`}</CodeBlock>
+          <GuideNote>version.json ต้องอัปเดตด้วย commit hash ล่าสุดทุกครั้งที่ push — Claude ทำให้อัตโนมัติใน session นี้</GuideNote>
         </div>
       </GuideSection>
 
