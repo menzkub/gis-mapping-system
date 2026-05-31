@@ -1,7 +1,7 @@
 {
-  "commit": "afe8124",
-  "shortCommit": "afe8124",
-  "message": "feat(i18n): complete UserGuide bilingual translation — all admin sections",
-  "date": "2026-05-31T10:45:00+00:00",
+  "commit": "fecebf5",
+  "shortCommit": "fecebf5",
+  "message": "security: fix audit_log RLS + QR code XSS",
+  "date": "2026-05-31T11:00:00+00:00",
   "branch": "main"
 }
