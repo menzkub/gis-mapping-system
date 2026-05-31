@@ -496,6 +496,19 @@ a { color: inherit; text-decoration: none; }
   .pea-modal-overlay { padding: calc(56px + 12px) 12px calc(64px + 12px); }
 }
 
+/* Deploy popup — center on mobile */
+@media (max-width: 680px) {
+  .deploy-popup {
+    position: fixed !important;
+    top: 68px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+    width: calc(100vw - 32px) !important;
+    max-width: 340px !important;
+  }
+}
+
 /* ============================================================
    Map
    ============================================================ */

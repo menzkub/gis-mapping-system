@@ -966,7 +966,7 @@ function DeployStatusDot() {
       {open && (
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setOpen(false)} />
-          <div className="fade-up" style={{
+          <div className="fade-up deploy-popup" style={{
             position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 2000,
             width: 300, background: "var(--surface)", borderRadius: 16,
             boxShadow: "0 20px 56px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
