@@ -788,7 +788,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
               </div>
               <div style={{ background: "white", padding: 14, borderRadius: 12,
                 display: "inline-block", marginBottom: 14, border: "1px solid var(--line)" }}>
-                <img src={`data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(qrSvg)))}`} alt="QR Code 2FA"
+                <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`} alt="QR Code 2FA"
                   width={160} height={160} style={{ display: "block" }} />
               </div>
               <div style={{ marginBottom: 20 }}>
