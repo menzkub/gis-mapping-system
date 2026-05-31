@@ -805,9 +805,10 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
               </div>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-                <div style={{ background: "white", padding: 14, borderRadius: 12,
-                  border: "1px solid var(--line)", display: "inline-block" }}>
-                  <SafeQR svg={qrSvg} size={180} />
+                <div style={{ background: "white", padding: 20, borderRadius: 12,
+                  border: "1px solid var(--line)", display: "flex",
+                  alignItems: "center", justifyContent: "center" }}>
+                  <SafeQR svg={qrSvg} size={200} />
                 </div>
               </div>
               <div style={{ marginBottom: 20 }}>
