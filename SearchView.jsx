@@ -166,13 +166,19 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
         <div className="sv-title-row">
           <div>
             <div className="t-eyebrow">{t("searchDataLabel")}</div>
-            <div className="search-title-text sv-search-title t-display" style={{ fontSize: 28, marginTop: 2, display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "0 8px" }}>
+            <div className="search-title-text sv-search-title t-display" style={{ fontSize: 28, marginTop: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0 8px" }}>
               <span>{tab === "meter" ? t("peaMeter") : t("peaTr")}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-mute)" }}>
-                {hasSearched
-                  ? `${results.length.toLocaleString()}${results.length >= 500 ? "+" : ""} / ${totalCount.toLocaleString()} ${t("foundItems")}`
-                  : `${totalCount.toLocaleString()} ${t("totalItems")}`}
-              </span>
+              {hasSearched ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
+                  <span style={{ fontWeight: 800 }}>{results.length.toLocaleString()}{results.length >= 500 ? "+" : ""}</span>
+                  <span style={{ fontWeight: 500, opacity: 0.7 }}>/ {totalCount.toLocaleString()} {t("foundItems")}</span>
+                </span>
+              ) : (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
+                  <span style={{ fontWeight: 800, fontSize: 15 }}>{totalCount.toLocaleString()}</span>
+                  <span style={{ fontWeight: 500, opacity: 0.7 }}>{t("totalItems")}</span>
+                </span>
+              )}
               {searching && (
                 <span style={{ fontSize: 12, color: "var(--pea-purple-500)", fontWeight: 600 }}>
                   {t("searching")}
