@@ -1521,126 +1521,126 @@ function UserGuide({ role }) {
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "20px 0 14px" }}>
               <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
-              <span className="badge badge-orange" style={{ fontSize: 12, padding: "4px 12px" }}>Admin เท่านั้น</span>
+              <span className="badge badge-orange" style={{ fontSize: 12, padding: "4px 12px" }}>{ug("Admin เท่านั้น","Admin Only")}</span>
               <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
             </div>
 
             <UGSection icon="dashboard" title="Dashboard" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
-                  ["การ์ด", "ข้อมูลที่แสดง"],
-                  ["มิเตอร์ทั้งหมด", "จำนวน PEA Meter ในระบบ"],
-                  ["หม้อแปลงทั้งหมด", "จำนวน PEA Transformer ในระบบ"],
-                  ["กำลัง (kVA)", "ผลรวม kVA ของหม้อแปลงทั้งหมด"],
-                  ["ผู้ใช้งาน", "จำนวน user ทั้งหมด (active + pending)"],
+                  [ug("การ์ด","Card"), ug("ข้อมูลที่แสดง","Data shown")],
+                  [ug("มิเตอร์ทั้งหมด","Total Meters"), ug("จำนวน PEA Meter ในระบบ","Number of PEA Meters in system")],
+                  [ug("หม้อแปลงทั้งหมด","Total Transformers"), ug("จำนวน PEA Transformer ในระบบ","Number of PEA Transformers in system")],
+                  [ug("กำลัง (kVA)","Power (kVA)"), ug("ผลรวม kVA ของหม้อแปลงทั้งหมด","Total kVA sum of all transformers")],
+                  [ug("ผู้ใช้งาน","Users"), ug("จำนวน user ทั้งหมด (active + pending)","Total users (active + pending)")],
                 ]} />
-                <UGNote>กด Refresh บน Topbar เพื่ออัปเดตข้อมูล Dashboard</UGNote>
+                <UGNote>{ug("กด Refresh บน Topbar เพื่ออัปเดตข้อมูล Dashboard","Press Refresh on Topbar to update Dashboard data")}</UGNote>
               </div>
             </UGSection>
 
-            <UGSection icon="users" title="จัดการผู้ใช้งาน" badge="admin" expandSignal={expandSig}>
+            <UGSection icon="users" title={ug("จัดการผู้ใช้งาน","User Management")} badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
-                  ["Action", "ผลลัพธ์"],
-                  ["คลิกแถวผู้ใช้", "เปิด popup ข้อมูลส่วนตัว + สถานะรหัสผ่าน + ประวัติการเปลี่ยนรหัส"],
-                  ["อนุมัติ", "pending → active (ผู้ใช้เข้าระบบได้)"],
-                  ["ระงับ", "→ banned (เข้าระบบไม่ได้)"],
-                  ["ปลดระงับ", "banned → active"],
-                  ["เปลี่ยน Role", "สลับ user ↔ admin (2FA เปิด/ปิดอัตโนมัติ)"],
-                  ["บังคับ 2FA", "คลิก toggle 2FA ในแถว"],
-                  ["ปลดล็อครหัสผ่าน", "กดปุ่ม 'ปลดล็อค' → user ต้องเปลี่ยนรหัสเมื่อ login"],
+                  ["Action", ug("ผลลัพธ์","Result")],
+                  [ug("คลิกแถวผู้ใช้","Click user row"), ug("เปิด popup ข้อมูลส่วนตัว + สถานะรหัสผ่าน + ประวัติการเปลี่ยนรหัส","Opens popup with personal info + password status + change history")],
+                  [ug("อนุมัติ","Approve"), ug("pending → active (ผู้ใช้เข้าระบบได้)","pending → active (user can login)")],
+                  [ug("ระงับ","Suspend"), ug("→ banned (เข้าระบบไม่ได้)","→ banned (cannot login)")],
+                  [ug("ปลดระงับ","Unsuspend"), "banned → active"],
+                  [ug("เปลี่ยน Role","Change Role"), ug("สลับ user ↔ admin (2FA เปิด/ปิดอัตโนมัติ)","Toggle user ↔ admin (2FA auto-enabled/disabled)")],
+                  [ug("บังคับ 2FA","Force 2FA"), ug("คลิก toggle 2FA ในแถว","Click 2FA toggle in row")],
+                  [ug("ปลดล็อครหัสผ่าน","Unlock Password"), ug("กดปุ่ม 'ปลดล็อค' → user ต้องเปลี่ยนรหัสเมื่อ login","Press 'Unlock' → user must change password on next login")],
                 ]} />
-                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Popup ข้อมูลผู้ใช้ (คลิกแถว)</div>
-                <UGStep n={1} text="คลิกที่แถวใดก็ได้ในตารางผู้ใช้ — popup เปิดแสดงอีเมล, สถานะ, บทบาท, 2FA, เข้าล่าสุด, วันสมัคร" />
-                <UGStep n={2} text="การ์ดสถานะรหัสผ่านแสดง progress bar + วันใช้ไป/45 วัน + วันหมดอายุ" />
-                <UGStep n={3} text="รายการประวัติการเปลี่ยนรหัสผ่านแสดงครบทุกครั้งพร้อมวันที่" />
-                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>คอลัมน์ "รหัสผ่าน" ในตารางผู้ใช้</div>
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("Popup ข้อมูลผู้ใช้ (คลิกแถว)","User Details Popup (click row)")}</div>
+                <UGStep n={1} text={ug("คลิกที่แถวใดก็ได้ในตารางผู้ใช้ — popup เปิดแสดงอีเมล, สถานะ, บทบาท, 2FA, เข้าล่าสุด, วันสมัคร","Click any user row — popup shows email, status, role, 2FA, last login, registration date")} />
+                <UGStep n={2} text={ug("การ์ดสถานะรหัสผ่านแสดง progress bar + วันใช้ไป/45 วัน + วันหมดอายุ","Password status card shows progress bar + days used/45 + expiry date")} />
+                <UGStep n={3} text={ug("รายการประวัติการเปลี่ยนรหัสผ่านแสดงครบทุกครั้งพร้อมวันที่","Password history list shows every change with dates")} />
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug('คอลัมน์ "รหัสผ่าน" ในตารางผู้ใช้','Password column in user table')}</div>
                 <UGTable rows={[
-                  ["สีที่แสดง", "ความหมาย"],
-                  ["🟢 เขียว (XX วัน)", "รหัสผ่านยังใช้งานได้ตามปกติ"],
-                  ["🟡 เหลือง (≤7 วัน)", "ใกล้หมดอายุ — ควรเปลี่ยน"],
-                  ["🔴 แดง (≤3 วัน)", "ใกล้หมดอายุมาก"],
-                  ["🔴 หมดอายุ + ปลดล็อค", "รหัสหมดอายุแล้ว — กดปลดล็อคให้ผู้ใช้"],
-                  ["🟡 ต้องเปลี่ยน", "Admin ปลดล็อคแล้ว รอผู้ใช้เข้ามาเปลี่ยน"],
+                  [ug("สีที่แสดง","Color"), ug("ความหมาย","Meaning")],
+                  [ug("🟢 เขียว (XX วัน)","🟢 Green (XX days)"), ug("รหัสผ่านยังใช้งานได้ตามปกติ","Password is still valid")],
+                  [ug("🟡 เหลือง (≤7 วัน)","🟡 Yellow (≤7 days)"), ug("ใกล้หมดอายุ — ควรเปลี่ยน","Expiring soon — should change")],
+                  [ug("🔴 แดง (≤3 วัน)","🔴 Red (≤3 days)"), ug("ใกล้หมดอายุมาก","Critically close to expiry")],
+                  [ug("🔴 หมดอายุ + ปลดล็อค","🔴 Expired + Unlock"), ug("รหัสหมดอายุแล้ว — กดปลดล็อคให้ผู้ใช้","Password expired — press Unlock for the user")],
+                  [ug("🟡 ต้องเปลี่ยน","🟡 Must Change"), ug("Admin ปลดล็อคแล้ว รอผู้ใช้เข้ามาเปลี่ยน","Admin unlocked — waiting for user to change")],
                 ]} />
-                <UGTip>มี pending user — ระบบแสดง badge แดงที่ปุ่ม Bell บน Topbar</UGTip>
+                <UGTip>{ug("มี pending user — ระบบแสดง badge แดงที่ปุ่ม Bell บน Topbar","Pending users — red badge appears on Bell button in Topbar")}</UGTip>
               </div>
             </UGSection>
 
-            <UGSection icon="meter" title="จัดการ PEA มิเตอร์ & หม้อแปลง" badge="admin" expandSignal={expandSig}>
+            <UGSection icon="meter" title={ug("จัดการ PEA มิเตอร์ & หม้อแปลง","Manage PEA Meter & Transformer")} badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
-                  ["Action", "วิธีใช้"],
-                  ["ค้นหา", "พิมพ์ในช่อง search — โหลดสูงสุด 100 รายการแรก"],
-                  ["เพิ่ม", "กด '+เพิ่ม' → กรอกข้อมูล → บันทึก"],
-                  ["แก้ไข", "กดปุ่มดินสอในแถว → แก้ไข → บันทึก"],
-                  ["ลบ", "กดถังขยะ → ยืนยันใน Confirm Dialog"],
-                  ["Export CSV", "กด Export → Dialog แสดงจำนวน → กด Export"],
+                  ["Action", ug("วิธีใช้","How to use")],
+                  [ug("ค้นหา","Search"), ug("พิมพ์ในช่อง search — โหลดสูงสุด 100 รายการแรก","Type in search box — loads first 100 records")],
+                  [ug("เพิ่ม","Add"), ug("กด '+เพิ่ม' → กรอกข้อมูล → บันทึก","Press '+Add' → fill data → save")],
+                  [ug("แก้ไข","Edit"), ug("กดปุ่มดินสอในแถว → แก้ไข → บันทึก","Press pencil button in row → edit → save")],
+                  [ug("ลบ","Delete"), ug("กดถังขยะ → ยืนยันใน Confirm Dialog","Press trash icon → confirm in dialog")],
+                  ["Export CSV", ug("กด Export → Dialog แสดงจำนวน → กด Export","Press Export → dialog shows count → press Export")],
                 ]} />
-                <UGNote>ทุกการเปลี่ยนแปลงถูกบันทึกใน Audit Log อัตโนมัติ</UGNote>
+                <UGNote>{ug("ทุกการเปลี่ยนแปลงถูกบันทึกใน Audit Log อัตโนมัติ","All changes are automatically recorded in Audit Log")}</UGNote>
               </div>
             </UGSection>
 
-            <UGSection icon="upload" title="นำเข้าข้อมูล CSV" badge="admin" expandSignal={expandSig}>
+            <UGSection icon="upload" title={ug("นำเข้าข้อมูล CSV","Import CSV Data")} badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
-                <UGStep n={1} text="เลือกประเภท: PEA Meter หรือ PEA Transformer" />
-                <UGStep n={2} text="ลากหรือคลิกเพื่ออัปโหลดไฟล์ CSV (UTF-8)" />
-                <UGStep n={3} text="ตรวจสอบ Preview 10 แถวแรก — ตรวจสอบหัวคอลัมน์" />
-                <UGStep n={4} text="กด 'นำเข้าข้อมูล' — ระบบ upsert ตาม OBJECTID (500 rows/รอบ)" />
-                <UGTip>ถ้า OBJECTID ซ้ำ ระบบจะ update ข้อมูลเดิม ไม่สร้างรายการใหม่</UGTip>
+                <UGStep n={1} text={ug("เลือกประเภท: PEA Meter หรือ PEA Transformer","Select type: PEA Meter or PEA Transformer")} />
+                <UGStep n={2} text={ug("ลากหรือคลิกเพื่ออัปโหลดไฟล์ CSV (UTF-8)","Drag or click to upload CSV file (UTF-8)")} />
+                <UGStep n={3} text={ug("ตรวจสอบ Preview 10 แถวแรก — ตรวจสอบหัวคอลัมน์","Check Preview of first 10 rows — verify column headers")} />
+                <UGStep n={4} text={ug("กด 'นำเข้าข้อมูล' — ระบบ upsert ตาม OBJECTID (500 rows/รอบ)","Press 'Import' — system upserts by OBJECTID (500 rows/batch)")} />
+                <UGTip>{ug("ถ้า OBJECTID ซ้ำ ระบบจะ update ข้อมูลเดิม ไม่สร้างรายการใหม่","If OBJECTID exists, system updates the record instead of creating a new one")}</UGTip>
               </div>
             </UGSection>
 
             <UGSection icon="history" title="Audit Log" badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
-                  ["Action ที่บันทึก", "ตัวอย่าง"],
-                  ["login / logout", "เข้า-ออกระบบ"],
-                  ["search_meter / search_tr", "ค้นหาข้อมูล"],
-                  ["create / update / delete", "เพิ่ม แก้ไข ลบ Meter/TR"],
-                  ["import_csv / export_csv", "นำเข้า/ส่งออกข้อมูล"],
-                  ["change_password", "เปลี่ยนรหัสผ่าน (บันทึกใน password_history ด้วย)"],
-                  ["reset_password_initiated", "เปิดหน้ารีเซ็ตรหัสผ่านผ่านลิงก์อีเมล"],
-                  ["reset_password_failed", "รีเซ็ตรหัสผ่านไม่สำเร็จ (มี error)"],
-                  ["enable_2fa / disable_2fa", "เปิด/ปิด 2FA"],
-                  ["approve_user / ban_user", "อนุมัติ/ระงับผู้ใช้งาน"],
-                  ["unlock_password", "Admin ปลดล็อครหัสผ่านหมดอายุ"],
+                  [ug("Action ที่บันทึก","Action recorded"), ug("ตัวอย่าง","Example")],
+                  ["login / logout", ug("เข้า-ออกระบบ","Login/logout")],
+                  ["search_meter / search_tr", ug("ค้นหาข้อมูล","Search data")],
+                  ["create / update / delete", ug("เพิ่ม แก้ไข ลบ Meter/TR","Add/edit/delete Meter/TR")],
+                  ["import_csv / export_csv", ug("นำเข้า/ส่งออกข้อมูล","Import/export data")],
+                  ["change_password", ug("เปลี่ยนรหัสผ่าน (บันทึกใน password_history ด้วย)","Change password (also saved in password_history)")],
+                  ["reset_password_initiated", ug("เปิดหน้ารีเซ็ตรหัสผ่านผ่านลิงก์อีเมล","Opened reset password page via email link")],
+                  ["reset_password_failed", ug("รีเซ็ตรหัสผ่านไม่สำเร็จ (มี error)","Password reset failed (error occurred)")],
+                  ["enable_2fa / disable_2fa", ug("เปิด/ปิด 2FA","Enable/Disable 2FA")],
+                  ["approve_user / ban_user", ug("อนุมัติ/ระงับผู้ใช้งาน","Approve/suspend user")],
+                  ["unlock_password", ug("Admin ปลดล็อครหัสผ่านหมดอายุ","Admin unlocked expired password")],
                 ]} />
-                <UGNote>Audit Log แบ่งหน้า 50 รายการต่อหน้า — กรองตาม user, action, วันที่ได้</UGNote>
+                <UGNote>{ug("Audit Log แบ่งหน้า 50 รายการต่อหน้า — กรองตาม user, action, วันที่ได้","Audit Log paginated 50 per page — filter by user, action, date")}</UGNote>
               </div>
             </UGSection>
 
-            <UGSection icon="settings" title="ตั้งค่าระบบ" badge="admin" expandSignal={expandSig}>
+            <UGSection icon="settings" title={ug("ตั้งค่าระบบ","System Settings")} badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 8 }}>Maintenance Mode</div>
-                <UGStep n={1} text="เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง" />
-                <UGStep n={2} text="แก้ไขข้อความแจ้งผู้ใช้ แล้วกด 'บันทึกข้อความ'" />
-                <UGStep n={3} text="เลือกวันที่/เวลาที่คาดว่าจะกลับมาผ่านปฏิทินไทย — กดปุ่มนาฬิกาเพื่อเปิด" />
-                <UGStep n={4} text="นำทางเดือนด้วยปุ่ม ← → เลือกวัน จากนั้นปรับชั่วโมง/นาที แล้วกด 'ยืนยัน'" />
-                <UGNote>Admin ยังคงเข้าใช้ระบบได้ปกติ — จะเห็น banner แจ้งเตือนแดงบน Topbar</UGNote>
-                <UGTip>อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม "เปิดระบบ" ใน banner ได้เลย</UGTip>
-                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ข้อมูลนักพัฒนาระบบ</div>
-                <UGStep n={1} text="กรอกชื่อ, ตำแหน่ง, หน่วยงาน, สถานที่ ในการ์ด 'ข้อมูลนักพัฒนาระบบ'" />
-                <UGStep n={2} text="เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏที่มุมหน้าจอ" />
-                <UGStep n={3} text="ลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้อัตโนมัติ" />
-                <UGNote>ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด</UGNote>
+                <UGStep n={1} text={ug("เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง","Enable 'Maintenance Mode' — regular users will see maintenance page")} />
+                <UGStep n={2} text={ug("แก้ไขข้อความแจ้งผู้ใช้ แล้วกด 'บันทึกข้อความ'","Edit message for users, then press 'Save Message'")} />
+                <UGStep n={3} text={ug("เลือกวันที่/เวลาที่คาดว่าจะกลับมาผ่านปฏิทินไทย — กดปุ่มนาฬิกาเพื่อเปิด","Set expected return date/time via Thai calendar — press clock button to open")} />
+                <UGStep n={4} text={ug("นำทางเดือนด้วยปุ่ม ← → เลือกวัน จากนั้นปรับชั่วโมง/นาที แล้วกด 'ยืนยัน'","Navigate months with ← → , select day, adjust hour/minute, then press 'Confirm'")} />
+                <UGNote>{ug("Admin ยังคงเข้าใช้ระบบได้ปกติ — จะเห็น banner แจ้งเตือนแดงบน Topbar","Admin can still access the system — will see a red warning banner on Topbar")}</UGNote>
+                <UGTip>{ug("อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม 'เปิดระบบ' ใน banner ได้เลย","Remember to disable Maintenance Mode when done — press 'Open System' button in the banner")}</UGTip>
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("ข้อมูลนักพัฒนาระบบ","Developer Info")}</div>
+                <UGStep n={1} text={ug("กรอกชื่อ, ตำแหน่ง, หน่วยงาน, สถานที่ ในการ์ด 'ข้อมูลนักพัฒนาระบบ'","Fill name, position, department, location in the 'Developer Info' card")} />
+                <UGStep n={2} text={ug("เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏที่มุมหน้าจอ","Enable 'Show Developer Button' — a floating button appears at screen corner")} />
+                <UGStep n={3} text={ug("ลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้อัตโนมัติ","Drag the button to desired position — position is saved automatically")} />
+                <UGNote>{ug("ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด","Both Maintenance Mode and Developer Info cards can be collapsed by clicking the header")}</UGNote>
               </div>
             </UGSection>
 
-            <UGSection icon="bolt" title="ประวัติการปรับปรุง UX/UI" badge="admin" expandSignal={expandSig}>
+            <UGSection icon="bolt" title={ug("ประวัติการปรับปรุง UX/UI","UX/UI Update History")} badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
                 <UGTable rows={[
-                  ["รายการ", "รายละเอียด"],
-                  ["ตำแหน่ง", "Sidebar (desktop) / Bottom nav (mobile) — ไอคอน ⚡ 'อัปเดต'"],
-                  ["สิทธิ์", "Admin เท่านั้น"],
-                  ["ข้อมูล", "Timeline ทุก version พร้อมวันที่, category chip, stat summary"],
-                  ["Deploy Status dot", "จุดสีใน Topbar — 🟢 ปัจจุบัน / 🟡 รอ Deploy / ⚫ กำลังโหลด"],
+                  [ug("รายการ","Item"), ug("รายละเอียด","Details")],
+                  [ug("ตำแหน่ง","Location"), ug("Sidebar (desktop) / Bottom nav (mobile) — ไอคอน ⚡ 'อัปเดต'","Sidebar (desktop) / Bottom nav (mobile) — ⚡ 'Updates' icon")],
+                  [ug("สิทธิ์","Access"), ug("Admin เท่านั้น","Admin only")],
+                  [ug("ข้อมูล","Content"), ug("Timeline ทุก version พร้อมวันที่, category chip, stat summary","Timeline of every version with dates, category chips, stat summary")],
+                  ["Deploy Status dot", ug("จุดสีใน Topbar — 🟢 ปัจจุบัน / 🟡 รอ Deploy / ⚫ กำลังโหลด","Colored dot in Topbar — 🟢 Current / 🟡 Awaiting Deploy / ⚫ Loading")],
                 ]} />
-                <UGStep n={1} text="กดแท็บ 'อัปเดต ⚡' ใน sidebar — timeline แสดงทุก version ตั้งแต่ v2.0" />
-                <UGStep n={2} text="การ์ด Deployment Status ด้านบน timeline — เปรียบเทียบ hash ที่รันกับ GitHub latest" />
-                <UGStep n={3} text="แต่ละรายการมี chip บอกประเภท: ใหม่ / UX/UI / แก้ไข / ประสิทธิภาพ" />
-                <UGStep n={4} text="กดจุดสีใน Topbar เพื่อดู popup สถานะ deploy ได้ทันทีโดยไม่ต้องเปิดหน้า อัปเดต" />
-                <UGTip>หลังจาก push โค้ดขึ้น GitHub Pages ใช้เวลา 1–3 นาที — สถานะจะเปลี่ยนเป็น 🟢 โดยอัตโนมัติ</UGTip>
+                <UGStep n={1} text={ug("กดแท็บ 'อัปเดต ⚡' ใน sidebar — timeline แสดงทุก version ตั้งแต่ v2.0","Press 'Updates ⚡' in sidebar — timeline shows all versions since v2.0")} />
+                <UGStep n={2} text={ug("การ์ด Deployment Status ด้านบน timeline — เปรียบเทียบ hash ที่รันกับ GitHub latest","Deployment Status card above timeline — compares running hash with GitHub latest")} />
+                <UGStep n={3} text={ug("แต่ละรายการมี chip บอกประเภท: ใหม่ / UX/UI / แก้ไข / ประสิทธิภาพ","Each item has a category chip: new / UX/UI / fix / performance")} />
+                <UGStep n={4} text={ug("กดจุดสีใน Topbar เพื่อดู popup สถานะ deploy ได้ทันทีโดยไม่ต้องเปิดหน้า อัปเดต","Press the colored dot in Topbar for an instant deploy status popup without opening Updates page")} />
+                <UGTip>{ug("หลังจาก push โค้ดขึ้น GitHub Pages ใช้เวลา 1–3 นาที — สถานะจะเปลี่ยนเป็น 🟢 โดยอัตโนมัติ","After pushing to GitHub Pages, wait 1–3 minutes — status will automatically turn 🟢")}</UGTip>
               </div>
             </UGSection>
           </>
