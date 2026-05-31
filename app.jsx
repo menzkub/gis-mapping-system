@@ -2372,6 +2372,7 @@ function App() {
   const [showNotif, setShowNotif] = useStateApp(false);
   const [refreshing, setRefreshing] = useStateApp(false);
   const [refreshMsg, setRefreshMsg] = useStateApp(null); // null | "loading" | "done" | "error"
+  const [showUtilMenu, setShowUtilMenu] = useStateApp(false);
   const [adminTab, setAdminTab] = useStateApp("dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
   const [devInfo, setDevInfo] = useStateApp({
@@ -2845,12 +2846,16 @@ function App() {
             .topbar-mobile-brand { display: none; flex: 1; align-items: center; gap: 8px; }
             .topbar-mobile-user  { display: none; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 20px; border: 1px solid rgba(139,63,196,0.3); background: rgba(139,63,196,0.1); cursor: pointer; white-space: nowrap; }
             .topbar-mobile-user:hover { background: rgba(139,63,196,0.2); }
+            .topbar-util-btn  { display: flex; }
+            .topbar-util-dots { display: none !important; }
             @media (max-width: 680px) {
               .topbar-greeting       { display: none !important; }
               .topbar-mapswitcher    { display: none !important; }
               .topbar-logout         { display: none !important; }
               .topbar-mobile-brand   { display: flex !important; }
               .topbar-mobile-user    { display: flex !important; }
+              .topbar-util-btn       { display: none !important; }
+              .topbar-util-dots      { display: flex !important; }
             }
           `}</style>
 
@@ -2880,37 +2885,32 @@ function App() {
             </div>
           )}
 
-          {/* Language toggle */}
-          <button
-            onClick={() => setLang(l => l === "th" ? "en" : "th")}
-            title={t("switchLang")}
-            style={{
-              display: "flex", alignItems: "center", gap: 4,
-              padding: "5px 11px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+          {/* Util buttons — desktop: individual, mobile: three-dots dropdown */}
+          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Desktop: individual buttons */}
+            <button className="topbar-util-btn" onClick={() => setLang(l => l === "th" ? "en" : "th")} title={t("switchLang")} style={{
+              alignItems: "center", gap: 4, padding: "5px 11px", borderRadius: 999, fontSize: 12, fontWeight: 700,
               background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.25)",
               color: "var(--pea-purple-600)", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-            }}
-          >
-            {lang === "th" ? "EN" : "TH"}
-          </button>
-
-          {/* Theme toggle */}
-          <button
-            className="btn-icon"
-            onClick={() => setTheme(t => t === "light" ? "dark" : "light")}
-            title={theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}
-          >
-            <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
-          </button>
-
-          {/* Refresh + feedback */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button className="btn-icon" title={t("refreshData")} onClick={handleRefresh} disabled={refreshing}
+            }}>
+              {lang === "th" ? "EN" : "TH"}
+            </button>
+            <button className="btn-icon topbar-util-btn" onClick={() => setTheme(t => t === "light" ? "dark" : "light")} title={theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}>
+              <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
+            </button>
+            <button className="btn-icon topbar-util-btn" title={t("refreshData")} onClick={handleRefresh} disabled={refreshing}
               style={{ color: refreshing ? "var(--pea-purple-500)" : undefined }}>
               <Icon name="refresh" size={18} style={{ animation: refreshing ? "pea-spin 0.8s linear infinite" : "none" }} />
             </button>
+
+            {/* Mobile: three-dots button */}
+            <button className="btn-icon topbar-util-dots" onClick={() => setShowUtilMenu(s => !s)} title="ตั้งค่า" style={{ flexShrink: 0 }}>
+              <Icon name="more-vertical" size={18} />
+            </button>
+
+            {/* Refresh feedback toast */}
             {refreshMsg && (
-              <div className="fade-in" style={{
+              <div className="fade-in topbar-util-btn" style={{
                 padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
                 background: refreshMsg === "done" ? "rgba(16,185,129,0.12)" : refreshMsg === "error" ? "rgba(239,68,68,0.1)" : "rgba(139,63,196,0.1)",
                 color: refreshMsg === "done" ? "#047857" : refreshMsg === "error" ? "var(--red)" : "var(--pea-purple-500)",
@@ -2918,6 +2918,71 @@ function App() {
               }}>
                 {refreshMsg === "loading" ? t("refreshing") : refreshMsg === "done" ? t("refreshDone") : t("refreshError")}
               </div>
+            )}
+
+            {/* Three-dots dropdown popup */}
+            {showUtilMenu && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setShowUtilMenu(false)} />
+                <div style={{
+                  position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 2000,
+                  background: "var(--surface)", border: "1px solid var(--line)",
+                  borderRadius: 14, boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                  padding: "6px", minWidth: 180, display: "flex", flexDirection: "column", gap: 2,
+                }}>
+                  {/* Language */}
+                  <button onClick={() => { setLang(l => l === "th" ? "en" : "th"); setShowUtilMenu(false); }} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: "pointer", color: "var(--text)",
+                    fontSize: 14, fontWeight: 600, textAlign: "left",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800, color: "var(--pea-purple-600)", flexShrink: 0 }}>
+                      {lang === "th" ? "EN" : "TH"}
+                    </span>
+                    <span>{lang === "th" ? "Switch to English" : "เปลี่ยนเป็นภาษาไทย"}</span>
+                  </button>
+
+                  {/* Theme */}
+                  <button onClick={() => { setTheme(t => t === "light" ? "dark" : "light"); setShowUtilMenu(false); }} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: "pointer", color: "var(--text)",
+                    fontSize: 14, fontWeight: 600, textAlign: "left",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <Icon name={theme === "light" ? "moon" : "sun"} size={15} style={{ color: "var(--pea-purple-600)" }} />
+                    </span>
+                    <span>{theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}</span>
+                  </button>
+
+                  {/* Refresh */}
+                  <button onClick={() => { handleRefresh(); setShowUtilMenu(false); }} disabled={refreshing} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: refreshing ? "not-allowed" : "pointer", color: "var(--text)",
+                    fontSize: 14, fontWeight: 600, textAlign: "left", opacity: refreshing ? 0.5 : 1,
+                  }}
+                    onMouseEnter={e => { if (!refreshing) e.currentTarget.style.background = "var(--hover)"; }}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <Icon name="refresh" size={15} style={{ color: "var(--pea-purple-600)", animation: refreshing ? "pea-spin 0.8s linear infinite" : "none" }} />
+                    </span>
+                    <span>{refreshing ? t("refreshing") : t("refreshData")}</span>
+                  </button>
+
+                  {refreshMsg && refreshMsg !== "loading" && (
+                    <div style={{ margin: "4px 8px 2px", padding: "6px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      background: refreshMsg === "done" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                      color: refreshMsg === "done" ? "#047857" : "var(--red)",
+                      border: `1px solid ${refreshMsg === "done" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.2)"}`,
+                    }}>
+                      {refreshMsg === "done" ? t("refreshDone") : t("refreshError")}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
