@@ -717,6 +717,8 @@ function SafeQR({ svg, size = 180 }) {
 
 function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
   const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
+  const { lang } = useLang();
+  const ug = (th, en) => lang === "en" ? en : th;
   const [step, setStep]       = useStateMFAS("loading"); // loading | scan | backup | error
   const [factorId, setFactorId] = useStateMFAS("");
   const [qrSvg, setQrSvg]     = useStateMFAS("");
@@ -783,8 +785,8 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
             <Icon name="lock" size={22} stroke={2} style={{ color: "white" }} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 20 }}>ตั้งค่า 2-Factor Auth</div>
-            <div className="t-mute text-sm">บัญชี <b>{currentUser.username}</b> ต้องเปิดใช้งาน 2FA</div>
+            <div style={{ fontWeight: 800, fontSize: 20 }}>{ug("ตั้งค่า 2-Factor Auth", "Setup 2-Factor Auth")}</div>
+            <div className="t-mute text-sm">{ug("บัญชี", "Account")} <b>{currentUser.username}</b> {ug("ต้องเปิดใช้งาน 2FA", "must enable 2FA")}</div>
           </div>
         </div>
 
@@ -794,15 +796,15 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
               <div style={{ width: 32, height: 32, margin: "0 auto 12px", borderRadius: "50%",
                 border: "3px solid var(--line)", borderTopColor: "var(--pea-purple-500)",
                 animation: "pea-spin 0.8s linear infinite" }} />
-              กำลังสร้าง QR Code…
+              {ug("กำลังสร้าง QR Code…", "Generating QR Code…")}
             </div>
           )}
 
           {step === "scan" && (
             <div>
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, marginBottom: 4 }}>ขั้นตอนที่ 1 — สแกน QR Code</div>
-                <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
+                <div style={{ fontWeight: 700, marginBottom: 4 }}>{ug("ขั้นตอนที่ 1 — สแกน QR Code", "Step 1 — Scan QR Code")}</div>
+                <div className="t-mute text-sm">{ug("เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง", "Open an Authenticator app (e.g. Google Authenticator or Authy) and scan the code below")}</div>
               </div>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div style={{ background: "white", padding: 20, borderRadius: 12,
@@ -812,12 +814,12 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 </div>
               </div>
               <div style={{ marginBottom: 20 }}>
-                <div className="t-mute text-xs" style={{ marginBottom: 4 }}>หรือกรอก Secret Key ด้วยตนเอง</div>
+                <div className="t-mute text-xs" style={{ marginBottom: 4 }}>{ug("หรือกรอก Secret Key ด้วยตนเอง", "Or enter the Secret Key manually")}</div>
                 <code style={{ fontFamily: "monospace", fontSize: 11, background: "var(--surface-2)",
                   padding: "6px 10px", borderRadius: 6, display: "block", wordBreak: "break-all",
                   letterSpacing: "0.12em", color: "var(--pea-purple-600)" }}>{secret}</code>
               </div>
-              <div style={{ fontWeight: 700, marginBottom: 10 }}>ขั้นตอนที่ 2 — กรอกรหัส 6 หลักเพื่อยืนยัน</div>
+              <div style={{ fontWeight: 700, marginBottom: 10 }}>{ug("ขั้นตอนที่ 2 — กรอกรหัส 6 หลักเพื่อยืนยัน", "Step 2 — Enter 6-digit code to verify")}</div>
               <form onSubmit={verify} className="f-col f-gap-3">
                 <input className="input"
                   style={{ fontSize: 26, letterSpacing: "0.5em", textAlign: "center", fontWeight: 700, height: 58 }}
@@ -828,7 +830,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
                 <button type="submit" className="btn btn-primary" style={{ height: 50 }}
                   disabled={busy || code.length !== 6}>
-                  {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน &amp; เปิดใช้งาน 2FA</>}
+                  {busy ? ug("กำลังยืนยัน…", "Verifying…") : <><Icon name="check" size={14} /> {ug("ยืนยัน & เปิดใช้งาน 2FA", "Verify & Enable 2FA")}</>}
                 </button>
               </form>
             </div>
@@ -842,8 +844,8 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                   <Icon name="lock" size={18} style={{ color: "var(--pea-purple-600)" }} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>รหัสสำรอง 2FA</div>
-                  <div className="t-mute text-xs">บันทึกรหัสเหล่านี้ในที่ปลอดภัย</div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{ug("รหัสสำรอง 2FA", "2FA Backup Codes")}</div>
+                  <div className="t-mute text-xs">{ug("บันทึกรหัสเหล่านี้ในที่ปลอดภัย", "Save these codes in a safe place")}</div>
                 </div>
               </div>
               <div style={{ background: "var(--surface-2)", borderRadius: 10, marginBottom: 12,
@@ -862,7 +864,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 ))}
               </div>
               <div className="badge badge-orange" style={{ padding: "8px 12px", marginBottom: 14, fontSize: 12 }}>
-                <Icon name="alert" size={13} /> แต่ละรหัสใช้ได้เพียงครั้งเดียว — บันทึกก่อนดำเนินการต่อ
+                <Icon name="alert" size={13} /> {ug("แต่ละรหัสใช้ได้เพียงครั้งเดียว — บันทึกก่อนดำเนินการต่อ", "Each code can only be used once — save before continuing")}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button className="btn" style={{ height: 42 }}
@@ -872,10 +874,10 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                     setTimeout(() => setCopied(false), 2000);
                   }}>
                   <Icon name={copied ? "check" : "copy"} size={14} />
-                  {copied ? "คัดลอกแล้ว!" : "คัดลอกรหัสทั้งหมด"}
+                  {copied ? ug("คัดลอกแล้ว!", "Copied!") : ug("คัดลอกรหัสทั้งหมด", "Copy All Codes")}
                 </button>
                 <button className="btn btn-primary" style={{ height: 46 }} onClick={onComplete}>
-                  <Icon name="check" size={14} /> {completeBtnLabel || "บันทึกรหัสแล้ว — เข้าสู่ระบบ"}
+                  <Icon name="check" size={14} /> {completeBtnLabel || ug("บันทึกรหัสแล้ว — เข้าสู่ระบบ", "Codes saved — Sign In")}
                 </button>
               </div>
             </div>
@@ -890,7 +892,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
           {step !== "backup" && (
             <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
               textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
-              ออกจากระบบแทน
+              {ug("ออกจากระบบแทน", "Sign out instead")}
             </button>
           )}
         </div>
