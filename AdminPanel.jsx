@@ -314,7 +314,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
 }
 
 /* ---------- Guide ---------- */
-const GUIDE_VERSION = { version: "v2.7", date: "31 พ.ค. 2569" };
+const GUIDE_VERSION = { version: "v2.9", date: "31 พ.ค. 2569" };
 
 function GuideSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateAd(false);
@@ -508,7 +508,7 @@ function AdminGuide() {
           <GuideTable rows={[
             [s("แท็บ", "Tab"), s("รายละเอียด", "Details")],
             [s("ข้อมูล", "Info"), s("ดูชื่อ, ชื่อผู้ใช้, อีเมล, บทบาท, วันที่สมัคร — แก้ไขชื่อได้", "View name, username, email, role, join date — name editable")],
-            [s("รหัสผ่าน", "Password"), s("สถานะรหัสผ่าน (progress bar + วันหมดอายุ) · ประวัติการเปลี่ยนรหัส · เปิด/ปิด 2FA", "Password status (progress bar + expiry) · change history · enable/disable 2FA")],
+            [s("รหัสผ่าน", "Password"), s("สถานะรหัสผ่าน (progress bar + วันหมดอายุ) · ประวัติการเปลี่ยนรหัส · สถานะ 2FA (read-only)", "Password status (progress bar + expiry) · change history · 2FA status (read-only)")],
             [s("การใช้งาน", "Activity"), s("ประวัติ login/logout, เปลี่ยนรหัส, 2FA พร้อม device info", "Login/logout history, password changes, 2FA with device info")],
             [s("การค้นหา", "Search"), s("ประวัติค้นหา Meter/TR พร้อม timestamp", "Meter/TR search history with timestamps")],
           ]} />
@@ -516,11 +516,11 @@ function AdminGuide() {
           <GuideStep n={1} text={s("การ์ดสถานะแสดง progress bar (วันที่ใช้ไปจาก 45 วัน), วันที่เปลี่ยนล่าสุด, วันหมดอายุ", "Status card shows progress bar (days used of 45), last changed date, expiry date")} />
           <GuideStep n={2} text={s("รายการ 'ประวัติการเปลี่ยนรหัสผ่าน' แสดงทุกครั้งที่มีการเปลี่ยน พร้อมวันที่และหมายเหตุ", "Password history list shows every change with date and notes")} />
           <GuideStep n={3} text={s("สีการ์ดเปลี่ยนตามสถานะ: เขียว (ปกติ) → เหลือง (≤7 วัน) → แดง (≤3 วัน / หมดอายุ)", "Card color changes by status: green (normal) → yellow (≤7 days) → red (≤3 days / expired)")} />
-          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("เปิด 2FA (TOTP)", "Enable 2FA (TOTP)")}</div>
-          <GuideStep n={1} text={s("ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'", "Go to Profile → Password tab → click 'Enable 2FA'")} />
-          <GuideStep n={2} text={s("สแกน QR Code ด้วย Google Authenticator หรือ Authy", "Scan QR Code with Google Authenticator or Authy")} />
-          <GuideStep n={3} text={s("กรอกรหัส 6 หลักเพื่อยืนยัน — 2FA เปิดใช้งานทันที", "Enter the 6-digit code to verify — 2FA is enabled immediately")} />
-          <GuideTip>{s("แนะนำให้เปิด 2FA เสมอ โดยเฉพาะบัญชี Admin เพื่อความปลอดภัย", "Always enable 2FA, especially for Admin accounts, for security")}</GuideTip>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("สถานะ 2FA (TOTP)", "2FA Status (TOTP)")}</div>
+          <GuideStep n={1} text={s("แท็บ 'รหัสผ่าน' แสดงสถานะ 2FA — เปิดอยู่ / ปิดอยู่ (อ่านอย่างเดียว)", "Password tab shows 2FA status — Enabled / Disabled (read-only)")} />
+          <GuideStep n={2} text={s("การเปิด/ปิด 2FA ดำเนินการโดย Admin เท่านั้น ผ่าน Admin → จัดการผู้ใช้งาน", "Enabling/disabling 2FA is done by Admin only via Admin → User Management")} />
+          <GuideNote>{s("เมื่อ Admin เปิด 2FA — ระบบจะให้สแกน QR Code ตอน Login ครั้งถัดไปโดยอัตโนมัติ", "When Admin enables 2FA — system will prompt QR Code scan on next login automatically")}</GuideNote>
+          <GuideTip>{s("2FA ใช้แอป Google Authenticator หรือ Authy สแกน QR Code จากหน้าตั้งค่าที่ปรากฏตอน Login", "2FA uses Google Authenticator or Authy — scan QR Code from the setup screen shown at login")}</GuideTip>
         </div>
       </GuideSection>
 
@@ -548,7 +548,7 @@ function AdminGuide() {
             [s("ระงับ", "Suspend"), s("เปลี่ยนสถานะเป็น banned (ผู้ใช้เข้าระบบไม่ได้)", "Change status to banned (user cannot log in)")],
             [s("ปลดระงับ", "Unsuspend"), s("เปลี่ยนสถานะจาก banned → active", "Change status from banned → active")],
             [s("เปลี่ยน Role", "Change Role"), s("สลับระหว่าง user ↔ admin (2FA เปิด/ปิดอัตโนมัติตาม role)", "Toggle between user ↔ admin (2FA auto-enabled for admin)")],
-            [s("บังคับ 2FA", "Force 2FA"), s("คลิก toggle 2FA ในแถว — เปลี่ยนทันที", "Click the 2FA toggle in the row — changes immediately")],
+            [s("เปิด/ปิด 2FA", "Enable/Disable 2FA"), s("คลิก toggle 2FA ในแถว (พร้อมกด confirm) — เปิด 2FA = ผู้ใช้ต้องสแกน QR ตอน Login ครั้งถัดไป", "Click 2FA toggle in row (confirm required) — Enable 2FA = user must scan QR on next login")],
             [s("ปลดล็อครหัสผ่าน", "Unlock Password"), s("กดปุ่ม 'ปลดล็อค' เมื่อรหัสหมดอายุ — ผู้ใช้ต้องเปลี่ยนรหัสเมื่อ login", "Click 'Unlock' when password expired — user must change password on next login")],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("Popup ข้อมูลผู้ใช้ (คลิกแถว)", "User Detail Popup (click row)")}</div>
@@ -841,7 +841,7 @@ function AdminDevGuide() {
             ["AuthScreen.jsx", "Login, Signup, Forgot password + canvas animation background", "~775 บรรทัด"],
             ["SearchView.jsx", "ค้นหา Meter/TR (server-side), filters, export, map integration", "~653 บรรทัด"],
             ["AdminPanel.jsx", "Dashboard, Users, Meters, TRs, Import, Audit, Settings, Guide, Dev", "~1730 บรรทัด"],
-            ["app.jsx", "App root, routing, auth state, ProfileView, MaintenanceScreen", "~1600 บรรทัด"],
+            ["app.jsx", "App root, routing, auth state, ProfileView, MFASetupScreen, SafeQR", "~1650 บรรทัด"],
             ["data.js", "Static fallback data (meters/TR/users จาก Fang, Chiang Mai)", "~43 บรรทัด"],
             ["styles.css", "CSS variables (light/dark theme), component styles, utilities", "~529 บรรทัด"],
           ]} />
@@ -1156,6 +1156,39 @@ CHANGELOG.unshift({
   ],
 });`}</CodeBlock>
           <GuideNote>แท็บ 'อัปเดต ⚡' ใน sidebar — เห็นเฉพาะ Admin · route = "changelog"</GuideNote>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>SafeQR — Canvas QR Renderer <DevBadge color="purple">app.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["Prop", "Type", "คำอธิบาย"],
+            ["svg", "string", "SVG string จาก Supabase (data.totp.qr_code) — รองรับทั้ง raw SVG และ data URL"],
+            ["size", "number", "ขนาด px (default 260) — render ที่ devicePixelRatio เต็ม (retina-ready)"],
+          ]} />
+          <CodeBlock>{`// SafeQR วาด SVG ลง <canvas> เพื่อให้ scanner อ่านได้ทุก device (iOS Safari รวมด้วย)
+// ใช้ encodeURIComponent() แทน btoa() — รองรับ Unicode ใน SVG
+<SafeQR svg={data.totp.qr_code} size={260} />
+
+// ทำงานอย่างไร:
+// 1. สร้าง canvas ที่ size × devicePixelRatio (retina-safe)
+// 2. fill white background
+// 3. โหลด SVG เป็น Image() ผ่าน data:image/svg+xml;charset=utf-8,...
+// 4. drawImage → canvas แสดงผลเป็น raster ที่ scanner อ่านได้`}</CodeBlock>
+          <GuideNote>อย่าใช้ dangerouslySetInnerHTML กับ SVG จาก Supabase — ใช้ SafeQR เสมอ</GuideNote>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>2FA Admin-Only Policy <DevBadge color="red">app.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["ที่ไหน", "สิทธิ์", "หมายเหตุ"],
+            ["Profile → แท็บรหัสผ่าน", "อ่านอย่างเดียว", "แสดงสถานะ เปิด/ปิด — ไม่มีปุ่ม action"],
+            ["Admin → ผู้ใช้งาน → toggle 2FA", "Admin เท่านั้น", "ต้องกด confirm ก่อนทุกครั้ง + stopPropagation"],
+            ["Login → MFASetupScreen", "อัตโนมัติ", "แสดงเมื่อ require_2fa=true แต่ยังไม่ verify"],
+          ]} />
+          <CodeBlock>{`// ตรวจสอบสถานะ 2FA ของ user ปัจจุบัน
+const { data } = await _supabase.auth.mfa.listFactors();
+const isVerified = data?.totp?.some(f => f.status === "verified");
+
+// Admin toggle 2FA สำหรับ user อื่น (profiles table)
+await _supabase.from("profiles")
+  .update({ require_2fa: true })
+  .eq("id", targetUserId);`}</CodeBlock>
 
           <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>useDeployStatus() hook + DeployStatusDot <DevBadge color="blue">app.jsx</DevBadge></div>
           <GuideTable rows={[

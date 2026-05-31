@@ -1033,6 +1033,16 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v2.9", date: "31 พ.ค. 2569", tag: "2FA & UI",
+    tagColor: "#8b3fc4", items: [
+      { cat: "fix",  text: { th: "แก้ไข QR Code 2FA: เปลี่ยนเป็น Canvas rendering (สแกนได้ทุก device, iOS Safari)", en: "Fix 2FA QR Code: Canvas rendering — scannable on all devices incl. iOS Safari" } },
+      { cat: "new",  text: { th: "หน้าตั้งค่า 2FA รองรับ 2 ภาษา (TH/EN) ตาม language toggle", en: "2FA setup screen is now bilingual (TH/EN) per language toggle" } },
+      { cat: "new",  text: { th: "2FA เปิด/ปิดได้โดย Admin เท่านั้น — Profile แสดงสถานะ read-only พร้อมข้อความแจ้ง", en: "2FA enable/disable restricted to Admin only — Profile shows status read-only with notice" } },
+      { cat: "fix",  text: { th: "iPad layout: ย้าย Maintenance/Password banner เข้าใน main content (ไม่ไปอยู่ใน sidebar column)", en: "iPad layout: move banners inside main content (no longer misplaced in sidebar column)" } },
+      { cat: "fix",  text: { th: "iPad sidebar: ซ่อน label, sub-nav ถูกต้องทั้ง portrait/landscape ด้วย !important", en: "iPad sidebar: properly hide labels and sub-nav in portrait/landscape via !important" } },
+    ],
+  },
+  {
     version: "v2.8", date: "31 พ.ค. 2569", tag: "Security",
     tagColor: "#ef4444", items: [
       { cat: "fix",  text: { th: "แก้ไข audit_log RLS: จำกัดเฉพาะ admin เท่านั้น",                   en: "Fix audit_log RLS: restricted to admin only" } },
