@@ -1518,6 +1518,197 @@ function PasswordExpiredScreen({ currentUser, onLogout }) {
   );
 }
 
+// ── ResetPasswordScreen — via email recovery link ─────────────────────────
+function ResetPasswordScreen({ recoveryUser, onComplete }) {
+  const [newPw, setNewPw]         = useStateApp("");
+  const [confirmPw, setConfirmPw] = useStateApp("");
+  const [showNew, setShowNew]     = useStateApp(false);
+  const [showConf, setShowConf]   = useStateApp(false);
+  const [err, setErr]             = useStateApp(null);
+  const [saving, setSaving]       = useStateApp(false);
+  const [done, setDone]           = useStateApp(false);
+
+  const checks = {
+    length:  newPw.length >= 8,
+    upper:   /[A-Z]/.test(newPw),
+    lower:   /[a-z]/.test(newPw),
+    number:  /[0-9]/.test(newPw),
+    special: /[^A-Za-z0-9]/.test(newPw),
+  };
+  const strength = Object.values(checks).filter(Boolean).length;
+  const sColors  = ["", "#ef4444", "#f97316", "#eab308", "#22c55e", "#16a34a"];
+  const confirmOk  = confirmPw.length > 0 && confirmPw === newPw;
+  const confirmBad = confirmPw.length > 0 && confirmPw !== newPw;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(null);
+    if (!Object.values(checks).every(Boolean)) { setErr("รหัสผ่านต้องผ่านทุกเงื่อนไข"); return; }
+    if (newPw !== confirmPw) { setErr("รหัสผ่านไม่ตรงกัน"); return; }
+    setSaving(true);
+    try {
+      const { error: pwErr } = await _supabase.auth.updateUser({ password: newPw });
+      if (pwErr) throw pwErr;
+      const now = new Date().toISOString();
+      const uid = recoveryUser?.id;
+      const uname = recoveryUser?.email || "";
+      if (uid) {
+        await Promise.all([
+          _supabase.from("profiles").update({ password_changed_at: now, pw_force_change: false }).eq("id", uid),
+          _supabase.from("password_history").insert({ user_id: uid, username: uname, changed_at: now, action: "reset", note: "รีเซ็ตรหัสผ่านผ่านลิงก์อีเมล" }),
+          _supabase.from("audit_log").insert({ user_id: uid, username: uname, action: "change_password", target: uname, detail: "รีเซ็ตรหัสผ่านผ่านลิงก์อีเมล", ip: (navigator.userAgent||"").slice(0,200) }),
+        ]);
+      }
+      setDone(true);
+      setTimeout(async () => { await _supabase.auth.signOut(); onComplete(); }, 2200);
+    } catch (e2) {
+      setErr(e2.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #1d4ed8 0%, #1e3a5f 55%, #0f172a 100%)",
+      padding: "0 16px", overflow: "auto" }}>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 460, margin: "20px auto",
+        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 72px rgba(0,0,0,0.55)", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{
+          background: "linear-gradient(135deg,#1d4ed8 0%,#2563eb 55%,#3b82f6 130%)",
+          padding: "28px 28px 22px", color: "white", position: "relative", overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", right: -50, top: -50, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", left: -30, bottom: -40, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 16, position: "relative" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+              background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.3)",
+              display: "grid", placeItems: "center",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
+              <Icon name="key" size={26} stroke={2} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>ตั้งค่ารหัสผ่านใหม่</div>
+              <div style={{ fontWeight: 800, fontSize: 22, lineHeight: 1.2 }}>รีเซ็ตรหัสผ่าน</div>
+            </div>
+          </div>
+          {recoveryUser?.email && (
+            <div style={{ marginTop: 16, position: "relative", display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
+              <Icon name="mail" size={14} style={{ flexShrink: 0, opacity: 0.8 }} />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{recoveryUser.email}</span>
+            </div>
+          )}
+        </div>
+
+        {done ? (
+          /* Success state */
+          <div style={{ padding: "40px 28px", textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 20px",
+              background: "linear-gradient(135deg,#22c55e,#16a34a)",
+              display: "grid", placeItems: "center", boxShadow: "0 12px 32px rgba(22,163,74,0.35)" }}>
+              <Icon name="check" size={32} style={{ color: "white" }} stroke={2.5} />
+            </div>
+            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 8 }}>รีเซ็ตสำเร็จ!</div>
+            <div style={{ fontSize: 14, color: "var(--ink-mute)", lineHeight: 1.6 }}>
+              รหัสผ่านของคุณถูกอัปเดตแล้ว<br />กำลังพาไปหน้าเข้าสู่ระบบ…
+            </div>
+            <div style={{ marginTop: 20, height: 3, borderRadius: 99, background: "var(--line)", overflow: "hidden" }}>
+              <div className="fade-in" style={{ height: "100%", background: "linear-gradient(90deg,#22c55e,#16a34a)", animation: "grow 2.2s linear forwards",
+                width: "0%", borderRadius: 99 }} />
+            </div>
+            <style>{`@keyframes grow { from{width:0%} to{width:100%} }`}</style>
+          </div>
+        ) : (
+          <form onSubmit={submit} style={{ padding: "24px 28px 28px" }}>
+
+            {/* New password */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>รหัสผ่านใหม่</label>
+              <div style={{ position: "relative" }}>
+                <input className="input" type={showNew ? "text" : "password"} value={newPw}
+                  onChange={e => setNewPw(e.target.value)} placeholder="รหัสผ่านใหม่"
+                  style={{ paddingRight: 44, borderColor: newPw && (strength < 5 ? sColors[strength] : "#22c55e") }} />
+                <button type="button" onClick={() => setShowNew(v => !v)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)" }}>
+                  <Icon name={showNew ? "eyeOff" : "eye"} size={16} />
+                </button>
+              </div>
+              {/* Strength bar */}
+              {newPw && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: 3, marginBottom: 6 }}>
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} style={{ flex: 1, height: 4, borderRadius: 99,
+                        background: i <= strength ? sColors[strength] : "var(--line)",
+                        transition: "background 200ms" }} />
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
+                    {[
+                      { key: "length",  label: "8+ ตัวอักษร" },
+                      { key: "upper",   label: "A-Z" },
+                      { key: "lower",   label: "a-z" },
+                      { key: "number",  label: "0-9" },
+                      { key: "special", label: "อักขระพิเศษ" },
+                    ].map(r => (
+                      <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11,
+                        color: checks[r.key] ? "#16a34a" : "var(--ink-mute)", fontWeight: checks[r.key] ? 700 : 400 }}>
+                        <Icon name={checks[r.key] ? "check" : "close"} size={10} />
+                        {r.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm password */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>ยืนยันรหัสผ่าน</label>
+              <div style={{ position: "relative" }}>
+                <input className="input" type={showConf ? "text" : "password"} value={confirmPw}
+                  onChange={e => setConfirmPw(e.target.value)} placeholder="กรอกรหัสผ่านอีกครั้ง"
+                  style={{ paddingLeft: 42, paddingRight: 44,
+                    borderColor: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : undefined }} />
+                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                  color: confirmBad ? "var(--red)" : confirmOk ? "#22c55e" : "var(--ink-mute)" }}>
+                  <Icon name={confirmOk ? "check" : "lock"} size={15} />
+                </span>
+                <button type="button" onClick={() => setShowConf(v => !v)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)" }}>
+                  <Icon name={showConf ? "eyeOff" : "eye"} size={16} />
+                </button>
+              </div>
+              {confirmOk  && <div style={{ marginTop: 5, fontSize: 11, color: "#16a34a", fontWeight: 600 }}>✓ รหัสผ่านตรงกัน</div>}
+              {confirmBad && <div style={{ marginTop: 5, fontSize: 11, color: "var(--red)", fontWeight: 600 }}>✗ รหัสผ่านไม่ตรงกัน</div>}
+            </div>
+
+            {err && (
+              <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.25)", color: "#dc2626", fontSize: 13, marginBottom: 16,
+                display: "flex", gap: 8, alignItems: "center" }}>
+                <Icon name="warning" size={14} style={{ flexShrink: 0 }} />
+                {err}
+              </div>
+            )}
+
+            <button type="submit" disabled={saving || !confirmOk}
+              style={{ width: "100%", height: 48, borderRadius: 14, border: "none", cursor: saving || !confirmOk ? "not-allowed" : "pointer",
+                background: saving || !confirmOk ? "var(--line)" : "linear-gradient(135deg,#1d4ed8,#2563eb)",
+                color: saving || !confirmOk ? "var(--ink-mute)" : "white",
+                fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                transition: "all 180ms", boxShadow: !saving && confirmOk ? "0 8px 24px rgba(29,78,216,0.35)" : "none" }}>
+              {saving ? <><Icon name="refresh" size={16} />กำลังรีเซ็ต…</> : <><Icon name="key" size={16} />ตั้งรหัสผ่านใหม่</>}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ForcePasswordChangeScreen ─────────────────────────────────────────────
 function ForcePasswordChangeScreen({ currentUser, supabaseUser, onComplete }) {
   const [newPw, setNewPw]         = useStateApp("");
@@ -2030,6 +2221,11 @@ function App() {
     });
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setPendingUser(session?.user || null);
+        setAppState("pw_reset");
+        return;
+      }
       if (event === "SIGNED_IN" && session?.user) {
         loadAppData(session.user, true); // login จริง — log ได้
       }
@@ -2156,6 +2352,13 @@ function App() {
     <PasswordExpiredScreen
       currentUser={currentUser}
       onLogout={async () => { await _supabase.auth.signOut(); }}
+    />
+  );
+
+  if (appState === "pw_reset") return (
+    <ResetPasswordScreen
+      recoveryUser={pendingUser}
+      onComplete={() => { setPendingUser(null); setAppState("unauthed"); }}
     />
   );
 
