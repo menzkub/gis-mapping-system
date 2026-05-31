@@ -671,8 +671,10 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
                 <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
               </div>
               <div style={{ background: "white", padding: 14, borderRadius: 12,
-                display: "inline-block", marginBottom: 14, border: "1px solid var(--line)" }}
-                dangerouslySetInnerHTML={{ __html: qrSvg }} />
+                display: "inline-block", marginBottom: 14, border: "1px solid var(--line)" }}>
+                <img src={`data:image/svg+xml;base64,${btoa(qrSvg)}`} alt="QR Code 2FA"
+                  width={160} height={160} style={{ display: "block" }} />
+              </div>
               <div style={{ marginBottom: 20 }}>
                 <div className="t-mute text-xs" style={{ marginBottom: 4 }}>หรือกรอก Secret Key ด้วยตนเอง</div>
                 <code style={{ fontFamily: "monospace", fontSize: 11, background: "var(--surface-2)",

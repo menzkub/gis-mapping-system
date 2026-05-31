@@ -74,9 +74,11 @@ create policy "transformers_delete_admin" on public.transformers
 -- ---- audit_log ----
 alter table public.audit_log enable row level security;
 
-create policy "audit_select_auth" on public.audit_log
-  for select to authenticated using (true);
+-- Admin อ่านได้เท่านั้น — ไม่ให้ user ทั่วไปเห็น log ของคนอื่น
+create policy "audit_select_admin" on public.audit_log
+  for select to authenticated using (public.my_role() = 'admin');
 
+-- ทุกคนเขียน log ของตัวเองได้ (system จัดการผ่าน server-side)
 create policy "audit_insert_auth" on public.audit_log
   for insert to authenticated with check (true);
 
