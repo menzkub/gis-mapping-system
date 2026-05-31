@@ -1,7 +1,7 @@
 {
-  "commit": "54ceb3b",
-  "shortCommit": "54ceb3b",
-  "message": "fix: center deploy status popup on mobile",
-  "date": "2026-05-31T09:20:00+00:00",
+  "commit": "7042939",
+  "shortCommit": "7042939",
+  "message": "fix: deploy popup full-width on mobile with word-wrap",
+  "date": "2026-05-31T09:30:00+00:00",
   "branch": "main"
 }
