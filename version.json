@@ -1,7 +1,7 @@
 {
-  "commit": "bd43ff0",
-  "shortCommit": "bd43ff0",
-  "message": "docs: add last-updated date chips to all guide hero sections",
-  "date": "2026-05-31T08:00:00+00:00",
+  "commit": "63ad34d",
+  "shortCommit": "63ad34d",
+  "message": "fix: inSync detects chore version.json commit as up-to-date",
+  "date": "2026-05-31T08:15:00+00:00",
   "branch": "main"
 }
