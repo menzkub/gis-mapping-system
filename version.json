@@ -1,7 +1,7 @@
 {
-  "commit": "68e9a9e",
-  "shortCommit": "68e9a9e",
-  "message": "feat(security): add 2FA backup codes",
-  "date": "2026-05-31T11:15:00+00:00",
+  "commit": "d0c147e",
+  "shortCommit": "d0c147e",
+  "message": "feat(ux): add post-signup step-by-step instructions",
+  "date": "2026-05-31T11:30:00+00:00",
   "branch": "main"
 }
