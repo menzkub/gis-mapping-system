@@ -154,6 +154,7 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const [pwHistLoad, setPwHistLoad]   = useStateApp(false);
   const [pwSuccess, setPwSuccess] = useStateApp(false);
   const [mfaStatus, setMfaStatus] = useStateApp(null); // null=loading | true=enrolled | false=not
+  const [show2FASetup, setShow2FASetup] = useStateApp(false);
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -235,6 +236,25 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
     }
   };
 
+  const disable2FA = async () => {
+    const ok = await confirm({
+      title: "ปิดใช้งาน 2FA",
+      message: <>ปิด 2FA สำหรับบัญชี <b>{currentUser.username}</b>? บัญชีจะมีความปลอดภัยน้อยลง และ Backup Codes ทั้งหมดจะถูกลบ</>,
+      confirmText: "ปิด 2FA",
+      cancelText: "ยกเลิก",
+      tone: "danger",
+    });
+    if (!ok) return;
+    const { data: factors } = await _supabase.auth.mfa.listFactors();
+    for (const f of (factors?.all || [])) {
+      await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+    }
+    await _supabase.from("mfa_backup_codes").delete().eq("user_id", currentUser.id);
+    setMfaStatus(false);
+    await addAudit({ user: currentUser.username, action: "disable_2fa", target: currentUser.username, detail: "ปิด 2FA และลบ Backup Codes แล้ว" });
+    toast?.("ปิด 2FA เรียบร้อยแล้ว", "success");
+  };
+
 
   return (
     <div className="pv-root" style={{ maxWidth: 720, margin: "0 auto", padding: "28px 24px", height: "100%", overflow: "auto" }}>
@@ -293,6 +313,38 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
                 <div className="fw-6">{r.value}</div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── 2FA Management ── */}
+      {tab === "password" && (
+        <div className="card card-elev fade-up" style={{ maxWidth: 480, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{t("f2FA")}</div>
+              <div className="t-mute text-sm">{mfaStatus ? "เปิดใช้งานอยู่ — สแกน QR ใหม่เพื่อตั้งค่าอีกครั้ง" : "ยังไม่ได้เปิดใช้งาน"}</div>
+            </div>
+            <span style={{
+              padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+              background: mfaStatus ? "rgba(22,163,74,0.12)" : "rgba(239,68,68,0.1)",
+              color: mfaStatus ? "#16a34a" : "#dc2626",
+              border: `1px solid ${mfaStatus ? "#16a34a44" : "#ef444444"}`,
+            }}>
+              {mfaStatus === null ? "กำลังโหลด…" : mfaStatus ? "🔒 เปิดอยู่" : "ปิดอยู่"}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn btn-primary" style={{ flex: 1, height: 44 }}
+              onClick={() => setShow2FASetup(true)}>
+              <Icon name="lock" size={14} />
+              {mfaStatus ? "ตั้งค่า 2FA ใหม่ / สแกน QR ใหม่" : "เปิดใช้งาน 2FA"}
+            </button>
+            {mfaStatus && (
+              <button className="btn btn-outline" style={{ height: 44 }} onClick={disable2FA}>
+                ปิด 2FA
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -590,6 +642,23 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         );
       })()}
 
+      {/* ── 2FA Setup Overlay (เปิดจาก ProfileView) ── */}
+      {show2FASetup && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9900 }}>
+          <MFASetupScreen
+            currentUser={currentUser}
+            completeBtnLabel="บันทึกรหัสแล้ว — เสร็จสิ้น"
+            onComplete={async () => {
+              setShow2FASetup(false);
+              setMfaStatus(true);
+              await addAudit({ user: currentUser.username, action: "enable_2fa", target: currentUser.username, detail: "ตั้งค่า 2FA ใหม่สำเร็จ (จากโปรไฟล์)" });
+              toast?.("เปิด 2FA เรียบร้อยแล้ว", "success");
+            }}
+            onCancel={() => setShow2FASetup(false)}
+          />
+        </div>
+      )}
+
       <style>{`
         .pv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .pv-tabs::-webkit-scrollbar { display: none; }
@@ -628,7 +697,7 @@ async function hashBackupCode(code) {
 }
 
 // ── MFASetupScreen ────────────────────────────────────────────────────────
-function MFASetupScreen({ currentUser, onComplete, onCancel }) {
+function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
   const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
   const [step, setStep]       = useStateMFAS("loading"); // loading | scan | backup | error
   const [factorId, setFactorId] = useStateMFAS("");
@@ -786,7 +855,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
                   {copied ? "คัดลอกแล้ว!" : "คัดลอกรหัสทั้งหมด"}
                 </button>
                 <button className="btn btn-primary" style={{ height: 46 }} onClick={onComplete}>
-                  <Icon name="check" size={14} /> บันทึกรหัสแล้ว — เข้าสู่ระบบ
+                  <Icon name="check" size={14} /> {completeBtnLabel || "บันทึกรหัสแล้ว — เข้าสู่ระบบ"}
                 </button>
               </div>
             </div>
