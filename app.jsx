@@ -317,13 +317,15 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         </div>
       )}
 
-      {/* ── 2FA Management ── */}
+      {/* ── 2FA Status (read-only — admin manages via Users panel) ── */}
       {tab === "password" && (
         <div className="card card-elev fade-up" style={{ maxWidth: 480, marginBottom: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{t("f2FA")}</div>
-              <div className="t-mute text-sm">{mfaStatus ? "เปิดใช้งานอยู่ — สแกน QR ใหม่เพื่อตั้งค่าอีกครั้ง" : "ยังไม่ได้เปิดใช้งาน"}</div>
+              <div className="t-mute text-sm">
+                {mfaStatus ? "เปิดใช้งานอยู่" : "ยังไม่ได้เปิดใช้งาน"}
+              </div>
             </div>
             <span style={{
               padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700,
@@ -334,17 +336,9 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
               {mfaStatus === null ? "กำลังโหลด…" : mfaStatus ? "🔒 เปิดอยู่" : "ปิดอยู่"}
             </span>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn btn-primary" style={{ flex: 1, height: 44 }}
-              onClick={() => setShow2FASetup(true)}>
-              <Icon name="lock" size={14} />
-              {mfaStatus ? "ตั้งค่า 2FA ใหม่ / สแกน QR ใหม่" : "เปิดใช้งาน 2FA"}
-            </button>
-            {mfaStatus && (
-              <button className="btn btn-outline" style={{ height: 44 }} onClick={disable2FA}>
-                ปิด 2FA
-              </button>
-            )}
+          <div className="t-mute text-xs" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="info" size={13} />
+            การเปิด/ปิด 2FA ดำเนินการโดยผู้ดูแลระบบ (Admin) เท่านั้น
           </div>
         </div>
       )}
@@ -642,22 +636,6 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         );
       })()}
 
-      {/* ── 2FA Setup Overlay (เปิดจาก ProfileView) ── */}
-      {show2FASetup && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9900 }}>
-          <MFASetupScreen
-            currentUser={currentUser}
-            completeBtnLabel="บันทึกรหัสแล้ว — เสร็จสิ้น"
-            onComplete={async () => {
-              setShow2FASetup(false);
-              setMfaStatus(true);
-              await addAudit({ user: currentUser.username, action: "enable_2fa", target: currentUser.username, detail: "ตั้งค่า 2FA ใหม่สำเร็จ (จากโปรไฟล์)" });
-              toast?.("เปิด 2FA เรียบร้อยแล้ว", "success");
-            }}
-            onCancel={() => setShow2FASetup(false)}
-          />
-        </div>
-      )}
 
       <style>{`
         .pv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
