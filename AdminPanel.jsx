@@ -134,8 +134,17 @@ function AdminDashboard({ data }) {
         .db-mid-grid  { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
         .db-donut-row { display: flex; align-items: center; gap: 20px; }
         .db-donut-row svg { width: 130px; height: 130px; flex-shrink: 0; }
-        .db-act-row   { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
-        @media (max-width: 680px) {
+        .db-act-row   { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid var(--line); }
+        .db-act-avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: white; flex-shrink: 0; }
+        /* iPad (641–1024px) */
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .db-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+          .db-mid-grid  { grid-template-columns: 1fr 1fr; gap: 14px; }
+          .db-donut-row { flex-direction: column; gap: 14px; }
+          .db-donut-row svg { width: 100px !important; height: 100px !important; align-self: center; }
+          .db-donut-row .db-legend-list { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+        }
+        @media (max-width: 640px) {
           .db-stat-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
           .db-mid-grid  { grid-template-columns: 1fr; }
           .db-donut-row { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -210,12 +219,14 @@ function AdminDashboard({ data }) {
           <div className="t-mute text-sm" style={{ padding: "16px 0" }}>{t("dbNoActivity")}</div>
         ) : recent.map(r => (
           <div key={r.id} className="db-act-row">
-            <div className={"badge " + actionBadge(r.action)} style={{ flexShrink: 0 }}>{actionLabel(r.action)}</div>
+            <div className="db-act-avatar" style={{ background: "linear-gradient(135deg,#6b2c91,#8b3fc4)" }}>
+              {(r.user || "?")[0].toUpperCase()}
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="text-sm fw-6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.detail || "—"}</div>
-              <div className="t-mute text-xs">{r.at} · {r.user}</div>
+              <div className="t-mute text-xs" style={{ marginTop: 2 }}>{r.at.slice(0, 16)} · <span style={{ fontWeight: 600 }}>@{r.user}</span></div>
             </div>
-            <div className="mono text-xs t-mute db-act-target" style={{ flexShrink: 0 }}>{r.target}</div>
+            <div className={"badge " + actionBadge(r.action)} style={{ flexShrink: 0, fontSize: 11 }}>{actionLabel(r.action)}</div>
           </div>
         ))}
       </div>

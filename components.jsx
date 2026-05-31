@@ -157,6 +157,7 @@ function StatCard({ label, value, delta, icon, accent = "purple" }) {
   const [c1, c2] = colorMap[accent];
   return (
     <div className="card card-elev" style={{ overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${c1},${c2})`, borderRadius: "14px 14px 0 0" }} />
       <div style={{ position: "absolute", top: -20, right: -20, width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${c1}22, transparent 70%)` }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, position: "relative" }}>
         <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${c1}, ${c2})`, color: "white", display: "grid", placeItems: "center", boxShadow: `0 8px 22px ${c1}55` }}>
