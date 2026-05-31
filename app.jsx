@@ -1460,58 +1460,58 @@ function UserGuide({ role }) {
         </UGSection>
 
         {/* ─── แผนที่ ─── */}
-        <UGSection icon="map" title="แผนที่และการนำทาง GPS" expandSignal={expandSig}>
+        <UGSection icon="map" title={ug("แผนที่และการนำทาง GPS","Map & GPS Navigation")} expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
-              ["ฟีเจอร์", "วิธีใช้"],
-              ["สลับ Street/Satellite", "กดปุ่ม Street หรือ Satellite บน Topbar"],
-              ["Cluster", "กดปุ่ม Cluster บนแผนที่ — รวมกลุ่ม marker"],
-              ["Heatmap", "กดปุ่ม Heatmap — แสดงความหนาแน่นพื้นที่"],
-              ["Split View", "กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน"],
-              ["คัดลอกพิกัด", "คลิก marker → กดปุ่ม Copy lat/lng"],
+              [ug("ฟีเจอร์","Feature"), ug("วิธีใช้","How to use")],
+              [ug("สลับ Street/Satellite","Switch Street/Satellite"), ug("กดปุ่ม Street หรือ Satellite บน Topbar","Press Street or Satellite button on Topbar")],
+              ["Cluster", ug("กดปุ่ม Cluster บนแผนที่ — รวมกลุ่ม marker","Press Cluster on map — groups nearby markers")],
+              ["Heatmap", ug("กดปุ่ม Heatmap — แสดงความหนาแน่นพื้นที่","Press Heatmap — shows density overlay")],
+              ["Split View", ug("กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน","Press Split — table and map side by side")],
+              [ug("คัดลอกพิกัด","Copy coordinates"), ug("คลิก marker → กดปุ่ม Copy lat/lng","Click marker → press Copy lat/lng button")],
             ]} />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>นำทาง GPS</div>
-            <UGStep n={1} text="คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง" />
-            <UGStep n={2} text="ระบบขอสิทธิ์ตำแหน่งปัจจุบัน — กด 'Allow'" />
-            <UGStep n={3} text="ระบบคำนวณระยะทางและเวลาโดยประมาณ" />
-            <UGStep n={4} text="กด 'นำทาง' เพื่อเปิด Google Maps หรือ Apple Maps" />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("นำทาง GPS","GPS Navigation")}</div>
+            <UGStep n={1} text={ug("คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง","Click a marker on the map or press Navigate in the table")} />
+            <UGStep n={2} text={ug("ระบบขอสิทธิ์ตำแหน่งปัจจุบัน — กด 'Allow'","System requests location permission — press 'Allow'")} />
+            <UGStep n={3} text={ug("ระบบคำนวณระยะทางและเวลาโดยประมาณ","System calculates distance and estimated time")} />
+            <UGStep n={4} text={ug("กด 'นำทาง' เพื่อเปิด Google Maps หรือ Apple Maps","Press 'Navigate' to open Google Maps or Apple Maps")} />
           </div>
         </UGSection>
 
         {/* ─── โปรไฟล์ ─── */}
-        <UGSection icon="user" title="โปรไฟล์ & ความปลอดภัยส่วนตัว" expandSignal={expandSig}>
+        <UGSection icon="user" title={ug("โปรไฟล์ & ความปลอดภัยส่วนตัว","Profile & Personal Security")} expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
-              ["แท็บ", "รายละเอียด"],
-              ["ข้อมูล", "ดูชื่อ, username, อีเมล, บทบาท, สถานะบัญชี"],
-              ["รหัสผ่าน", "สถานะรหัสผ่าน (progress bar + วันหมดอายุ) · ประวัติการเปลี่ยนรหัส · เปิด/ปิด 2FA"],
-              ["การใช้งาน", "ประวัติ login/logout/เปลี่ยนรหัส พร้อม device info"],
-              ["การค้นหา", "ประวัติค้นหา Meter/TR พร้อม timestamp"],
+              [ug("แท็บ","Tab"), ug("รายละเอียด","Details")],
+              [ug("ข้อมูล","Info"), ug("ดูชื่อ, username, อีเมล, บทบาท, สถานะบัญชี","View name, username, email, role, account status")],
+              [ug("รหัสผ่าน","Password"), ug("สถานะรหัสผ่าน (progress bar + วันหมดอายุ) · ประวัติการเปลี่ยนรหัส · เปิด/ปิด 2FA","Password status (progress bar + expiry) · Change history · Enable/Disable 2FA")],
+              [ug("การใช้งาน","Activity"), ug("ประวัติ login/logout/เปลี่ยนรหัส พร้อม device info","Login/logout/password change history with device info")],
+              [ug("การค้นหา","Search"), ug("ประวัติค้นหา Meter/TR พร้อม timestamp","Meter/TR search history with timestamps")],
             ]} />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>แท็บ "รหัสผ่าน" — รายละเอียด</div>
-            <UGStep n={1} text="การ์ดสถานะแสดง: progress bar (วันที่ใช้ไปจาก 45 วัน), วันที่เปลี่ยนล่าสุด, วันหมดอายุ" />
-            <UGStep n={2} text="รายการ 'ประวัติการเปลี่ยนรหัสผ่าน' แสดงทุกครั้งที่มีการเปลี่ยน พร้อมวันที่และหมายเหตุ" />
-            <UGStep n={3} text="สีการ์ดเปลี่ยนตามสถานะ: เขียว (ปกติ) → เหลือง (≤7 วัน) → แดง (≤3 วัน / หมดอายุ)" />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>นโยบายรหัสผ่าน (45 วัน)</div>
-            <UGStep n={1} text="รหัสผ่านมีอายุ 45 วัน — ระบบแจ้งเตือนล่วงหน้า 7/3/1 วัน ด้วย banner สีต่างกัน" />
-            <UGStep n={2} text="หากหมดอายุโดยไม่เปลี่ยน — จะเข้าสู่ระบบไม่ได้ ต้องให้ Admin ปลดล็อค" />
-            <UGStep n={3} text="หลัง Admin ปลดล็อค — ระบบบังคับเปลี่ยนรหัสทันที ก่อนใช้งานระบบ" />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เปิด 2FA (TOTP)</div>
-            <UGStep n={1} text="ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'" />
-            <UGStep n={2} text="สแกน QR Code ด้วย Google Authenticator หรือ Authy" />
-            <UGStep n={3} text="กรอกรหัส 6 หลักเพื่อยืนยัน" />
-            <UGTip>แนะนำให้เปิด 2FA เสมอเพื่อความปลอดภัยของบัญชี</UGTip>
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug('แท็บ "รหัสผ่าน" — รายละเอียด','Password Tab — Details')}</div>
+            <UGStep n={1} text={ug("การ์ดสถานะแสดง: progress bar (วันที่ใช้ไปจาก 45 วัน), วันที่เปลี่ยนล่าสุด, วันหมดอายุ","Status card shows: progress bar (days used of 45), last changed date, expiry date")} />
+            <UGStep n={2} text={ug("รายการ 'ประวัติการเปลี่ยนรหัสผ่าน' แสดงทุกครั้งที่มีการเปลี่ยน พร้อมวันที่และหมายเหตุ","'Password History' lists every change with date and note")} />
+            <UGStep n={3} text={ug("สีการ์ดเปลี่ยนตามสถานะ: เขียว (ปกติ) → เหลือง (≤7 วัน) → แดง (≤3 วัน / หมดอายุ)","Card color by status: green (ok) → yellow (≤7 days) → red (≤3 days / expired)")} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("นโยบายรหัสผ่าน (45 วัน)","Password Policy (45 days)")}</div>
+            <UGStep n={1} text={ug("รหัสผ่านมีอายุ 45 วัน — ระบบแจ้งเตือนล่วงหน้า 7/3/1 วัน ด้วย banner สีต่างกัน","Password expires after 45 days — system warns 7/3/1 days ahead with colored banners")} />
+            <UGStep n={2} text={ug("หากหมดอายุโดยไม่เปลี่ยน — จะเข้าสู่ระบบไม่ได้ ต้องให้ Admin ปลดล็อค","If expired without changing — cannot login until Admin unlocks")} />
+            <UGStep n={3} text={ug("หลัง Admin ปลดล็อค — ระบบบังคับเปลี่ยนรหัสทันที ก่อนใช้งานระบบ","After Admin unlocks — system forces password change before access")} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("เปิด 2FA (TOTP)","Enable 2FA (TOTP)")}</div>
+            <UGStep n={1} text={ug("ไปที่โปรไฟล์ → แท็บ 'รหัสผ่าน' → กด 'เปิดใช้ 2FA'","Go to Profile → Password tab → press 'Enable 2FA'")} />
+            <UGStep n={2} text={ug("สแกน QR Code ด้วย Google Authenticator หรือ Authy","Scan QR Code with Google Authenticator or Authy")} />
+            <UGStep n={3} text={ug("กรอกรหัส 6 หลักเพื่อยืนยัน","Enter the 6-digit code to confirm")} />
+            <UGTip>{ug("แนะนำให้เปิด 2FA เสมอเพื่อความปลอดภัยของบัญชี","Always enable 2FA for account security")}</UGTip>
           </div>
         </UGSection>
 
         {/* ─── UI ─── */}
-        <UGSection icon="sun" title="การตั้งค่า UI" expandSignal={expandSig}>
+        <UGSection icon="sun" title={ug("การตั้งค่า UI","UI Settings")} expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
-              ["ปุ่ม", "ตำแหน่ง", "ฟังก์ชัน"],
-              ["🌙 / ☀️", "Topbar ขวา", "สลับโหมดมืด/สว่าง (จำค่าไว้)"],
-              ["TH / EN", "Topbar ขวา", "สลับภาษาไทย/อังกฤษ"],
-              ["🔄 Refresh", "Topbar ขวา", "โหลดข้อมูลใหม่"],
+              [ug("ปุ่ม","Button"), ug("ตำแหน่ง","Location"), ug("ฟังก์ชัน","Function")],
+              ["🌙 / ☀️", "Topbar ขวา", ug("สลับโหมดมืด/สว่าง (จำค่าไว้)","Toggle dark/light mode (remembered)")],
+              ["TH / EN", "Topbar ขวา", ug("สลับภาษาไทย/อังกฤษ","Toggle Thai/English")],
+              ["🔄 Refresh", "Topbar ขวา", ug("โหลดข้อมูลใหม่","Reload data")],
             ]} />
           </div>
         </UGSection>
