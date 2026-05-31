@@ -2379,17 +2379,25 @@ function App() {
   const inRecoveryRef = React.useRef(false);
 
   useEffectApp(() => {
+    // Pre-arm ref BEFORE async callbacks — ensures getSession callback sees the flag
+    if (_isRecoveryLoad || _hasOAuthCode) inRecoveryRef.current = true;
+
     _supabase.auth.getSession().then(({ data: { session } }) => {
-      if (_isRecoveryLoad || inRecoveryRef.current) return; // PASSWORD_RECOVERY event will handle
+      if (inRecoveryRef.current) {
+        // Recovery/PKCE mode: if code was already exchanged, session is ready now
+        if (session?.user) {
+          setPendingUser(session.user);
+          setAppState("pw_reset");
+        }
+        // No session yet — PASSWORD_RECOVERY or SIGNED_IN will handle it
+        return;
+      }
       if (session?.user) {
         loadAppData(session.user, false); // session restore — ไม่ log login ซ้ำ
       } else {
         setAppState("unauthed");
       }
     });
-
-    // If page loaded with recovery URL or PKCE code, pre-arm the ref immediately
-    if (_isRecoveryLoad || _hasOAuthCode) inRecoveryRef.current = true;
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
@@ -2400,13 +2408,15 @@ function App() {
         return;
       }
       if (event === "SIGNED_IN" && session?.user) {
-        // Check sessionStorage for recovery (covers PKCE flow where PASSWORD_RECOVERY may fire late)
         if (sessionStorage.getItem("pea_recovery") || inRecoveryRef.current) {
+          // Recovery flow — route directly; skip loadAppData so 2FA never intercepts
           inRecoveryRef.current = true;
-          // Don't route directly — let loadAppData handle it so profile is loaded
-          // (recovery check is inserted before 2FA check inside loadAppData)
+          sessionStorage.removeItem("pea_recovery");
+          setPendingUser(session.user);
+          setAppState("pw_reset");
+          return;
         }
-        loadAppData(session.user, !inRecoveryRef.current); // don't log login for recovery
+        loadAppData(session.user, true); // normal login — log it
         return;
       }
       if (event === "SIGNED_OUT") {
