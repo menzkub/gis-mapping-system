@@ -804,10 +804,10 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>ขั้นตอนที่ 1 — สแกน QR Code</div>
                 <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
               </div>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div style={{ background: "white", padding: 20, borderRadius: 12,
-                  border: "1px solid var(--line)", display: "flex",
-                  alignItems: "center", justifyContent: "center" }}>
+                  border: "1px solid var(--line)", display: "inline-block",
+                  lineHeight: 0 }}>
                   <SafeQR svg={qrSvg} size={200} />
                 </div>
               </div>
