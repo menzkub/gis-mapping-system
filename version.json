@@ -1,7 +1,7 @@
 {
-  "commit": "fecebf5",
-  "shortCommit": "fecebf5",
-  "message": "security: fix audit_log RLS + QR code XSS",
-  "date": "2026-05-31T11:00:00+00:00",
+  "commit": "68e9a9e",
+  "shortCommit": "68e9a9e",
+  "message": "feat(security): add 2FA backup codes",
+  "date": "2026-05-31T11:15:00+00:00",
   "branch": "main"
 }
