@@ -1,7 +1,7 @@
 {
-  "commit": "c74ec3d",
-  "shortCommit": "c74ec3d",
-  "message": "fix(users): stopPropagation on 2FA column + confirm before toggle",
-  "date": "2026-05-31T14:17:00+00:00",
+  "commit": "a44b579",
+  "shortCommit": "a44b579",
+  "message": "fix(2fa): replace broken img QR with SafeQR (DOMParser) + center layout",
+  "date": "2026-05-31T14:45:00+00:00",
   "branch": "main"
 }
