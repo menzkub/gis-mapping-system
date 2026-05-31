@@ -424,10 +424,10 @@ function AdminGuide() {
         {/* Expand/Collapse buttons */}
         <div style={{ display: "flex", gap: 6, marginTop: 16 }}>
           <button onClick={expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-            <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+            <Icon name="chevDown" size={13} /> {s("ขยายทั้งหมด","Expand All")}
           </button>
           <button onClick={collapseAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-            <Icon name="chevRight" size={13} /> ยุบทั้งหมด
+            <Icon name="chevRight" size={13} /> {s("ยุบทั้งหมด","Collapse All")}
           </button>
         </div>
       </div>
