@@ -1340,6 +1340,8 @@ function UGTable({ rows }) {
 }
 
 function UserGuide({ role }) {
+  const { lang } = useLang();
+  const ug = (th, en) => lang === "en" ? en : th;
   const isAdmin = role === "admin";
   const guideRef = React.useRef(null);
   const [expandSig, setExpandSig] = useStateApp({ count: 0, open: false });
@@ -1370,14 +1372,14 @@ function UserGuide({ role }) {
               <Icon name="book" size={26} />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>คู่มือการใช้งาน</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>{ug("คู่มือการใช้งาน", "User Manual")}</div>
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>
-                {isAdmin ? "สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Feature" : "สำหรับผู้ใช้งานทั่วไป"}
+                {isAdmin ? ug("สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Feature", "For Administrators — All Features") : ug("สำหรับผู้ใช้งานทั่วไป", "For General Users")}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.9)" }}>
-                  <Icon name="history" size={10} /> อัปเดตล่าสุด: {CHANGELOG[0].date}
+                  <Icon name="history" size={10} /> {ug("อัปเดตล่าสุด: ", "Last updated: ")}{CHANGELOG[0].date}
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.9)" }}>
                   <Icon name="package" size={10} /> {CHANGELOG[0].version}
@@ -1389,10 +1391,10 @@ function UserGuide({ role }) {
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
             {[
-              { label: "หัวข้อ",   value: isAdmin ? 12 : 5,  icon: "book",    sub: "sections" },
-              { label: "ขั้นตอน", value: isAdmin ? 41 : 16, icon: "check",   sub: "steps" },
-              { label: "ฟีเจอร์",  value: isAdmin ? 12 : 8,  icon: "bolt",    sub: "features" },
-              { label: "เคล็ดลับ", value: isAdmin ? 16 : 7,  icon: "warning", sub: "tips & notes" },
+              { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 12 : 5,  icon: "book",    sub: "sections" },
+              { label: ug("ขั้นตอน","Steps"), value: isAdmin ? 41 : 16, icon: "check",   sub: "steps" },
+              { label: ug("ฟีเจอร์","Features"),  value: isAdmin ? 12 : 8,  icon: "bolt",    sub: "features" },
+              { label: ug("เคล็ดลับ","Tips"), value: isAdmin ? 16 : 7,  icon: "warning", sub: "tips & notes" },
             ].map(({ label, value, icon, sub }) => (
               <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -1409,51 +1411,51 @@ function UserGuide({ role }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, gap: 8, flexWrap: "wrap" }}>
             <div style={{ display: "flex", gap: 6 }}>
               <button onClick={expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-                <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+                <Icon name="chevDown" size={13} /> {ug("ขยายทั้งหมด","Expand All")}
               </button>
               <button onClick={collapseAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-                <Icon name="chevRight" size={13} /> ยุบทั้งหมด
+                <Icon name="chevRight" size={13} /> {ug("ยุบทั้งหมด","Collapse All")}
               </button>
             </div>
             {isAdmin && (
               <button onClick={downloadGuide} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
-                <Icon name="download" size={14} /> ดาวน์โหลดคู่มือ
+                <Icon name="download" size={14} /> {ug("ดาวน์โหลดคู่มือ","Download Guide")}
               </button>
             )}
           </div>
         </div>
 
         {/* ─── เข้าสู่ระบบ ─── */}
-        <UGSection icon="lock" title="การเข้าสู่ระบบ & สมัครสมาชิก" expandSignal={expandSig}>
+        <UGSection icon="lock" title={ug("การเข้าสู่ระบบ & สมัครสมาชิก","Login & Registration")} expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>สมัครสมาชิก</div>
-            <UGStep n={1} text="คลิก 'สมัครสมาชิก' บนหน้า Login" />
-            <UGStep n={2} text="กรอกชื่อ-นามสกุล, ชื่อผู้ใช้, อีเมล, และรหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)" />
-            <UGStep n={3} text="กด 'สมัครสมาชิก' — บัญชีจะอยู่ในสถานะ 'รออนุมัติ' จนกว่า Admin จะอนุมัติ" />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>เข้าสู่ระบบ</div>
-            <UGStep n={1} text="กรอกอีเมลและรหัสผ่าน แล้วกด 'เข้าสู่ระบบ'" />
-            <UGStep n={2} text="หากเปิด 2FA ไว้ — ระบบจะขอรหัส 6 หลักจาก Authenticator App" />
-            <UGStep n={3} text="ติ๊ก 'จดจำฉันไว้ 7 วัน' เพื่อไม่ต้องล็อกอินบ่อย" />
-            <UGTip>ลืมรหัสผ่าน? กดลิงก์ 'ลืมรหัสผ่าน' ระบบจะส่ง link รีเซ็ตไปยังอีเมล</UGTip>
-            <UGNote>ระบบออกจากระบบอัตโนมัติหลังไม่ใช้งาน 30 นาที</UGNote>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>{ug("สมัครสมาชิก","Registration")}</div>
+            <UGStep n={1} text={ug("คลิก 'สมัครสมาชิก' บนหน้า Login","Click 'Register' on the Login page")} />
+            <UGStep n={2} text={ug("กรอกชื่อ-นามสกุล, ชื่อผู้ใช้, อีเมล, และรหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)","Fill in full name, username, email, and password (must include uppercase + number + special character)")} />
+            <UGStep n={3} text={ug("กด 'สมัครสมาชิก' — บัญชีจะอยู่ในสถานะ 'รออนุมัติ' จนกว่า Admin จะอนุมัติ","Press 'Register' — account will be in 'Pending' status until approved by Admin")} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("เข้าสู่ระบบ","Login")}</div>
+            <UGStep n={1} text={ug("กรอกอีเมลและรหัสผ่าน แล้วกด 'เข้าสู่ระบบ'","Enter email and password, then press 'Login'")} />
+            <UGStep n={2} text={ug("หากเปิด 2FA ไว้ — ระบบจะขอรหัส 6 หลักจาก Authenticator App","If 2FA is enabled — enter the 6-digit code from your Authenticator App")} />
+            <UGStep n={3} text={ug("ติ๊ก 'จดจำฉันไว้ 7 วัน' เพื่อไม่ต้องล็อกอินบ่อย","Check 'Remember me for 7 days' to avoid frequent logins")} />
+            <UGTip>{ug("ลืมรหัสผ่าน? กดลิงก์ 'ลืมรหัสผ่าน' ระบบจะส่ง link รีเซ็ตไปยังอีเมล","Forgot password? Click 'Forgot Password' — the system will send a reset link to your email")}</UGTip>
+            <UGNote>{ug("ระบบออกจากระบบอัตโนมัติหลังไม่ใช้งาน 30 นาที","System auto-logs out after 30 minutes of inactivity")}</UGNote>
           </div>
         </UGSection>
 
         {/* ─── ค้นหา ─── */}
-        <UGSection icon="search" title="ค้นหาข้อมูล Meter / Transformer" expandSignal={expandSig}>
+        <UGSection icon="search" title={ug("ค้นหาข้อมูล Meter / Transformer","Search Meter / Transformer Data")} expandSignal={expandSig}>
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>ค้นหา PEA มิเตอร์</div>
-            <UGStep n={1} text="เลือกแท็บ 'PEA Meter' ในหน้าค้นหา" />
-            <UGStep n={2} text="พิมพ์คำค้นหา: TAG, PEANO, ACCOUNTNUM, หรือ Feeder ID — ระบบค้นหาอัตโนมัติ" />
-            <UGStep n={3} text="กรองเพิ่มเติม: เลือก Feeder, เจ้าของ (PEA/Customer), หรือ CODE" />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ค้นหา PEA หม้อแปลง</div>
-            <UGStep n={1} text="เลือกแท็บ 'PEA Transformer'" />
-            <UGStep n={2} text="พิมพ์คำค้นหา: TAG, PEANO, สถานที่, หรือ Feeder" />
-            <UGStep n={3} text="กรองเพิ่มเติม: ระบบเฟส, แรงดัน (22/33 kV), kVA ต่ำสุด-สูงสุด" />
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Export ผลการค้นหา</div>
-            <UGStep n={1} text="กดปุ่ม 'Export' — Dialog แสดงจำนวนรายการที่จะส่งออก" />
-            <UGStep n={2} text="กด 'Export' อีกครั้งเพื่อดาวน์โหลดเป็นไฟล์ CSV" />
-            <UGTip>ผลลัพธ์ถูกจำกัดสูงสุด 500 รายการ — พิมพ์คำค้นหาเพิ่มเพื่อลดจำนวน</UGTip>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>{ug("ค้นหา PEA มิเตอร์","Search PEA Meter")}</div>
+            <UGStep n={1} text={ug("เลือกแท็บ 'PEA Meter' ในหน้าค้นหา","Select the 'PEA Meter' tab on the search page")} />
+            <UGStep n={2} text={ug("พิมพ์คำค้นหา: TAG, PEANO, ACCOUNTNUM, หรือ Feeder ID — ระบบค้นหาอัตโนมัติ","Type search query: TAG, PEANO, ACCOUNTNUM, or Feeder ID — auto-search")} />
+            <UGStep n={3} text={ug("กรองเพิ่มเติม: เลือก Feeder, เจ้าของ (PEA/Customer), หรือ CODE","Filter by Feeder, Owner (PEA/Customer), or CODE")} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("ค้นหา PEA หม้อแปลง","Search PEA Transformer")}</div>
+            <UGStep n={1} text={ug("เลือกแท็บ 'PEA Transformer'","Select the 'PEA Transformer' tab")} />
+            <UGStep n={2} text={ug("พิมพ์คำค้นหา: TAG, PEANO, สถานที่, หรือ Feeder","Type: TAG, PEANO, location, or Feeder")} />
+            <UGStep n={3} text={ug("กรองเพิ่มเติม: ระบบเฟส, แรงดัน (22/33 kV), kVA ต่ำสุด-สูงสุด","Filter by phase, voltage (22/33 kV), min-max kVA")} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("Export ผลการค้นหา","Export Search Results")}</div>
+            <UGStep n={1} text={ug("กดปุ่ม 'Export' — Dialog แสดงจำนวนรายการที่จะส่งออก","Press 'Export' — a dialog shows the number of records to export")} />
+            <UGStep n={2} text={ug("กด 'Export' อีกครั้งเพื่อดาวน์โหลดเป็นไฟล์ CSV","Press 'Export' again to download as CSV file")} />
+            <UGTip>{ug("ผลลัพธ์ถูกจำกัดสูงสุด 500 รายการ — พิมพ์คำค้นหาเพิ่มเพื่อลดจำนวน","Results limited to 500 rows — type more to narrow down")}</UGTip>
           </div>
         </UGSection>
 
@@ -2775,15 +2777,15 @@ function App() {
                   className={"sidebar-nav-btn" + (route === it.id ? " sidebar-nav-btn--active" : "")}
                   onClick={() => setRoute(it.id)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                    borderRadius: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 14,
+                    display: "flex", alignItems: "center", gap: 12, padding: "13px 16px",
+                    borderRadius: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 15,
                     background: route === it.id ? "linear-gradient(135deg, rgba(244,123,32,0.25), rgba(139,63,196,0.25))" : "transparent",
                     border: route === it.id ? "1px solid rgba(244,123,32,0.5)" : "1px solid transparent",
                     boxShadow: route === it.id ? "0 8px 20px rgba(244,123,32,0.18)" : "none",
                     textAlign: "left", transition: "all 180ms var(--ease-out)",
                   }}
                 >
-                  <Icon name={it.icon} size={18} />
+                  <Icon name={it.icon} size={20} />
                   <span className="sidebar-nav-label">{it.label}</span>
                 </button>
 
@@ -2793,7 +2795,7 @@ function App() {
                     {ADMIN_NAV.map(sub => (
                       <button key={sub.id} onClick={() => setAdminTab(sub.id)} style={{
                         display: "flex", alignItems: "center", gap: 9,
-                        padding: "7px 10px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                        padding: "8px 12px", borderRadius: 9, fontSize: 14, fontWeight: 600,
                         color: adminTab === sub.id ? "white" : "rgba(255,255,255,0.58)",
                         background: adminTab === sub.id ? "rgba(244,123,32,0.20)" : "transparent",
                         border: adminTab === sub.id ? "1px solid rgba(244,123,32,0.32)" : "1px solid transparent",
@@ -2817,12 +2819,12 @@ function App() {
 
           <div className="sidebar-user" style={{ marginTop: "auto", padding: 14, background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
                 {currentUser.name?.[0] || currentUser.username[0]}
               </div>
               <div className="sidebar-user-info" style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentUser.name}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>@{currentUser.username} · {currentUser.role}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentUser.name}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>@{currentUser.username} · {currentUser.role}</div>
               </div>
             </div>
             <button className="sidebar-logout-btn" onClick={() => setShowLogoutConfirm(true)} style={{
