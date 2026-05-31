@@ -146,9 +146,10 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
-          .sv-title-row { flex-direction: column; gap: 6px; align-items: flex-start; }
+          .sv-title-row { flex-direction: column; gap: 6px; align-items: stretch; }
           .sv-search-title { font-size: 20px !important; }
-          .sv-tabs .tab { font-size: 12px !important; padding: 0 12px !important; height: 34px !important; white-space: nowrap; }
+          .sv-tabs { width: 100% !important; flex-shrink: 1 !important; }
+          .sv-tabs .tab { flex: 1; justify-content: center; font-size: 13px !important; padding: 0 12px !important; height: 44px !important; white-space: nowrap; }
           .sv-controls { flex-wrap: wrap; gap: 8px; }
           .sv-search-wrap { flex-basis: 100%; }
           .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; width: 100%; }
