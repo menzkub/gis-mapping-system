@@ -878,6 +878,121 @@ const CAT_META = {
   perf: { label: "ประสิทธิภาพ", bg: "rgba(244,123,32,0.12)", border: "rgba(244,123,32,0.3)", text: "var(--pea-orange-600)" },
 };
 
+// ── DeploymentStatus — fetches version.json + GitHub API ─────────────────
+function DeploymentStatus() {
+  const [deployed, setDeployed]   = useStateApp(null);  // from version.json
+  const [ghCommit, setGhCommit]   = useStateApp(null);  // from GitHub API
+  const [loading, setLoading]     = useStateApp(true);
+  const [ghLoading, setGhLoading] = useStateApp(true);
+
+  useEffectApp(() => {
+    // Fetch deployed version (cache-busted)
+    fetch("version.json?t=" + Date.now())
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setDeployed(d); setLoading(false); })
+      .catch(() => setLoading(false));
+
+    // Fetch latest commit on main from GitHub API
+    fetch("https://api.github.com/repos/menzkub/gis-mapping-system/commits/main", {
+      headers: { Accept: "application/vnd.github.v3+json" },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setGhCommit(d); setGhLoading(false); })
+      .catch(() => setGhLoading(false));
+  }, []);
+
+  const fmtDate = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" }) +
+      " · " + d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const deployedHash = deployed?.shortCommit || deployed?.commit?.slice(0, 7);
+  const ghHash = ghCommit?.sha?.slice(0, 7);
+  const inSync = deployedHash && ghHash && deployedHash === ghHash;
+  const statusColor = loading ? "#6b7280" : inSync ? "#059669" : "#d97706";
+  const statusBg    = loading ? "rgba(107,114,128,0.1)" : inSync ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)";
+  const statusBorder = loading ? "rgba(107,114,128,0.25)" : inSync ? "rgba(5,150,105,0.25)" : "rgba(217,119,6,0.25)";
+  const statusLabel  = loading ? "กำลังตรวจสอบ…" : inSync ? "ระบบเป็นปัจจุบัน" : "มีการอัปเดตรอ Deploy";
+  const statusIcon   = loading ? "spinner" : inSync ? "check" : "warning";
+
+  return (
+    <div style={{ marginBottom: 24, borderRadius: 16, border: `1px solid ${statusBorder}`, background: statusBg, overflow: "hidden" }}>
+      {/* Header row */}
+      <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${statusBorder}` }}>
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusColor, flexShrink: 0,
+          boxShadow: `0 0 0 3px ${statusColor}33`,
+          animation: loading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
+        }} />
+        <span style={{ fontWeight: 700, fontSize: 14, color: statusColor }}>{statusLabel}</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Deployment Status</span>
+      </div>
+
+      {/* Two columns */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+        {/* Deployed */}
+        <div style={{ padding: "14px 18px", borderRight: `1px solid ${statusBorder}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 8 }}>
+            🌐 กำลังรันบนเว็บไซต์
+          </div>
+          {loading ? (
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+          ) : deployed ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'IBM Plex Mono','Courier New',monospace", color: statusColor, background: `${statusColor}15`, padding: "2px 8px", borderRadius: 6 }}>
+                  {deployedHash}
+                </code>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--ink)", marginBottom: 3, lineHeight: 1.4 }}>{deployed.message}</div>
+              <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{fmtDate(deployed.date)}</div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่พบข้อมูล</div>
+          )}
+        </div>
+
+        {/* GitHub latest */}
+        <div style={{ padding: "14px 18px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 8 }}>
+            ☁️ ล่าสุดบน GitHub
+          </div>
+          {ghLoading ? (
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+          ) : ghCommit ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'IBM Plex Mono','Courier New',monospace", color: "var(--pea-purple-600)", background: "rgba(139,63,196,0.12)", padding: "2px 8px", borderRadius: 6 }}>
+                  {ghHash}
+                </code>
+                {!inSync && ghHash && deployedHash && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.12)", border: "1px solid rgba(217,119,6,0.25)", padding: "1px 6px", borderRadius: 4 }}>
+                    รอ Deploy
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--ink)", marginBottom: 3, lineHeight: 1.4 }}>
+                {ghCommit.commit?.message?.split("\n")[0] || "—"}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>
+                {fmtDate(ghCommit.commit?.author?.date)} · {ghCommit.commit?.author?.name}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่สามารถเชื่อมต่อ GitHub API</div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer note */}
+      <div style={{ padding: "8px 18px 10px", borderTop: `1px solid ${statusBorder}`, fontSize: 11, color: "var(--ink-mute)" }}>
+        GitHub Pages มักใช้เวลา 1–3 นาทีหลัง push · repo: <b>menzkub/gis-mapping-system</b>
+      </div>
+    </div>
+  );
+}
+
 function ChangelogView() {
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
@@ -921,6 +1036,9 @@ function ChangelogView() {
             ))}
           </div>
         </div>
+
+        {/* Deployment status */}
+        <DeploymentStatus />
 
         {/* Legend */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>

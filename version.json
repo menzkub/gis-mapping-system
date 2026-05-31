@@ -1,0 +1,7 @@
+{
+  "commit": "932cbb062bbe20ab735eec0f86fce2ec918eb4d9",
+  "shortCommit": "932cbb0",
+  "message": "fix: PKCE recovery for regular users + log forgot-password history",
+  "date": "2026-05-31T06:58:21+00:00",
+  "branch": "main"
+}
