@@ -1494,13 +1494,26 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
   const toast   = useToast();
   const list = data.users.filter(u => !q || `${u.username} ${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
 
-  const toggle2FA = (u) => updateUser(
-    u.id,
-    { require_2fa: !u.require_2fa },
-    u.require_2fa ? "disable_2fa" : "enable_2fa",
-    `${u.require_2fa ? "ปิด" : "เปิด"} 2FA สำหรับ ${u.username}`,
-    `${u.require_2fa ? "ปิด" : "เปิด"} 2FA สำหรับ ${u.name} แล้ว`
-  );
+  const toggle2FA = async (u) => {
+    const enabling = !u.require_2fa;
+    const ok = await confirm({
+      title: enabling ? "เปิดใช้งาน 2FA" : "ปิดใช้งาน 2FA",
+      message: enabling
+        ? <><b>{u.name}</b> (@{u.username}) จะต้องยืนยัน 2FA ทุกครั้งที่เข้าสู่ระบบ</>
+        : <>ปิด 2FA สำหรับ <b>{u.name}</b> (@{u.username})? บัญชีจะมีความปลอดภัยน้อยลง</>,
+      confirmText: enabling ? "เปิด 2FA" : "ปิด 2FA",
+      cancelText: "ยกเลิก",
+      tone: enabling ? "primary" : "danger",
+    });
+    if (!ok) return;
+    await updateUser(
+      u.id,
+      { require_2fa: enabling },
+      enabling ? "enable_2fa" : "disable_2fa",
+      `${enabling ? "เปิด" : "ปิด"} 2FA สำหรับ ${u.username}`,
+      `${enabling ? "เปิด" : "ปิด"} 2FA สำหรับ ${u.name} แล้ว`
+    );
+  };
 
   const updateUser = async (id, patch, action, detail, toastMsg) => {
     setSaving(true);
@@ -1730,7 +1743,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     {u.status === "active" ? "ใช้งานได้" : u.status === "banned" ? "ระงับ" : "รออนุมัติ"}
                   </span>
                 </td>
-                <td>
+                <td onClick={e => e.stopPropagation()}>
                   <button onClick={() => toggle2FA(u)} style={{
                     display: "inline-flex", alignItems: "center", gap: 5,
                     padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
@@ -1839,7 +1852,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                 <span className={"badge " + (u.status === "active" ? "badge-green" : isBanned ? "badge-red" : "badge-amber")} style={{ fontSize: 11 }}>
                   {u.status === "active" ? "ใช้งานได้" : isBanned ? "ระงับ" : "รออนุมัติ"}
                 </span>
-                <button onClick={() => toggle2FA(u)} style={{
+                <button onClick={e => { e.stopPropagation(); toggle2FA(u); }} style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
                   padding: "3px 9px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
                   border: `1px solid ${u.require_2fa ? "#16a34a" : "var(--line)"}`,
