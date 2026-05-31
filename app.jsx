@@ -142,8 +142,10 @@ function NotifPanel({ data, currentUser }) {
 function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const { t } = useLang();
   const [tab, setTabPV]           = useStateApp("info");
+  const [currentPw, setCurrentPw] = useStateApp("");
   const [newPw, setNewPw]         = useStateApp("");
   const [confirmPw, setConfirmPw] = useStateApp("");
+  const [showCurrentPw, setShowCurrentPw] = useStateApp(false);
   const [showNewPw, setShowNewPw]         = useStateApp(false);
   const [showConfirmPw, setShowConfirmPw] = useStateApp(false);
   const [saving, setSaving]       = useStateApp(false);
@@ -191,6 +193,9 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const changePassword = async (e) => {
     e.preventDefault();
     setErr(null);
+    if (!currentPw.trim()) {
+      setErr(t("currentPwRequired")); return;
+    }
     if (!Object.values(checks).every(Boolean)) {
       setErr(t("pwCriteriaErr")); return;
     }
@@ -206,7 +211,7 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
     });
     if (!ok) return;
     setSaving(true);
-    const { error } = await _supabase.auth.updateUser({ password: newPw });
+    const { error } = await _supabase.auth.updateUser({ password: newPw, nonce: currentPw });
     if (error) {
       setSaving(false);
       setErr(error.message);
@@ -225,7 +230,7 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
       onPasswordChanged?.();
       toast?.(t("pwSuccessMsg"), "success");
       setPwSuccess(true);
-      setNewPw(""); setConfirmPw("");
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
       setTimeout(() => setPwSuccess(false), 4000);
     }
   };
@@ -305,6 +310,22 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
             </div>
           )}
           <form className="f-col f-gap-4" onSubmit={changePassword}>
+            <div className="field">
+              <label className="field-label">{t("currentPassword")}</label>
+              <div style={{ position: "relative" }}>
+                <input className="input" type={showCurrentPw ? "text" : "password"}
+                  style={{ paddingLeft: 42, paddingRight: 44 }}
+                  value={currentPw} onChange={e => { setCurrentPw(e.target.value); setErr(null); }}
+                  placeholder={t("currentPwPlaceholder")} autoComplete="current-password" required />
+                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}>
+                  <Icon name="lock" size={18} />
+                </div>
+                <button type="button" onClick={() => setShowCurrentPw(s => !s)}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", width: 32, height: 32 }}>
+                  <Icon name={showCurrentPw ? "eyeOff" : "eye"} size={18} />
+                </button>
+              </div>
+            </div>
             <div className="field">
               <label className="field-label">{t("newPassword")}</label>
               <div style={{ position: "relative" }}>
