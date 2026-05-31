@@ -697,20 +697,21 @@ async function hashBackupCode(code) {
 }
 
 // ── MFASetupScreen ────────────────────────────────────────────────────────
-// SafeQR — render SVG จาก Supabase ผ่าน DOMParser (ปลอดภัยกว่า dangerouslySetInnerHTML)
+// SafeQR — render SVG via Blob URL (หลีกเลี่ยง btoa encoding + DOMParser strict XML)
 function SafeQR({ svg, size = 180 }) {
-  const ref = React.useRef(null);
+  const [url, setUrl] = React.useState(null);
   React.useEffect(() => {
-    if (!ref.current || !svg) return;
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svg, "image/svg+xml");
-    const el = doc.documentElement;
-    el.setAttribute("width", size);
-    el.setAttribute("height", size);
-    ref.current.innerHTML = "";
-    ref.current.appendChild(document.importNode(el, true));
-  }, [svg, size]);
-  return <div ref={ref} style={{ width: size, height: size }} />;
+    if (!svg) return;
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const objectUrl = URL.createObjectURL(blob);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [svg]);
+  return (
+    <div style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {url && <img src={url} width={size} height={size} alt="QR Code 2FA" style={{ display: "block" }} />}
+    </div>
+  );
 }
 
 function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
