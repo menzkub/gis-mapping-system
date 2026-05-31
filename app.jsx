@@ -913,7 +913,9 @@ function useDeployStatus() {
   const deployedHash = deployed?.shortCommit || deployed?.commit?.slice(0, 7);
   const ghHash = ghCommit?.sha?.slice(0, 7);
   const isLoading = loading || ghLoading;
-  const inSync = !isLoading && deployedHash && ghHash && deployedHash === ghHash;
+  // Also in-sync if GitHub's latest commit is the version.json chore update for this deployed hash
+  const ghMsgHasDeployed = deployedHash && ghCommit?.commit?.message?.includes(deployedHash);
+  const inSync = !isLoading && deployedHash && ghHash && (deployedHash === ghHash || ghMsgHasDeployed);
 
   return { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync };
 }
