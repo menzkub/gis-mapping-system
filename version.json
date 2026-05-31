@@ -1,7 +1,7 @@
 {
-  "commit": "8acf87eb6e58cf99f2af103fb2ef28efaa687c28",
-  "shortCommit": "8acf87e",
-  "message": "feat: deploy status dot in topbar + fix modal centering",
-  "date": "2026-05-31T07:20:48+00:00",
+  "commit": "ee080f53ba3ad416d8979ff6ea7564d5ade086ee",
+  "shortCommit": "ee080f5",
+  "message": "docs: add v2.7 changelog + update UserGuide & AdminDevGuide",
+  "date": "2026-05-31T07:30:02+00:00",
   "branch": "main"
 }
