@@ -1,7 +1,7 @@
 {
-  "commit": "44b2a46",
-  "shortCommit": "44b2a46",
-  "message": "docs: v2.9 changelog + update UserGuide & DevDocs for 2FA/iPad changes",
-  "date": "2026-05-31T15:30:00+00:00",
+  "commit": "bcddcc6",
+  "shortCommit": "bcddcc6",
+  "message": "feat(ipad): collapsible sidebar — hamburger toggle + backdrop overlay",
+  "date": "2026-05-31T16:00:00+00:00",
   "branch": "main"
 }

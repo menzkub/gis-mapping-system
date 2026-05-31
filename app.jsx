@@ -3110,11 +3110,11 @@ function App() {
                   <span className="sidebar-nav-label">{it.label}</span>
                 </button>
 
-                {/* Admin sub-nav — expands inline when Admin route is active */}
-                {it.id === "admin" && route === "admin" && (
+                {/* Admin sub-nav — shows when on admin route OR when sidebar is expanded */}
+                {it.id === "admin" && (route === "admin" || sidebarExpanded) && (
                   <div className="adm-subnav sidebar-nav-label" style={{ marginLeft: 10, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,0.10)", display: "flex", flexDirection: "column", gap: 1 }}>
                     {ADMIN_NAV.map(sub => (
-                      <button key={sub.id} onClick={() => setAdminTab(sub.id)} style={{
+                      <button key={sub.id} onClick={() => { setRoute("admin"); setAdminTab(sub.id); setSidebarExpanded(false); }} style={{
                         display: "flex", alignItems: "center", gap: 9,
                         padding: "8px 12px", borderRadius: 9, fontSize: 14, fontWeight: 600,
                         color: adminTab === sub.id ? "white" : "rgba(255,255,255,0.58)",

@@ -372,6 +372,9 @@ a { color: inherit; text-decoration: none; }
   /* Expanded */
   .app-root.sidebar-expanded { grid-template-columns: 260px 1fr; }
   .app-root.sidebar-expanded .adm-subnav { display: flex !important; }
+  .app-root.sidebar-expanded .app-sidebar { overflow-x: hidden; overflow-y: auto; }
+  .app-root.sidebar-expanded .app-sidebar::-webkit-scrollbar { width: 3px; }
+  .app-root.sidebar-expanded .app-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
 
   /* Backdrop overlay */
   .sidebar-backdrop {
