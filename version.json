@@ -1,7 +1,7 @@
 {
-  "commit": "0ee970a",
-  "shortCommit": "0ee970a",
-  "message": "feat: collapse lang/theme/refresh into three-dots menu on mobile",
-  "date": "2026-05-31T08:30:00+00:00",
+  "commit": "32f5674",
+  "shortCommit": "32f5674",
+  "message": "fix: add moreV/globe icons; fix three-dots button showing empty box",
+  "date": "2026-05-31T09:00:00+00:00",
   "branch": "main"
 }
