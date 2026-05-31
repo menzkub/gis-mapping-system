@@ -1,7 +1,7 @@
 {
-  "commit": "d0c147e",
-  "shortCommit": "d0c147e",
-  "message": "feat(ux): add post-signup step-by-step instructions",
-  "date": "2026-05-31T11:30:00+00:00",
+  "commit": "103bfed",
+  "shortCommit": "103bfed",
+  "message": "fix: update Supabase anon key + pin CDN to 2.49.4",
+  "date": "2026-05-31T11:45:00+00:00",
   "branch": "main"
 }
