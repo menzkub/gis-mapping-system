@@ -697,21 +697,22 @@ async function hashBackupCode(code) {
 }
 
 // ── MFASetupScreen ────────────────────────────────────────────────────────
-// SafeQR — render SVG via Blob URL (หลีกเลี่ยง btoa encoding + DOMParser strict XML)
+// SafeQR — inject SVG via temp div (HTML lenient parser, ใช้ได้กับทุก browser รวมถึง iOS Safari)
 function SafeQR({ svg, size = 180 }) {
-  const [url, setUrl] = React.useState(null);
+  const ref = React.useRef(null);
   React.useEffect(() => {
-    if (!svg) return;
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    const objectUrl = URL.createObjectURL(blob);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [svg]);
-  return (
-    <div style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      {url && <img src={url} width={size} height={size} alt="QR Code 2FA" style={{ display: "block" }} />}
-    </div>
-  );
+    if (!ref.current || !svg) return;
+    const tmp = document.createElement("div");
+    tmp.innerHTML = svg;
+    const el = tmp.querySelector("svg");
+    if (!el) return;
+    el.setAttribute("width", size);
+    el.setAttribute("height", size);
+    el.style.display = "block";
+    ref.current.innerHTML = "";
+    ref.current.appendChild(el);
+  }, [svg, size]);
+  return <div ref={ref} style={{ width: size, height: size }} />;
 }
 
 function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
