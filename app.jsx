@@ -588,16 +588,36 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   );
 }
 
+// ── 2FA Backup Code Helpers ───────────────────────────────────────────────
+function generateBackupCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // ไม่มีตัวอักษรที่สับสน (0,O,1,I)
+  const arr = new Uint8Array(12);
+  crypto.getRandomValues(arr);
+  let code = "";
+  for (let i = 0; i < 12; i++) {
+    if (i > 0 && i % 4 === 0) code += "-";
+    code += chars[arr[i] % chars.length];
+  }
+  return code; // รูปแบบ: XXXX-XXXX-XXXX
+}
+async function hashBackupCode(code) {
+  const clean = code.toUpperCase().replace(/-/g, "");
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(clean));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ── MFASetupScreen ────────────────────────────────────────────────────────
 function MFASetupScreen({ currentUser, onComplete, onCancel }) {
   const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
-  const [step, setStep]       = useStateMFAS("loading"); // loading | scan | error
+  const [step, setStep]       = useStateMFAS("loading"); // loading | scan | backup | error
   const [factorId, setFactorId] = useStateMFAS("");
   const [qrSvg, setQrSvg]     = useStateMFAS("");
   const [secret, setSecret]   = useStateMFAS("");
   const [code, setCode]       = useStateMFAS("");
   const [err, setErr]         = useStateMFAS(null);
   const [busy, setBusy]       = useStateMFAS(false);
+  const [backupCodes, setBackupCodes] = useStateMFAS([]);
+  const [copied, setCopied]   = useStateMFAS(false);
 
   useEffectMFAS(() => {
     (async () => {
@@ -631,7 +651,13 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
       for (const f of (all?.all || [])) {
         if (f.id !== factorId) await _supabase.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
       }
-      onComplete();
+      // สร้างและบันทึก backup codes (hash ก่อนเก็บ)
+      const codes = Array.from({ length: 10 }, generateBackupCode);
+      const hashes = await Promise.all(codes.map(hashBackupCode));
+      await _supabase.from("mfa_backup_codes").delete().eq("user_id", currentUser.id);
+      await _supabase.from("mfa_backup_codes").insert(hashes.map(h => ({ user_id: currentUser.id, code_hash: h })));
+      setBackupCodes(codes);
+      setStep("backup");
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
@@ -698,16 +724,65 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
             </div>
           )}
 
+          {step === "backup" && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                  background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center" }}>
+                  <Icon name="lock" size={18} style={{ color: "var(--pea-purple-600)" }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>รหัสสำรอง 2FA</div>
+                  <div className="t-mute text-xs">บันทึกรหัสเหล่านี้ในที่ปลอดภัย</div>
+                </div>
+              </div>
+              <div style={{ background: "var(--surface-2)", borderRadius: 10, marginBottom: 12,
+                border: "1px solid var(--line)", overflow: "hidden" }}>
+                {backupCodes.map((c, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "8px 14px",
+                    borderBottom: i < backupCodes.length - 1 ? "1px solid var(--line)" : "none",
+                  }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 600,
+                      letterSpacing: "0.1em", color: "var(--pea-purple-600)" }}>{c}</span>
+                    <span className="t-mute" style={{ fontSize: 11, background: "var(--surface)",
+                      padding: "2px 7px", borderRadius: 20, border: "1px solid var(--line)" }}>#{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="badge badge-orange" style={{ padding: "8px 12px", marginBottom: 14, fontSize: 12 }}>
+                <Icon name="alert" size={13} /> แต่ละรหัสใช้ได้เพียงครั้งเดียว — บันทึกก่อนดำเนินการต่อ
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button className="btn" style={{ height: 42 }}
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(backupCodes.join("\n")).catch(() => {});
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}>
+                  <Icon name={copied ? "check" : "copy"} size={14} />
+                  {copied ? "คัดลอกแล้ว!" : "คัดลอกรหัสทั้งหมด"}
+                </button>
+                <button className="btn btn-primary" style={{ height: 46 }} onClick={onComplete}>
+                  <Icon name="check" size={14} /> บันทึกรหัสแล้ว — เข้าสู่ระบบ
+                </button>
+              </div>
+            </div>
+          )}
+
           {step === "error" && (
             <div className="badge badge-red" style={{ padding: "10px 14px", marginBottom: 16 }}>
               <Icon name="close" size={14} /> {err}
             </div>
           )}
 
-          <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
-            textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
-            ออกจากระบบแทน
-          </button>
+          {step !== "backup" && (
+            <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
+              textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
+              ออกจากระบบแทน
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -717,10 +792,12 @@ function MFASetupScreen({ currentUser, onComplete, onCancel }) {
 // ── MFAVerifyScreen ───────────────────────────────────────────────────────
 function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
   const { useState: useStateMFAV, useEffect: useEffectMFAV } = React;
-  const [factorId, setFactorId] = useStateMFAV("");
-  const [code, setCode]         = useStateMFAV("");
-  const [err, setErr]           = useStateMFAV(null);
-  const [busy, setBusy]         = useStateMFAV(false);
+  const [factorId, setFactorId]   = useStateMFAV("");
+  const [code, setCode]           = useStateMFAV("");
+  const [err, setErr]             = useStateMFAV(null);
+  const [busy, setBusy]           = useStateMFAV(false);
+  const [useBackup, setUseBackup] = useStateMFAV(false);
+  const [backupCode, setBackupCode] = useStateMFAV("");
 
   useEffectMFAV(() => {
     _supabase.auth.mfa.listFactors().then(({ data }) => {
@@ -742,6 +819,28 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
+  const validateBackup = async (e) => {
+    e?.preventDefault();
+    const clean = backupCode.toUpperCase().replace(/-/g, "");
+    if (clean.length < 12) { setErr("กรุณากรอกรหัสสำรองให้ครบ"); return; }
+    setBusy(true); setErr(null);
+    try {
+      const hash = await hashBackupCode(backupCode);
+      const { data, error } = await _supabase
+        .from("mfa_backup_codes")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("code_hash", hash)
+        .is("used_at", null)
+        .maybeSingle();
+      if (error || !data) throw new Error("รหัสสำรองไม่ถูกต้องหรือถูกใช้ไปแล้ว");
+      await _supabase.from("mfa_backup_codes")
+        .update({ used_at: new Date().toISOString() })
+        .eq("id", data.id);
+      onComplete();
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+
   return (
     <div style={{ height: "100vh", display: "grid", placeItems: "center",
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
@@ -759,23 +858,56 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
               <div className="t-mute text-sm">สวัสดี, <b>{currentUser.name}</b></div>
             </div>
           </div>
-          <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
-            เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักของบัญชีนี้
-          </div>
-          <form onSubmit={verify} className="f-col f-gap-3">
-            <input className="input"
-              style={{ fontSize: 30, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700, height: 68 }}
-              maxLength={6} inputMode="numeric" autoComplete="one-time-code"
-              placeholder="000000" value={code}
-              onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
-              autoFocus />
-            {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
-            <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15 }}
-              disabled={busy || code.length !== 6}>
-              {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน</>}
-            </button>
-          </form>
-          <button onClick={onCancel} style={{ marginTop: 16, width: "100%", padding: 10,
+          {!useBackup ? (
+            <>
+              <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
+                เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักของบัญชีนี้
+              </div>
+              <form onSubmit={verify} className="f-col f-gap-3">
+                <input className="input"
+                  style={{ fontSize: 30, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700, height: 68 }}
+                  maxLength={6} inputMode="numeric" autoComplete="one-time-code"
+                  placeholder="000000" value={code}
+                  onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
+                  autoFocus />
+                {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
+                <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15 }}
+                  disabled={busy || code.length !== 6}>
+                  {busy ? "กำลังยืนยัน…" : <><Icon name="check" size={14} /> ยืนยัน</>}
+                </button>
+              </form>
+              <button onClick={() => { setUseBackup(true); setErr(null); setCode(""); }}
+                style={{ marginTop: 12, width: "100%", padding: 9, textAlign: "center",
+                  color: "var(--pea-purple-500)", fontSize: 13, background: "none", fontWeight: 500 }}>
+                ไม่มีแอป Authenticator? ใช้รหัสสำรอง
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
+                กรอกรหัสสำรอง (XXXX-XXXX-XXXX) ที่บันทึกไว้ตอนตั้งค่า 2FA
+              </div>
+              <form onSubmit={validateBackup} className="f-col f-gap-3">
+                <input className="input"
+                  style={{ fontFamily: "monospace", letterSpacing: "0.12em", textAlign: "center",
+                    fontWeight: 600, height: 56, fontSize: 16, textTransform: "uppercase" }}
+                  maxLength={14} placeholder="XXXX-XXXX-XXXX" value={backupCode}
+                  onChange={e => { setBackupCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "")); setErr(null); }}
+                  autoFocus />
+                {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
+                <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15 }}
+                  disabled={busy || backupCode.replace(/-/g, "").length < 12}>
+                  {busy ? "กำลังตรวจสอบ…" : <><Icon name="check" size={14} /> ยืนยันรหัสสำรอง</>}
+                </button>
+              </form>
+              <button onClick={() => { setUseBackup(false); setErr(null); setBackupCode(""); }}
+                style={{ marginTop: 12, width: "100%", padding: 9, textAlign: "center",
+                  color: "var(--pea-purple-500)", fontSize: 13, background: "none", fontWeight: 500 }}>
+                กลับไปใช้ Authenticator แทน
+              </button>
+            </>
+          )}
+          <button onClick={onCancel} style={{ marginTop: 4, width: "100%", padding: 10,
             textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
             ออกจากระบบ
           </button>
