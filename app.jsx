@@ -7,6 +7,16 @@ const {
   useCallback: useCallbackApp,
 } = React;
 
+// ── Capture URL recovery type BEFORE Supabase clears the hash ────────────
+const _hashOnLoad   = window.location.hash;
+const _searchOnLoad = window.location.search;
+const _urlTypeOnLoad = (
+  new URLSearchParams(_hashOnLoad.replace(/^#/, "")).get("type") ||
+  new URLSearchParams(_searchOnLoad).get("type") ||
+  ""
+);
+const _isRecoveryLoad = _urlTypeOnLoad === "recovery";
+
 // ── Loading screen ────────────────────────────────────────────────────────
 function LoadingScreen({ message = "กำลังโหลดข้อมูล…" }) {
   return (
@@ -2214,20 +2224,17 @@ function App() {
   const inRecoveryRef = React.useRef(false);
 
   useEffectApp(() => {
-    // Check URL for recovery token before calling getSession
-    const hashParams  = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const queryParams = new URLSearchParams(window.location.search);
-    const urlType = hashParams.get("type") || queryParams.get("type");
-    const isRecoveryUrl = urlType === "recovery";
-
     _supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isRecoveryUrl || inRecoveryRef.current) return; // PASSWORD_RECOVERY event will handle
+      if (_isRecoveryLoad || inRecoveryRef.current) return; // PASSWORD_RECOVERY event will handle
       if (session?.user) {
         loadAppData(session.user, false); // session restore — ไม่ log login ซ้ำ
       } else {
         setAppState("unauthed");
       }
     });
+
+    // If page loaded with recovery URL, pre-arm the ref immediately
+    if (_isRecoveryLoad) inRecoveryRef.current = true;
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
@@ -2237,7 +2244,12 @@ function App() {
         return;
       }
       if (event === "SIGNED_IN" && session?.user) {
-        if (inRecoveryRef.current) return; // block SIGNED_IN during recovery
+        if (inRecoveryRef.current) {
+          // PKCE flow: SIGNED_IN fires for recovery — route to reset screen
+          setPendingUser(session.user);
+          setAppState("pw_reset");
+          return;
+        }
         loadAppData(session.user, true); // login จริง — log ได้
       }
       if (event === "SIGNED_OUT") {
