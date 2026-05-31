@@ -1,7 +1,7 @@
 {
-  "commit": "ee080f53ba3ad416d8979ff6ea7564d5ade086ee",
-  "shortCommit": "ee080f5",
-  "message": "docs: add v2.7 changelog + update UserGuide & AdminDevGuide",
-  "date": "2026-05-31T07:30:02+00:00",
+  "commit": "bd43ff0",
+  "shortCommit": "bd43ff0",
+  "message": "docs: add last-updated date chips to all guide hero sections",
+  "date": "2026-05-31T08:00:00+00:00",
   "branch": "main"
 }
