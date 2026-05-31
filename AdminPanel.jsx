@@ -2774,6 +2774,7 @@ const TH_DAYS   = ["อา","จ","อ","พ","พฤ","ศ","ส"];
 function DateTimePicker({ value, onChange }) {
   /* value = "YYYY-MM-DDTHH:MM" or "" */
   const [open, setOpen] = useStateAd(false);
+  const [dropPos, setDropPos] = useStateAd({ top: 0, left: 0, width: 280 });
   const ref = React.useRef(null);
 
   /* Parse value */
@@ -2849,7 +2850,13 @@ function DateTimePicker({ value, onChange }) {
       {/* Trigger */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => {
+          if (!open && ref.current) {
+            const r = ref.current.getBoundingClientRect();
+            setDropPos({ top: r.bottom + 8, left: r.left, width: r.width });
+          }
+          setOpen(o => !o);
+        }}
         style={{
           width: "100%", display: "flex", alignItems: "center", gap: 10,
           padding: "11px 14px", borderRadius: 12,
@@ -2874,11 +2881,11 @@ function DateTimePicker({ value, onChange }) {
         <Icon name={open ? "chevUp" : "chevDown"} size={14} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
       </button>
 
-      {/* Dropdown panel */}
+      {/* Dropdown panel — position:fixed เพื่อหนี overflow:hidden ของ parent */}
       {open && (
         <div className="fade-up" style={{
-          position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0,
-          background: "var(--surface)", borderRadius: 16, zIndex: 999,
+          position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width,
+          background: "var(--surface)", borderRadius: 16, zIndex: 9200,
           boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--line)",
           overflow: "hidden", minWidth: 280,
         }}>
