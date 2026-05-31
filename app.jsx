@@ -16,6 +16,8 @@ const _urlTypeOnLoad = (
   ""
 );
 const _isRecoveryLoad = _urlTypeOnLoad === "recovery";
+// Persist across MFA verification flow
+if (_isRecoveryLoad) sessionStorage.setItem("pea_recovery", "1");
 
 // ── Loading screen ────────────────────────────────────────────────────────
 function LoadingScreen({ message = "กำลังโหลดข้อมูล…" }) {
@@ -2170,6 +2172,15 @@ function App() {
       }
       // ── end password expiry check ─────────────────────────────────────────
 
+      // ── Recovery intercept — skip 2FA and load, go straight to reset ────
+      if (sessionStorage.getItem("pea_recovery") || inRecoveryRef.current) {
+        sessionStorage.removeItem("pea_recovery");
+        inRecoveryRef.current = true;
+        setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+        setPendingUser(supabaseUser);
+        setAppState("pw_reset");
+        return;
+      }
       // ── 2FA check ────────────────────────────────────────────────────────
       if (myProfile.require_2fa) {
         const { data: aal } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -2238,22 +2249,25 @@ function App() {
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
+        sessionStorage.setItem("pea_recovery", "1");
         inRecoveryRef.current = true;
         setPendingUser(session?.user || null);
         setAppState("pw_reset");
         return;
       }
       if (event === "SIGNED_IN" && session?.user) {
-        if (inRecoveryRef.current) {
-          // PKCE flow: SIGNED_IN fires for recovery — route to reset screen
-          setPendingUser(session.user);
-          setAppState("pw_reset");
-          return;
+        // Check sessionStorage for recovery (covers PKCE flow where PASSWORD_RECOVERY may fire late)
+        if (sessionStorage.getItem("pea_recovery") || inRecoveryRef.current) {
+          inRecoveryRef.current = true;
+          // Don't route directly — let loadAppData handle it so profile is loaded
+          // (recovery check is inserted before 2FA check inside loadAppData)
         }
-        loadAppData(session.user, true); // login จริง — log ได้
+        loadAppData(session.user, !inRecoveryRef.current); // don't log login for recovery
+        return;
       }
       if (event === "SIGNED_OUT") {
         inRecoveryRef.current = false;
+        sessionStorage.removeItem("pea_recovery");
         setCurrentUser(null);
         setData({ meters: [], transformers: [], users: [], auditLog: [], feeders: [], dashStats: {} });
         window.__peaAuthErr = null;
@@ -2382,7 +2396,7 @@ function App() {
   if (appState === "pw_reset") return (
     <ResetPasswordScreen
       recoveryUser={pendingUser}
-      onComplete={() => { inRecoveryRef.current = false; setPendingUser(null); setAppState("unauthed"); }}
+      onComplete={() => { inRecoveryRef.current = false; sessionStorage.removeItem("pea_recovery"); setPendingUser(null); setAppState("unauthed"); }}
     />
   );
 
