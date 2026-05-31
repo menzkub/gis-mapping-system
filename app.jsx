@@ -878,21 +878,19 @@ const CAT_META = {
   perf: { label: "ประสิทธิภาพ", bg: "rgba(244,123,32,0.12)", border: "rgba(244,123,32,0.3)", text: "var(--pea-orange-600)" },
 };
 
-// ── DeploymentStatus — fetches version.json + GitHub API ─────────────────
-function DeploymentStatus() {
-  const [deployed, setDeployed]   = useStateApp(null);  // from version.json
-  const [ghCommit, setGhCommit]   = useStateApp(null);  // from GitHub API
+// ── Shared deploy-data hook ──────────────────────────────────────────────
+function useDeployStatus() {
+  const [deployed, setDeployed]   = useStateApp(null);
+  const [ghCommit, setGhCommit]   = useStateApp(null);
   const [loading, setLoading]     = useStateApp(true);
   const [ghLoading, setGhLoading] = useStateApp(true);
 
   useEffectApp(() => {
-    // Fetch deployed version (cache-busted)
     fetch("version.json?t=" + Date.now())
       .then(r => r.ok ? r.json() : null)
       .then(d => { setDeployed(d); setLoading(false); })
       .catch(() => setLoading(false));
 
-    // Fetch latest commit on main from GitHub API
     fetch("https://api.github.com/repos/menzkub/gis-mapping-system/commits/main", {
       headers: { Accept: "application/vnd.github.v3+json" },
     })
@@ -901,6 +899,121 @@ function DeploymentStatus() {
       .catch(() => setGhLoading(false));
   }, []);
 
+  const deployedHash = deployed?.shortCommit || deployed?.commit?.slice(0, 7);
+  const ghHash = ghCommit?.sha?.slice(0, 7);
+  const isLoading = loading || ghLoading;
+  const inSync = !isLoading && deployedHash && ghHash && deployedHash === ghHash;
+
+  return { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync };
+}
+
+// ── DeployStatusDot — topbar indicator for admins ────────────────────────
+function DeployStatusDot() {
+  const [open, setOpen] = useStateApp(false);
+  const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync } = useDeployStatus();
+
+  const pending  = !isLoading && deployedHash && ghHash && !inSync;
+  const dotColor = isLoading ? "#9ca3af" : inSync ? "#059669" : "#d97706";
+  const dotLabel = isLoading ? "กำลังตรวจสอบ…" : inSync ? "ระบบเป็นปัจจุบัน" : "มีการอัปเดตรอ Deploy";
+
+  const fmtDate = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" }) +
+      " · " + d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        title={dotLabel}
+        style={{
+          width: 32, height: 32, borderRadius: "50%",
+          display: "grid", placeItems: "center",
+          background: open ? "var(--soft)" : "transparent",
+          border: "none", cursor: "pointer", position: "relative", flexShrink: 0,
+        }}
+      >
+        <div style={{
+          width: 10, height: 10, borderRadius: "50%",
+          background: dotColor, transition: "background 0.3s",
+          boxShadow: `0 0 0 3px ${dotColor}33`,
+          animation: isLoading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
+        }} />
+        {pending && (
+          <span style={{
+            position: "absolute", top: 5, right: 5,
+            width: 7, height: 7, borderRadius: "50%",
+            background: "#f59e0b", border: "2px solid var(--surface)",
+          }} />
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setOpen(false)} />
+          <div className="fade-up" style={{
+            position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 2000,
+            width: 300, background: "var(--surface)", borderRadius: 16,
+            boxShadow: "0 20px 56px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
+            overflow: "hidden",
+          }}>
+            {/* Status header */}
+            <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: "50%", background: dotColor, flexShrink: 0,
+                animation: isLoading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
+              }} />
+              <span style={{ fontWeight: 700, fontSize: 13, color: dotColor, flex: 1 }}>{dotLabel}</span>
+              <span style={{ fontSize: 10, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Deploy</span>
+            </div>
+
+            {/* Deployed version */}
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>🌐 กำลังรันบนเว็บ</div>
+              {loading ? (
+                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+              ) : deployed ? (
+                <>
+                  <code style={{ fontSize: 12, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "#059669", background: "rgba(5,150,105,0.1)", padding: "1px 7px", borderRadius: 5 }}>{deployedHash}</code>
+                  <div style={{ fontSize: 11, color: "var(--ink)", marginTop: 4, lineHeight: 1.4 }}>{deployed.message}</div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 2 }}>{fmtDate(deployed.date)}</div>
+                </>
+              ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่พบข้อมูล version.json</div>}
+            </div>
+
+            {/* GitHub latest */}
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>☁️ ล่าสุดบน GitHub</div>
+              {ghLoading ? (
+                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+              ) : ghCommit ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <code style={{ fontSize: 12, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "var(--pea-purple-600)", background: "rgba(139,63,196,0.12)", padding: "1px 7px", borderRadius: 5 }}>{ghHash}</code>
+                    {pending && <span style={{ fontSize: 9, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.3)", padding: "1px 5px", borderRadius: 4 }}>รอ Deploy</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink)", marginTop: 4, lineHeight: 1.4 }}>{ghCommit.commit?.message?.split("\n")[0] || "—"}</div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 2 }}>{fmtDate(ghCommit.commit?.author?.date)} · {ghCommit.commit?.author?.name}</div>
+                </>
+              ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่สามารถเชื่อมต่อ GitHub API</div>}
+            </div>
+
+            <div style={{ padding: "8px 14px", fontSize: 10, color: "var(--ink-mute)" }}>
+              GitHub Pages ใช้เวลา 1–3 นาทีหลัง push
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── DeploymentStatus — full card in ChangelogView ────────────────────────
+function DeploymentStatus() {
+  const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync } = useDeployStatus();
+
   const fmtDate = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -908,14 +1021,10 @@ function DeploymentStatus() {
       " · " + d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
   };
 
-  const deployedHash = deployed?.shortCommit || deployed?.commit?.slice(0, 7);
-  const ghHash = ghCommit?.sha?.slice(0, 7);
-  const inSync = deployedHash && ghHash && deployedHash === ghHash;
-  const statusColor = loading ? "#6b7280" : inSync ? "#059669" : "#d97706";
-  const statusBg    = loading ? "rgba(107,114,128,0.1)" : inSync ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)";
-  const statusBorder = loading ? "rgba(107,114,128,0.25)" : inSync ? "rgba(5,150,105,0.25)" : "rgba(217,119,6,0.25)";
-  const statusLabel  = loading ? "กำลังตรวจสอบ…" : inSync ? "ระบบเป็นปัจจุบัน" : "มีการอัปเดตรอ Deploy";
-  const statusIcon   = loading ? "spinner" : inSync ? "check" : "warning";
+  const statusColor  = isLoading ? "#6b7280" : inSync ? "#059669" : "#d97706";
+  const statusBg     = isLoading ? "rgba(107,114,128,0.1)" : inSync ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)";
+  const statusBorder = isLoading ? "rgba(107,114,128,0.25)" : inSync ? "rgba(5,150,105,0.25)" : "rgba(217,119,6,0.25)";
+  const statusLabel  = isLoading ? "กำลังตรวจสอบ…" : inSync ? "ระบบเป็นปัจจุบัน" : "มีการอัปเดตรอ Deploy";
 
   return (
     <div style={{ marginBottom: 24, borderRadius: 16, border: `1px solid ${statusBorder}`, background: statusBg, overflow: "hidden" }}>
@@ -923,7 +1032,7 @@ function DeploymentStatus() {
       <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${statusBorder}` }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusColor, flexShrink: 0,
           boxShadow: `0 0 0 3px ${statusColor}33`,
-          animation: loading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
+          animation: isLoading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
         }} />
         <span style={{ fontWeight: 700, fontSize: 14, color: statusColor }}>{statusLabel}</span>
         <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Deployment Status</span>
@@ -941,7 +1050,7 @@ function DeploymentStatus() {
           ) : deployed ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'IBM Plex Mono','Courier New',monospace", color: statusColor, background: `${statusColor}15`, padding: "2px 8px", borderRadius: 6 }}>
+                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'IBM Plex Mono','Courier New',monospace", color: inSync ? "#059669" : "#d97706", background: inSync ? "rgba(5,150,105,0.12)" : "rgba(217,119,6,0.12)", padding: "2px 8px", borderRadius: 6 }}>
                   {deployedHash}
                 </code>
               </div>
@@ -2778,6 +2887,9 @@ function App() {
               </div>
             )}
           </div>
+
+          {/* Deploy status dot — admin only */}
+          {currentUser.role === "admin" && <DeployStatusDot />}
 
           {/* Bell notification */}
           <div style={{ position: "relative" }}>

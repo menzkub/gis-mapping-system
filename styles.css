@@ -463,7 +463,9 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
-   Modal overlay — centered, accounts for mobile nav bars
+   Modal overlay — centered within visible content area
+   padding-left offsets the sidebar so the modal is truly centered
+   in the content column, not the full viewport
    ============================================================ */
 .pea-modal-overlay {
   position: fixed;
@@ -472,19 +474,26 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  /* desktop default: sidebar=260px, topbar=64px */
+  padding: calc(64px + 16px) 20px 20px calc(260px + 20px);
   background: rgba(14,10,22,0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
+/* Large desktop ≥1440px: sidebar=290px, topbar=68px */
+@media (min-width: 1440px) {
+  .pea-modal-overlay { padding: calc(68px + 16px) 20px 20px calc(290px + 20px); }
+}
+
+/* Tablet 641–1024px: icon sidebar=72px, topbar=64px */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .pea-modal-overlay { padding: calc(64px + 12px) 12px 12px calc(72px + 12px); }
+}
+
+/* Mobile ≤640px: no sidebar, top bar=56px, bottom nav=64px */
 @media (max-width: 640px) {
-  /* On mobile: top bar = 56px, bottom nav = 64px — add padding so modal
-     centers within the visible content area, not the full viewport */
-  .pea-modal-overlay {
-    padding: 72px 12px 80px;
-    align-items: center;
-  }
+  .pea-modal-overlay { padding: calc(56px + 12px) 12px calc(64px + 12px); }
 }
 
 /* ============================================================
