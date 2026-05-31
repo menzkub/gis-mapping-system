@@ -1,7 +1,7 @@
 {
-  "commit": "f515d5a30ebf7dd72de38ed0c71d7470e178bf79",
-  "shortCommit": "f515d5a",
-  "message": "fix: route recovery directly to pw_reset for both user and admin",
-  "date": "2026-05-31T07:09:57+00:00",
+  "commit": "8acf87eb6e58cf99f2af103fb2ef28efaa687c28",
+  "shortCommit": "8acf87e",
+  "message": "feat: deploy status dot in topbar + fix modal centering",
+  "date": "2026-05-31T07:20:48+00:00",
   "branch": "main"
 }
