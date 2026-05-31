@@ -2905,7 +2905,7 @@ function App() {
 
             {/* Mobile: three-dots button */}
             <button className="btn-icon topbar-util-dots" onClick={() => setShowUtilMenu(s => !s)} title="ตั้งค่า" style={{ flexShrink: 0 }}>
-              <Icon name="more-vertical" size={18} />
+              <Icon name="moreV" size={18} />
             </button>
 
             {/* Refresh feedback toast */}
