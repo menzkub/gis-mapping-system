@@ -697,30 +697,28 @@ async function hashBackupCode(code) {
 }
 
 // ── MFASetupScreen ────────────────────────────────────────────────────────
-// SafeQR — inject SVG via temp div with viewBox fix + isolated light color-scheme
-function SafeQR({ svg, size = 220 }) {
-  const ref = React.useRef(null);
+// SafeQR — วาด SVG ลง Canvas (raster image) เพื่อให้ scanner อ่านได้ทุก device
+function SafeQR({ svg, size = 260 }) {
+  const canvasRef = React.useRef(null);
   React.useEffect(() => {
-    if (!ref.current || !svg) return;
-    const tmp = document.createElement("div");
-    tmp.innerHTML = svg;
-    const el = tmp.querySelector("svg");
-    if (!el) return;
-    // ถ้า SVG ไม่มี viewBox → ต้องเพิ่มก่อน scale จะถูกต้อง
-    if (!el.getAttribute("viewBox")) {
-      const w = parseFloat(el.getAttribute("width")) || size;
-      const h = parseFloat(el.getAttribute("height")) || size;
-      el.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    }
-    el.setAttribute("width", size);
-    el.setAttribute("height", size);
-    el.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    el.style.display = "block";
-    ref.current.innerHTML = "";
-    ref.current.appendChild(el);
+    if (!svg || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width  = size + "px";
+    canvas.style.height = size + "px";
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, size, size);
+    img.src = svg.startsWith("data:")
+      ? svg
+      : "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   }, [svg, size]);
-  // color-scheme: light ป้องกัน dark mode override สี QR
-  return <div ref={ref} style={{ width: size, height: size, colorScheme: "light", background: "white" }} />;
+  return <canvas ref={canvasRef} style={{ display: "block" }} />;
 }
 
 function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
@@ -818,7 +816,7 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 <div style={{ background: "white", padding: 24, borderRadius: 12,
                   border: "1px solid var(--line)", display: "inline-block",
                   lineHeight: 0, colorScheme: "light" }}>
-                  <SafeQR svg={qrSvg} size={220} />
+                  <SafeQR svg={qrSvg} size={260} />
                 </div>
               </div>
               <div style={{ marginBottom: 20 }}>
@@ -3377,6 +3375,9 @@ function App() {
           </button>
         </header>
 
+        {/* Main */}
+        <main className="app-main">
+
         {/* Password Expiry Warning Banner */}
         {daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
           <div style={{
@@ -3443,8 +3444,6 @@ function App() {
           </div>
         )}
 
-        {/* Main */}
-        <main className="app-main">
           {route === "search" && (
             <SearchView
               data={data}
