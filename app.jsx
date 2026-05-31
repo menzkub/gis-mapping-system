@@ -697,8 +697,8 @@ async function hashBackupCode(code) {
 }
 
 // ── MFASetupScreen ────────────────────────────────────────────────────────
-// SafeQR — inject SVG via temp div (HTML lenient parser, ใช้ได้กับทุก browser รวมถึง iOS Safari)
-function SafeQR({ svg, size = 180 }) {
+// SafeQR — inject SVG via temp div with viewBox fix + isolated light color-scheme
+function SafeQR({ svg, size = 220 }) {
   const ref = React.useRef(null);
   React.useEffect(() => {
     if (!ref.current || !svg) return;
@@ -706,13 +706,21 @@ function SafeQR({ svg, size = 180 }) {
     tmp.innerHTML = svg;
     const el = tmp.querySelector("svg");
     if (!el) return;
+    // ถ้า SVG ไม่มี viewBox → ต้องเพิ่มก่อน scale จะถูกต้อง
+    if (!el.getAttribute("viewBox")) {
+      const w = parseFloat(el.getAttribute("width")) || size;
+      const h = parseFloat(el.getAttribute("height")) || size;
+      el.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    }
     el.setAttribute("width", size);
     el.setAttribute("height", size);
+    el.setAttribute("preserveAspectRatio", "xMidYMid meet");
     el.style.display = "block";
     ref.current.innerHTML = "";
     ref.current.appendChild(el);
   }, [svg, size]);
-  return <div ref={ref} style={{ width: size, height: size }} />;
+  // color-scheme: light ป้องกัน dark mode override สี QR
+  return <div ref={ref} style={{ width: size, height: size, colorScheme: "light", background: "white" }} />;
 }
 
 function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
@@ -807,10 +815,10 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 <div className="t-mute text-sm">{ug("เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง", "Open an Authenticator app (e.g. Google Authenticator or Authy) and scan the code below")}</div>
               </div>
               <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <div style={{ background: "white", padding: 20, borderRadius: 12,
+                <div style={{ background: "white", padding: 24, borderRadius: 12,
                   border: "1px solid var(--line)", display: "inline-block",
-                  lineHeight: 0 }}>
-                  <SafeQR svg={qrSvg} size={200} />
+                  lineHeight: 0, colorScheme: "light" }}>
+                  <SafeQR svg={qrSvg} size={220} />
                 </div>
               </div>
               <div style={{ marginBottom: 20 }}>
