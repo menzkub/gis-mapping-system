@@ -2904,8 +2904,16 @@ function App() {
             </button>
 
             {/* Mobile: three-dots button */}
-            <button className="btn-icon topbar-util-dots" onClick={() => setShowUtilMenu(s => !s)} title="ตั้งค่า" style={{ flexShrink: 0 }}>
-              <Icon name="moreV" size={18} />
+            <button className="topbar-util-dots" onClick={() => setShowUtilMenu(s => !s)} title="ตั้งค่า" style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "6px 12px 6px 10px", borderRadius: 999, flexShrink: 0, cursor: "pointer",
+              background: showUtilMenu ? "rgba(139,63,196,0.18)" : "rgba(139,63,196,0.1)",
+              border: `1px solid ${showUtilMenu ? "rgba(139,63,196,0.5)" : "rgba(139,63,196,0.25)"}`,
+              color: "var(--pea-purple-600)", fontSize: 12, fontWeight: 700,
+              transition: "background 0.15s, border-color 0.15s",
+            }}>
+              <Icon name="moreV" size={15} />
+              <span>ตั้งค่า</span>
             </button>
 
             {/* Refresh feedback toast */}
