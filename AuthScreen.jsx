@@ -604,8 +604,7 @@ function AuthScreen({ initialError }) {
                   </button>
                 </div>
                 );
-              })()
-              ) : (
+              })() : (
                 <form className="fade-up" onSubmit={submit}>
                   <div className="t-display" style={{ fontSize: 30, marginBottom: 6, letterSpacing: "-0.02em" }}>
                     {mode === "login" ? t("authWelcome") : t("authSignupTitle")}
