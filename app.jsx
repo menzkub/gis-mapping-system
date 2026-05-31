@@ -713,7 +713,7 @@ function SafeQR({ svg, size = 180 }) {
   return <div ref={ref} style={{ width: size, height: size }} />;
 }
 
-
+function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
   const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
   const [step, setStep]       = useStateMFAS("loading"); // loading | scan | backup | error
   const [factorId, setFactorId] = useStateMFAS("");
