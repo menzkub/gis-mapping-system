@@ -1,7 +1,7 @@
 {
-  "commit": "655459c",
-  "shortCommit": "655459c",
-  "message": "fix: center icon inside btn-icon with display:grid place-items:center",
-  "date": "2026-05-31T10:00:00+00:00",
+  "commit": "249849e",
+  "shortCommit": "249849e",
+  "message": "style: highlight total count as purple pill badge in search header",
+  "date": "2026-05-31T10:10:00+00:00",
   "branch": "main"
 }
