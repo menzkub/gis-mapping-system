@@ -697,7 +697,23 @@ async function hashBackupCode(code) {
 }
 
 // ── MFASetupScreen ────────────────────────────────────────────────────────
-function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel }) {
+// SafeQR — render SVG จาก Supabase ผ่าน DOMParser (ปลอดภัยกว่า dangerouslySetInnerHTML)
+function SafeQR({ svg, size = 180 }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!ref.current || !svg) return;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svg, "image/svg+xml");
+    const el = doc.documentElement;
+    el.setAttribute("width", size);
+    el.setAttribute("height", size);
+    ref.current.innerHTML = "";
+    ref.current.appendChild(document.importNode(el, true));
+  }, [svg, size]);
+  return <div ref={ref} style={{ width: size, height: size }} />;
+}
+
+
   const { useState: useStateMFAS, useEffect: useEffectMFAS } = React;
   const [step, setStep]       = useStateMFAS("loading"); // loading | scan | backup | error
   const [factorId, setFactorId] = useStateMFAS("");
@@ -786,10 +802,11 @@ function MFASetupScreen({ currentUser, onComplete, onCancel, completeBtnLabel })
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>ขั้นตอนที่ 1 — สแกน QR Code</div>
                 <div className="t-mute text-sm">เปิดแอป Authenticator เช่น Google Authenticator หรือ Authy แล้วสแกนรหัสด้านล่าง</div>
               </div>
-              <div style={{ background: "white", padding: 14, borderRadius: 12,
-                display: "inline-block", marginBottom: 14, border: "1px solid var(--line)" }}>
-                <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`} alt="QR Code 2FA"
-                  width={160} height={160} style={{ display: "block" }} />
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                <div style={{ background: "white", padding: 14, borderRadius: 12,
+                  border: "1px solid var(--line)", display: "inline-block" }}>
+                  <SafeQR svg={qrSvg} size={180} />
+                </div>
               </div>
               <div style={{ marginBottom: 20 }}>
                 <div className="t-mute text-xs" style={{ marginBottom: 4 }}>หรือกรอก Secret Key ด้วยตนเอง</div>
