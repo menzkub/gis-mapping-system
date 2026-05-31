@@ -2538,6 +2538,7 @@ function App() {
     version: "1.0.0", footer: "", showBtn: false,
   });
   const [daysUntilExpiry, setDaysUntilExpiry] = useStateApp(null);
+  const [idleWarnSecs, setIdleWarnSecs] = useStateApp(null);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -2732,14 +2733,32 @@ function App() {
     return () => subscription.unsubscribe();
   }, [loadAppData]);
 
-  // ── Auto-logout หลังไม่ใช้งาน 30 นาที ───────────────────────────────────
+  // ── Auto-logout หลังไม่ใช้งาน 30 นาที (warning 2 นาทีก่อน) ──────────────
   useEffectApp(() => {
     if (!currentUser) return;
-    const TIMEOUT = 30 * 60 * 1000;
-    let timer;
+    const TIMEOUT     = 30 * 60 * 1000;
+    const WARN_BEFORE = 2  * 60 * 1000;
+    let mainTimer, warnTimer, countdownRef;
+
     const reset = () => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
+      clearTimeout(mainTimer);
+      clearTimeout(warnTimer);
+      clearInterval(countdownRef);
+      setIdleWarnSecs(null);
+
+      warnTimer = setTimeout(() => {
+        let secs = Math.floor(WARN_BEFORE / 1000);
+        setIdleWarnSecs(secs);
+        countdownRef = setInterval(() => {
+          secs -= 1;
+          setIdleWarnSecs(secs > 0 ? secs : 0);
+          if (secs <= 0) clearInterval(countdownRef);
+        }, 1000);
+      }, TIMEOUT - WARN_BEFORE);
+
+      mainTimer = setTimeout(async () => {
+        clearInterval(countdownRef);
+        setIdleWarnSecs(null);
         await _supabase.from("audit_log").insert({
           user_id:  currentUser.id,
           username: currentUser.username,
@@ -2751,11 +2770,14 @@ function App() {
         await _supabase.auth.signOut();
       }, TIMEOUT);
     };
+
     const events = ["mousedown", "keydown", "scroll", "touchstart", "click", "mousemove"];
     events.forEach(e => window.addEventListener(e, reset, { passive: true }));
     reset();
     return () => {
-      clearTimeout(timer);
+      clearTimeout(mainTimer);
+      clearTimeout(warnTimer);
+      clearInterval(countdownRef);
       events.forEach(e => window.removeEventListener(e, reset));
     };
   }, [currentUser]);
@@ -2904,6 +2926,42 @@ function App() {
   return (
     <ToastProvider><ConfirmProvider>
       <div className="app-root">
+
+        {/* ── Idle-logout warning banner ── */}
+        {idleWarnSecs !== null && (
+          <div className="fade-up" style={{
+            position: "fixed", zIndex: 9800,
+            top: 72, right: 16, left: "auto",
+            maxWidth: 360, width: "calc(100% - 32px)",
+            background: "linear-gradient(135deg,#f47b20,#d96512)",
+            color: "white", borderRadius: 16,
+            padding: "14px 18px",
+            display: "flex", alignItems: "center", gap: 14,
+            boxShadow: "0 12px 40px rgba(244,123,32,0.55)",
+          }}>
+            <Icon name="warning" size={20} style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, lineHeight: 1.3 }}>
+                {lang === "en" ? "Session expiring" : "เซสชันใกล้หมดอายุ"}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+                {lang === "en"
+                  ? `Auto-logout in ${Math.floor(idleWarnSecs / 60)}:${String(idleWarnSecs % 60).padStart(2,"0")}`
+                  : `ออกจากระบบใน ${Math.floor(idleWarnSecs / 60)}:${String(idleWarnSecs % 60).padStart(2,"0")} นาที`}
+              </div>
+            </div>
+            <button
+              onClick={() => window.dispatchEvent(new MouseEvent("mousemove"))}
+              style={{
+                background: "rgba(255,255,255,0.22)", border: "none", color: "white",
+                fontWeight: 700, fontSize: 13, padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                flexShrink: 0, whiteSpace: "nowrap",
+              }}>
+              {lang === "en" ? "Stay" : "ยังอยู่"}
+            </button>
+          </div>
+        )}
+
         {/* Sidebar */}
         <aside className="app-sidebar" style={{
           background: "linear-gradient(180deg, #1b0926 0%, #321148 50%, #1b0926 100%)",
