@@ -958,6 +958,18 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v2.8", date: "31 พ.ค. 2569", tag: "Security",
+    tagColor: "#ef4444", items: [
+      { cat: "fix",  text: { th: "แก้ไข audit_log RLS: จำกัดเฉพาะ admin เท่านั้น",                   en: "Fix audit_log RLS: restricted to admin only" } },
+      { cat: "fix",  text: { th: "แก้ไข QR Code 2FA ป้องกัน XSS (base64 แทน innerHTML)",             en: "Fix 2FA QR Code XSS (base64 instead of innerHTML)" } },
+      { cat: "new",  text: { th: "เพิ่ม Backup Codes 10 รหัสสำหรับ 2FA (SHA-256 hash)",              en: "Add 2FA Backup Codes: 10 codes, SHA-256 hashed" } },
+      { cat: "new",  text: { th: "ตั้งค่า Rate Limiting, Attack Protection, Email Confirmation",      en: "Configure Rate Limiting, Attack Protection, Email Confirmation" } },
+      { cat: "new",  text: { th: "กำหนด Password Policy: min 8, upper+lower+digit+symbol",            en: "Add Password Policy: min 8, upper+lower+digit+symbol" } },
+      { cat: "fix",  text: { th: "แก้ไขการเปลี่ยนรหัสผ่าน: ต้องยืนยันรหัสเดิม (nonce)",              en: "Fix password change: requires current password verification (nonce)" } },
+      { cat: "new",  text: { th: "อัปเดต Supabase Anon Key และ Pin CDN เวอร์ชัน 2.49.4",             en: "Update Supabase Anon Key and pin CDN to version 2.49.4" } },
+    ],
+  },
+  {
     version: "v2.7", date: "31 พ.ค. 2569", tag: "Deploy",
     tagColor: "#3b82f6", items: [
       { cat: "new",  text: "Deploy Status Dot ใน Topbar: admin คลิกเพื่อดู popup สถานะ deploy ทันที (🟢/🟡/⚫)" },
@@ -1271,6 +1283,8 @@ function DeploymentStatus() {
 }
 
 function ChangelogView() {
+  const { lang } = useLang();
+  const clText = (t) => (t && typeof t === "object") ? (t[lang] ?? t.th) : t;
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
       <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 20px 48px" }}>
@@ -1393,7 +1407,7 @@ function ChangelogView() {
                           fontWeight: 700, flexShrink: 0, marginTop: 1,
                           background: m.bg, border: `1px solid ${m.border}`, color: m.text,
                         }}>{m.label}</span>
-                        <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>{item.text}</span>
+                        <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>{clText(item.text)}</span>
                       </div>
                     );
                   })}
@@ -1656,6 +1670,9 @@ function UserGuide({ role }) {
             <UGStep n={2} text={ug("สแกน QR Code ด้วย Google Authenticator หรือ Authy","Scan QR Code with Google Authenticator or Authy")} />
             <UGStep n={3} text={ug("กรอกรหัส 6 หลักเพื่อยืนยัน","Enter the 6-digit code to confirm")} />
             <UGTip>{ug("แนะนำให้เปิด 2FA เสมอเพื่อความปลอดภัยของบัญชี","Always enable 2FA for account security")}</UGTip>
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("ความปลอดภัยของรหัสผ่าน","Password Security")}</div>
+            <UGNote>{ug("นโยบายรหัสผ่าน: ต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวพิมพ์ใหญ่ + ตัวพิมพ์เล็ก + ตัวเลข + อักขระพิเศษ","Password policy: minimum 8 characters including uppercase + lowercase + digit + special character")}</UGNote>
+            <UGNote>{ug("Backup Codes สำหรับ 2FA: เมื่อเปิด 2FA ระบบจะสร้างรหัสสำรอง 10 รหัส — เก็บรหัสเหล่านี้ไว้ในที่ปลอดภัย ใช้ได้เมื่อไม่มี Authenticator App","2FA Backup Codes: when enabling 2FA the system generates 10 backup codes — store them securely, use when Authenticator App is unavailable")}</UGNote>
           </div>
         </UGSection>
 

@@ -863,9 +863,10 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
             ["profiles", "id (uuid = auth.uid)", "ผู้ใช้: username, name, role, status, require_2fa, last_login, password_changed_at, pw_force_change"],
             ["meters", "objectid (bigint)", "มิเตอร์: tag, code, route, accountnum, peano, feederid, owner, lat, lng"],
             ["transformers", "objectid (bigint)", "หม้อแปลง: tag, phase, voltage, peano_tr, kva, owner_tr, location, feeder1, lat, lng"],
-            ["audit_log", "id (bigserial)", "บันทึก: user_id, username, action, target, detail, ip, at"],
+            ["audit_log", "id (bigserial)", "บันทึก: user_id, username, action, target, detail, ip, at — SELECT จำกัดเฉพาะ admin (RLS)"],
             ["settings", "key (text)", "ค่าตั้งค่า key-value: maintenance_mode, maintenance_message, dev_name, …"],
             ["password_history", "id (bigserial)", "ประวัติเปลี่ยนรหัส: user_id, username, changed_at, action, note"],
+            ["mfa_backup_codes", "id (bigserial)", "Backup codes สำหรับ 2FA: user_id, code_hash (SHA-256), used, created_at — 10 รหัสต่อ user"],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>RPC Functions</div>
           <CodeBlock>{`-- Dashboard stats (meters, transformers, kva, feeders top 8)
@@ -913,6 +914,15 @@ fromProfilePatch(p)  // selective patch: name, role, status, username,
 // ตัวอย่างการใช้งาน
 const { data } = await _supabase.from("meters").select("*").limit(100);
 const meters = data.map(toMeter);  // แปลงก่อนใช้ใน component`}</CodeBlock>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>การเปลี่ยนรหัสผ่าน — nonce (ยืนยันรหัสเดิม)</div>
+          <GuideNote>การเปลี่ยนรหัสผ่านต้องใช้ <code>nonce</code> (รหัสผ่านปัจจุบัน) เพื่อยืนยันตัวตนก่อน — ป้องกัน session hijacking และการเปลี่ยนรหัสโดยไม่ได้รับอนุญาต</GuideNote>
+          <CodeBlock>{`// การเปลี่ยนรหัสผ่านผ่าน Supabase Auth — ต้องระบุ nonce (รหัสผ่านเดิม)
+const { error } = await _supabase.auth.updateUser({
+  password: newPassword,
+  nonce: currentPassword,  // ← required: ยืนยันรหัสผ่านเดิมก่อนเสมอ
+});
+// หากไม่ส่ง nonce หรือ nonce ผิด → error: "nonce mismatch"
+// บันทึก audit log action "change_password" ทุกครั้งที่สำเร็จ`}</CodeBlock>
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>loadAll — bypass Supabase 1000-row limit</div>
           <CodeBlock>{`// config.js — paginate จนได้ทุก row
 async function loadAll(table) {
