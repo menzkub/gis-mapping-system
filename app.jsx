@@ -3327,3 +3327,32 @@ function App() {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <LanguageProvider><App /></LanguageProvider>
 );
+
+// Global error handler — แสดง crash แทนหน้าขาว
+window.addEventListener("error", (e) => {
+  const root = document.getElementById("root");
+  if (root && !root.innerHTML.trim()) {
+    root.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;background:#1b0926;color:white;padding:24px;font-family:monospace">
+      <div style="max-width:600px;width:100%">
+        <div style="font-size:22px;font-weight:800;color:#f47b20;margin-bottom:12px">⚠ JavaScript Error</div>
+        <div style="font-size:13px;color:#d4abff;margin-bottom:16px;line-height:1.6">${e.message || "Unknown error"}</div>
+        <div style="background:#321148;padding:14px;border-radius:10px;font-size:11px;color:#a78bfa;word-break:break-all">
+          ${e.filename || ""}:${e.lineno || ""}:${e.colno || ""}
+        </div>
+        <button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#8b3fc4;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>
+      </div>
+    </div>`;
+  }
+});
+window.addEventListener("unhandledrejection", (e) => {
+  const root = document.getElementById("root");
+  if (root && !root.innerHTML.trim()) {
+    root.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;background:#1b0926;color:white;padding:24px;font-family:monospace">
+      <div style="max-width:600px;width:100%">
+        <div style="font-size:22px;font-weight:800;color:#f47b20;margin-bottom:12px">⚠ Unhandled Promise Rejection</div>
+        <div style="font-size:13px;color:#d4abff;margin-bottom:16px;line-height:1.6">${e.reason?.message || String(e.reason) || "Unknown"}</div>
+        <button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;background:#8b3fc4;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button>
+      </div>
+    </div>`;
+  }
+});
