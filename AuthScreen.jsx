@@ -518,21 +518,93 @@ function AuthScreen({ initialError }) {
                 </button>
               </div>
 
-              {signupDone ? (
-                <div className="fade-up card" style={{ borderColor: "var(--green)", background: "var(--green-bg)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green)", color: "white", display: "grid", placeItems: "center" }}>
-                      <Icon name="check" size={22} stroke={3} />
+              {signupDone ? (() => {
+                const a = (th, en) => lang === "en" ? en : th;
+                return (
+                <div className="fade-up">
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                      background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
+                      boxShadow: "0 8px 24px rgba(107,44,145,0.35)" }}>
+                      <Icon name="mail" size={24} stroke={2} style={{ color: "white" }} />
                     </div>
-                    <div style={{ fontWeight: 800, fontSize: 18, color: "#065f46" }}>{t("authRequestSent")}</div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 20 }}>{a("สมัครสำเร็จ!", "Registration Submitted!")}</div>
+                      <div className="t-mute text-sm">{a("กรุณาทำตามขั้นตอนด้านล่าง","Please follow the steps below")}</div>
+                    </div>
                   </div>
-                  <div style={{ color: "#047857", fontSize: 14, lineHeight: 1.55 }}>
-                    บัญชี <b>{signup.username}</b> {t("authPendingApproval")}
+
+                  {/* Step 1 — Confirm email */}
+                  <div style={{ display: "flex", gap: 12, marginBottom: 10, padding: "14px 16px",
+                    background: "rgba(139,63,196,0.07)", borderRadius: 12, border: "1px solid rgba(139,63,196,0.18)" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                      background: "var(--pea-purple-600)", color: "white",
+                      display: "grid", placeItems: "center", fontSize: 13, fontWeight: 800 }}>1</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>
+                        {a("ยืนยันอีเมลของคุณ", "Confirm your email")}
+                      </div>
+                      <div className="t-mute text-sm" style={{ lineHeight: 1.55 }}>
+                        {a("เราส่งลิงก์ยืนยันไปที่", "We sent a confirmation link to")}{" "}
+                        <b style={{ color: "var(--pea-purple-600)" }}>{signup.email}</b>
+                        {" "}{a("กดลิงก์ในอีเมลนั้นเพื่อยืนยันตัวตน", "— click the link in that email to verify your identity")}
+                      </div>
+                    </div>
                   </div>
-                  <button className="btn btn-primary" style={{ marginTop: 16, width: "100%" }} onClick={() => { setMode("login"); setSignupDone(false); setSignup({ name: "", username: "", email: "", password: "" }); }}>
-                    {t("authBackToLogin")}
+
+                  {/* Step 2 — Admin approval */}
+                  <div style={{ display: "flex", gap: 12, marginBottom: 10, padding: "14px 16px",
+                    background: "var(--surface-2)", borderRadius: 12, border: "1px solid var(--line)" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                      background: "var(--line-2)", color: "var(--ink-mute)",
+                      display: "grid", placeItems: "center", fontSize: 13, fontWeight: 800 }}>2</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>
+                        {a("รอการอนุมัติจาก Admin", "Wait for Admin approval")}
+                      </div>
+                      <div className="t-mute text-sm" style={{ lineHeight: 1.55 }}>
+                        {a("หลังยืนยันอีเมลแล้ว Admin จะตรวจสอบและอนุมัติบัญชี","After confirming your email, an Admin will review and approve the account")}{" "}
+                        <b>{signup.username}</b>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 3 — Login */}
+                  <div style={{ display: "flex", gap: 12, marginBottom: 16, padding: "14px 16px",
+                    background: "var(--surface-2)", borderRadius: 12, border: "1px solid var(--line)" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                      background: "var(--line-2)", color: "var(--ink-mute)",
+                      display: "grid", placeItems: "center", fontSize: 13, fontWeight: 800 }}>3</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>
+                        {a("เข้าสู่ระบบได้เลย", "Log in to the system")}
+                      </div>
+                      <div className="t-mute text-sm" style={{ lineHeight: 1.55 }}>
+                        {a("เมื่อได้รับการอนุมัติแล้ว เข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่ตั้งไว้ได้เลย",
+                          "Once approved, you can log in with the email and password you just set")}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Spam tip */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 18, padding: "10px 14px",
+                    background: "rgba(234,179,8,0.08)", borderRadius: 10, border: "1px solid rgba(234,179,8,0.25)" }}>
+                    <Icon name="alert" size={15} style={{ color: "#ca8a04", flexShrink: 0, marginTop: 1 }} />
+                    <div style={{ fontSize: 12, color: "#92400e", lineHeight: 1.55 }}>
+                      {a("ไม่พบอีเมล? ลองตรวจสอบใน","Email not found? Check your")}{" "}
+                      <b>{a("โฟลเดอร์ Spam / Junk","Spam / Junk folder")}</b>
+                      {" "}{a("หรือรออีกสักครู่ อีเมลอาจใช้เวลาสักสักครู่","or wait a moment — delivery may take a few minutes")}
+                    </div>
+                  </div>
+
+                  <button className="btn btn-primary" style={{ width: "100%", height: 48 }}
+                    onClick={() => { setMode("login"); setSignupDone(false); setSignup({ name: "", username: "", email: "", password: "" }); }}>
+                    <Icon name="arrowRight" size={14} /> {t("authBackToLogin")}
                   </button>
                 </div>
+                );
+              })()
               ) : (
                 <form className="fade-up" onSubmit={submit}>
                   <div className="t-display" style={{ fontSize: 30, marginBottom: 6, letterSpacing: "-0.02em" }}>
