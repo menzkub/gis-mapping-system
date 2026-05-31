@@ -18,6 +18,9 @@ const _urlTypeOnLoad = (
 const _isRecoveryLoad = _urlTypeOnLoad === "recovery";
 // Persist across MFA verification flow
 if (_isRecoveryLoad) sessionStorage.setItem("pea_recovery", "1");
+// PKCE recovery: link URL contains ?code= (no type= visible) — detect early
+const _hasOAuthCode = new URLSearchParams(_searchOnLoad).has("code");
+if (_hasOAuthCode && !_isRecoveryLoad) sessionStorage.setItem("pea_recovery", "1");
 
 // ── Loading screen ────────────────────────────────────────────────────────
 function LoadingScreen({ message = "กำลังโหลดข้อมูล…" }) {
@@ -48,14 +51,18 @@ function activityLabel(a, t) {
     search_meter: t("actSearchMeter"), search_tr: t("actSearchTr"),
     view_map: t("actViewMap"), create_user: t("actCreateUser"),
     update_meter: t("actUpdateMeter"), update_tr: t("actUpdateTr"),
+    reset_password_initiated: "ขอรีเซ็ตรหัสผ่าน",
+    reset_password_failed:    "รีเซ็ตรหัสผ่านไม่สำเร็จ",
   };
   return m[a] || a;
 }
 function activityBadge(a) {
-  if (a === "login")           return "badge-green";
-  if (a === "logout")          return "badge-purple";
-  if (a === "change_password") return "badge-orange";
-  if (a.startsWith("search"))  return "badge-blue";
+  if (a === "login")                       return "badge-green";
+  if (a === "logout")                      return "badge-purple";
+  if (a === "change_password")             return "badge-orange";
+  if (a === "reset_password_initiated")    return "badge-blue";
+  if (a === "reset_password_failed")       return "badge-red";
+  if (a.startsWith("search"))              return "badge-blue";
   return "badge-amber";
 }
 function parseDevice(ua = "") {
@@ -1540,6 +1547,17 @@ function ResetPasswordScreen({ recoveryUser, onComplete }) {
   const [saving, setSaving]       = useStateApp(false);
   const [done, setDone]           = useStateApp(false);
 
+  // Log when user actually arrives at the reset form (link was clicked & code exchanged)
+  useEffectApp(() => {
+    if (!recoveryUser?.id) return;
+    _supabase.from("audit_log").insert({
+      user_id: recoveryUser.id, username: recoveryUser.email || "",
+      action: "reset_password_initiated", target: recoveryUser.email || "",
+      detail: "เข้าสู่หน้ารีเซ็ตรหัสผ่านผ่านลิงก์อีเมล",
+      ip: (navigator.userAgent || "").slice(0, 200),
+    });
+  }, []);
+
   const checks = {
     length:  newPw.length >= 8,
     upper:   /[A-Z]/.test(newPw),
@@ -1574,6 +1592,14 @@ function ResetPasswordScreen({ recoveryUser, onComplete }) {
       setDone(true);
       setTimeout(async () => { await _supabase.auth.signOut(); onComplete(); }, 2200);
     } catch (e2) {
+      if (recoveryUser?.id) {
+        _supabase.from("audit_log").insert({
+          user_id: recoveryUser.id, username: recoveryUser.email || "",
+          action: "reset_password_failed", target: recoveryUser.email || "",
+          detail: `รีเซ็ตรหัสผ่านไม่สำเร็จ: ${e2.message || "Unknown error"}`,
+          ip: (navigator.userAgent || "").slice(0, 200),
+        });
+      }
       setErr(e2.message);
       setSaving(false);
     }
@@ -2244,8 +2270,8 @@ function App() {
       }
     });
 
-    // If page loaded with recovery URL, pre-arm the ref immediately
-    if (_isRecoveryLoad) inRecoveryRef.current = true;
+    // If page loaded with recovery URL or PKCE code, pre-arm the ref immediately
+    if (_isRecoveryLoad || _hasOAuthCode) inRecoveryRef.current = true;
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
