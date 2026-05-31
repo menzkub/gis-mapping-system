@@ -2211,8 +2211,17 @@ function App() {
   }, []);
 
   // ── Auth state listener ──────────────────────────────────────────────────
+  const inRecoveryRef = React.useRef(false);
+
   useEffectApp(() => {
+    // Check URL for recovery token before calling getSession
+    const hashParams  = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const queryParams = new URLSearchParams(window.location.search);
+    const urlType = hashParams.get("type") || queryParams.get("type");
+    const isRecoveryUrl = urlType === "recovery";
+
     _supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isRecoveryUrl || inRecoveryRef.current) return; // PASSWORD_RECOVERY event will handle
       if (session?.user) {
         loadAppData(session.user, false); // session restore — ไม่ log login ซ้ำ
       } else {
@@ -2222,14 +2231,17 @@ function App() {
 
     const { data: { subscription } } = _supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
+        inRecoveryRef.current = true;
         setPendingUser(session?.user || null);
         setAppState("pw_reset");
         return;
       }
       if (event === "SIGNED_IN" && session?.user) {
+        if (inRecoveryRef.current) return; // block SIGNED_IN during recovery
         loadAppData(session.user, true); // login จริง — log ได้
       }
       if (event === "SIGNED_OUT") {
+        inRecoveryRef.current = false;
         setCurrentUser(null);
         setData({ meters: [], transformers: [], users: [], auditLog: [], feeders: [], dashStats: {} });
         window.__peaAuthErr = null;
@@ -2358,7 +2370,7 @@ function App() {
   if (appState === "pw_reset") return (
     <ResetPasswordScreen
       recoveryUser={pendingUser}
-      onComplete={() => { setPendingUser(null); setAppState("unauthed"); }}
+      onComplete={() => { inRecoveryRef.current = false; setPendingUser(null); setAppState("unauthed"); }}
     />
   );
 
