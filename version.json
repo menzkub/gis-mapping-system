@@ -1,7 +1,7 @@
 {
-  "commit": "32f5674",
-  "shortCommit": "32f5674",
-  "message": "fix: add moreV/globe icons; fix three-dots button showing empty box",
-  "date": "2026-05-31T09:00:00+00:00",
+  "commit": "71f3414",
+  "shortCommit": "71f3414",
+  "message": "style: make three-dots util button a purple pill with label",
+  "date": "2026-05-31T09:10:00+00:00",
   "branch": "main"
 }
