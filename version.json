@@ -1,7 +1,7 @@
 {
-  "commit": "249849e",
-  "shortCommit": "249849e",
-  "message": "style: highlight total count as purple pill badge in search header",
-  "date": "2026-05-31T10:10:00+00:00",
+  "commit": "e0d2f68",
+  "shortCommit": "e0d2f68",
+  "message": "style: enlarge sidebar nav labels, user name, and avatar",
+  "date": "2026-05-31T10:30:00+00:00",
   "branch": "main"
 }
