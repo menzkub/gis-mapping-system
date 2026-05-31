@@ -1,7 +1,7 @@
 {
-  "commit": "63ad34d",
-  "shortCommit": "63ad34d",
-  "message": "fix: inSync detects chore version.json commit as up-to-date",
-  "date": "2026-05-31T08:15:00+00:00",
+  "commit": "0ee970a",
+  "shortCommit": "0ee970a",
+  "message": "feat: collapse lang/theme/refresh into three-dots menu on mobile",
+  "date": "2026-05-31T08:30:00+00:00",
   "branch": "main"
 }
