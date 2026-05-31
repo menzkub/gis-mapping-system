@@ -1,7 +1,7 @@
 {
-  "commit": "e0d2f68",
-  "shortCommit": "e0d2f68",
-  "message": "style: enlarge sidebar nav labels, user name, and avatar",
-  "date": "2026-05-31T10:30:00+00:00",
+  "commit": "afe8124",
+  "shortCommit": "afe8124",
+  "message": "feat(i18n): complete UserGuide bilingual translation — all admin sections",
+  "date": "2026-05-31T10:45:00+00:00",
   "branch": "main"
 }
