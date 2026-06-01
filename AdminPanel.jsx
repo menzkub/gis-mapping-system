@@ -2521,6 +2521,7 @@ function AdminTrs({ addAudit, currentUser }) {
 /* ---------- Admin Overview Map ---------- */
 function AdminMapTab({ data, currentUser, addAudit }) {
   const { t } = useLang();
+  const corrBtnLabel = t("corrReportBtn");
   const containerRef = React.useRef(null);
   const mapRef       = React.useRef(null);
   const tileRef      = React.useRef(null);
@@ -2726,7 +2727,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         });
         cells.forEach(group => {
           if (group.length === 1) {
-            makeAdmMarker(group[0], symbol, isMeter, accent, accent2, handleCorrection).addTo(layerRef.current);
+            makeAdmMarker(group[0], symbol, isMeter, accent, accent2, handleCorrection, corrBtnLabel).addTo(layerRef.current);
           } else {
             const lat = group.reduce((s, p) => s + p.LATITUDE, 0) / group.length;
             const lng = group.reduce((s, p) => s + p.LONGITUDE, 0) / group.length;
@@ -2741,7 +2742,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           }
         });
       } else {
-        points.forEach(p => makeAdmMarker(p, symbol, isMeter, accent, accent2, handleCorrection).addTo(layerRef.current));
+        points.forEach(p => makeAdmMarker(p, symbol, isMeter, accent, accent2, handleCorrection, corrBtnLabel).addTo(layerRef.current));
       }
     };
 
@@ -2750,7 +2751,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
 
     if (showT) drawLayer(trs, "tr", tLayerRef);
     else tLayerRef.current.clearLayers();
-  }, [meters, trs, showM, showT, loadState, zoomTick]);
+  }, [meters, trs, showM, showT, loadState, zoomTick, corrBtnLabel]);
 
   // Fit bounds on first data load
   useEffectAd(() => {
@@ -3072,7 +3073,7 @@ function CorrectionReviewPanel({ corrections, onApprove, onReject, onClose, t })
   );
 }
 
-function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection) {
+function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection, corrLabel) {
   const icon = L.divIcon({
     className: "",
     html: `<div class="pea-marker${isMeter ? "" : " tr"}"><span>${symbol}</span></div>`,
@@ -3080,7 +3081,7 @@ function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection) {
   });
   const marker = L.marker([p.LATITUDE, p.LONGITUDE], { icon, riseOnHover: true });
   const corrBtn = `<button data-adm-corr style="margin-top:8px;width:100%;padding:5px 0;border-radius:8px;border:1px solid #ea580c44;background:rgba(234,88,12,0.08);color:#ea580c;font-size:11px;font-weight:700;cursor:pointer">
-  📍 แจ้งแก้ไขพิกัด
+  📍 ${corrLabel || "แจ้งแก้ไขพิกัด"}
 </button>`;
   const popup = isMeter
     ? `<div style="padding:10px 14px;min-width:180px">
