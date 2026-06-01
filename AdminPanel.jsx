@@ -3249,10 +3249,13 @@ function AdminMapTab({ data, currentUser, addAudit }) {
             const label = n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
             const icon = L.divIcon({
               className: "",
-              html: `<div style="width:44px;height:44px;border-radius:50%;background:radial-gradient(circle,${accent2},${accent});color:white;font-weight:800;font-size:${n>=1000?10:13}px;display:grid;place-items:center;border:3px solid white;box-shadow:0 4px 14px rgba(0,0,0,0.3)">${label}</div>`,
+              html: `<div style="width:44px;height:44px;border-radius:50%;background:radial-gradient(circle,${accent2},${accent});color:white;font-weight:800;font-size:${n>=1000?10:13}px;display:grid;place-items:center;border:3px solid white;box-shadow:0 4px 14px rgba(0,0,0,0.3);cursor:pointer">${label}</div>`,
               iconSize: [44, 44], iconAnchor: [22, 22],
             });
-            L.marker([lat, lng], { icon }).addTo(layerRef.current);
+            const groupBounds = L.latLngBounds(group.map(p => [p.LATITUDE, p.LONGITUDE]));
+            L.marker([lat, lng], { icon })
+              .on("click", () => map.fitBounds(groupBounds, { padding: [60, 60], maxZoom: 17 }))
+              .addTo(layerRef.current);
           }
         });
       } else {
