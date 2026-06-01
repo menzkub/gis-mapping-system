@@ -767,8 +767,21 @@ function AdminDevGuide() {
 
   return (
     <div ref={guideRef} style={{ maxWidth: 860, margin: "0 auto" }}>
+      <style>{`
+        .dg-hero  { padding: 24px 28px; }
+        .dg-title { font-size: 22px; font-weight: 800; line-height: 1.2; }
+        .dg-sgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 16px; }
+        .dg-btns  { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+        @media (max-width: 520px) {
+          .dg-hero  { padding: 16px; }
+          .dg-title { font-size: 17px; }
+          .dg-sgrid { grid-template-columns: repeat(2,1fr) !important; gap: 8px; }
+          .dg-btns  { flex-direction: column; }
+          .dg-btns button { width: 100%; justify-content: center; }
+        }
+      `}</style>
       {/* Hero */}
-      <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#1b0926 0%,#321148 50%,#4f1e6e 100%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden", border: "1px solid rgba(139,63,196,0.3)" }}>
+      <div className="dg-hero" style={{ borderRadius: 20, background: "linear-gradient(135deg,#1b0926 0%,#321148 50%,#4f1e6e 100%)", color: "white", marginBottom: 20, position: "relative", overflow: "hidden", border: "1px solid rgba(139,63,196,0.3)" }}>
         <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(139,63,196,0.12)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
@@ -776,7 +789,7 @@ function AdminDevGuide() {
           </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Developer Documentation</div>
-            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
+            <div className="dg-title">GIS Meter & Transformer</div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>คู่มือสำหรับนักพัฒนา — โครงสร้างโค้ด, ฐานข้อมูล, API และ Helpers</div>
           </div>
         </div>
@@ -798,7 +811,7 @@ function AdminDevGuide() {
         </div>
 
         {/* Stat cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
+        <div className="dg-sgrid">
           {[
             { label: "หัวข้อ",       value: 10, icon: "book",     sub: "sections" },
             { label: "ไฟล์ระบบ",    value: 10, icon: "package",  sub: "source files" },
@@ -817,15 +830,13 @@ function AdminDevGuide() {
         </div>
 
         {/* Expand/Collapse + Download buttons */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, gap: 8, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={expandAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-              <Icon name="chevDown" size={13} /> ขยายทั้งหมด
-            </button>
-            <button onClick={collapseAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-              <Icon name="chevRight" size={13} /> ยุบทั้งหมด
-            </button>
-          </div>
+        <div className="dg-btns">
+          <button onClick={expandAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+            <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+          </button>
+          <button onClick={collapseAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+            <Icon name="chevRight" size={13} /> ยุบทั้งหมด
+          </button>
           <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)", opacity: pdfLoading ? 0.7 : 1 }}>
             <Icon name="download" size={14} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} /> {pdfLoading ? "กำลังสร้าง PDF…" : "ดาวน์โหลดเอกสาร PDF"}
           </button>

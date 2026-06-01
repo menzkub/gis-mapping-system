@@ -1366,7 +1366,7 @@ function DeploymentStatus() {
           ) : deployed ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'IBM Plex Mono','Courier New',monospace", color: inSync ? "#059669" : "#d97706", background: inSync ? "rgba(5,150,105,0.12)" : "rgba(217,119,6,0.12)", padding: "2px 8px", borderRadius: 6 }}>
+                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Courier New',monospace", fontVariantLigatures: "none", color: inSync ? "#059669" : "#d97706", background: inSync ? "rgba(5,150,105,0.12)" : "rgba(217,119,6,0.12)", padding: "2px 8px", borderRadius: 6 }}>
                   {deployedHash}
                 </code>
               </div>
@@ -1388,7 +1388,7 @@ function DeploymentStatus() {
           ) : ghCommit ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'IBM Plex Mono','Courier New',monospace", color: "var(--pea-purple-600)", background: "rgba(139,63,196,0.12)", padding: "2px 8px", borderRadius: 6 }}>
+                <code style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Courier New',monospace", fontVariantLigatures: "none", color: "var(--pea-purple-600)", background: "rgba(139,63,196,0.12)", padding: "2px 8px", borderRadius: 6 }}>
                   {ghHash}
                 </code>
                 {!inSync && ghHash && deployedHash && (
@@ -1423,6 +1423,19 @@ function ChangelogView() {
   const clText = (t) => (t && typeof t === "object") ? (t[lang] ?? t.th) : t;
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
+      <style>{`
+        .cl-hero  { padding: 24px 28px; }
+        .cl-title { font-size: 22px; font-weight: 800; }
+        .cl-chips { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+        .cl-chip  { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 14px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 8px; }
+        .cl-hash  { font-family: 'Courier New',monospace; font-variant-ligatures: none; font-feature-settings: "liga" 0; }
+        @media (max-width: 520px) {
+          .cl-hero  { padding: 16px; }
+          .cl-title { font-size: 17px; }
+          .cl-chips { gap: 6px; margin-top: 14px; }
+          .cl-chip  { padding: 7px 11px; flex: 1 1 calc(50% - 6px); min-width: 0; }
+        }
+      `}</style>
       <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 20px 48px" }}>
 
         {/* Hero */}
@@ -1440,7 +1453,7 @@ function ChangelogView() {
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Release Notes</div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>ประวัติการปรับปรุง UX/UI</div>
+              <div className="cl-title">ประวัติการปรับปรุง UX/UI</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>
                 บันทึกการพัฒนาและปรับปรุงระบบทั้งหมด — อัปเดตโดย Claude AI
               </div>
@@ -1456,17 +1469,17 @@ function ChangelogView() {
           </div>
 
           {/* Summary chips */}
-          <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
+          <div className="cl-chips">
             {[
               { label: "เวอร์ชัน", value: CHANGELOG.length, icon: "package" },
               { label: "ฟีเจอร์ใหม่", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "new").length, 0), icon: "bolt" },
               { label: "UX/UI", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "ux").length, 0), icon: "sun" },
               { label: "แก้ไข", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "fix").length, 0), icon: "check" },
             ].map(({ label, value, icon }) => (
-              <div key={label} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 14px", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
+              <div key={label} className="cl-chip">
                 <Icon name={icon} size={13} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
-                <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{value}</span>
+                <span style={{ fontSize: 20, fontWeight: 900, lineHeight: 1, marginLeft: "auto" }}>{value}</span>
               </div>
             ))}
           </div>
@@ -1511,7 +1524,7 @@ function ChangelogView() {
                   background: vi === 0 ? `linear-gradient(135deg, ${ver.tagColor}18, transparent)` : "transparent",
                 }}>
                   <div style={{
-                    fontFamily: "'IBM Plex Mono','Courier New',monospace",
+                    fontFamily: "'Courier New',monospace", fontVariantLigatures: "none",
                     fontSize: 16, fontWeight: 800, color: ver.tagColor, letterSpacing: "-0.02em",
                   }}>{ver.version}</div>
                   <span style={{
@@ -1697,9 +1710,24 @@ function UserGuide({ role }) {
 
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
+      <style>{`
+        .ug-hero   { padding: 24px 28px; }
+        .ug-sgrid  { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 16px; }
+        .ug-title  { font-size: 22px; font-weight: 800; line-height: 1.2; }
+        .ug-btns   { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        .ug-btns-l { display: flex; gap: 6px; }
+        @media (max-width: 520px) {
+          .ug-hero  { padding: 16px; }
+          .ug-sgrid { grid-template-columns: repeat(2,1fr) !important; gap: 8px; }
+          .ug-title { font-size: 17px; }
+          .ug-btns  { flex-direction: column; align-items: stretch; margin-top: 12px; }
+          .ug-btns-l { flex-direction: row; }
+          .ug-btns button { width: 100%; justify-content: center; }
+        }
+      `}</style>
       <div ref={guideRef} style={{ maxWidth: 820, margin: "0 auto", padding: "24px 20px 40px" }}>
         {/* Hero */}
-        <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", color: "white", padding: "24px 28px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+        <div className="ug-hero" style={{ borderRadius: 20, background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", color: "white", marginBottom: 20, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.15)", display: "grid", placeItems: "center", flexShrink: 0 }}>
@@ -1707,7 +1735,7 @@ function UserGuide({ role }) {
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>{ug("คู่มือการใช้งาน", "User Manual")}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>GIS Meter & Transformer</div>
+              <div className="ug-title">GIS Meter & Transformer</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>
                 {isAdmin ? ug("สำหรับผู้ดูแลระบบ — ครอบคลุมทุก Feature", "For Administrators — All Features") : ug("สำหรับผู้ใช้งานทั่วไป", "For General Users")}
               </div>
@@ -1723,7 +1751,7 @@ function UserGuide({ role }) {
           </div>
 
           {/* Stat cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
+          <div className="ug-sgrid">
             {[
               { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 13 : 5,  icon: "book",    sub: "sections" },
               { label: ug("ขั้นตอน","Steps"), value: isAdmin ? 49 : 20, icon: "check",   sub: "steps" },
@@ -1742,8 +1770,8 @@ function UserGuide({ role }) {
           </div>
 
           {/* Expand/Collapse + Download buttons */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, gap: 8, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 6 }}>
+          <div className="ug-btns">
+            <div className="ug-btns-l">
               <button onClick={expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
                 <Icon name="chevDown" size={13} /> {ug("ขยายทั้งหมด","Expand All")}
               </button>
