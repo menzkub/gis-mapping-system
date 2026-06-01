@@ -2633,6 +2633,7 @@ function App() {
   const [refreshing, setRefreshing] = useStateApp(false);
   const [refreshMsg, setRefreshMsg] = useStateApp(null); // null | "loading" | "done" | "error"
   const [showUtilMenu, setShowUtilMenu] = useStateApp(false);
+  const [showBaseMenu, setShowBaseMenu] = useStateApp(false);
   const [adminTab, setAdminTab] = useStateApp("dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
   const [devInfo, setDevInfo] = useStateApp({
@@ -3207,13 +3208,41 @@ function App() {
 
           {/* Map layer switcher — only on search page */}
           {route === "search" && (
-            <div className="topbar-mapswitcher tabs" style={{ padding: 4 }}>
-              {Object.entries(TILE_LAYERS).map(([k]) => (
-                <button key={k} className={"tab " + (baseMap === k ? "active" : "")} style={{ height: 36, padding: "0 14px", fontSize: 12 }} onClick={() => setBaseMap(k)}>
-                  <Icon name={k === "satellite" ? "layers" : "map"} size={12} />
-                  {k === "satellite" ? t("mapSatellite") : t("mapStreet")}
-                </button>
-              ))}
+            <div className="topbar-mapswitcher" style={{ position: "relative" }}>
+              <button onClick={() => setShowBaseMenu(s => !s)} style={{
+                display: "flex", alignItems: "center", gap: 6, height: 36, padding: "0 14px",
+                borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                border: "1px solid var(--pea-purple-300)",
+                background: "rgba(107,44,145,0.08)", color: "var(--pea-purple-600)",
+              }}>
+                <Icon name={baseMap === "satellite" ? "layers" : "map"} size={13} />
+                {baseMap === "satellite" ? t("mapSatellite") : t("mapStreet")}
+                <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+              </button>
+              {showBaseMenu && (
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
+                  <div style={{
+                    position: "absolute", left: 0, top: "calc(100% + 6px)", zIndex: 600,
+                    background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12,
+                    boxShadow: "0 8px 28px rgba(0,0,0,0.16)", overflow: "hidden", minWidth: 150,
+                  }}>
+                    {[["street", "map", t("mapStreet")], ["satellite", "layers", t("mapSatellite")]].map(([k, icon, label]) => (
+                      <button key={k} onClick={() => { setBaseMap(k); setShowBaseMenu(false); }} style={{
+                        display: "flex", alignItems: "center", gap: 9, width: "100%",
+                        padding: "10px 16px", background: baseMap === k ? "var(--pea-purple-50)" : "transparent",
+                        color: baseMap === k ? "var(--pea-purple-600)" : "var(--ink)",
+                        border: "none", cursor: "pointer", fontSize: 13, fontWeight: baseMap === k ? 700 : 500,
+                        textAlign: "left",
+                      }}>
+                        <Icon name={icon} size={15} />
+                        {label}
+                        {baseMap === k && <span style={{ marginLeft: "auto" }}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -3283,6 +3312,22 @@ function App() {
                     </span>
                     <span>{lang === "th" ? "Switch to English" : "เปลี่ยนเป็นภาษาไทย"}</span>
                   </button>
+
+                  {/* Basemap — only on search page */}
+                  {route === "search" && [["street", "map", t("mapStreet")], ["satellite", "layers", t("mapSatellite")]].map(([k, icon, label]) => (
+                    <button key={k} onClick={() => { setBaseMap(k); setShowUtilMenu(false); }} style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                      background: baseMap === k ? "rgba(107,44,145,0.08)" : "transparent",
+                      border: "none", cursor: "pointer", color: baseMap === k ? "var(--pea-purple-600)" : "var(--text)",
+                      fontSize: 14, fontWeight: baseMap === k ? 700 : 600, textAlign: "left",
+                    }}>
+                      <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        <Icon name={icon} size={15} style={{ color: "var(--pea-purple-600)" }} />
+                      </span>
+                      <span>{label}</span>
+                      {baseMap === k && <span style={{ marginLeft: "auto", color: "var(--pea-purple-600)" }}>✓</span>}
+                    </button>
+                  ))}
 
                   {/* Theme */}
                   <button onClick={() => { setTheme(t => t === "light" ? "dark" : "light"); setShowUtilMenu(false); }} style={{
