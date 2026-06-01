@@ -965,11 +965,13 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
+  const dk = { card: "#1a1030", surface2: "#221440", ink: "#ffffff", mute: "rgba(255,255,255,0.55)", border: "rgba(139,63,196,0.35)" };
   return (
     <div style={{ height: "100vh", display: "grid", placeItems: "center",
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
       <div className="fade-up" style={{ width: "100%", maxWidth: 400, margin: "0 20px",
-        background: "var(--surface)", borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
+        background: dk.card, borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+        border: `1px solid ${dk.border}` }}>
         <div style={{ padding: "28px 32px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0,
@@ -978,18 +980,22 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
               <Icon name="lock" size={24} stroke={2} style={{ color: "white" }} />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 22 }}>ยืนยัน 2FA</div>
-              <div className="t-mute text-sm">สวัสดี, <b>{currentUser.name}</b></div>
+              <div style={{ fontWeight: 800, fontSize: 22, color: dk.ink }}>ยืนยัน 2FA</div>
+              <div style={{ fontSize: 13, color: dk.mute }}>สวัสดี, <b style={{ color: dk.ink }}>{currentUser.name}</b></div>
             </div>
           </div>
           {!useBackup ? (
             <>
-              <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
+              <div style={{ marginBottom: 20, lineHeight: 1.6, fontSize: 13, color: dk.mute }}>
                 เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักของบัญชีนี้
               </div>
               <form onSubmit={verify} className="f-col f-gap-3">
-                <input className="input"
-                  style={{ fontSize: 30, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700, height: 68 }}
+                <input
+                  style={{ fontSize: 32, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700,
+                    height: 72, borderRadius: 14, border: `2px solid ${code.length ? "#8b3fc4" : dk.border}`,
+                    background: dk.surface2, color: dk.ink, outline: "none", width: "100%",
+                    boxSizing: "border-box", transition: "border-color 180ms",
+                    boxShadow: code.length ? "0 0 0 3px rgba(139,63,196,0.25)" : "none" }}
                   maxLength={6} inputMode="numeric" autoComplete="one-time-code"
                   placeholder="000000" value={code}
                   onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
@@ -1002,19 +1008,21 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
               </form>
               <button onClick={() => { setUseBackup(true); setErr(null); setCode(""); }}
                 style={{ marginTop: 12, width: "100%", padding: 9, textAlign: "center",
-                  color: "var(--pea-purple-500)", fontSize: 13, background: "none", fontWeight: 500 }}>
+                  color: "#c084fc", fontSize: 13, background: "none", fontWeight: 500, border: "none", cursor: "pointer" }}>
                 ไม่มีแอป Authenticator? ใช้รหัสสำรอง
               </button>
             </>
           ) : (
             <>
-              <div className="t-mute text-sm" style={{ marginBottom: 20, lineHeight: 1.6 }}>
+              <div style={{ marginBottom: 20, lineHeight: 1.6, fontSize: 13, color: dk.mute }}>
                 กรอกรหัสสำรอง (XXXX-XXXX-XXXX) ที่บันทึกไว้ตอนตั้งค่า 2FA
               </div>
               <form onSubmit={validateBackup} className="f-col f-gap-3">
-                <input className="input"
+                <input
                   style={{ fontFamily: "monospace", letterSpacing: "0.12em", textAlign: "center",
-                    fontWeight: 600, height: 56, fontSize: 16, textTransform: "uppercase" }}
+                    fontWeight: 600, height: 56, fontSize: 16, textTransform: "uppercase",
+                    borderRadius: 14, border: `2px solid ${dk.border}`, background: dk.surface2,
+                    color: dk.ink, outline: "none", width: "100%", boxSizing: "border-box" }}
                   maxLength={14} placeholder="XXXX-XXXX-XXXX" value={backupCode}
                   onChange={e => { setBackupCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "")); setErr(null); }}
                   autoFocus />
@@ -1026,13 +1034,13 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
               </form>
               <button onClick={() => { setUseBackup(false); setErr(null); setBackupCode(""); }}
                 style={{ marginTop: 12, width: "100%", padding: 9, textAlign: "center",
-                  color: "var(--pea-purple-500)", fontSize: 13, background: "none", fontWeight: 500 }}>
+                  color: "#c084fc", fontSize: 13, background: "none", fontWeight: 500, border: "none", cursor: "pointer" }}>
                 กลับไปใช้ Authenticator แทน
               </button>
             </>
           )}
           <button onClick={onCancel} style={{ marginTop: 4, width: "100%", padding: 10,
-            textAlign: "center", color: "var(--ink-mute)", fontSize: 13, background: "none" }}>
+            textAlign: "center", color: dk.mute, fontSize: 13, background: "none", border: "none", cursor: "pointer" }}>
             ออกจากระบบ
           </button>
         </div>
