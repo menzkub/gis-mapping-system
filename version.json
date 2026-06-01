@@ -1,7 +1,7 @@
 {
-  "commit": "fix-mobile-nav-sidebar-location-btn",
+  "commit": "feat-db-usage-card-redesign",
   "shortCommit": "pending",
-  "message": "fix: mobile bottom nav overflow, sidebar desktop scroll, location pin button",
-  "date": "2026-06-01T21:00:00+00:00",
+  "message": "feat: DbUsageCard redesign — prominent gauge, gradient bar, per-table mini bars, timestamp inline",
+  "date": "2026-06-01T22:00:00+00:00",
   "branch": "main"
 }

@@ -250,13 +250,13 @@ function AdminDashboard({ data }) {
 // ── Supabase Database Usage Card ─────────────────────────────────────────
 function DbUsageCard() {
   const DB_TABLES = [
-    { key: "meters",      table: "meters",                 label: "PEA มิเตอร์",        color: "#6b2c91", kb: 1.5 },
-    { key: "trs",         table: "transformers",           label: "PEA หม้อแปลง",       color: "#f47b20", kb: 1.5 },
-    { key: "profiles",    table: "profiles",               label: "ผู้ใช้งาน",           color: "#10b981", kb: 0.5 },
-    { key: "audit",       table: "audit_log",              label: "Audit Log",           color: "#64748b", kb: 0.4 },
-    { key: "push",        table: "push_subscriptions",     label: "Push Subscriptions",  color: "#8b5cf6", kb: 2.0 },
-    { key: "corrections", table: "coordinate_corrections", label: "คำขอแก้ไขพิกัด",   color: "#0ea5e9", kb: 0.5 },
-    { key: "settings",    table: "settings",               label: "Settings",            color: "#94a3b8", kb: 0.1 },
+    { key: "meters",      table: "meters",                 label: "PEA มิเตอร์",       color: "#6b2c91", kb: 1.5 },
+    { key: "trs",         table: "transformers",           label: "PEA หม้อแปลง",      color: "#f47b20", kb: 1.5 },
+    { key: "profiles",    table: "profiles",               label: "ผู้ใช้งาน",          color: "#10b981", kb: 0.5 },
+    { key: "audit",       table: "audit_log",              label: "Audit Log",          color: "#64748b", kb: 0.4 },
+    { key: "push",        table: "push_subscriptions",     label: "Push Subscriptions", color: "#8b5cf6", kb: 2.0 },
+    { key: "corrections", table: "coordinate_corrections", label: "คำขอแก้ไขพิกัด",  color: "#0ea5e9", kb: 0.5 },
+    { key: "settings",    table: "settings",               label: "Settings",           color: "#94a3b8", kb: 0.1 },
   ];
   const FREE_LIMIT_MB = 500;
 
@@ -271,9 +271,7 @@ function DbUsageCard() {
       try {
         const { count, error } = await _supabase.from(t.table).select("*", { count: "exact", head: true });
         result[t.key] = error ? null : (count ?? 0);
-      } catch (_) {
-        result[t.key] = null;
-      }
+      } catch (_) { result[t.key] = null; }
     }));
     setCounts(result);
     setRefreshedAt(new Date());
@@ -282,74 +280,128 @@ function DbUsageCard() {
 
   useEffectAd(() => { load(); }, []);
 
-  const totalEstKb = counts
-    ? DB_TABLES.reduce((acc, t) => acc + ((counts[t.key] ?? 0) * t.kb), 0)
-    : 0;
-  const totalEstMb = totalEstKb / 1024;
-  const pct = Math.min((totalEstMb / FREE_LIMIT_MB) * 100, 100);
-  const barColor = pct < 50 ? "#10b981" : pct < 75 ? "#f59e0b" : "#ef4444";
+  const totalEstKb  = counts ? DB_TABLES.reduce((a, t) => a + ((counts[t.key] ?? 0) * t.kb), 0) : 0;
+  const totalEstMb  = totalEstKb / 1024;
+  const pct         = Math.min((totalEstMb / FREE_LIMIT_MB) * 100, 100);
+  const barColor    = pct < 50 ? "#10b981" : pct < 75 ? "#f59e0b" : "#ef4444";
+  const barGradient = pct < 50
+    ? "linear-gradient(90deg,#059669,#10b981,#34d399)"
+    : pct < 75
+    ? "linear-gradient(90deg,#d97706,#f59e0b,#fcd34d)"
+    : "linear-gradient(90deg,#dc2626,#ef4444,#f87171)";
+
+  const maxEstKb = counts
+    ? Math.max(...DB_TABLES.map(t => (counts[t.key] ?? 0) * t.kb), 1)
+    : 1;
 
   return (
-    <div className="card card-elev">
-      <div className="f-between" style={{ marginBottom: 16 }}>
+    <div className="card card-elev" style={{ overflow: "hidden", position: "relative" }}>
+      {/* Subtle glow bg */}
+      <div style={{ position:"absolute", top:-60, right:-60, width:260, height:260, borderRadius:"50%",
+                    background:`radial-gradient(circle, ${barColor}20 0%, transparent 65%)`, pointerEvents:"none" }} />
+
+      {/* ── Header ── */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20 }}>
         <div>
-          <div className="t-eyebrow" style={{ marginBottom: 2 }}>SUPABASE</div>
-          <div className="text-lg fw-7">Database Usage</div>
+          <div className="t-eyebrow" style={{ color:"var(--pea-orange-500)", marginBottom:4 }}>SUPABASE</div>
+          <div style={{ fontWeight:900, fontSize:24, letterSpacing:"-0.03em", lineHeight:1 }}>Database Usage</div>
         </div>
-        <button onClick={load} disabled={loading}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10,
-            background: "var(--surface-2)", border: "1px solid var(--line)", cursor: loading ? "default" : "pointer",
-            fontSize: 12, fontWeight: 700, color: "var(--ink-mute)", opacity: loading ? 0.5 : 1, transition: "opacity 200ms" }}>
-          <Icon name="refresh" size={13} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
-          รีเฟรช
-        </button>
-      </div>
-
-      {/* Estimated size progress bar */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-          <span className="text-sm fw-6">ประมาณการพื้นที่ใช้งาน (Estimated)</span>
-          <span className="t-mute text-sm mono">{loading ? "…" : `${totalEstMb.toFixed(1)} MB / ${FREE_LIMIT_MB} MB`}</span>
-        </div>
-        <div style={{ height: 10, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: loading ? "0%" : `${pct}%`, borderRadius: 999, background: barColor, transition: "width 800ms cubic-bezier(.22,1,.36,1)" }} />
-        </div>
-        <div className="t-mute text-xs" style={{ marginTop: 5 }}>
-          * ประมาณการจาก row count — ดูขนาดจริงที่{" "}
-          <span style={{ color: "var(--pea-purple-400)", fontWeight: 600 }}>Supabase Dashboard → Database → Storage</span>
+        {/* Refresh + timestamp inline */}
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+          <button onClick={load} disabled={loading} style={{
+            display:"flex", alignItems:"center", gap:6, padding:"8px 16px", borderRadius:20,
+            background:"var(--surface-2)", border:"1px solid var(--line)",
+            cursor: loading ? "default" : "pointer", fontSize:13, fontWeight:700,
+            color:"var(--pea-purple-500)", opacity: loading ? 0.6 : 1, transition:"opacity 200ms, box-shadow 160ms",
+            boxShadow: loading ? "none" : "0 2px 8px rgba(107,44,145,0.15)",
+          }}>
+            <Icon name="refresh" size={14} style={{ animation: loading ? "spin 0.8s linear infinite" : "none" }} />
+            รีเฟรช
+          </button>
+          {refreshedAt && (
+            <span style={{ fontSize:11, color:"var(--ink-mute)", fontWeight:600 }}>
+              อัปเดต {refreshedAt.toLocaleTimeString("th-TH")}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Per-table breakdown */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      {/* ── Big storage gauge ── */}
+      <div style={{ background:"var(--soft)", border:"1px solid var(--soft-border)", borderRadius:18, padding:"18px 20px", marginBottom:22 }}>
+        <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:12 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--ink-mute)", marginBottom:4 }}>
+              ประมาณการพื้นที่ใช้งาน
+            </div>
+            <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+              <span style={{ fontWeight:900, fontSize:36, letterSpacing:"-0.04em", color: barColor, lineHeight:1 }}>
+                {loading ? "—" : totalEstMb.toFixed(1)}
+              </span>
+              <span style={{ fontWeight:700, fontSize:16, color:"var(--ink-mute)" }}>MB</span>
+              <span style={{ fontWeight:600, fontSize:14, color:"var(--ink-mute)" }}>/ {FREE_LIMIT_MB} MB</span>
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontWeight:900, fontSize:28, letterSpacing:"-0.03em", color: barColor, lineHeight:1 }}>
+              {loading ? "—" : `${pct.toFixed(1)}%`}
+            </div>
+            <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-mute)", marginTop:2 }}>
+              {pct < 50 ? "ปกติ" : pct < 75 ? "ระวัง" : "เต็มใกล้"}
+            </div>
+          </div>
+        </div>
+        {/* Thick gradient bar */}
+        <div style={{ height:16, background:"var(--line-2)", borderRadius:999, overflow:"hidden", position:"relative" }}>
+          <div style={{
+            height:"100%", width: loading ? "0%" : `${pct}%`, borderRadius:999,
+            background: barGradient, transition:"width 900ms cubic-bezier(.22,1,.36,1)",
+            boxShadow: `0 0 12px ${barColor}66`,
+          }} />
+        </div>
+        <div className="t-mute" style={{ fontSize:11, marginTop:8 }}>
+          * ประมาณจาก row count — ดูจริงที่{" "}
+          <span style={{ color:"var(--pea-purple-500)", fontWeight:700 }}>Supabase Dashboard → Database → Storage</span>
+        </div>
+      </div>
+
+      {/* ── Per-table breakdown ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
         {DB_TABLES.map(t => {
-          const c = counts?.[t.key];
-          const estMb = ((c ?? 0) * t.kb / 1024);
+          const c      = counts?.[t.key];
+          const estKb  = (c ?? 0) * t.kb;
+          const estMb  = estKb / 1024;
+          const rowPct = Math.min((estKb / maxEstKb) * 100, 100);
           return (
-            <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 12px", borderRadius: 10, background: "var(--surface-2)" }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: t.color, flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="text-xs t-mute" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label}</div>
-                <div style={{ fontWeight: 800, fontSize: 14, color: c === null ? "var(--ink-mute)" : "var(--ink)" }}>
-                  {loading ? "…" : c === null ? "—" : c.toLocaleString()}
-                  {!loading && c !== null && c > 0 && (
-                    <span className="t-mute" style={{ fontWeight: 500, fontSize: 11, marginLeft: 4 }}>
-                      ~{estMb < 1 ? `${(estMb * 1024).toFixed(0)}KB` : `${estMb.toFixed(1)}MB`}
-                    </span>
-                  )}
-                </div>
+            <div key={t.key} style={{
+              padding:"12px 14px", borderRadius:14,
+              background:"var(--surface-2)", border:`1px solid var(--line)`,
+              borderLeft:`3.5px solid ${t.color}`,
+              transition:"box-shadow 200ms",
+            }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+                <span style={{ fontSize:11, fontWeight:700, color:"var(--ink-mute)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{t.label}</span>
+                {!loading && c !== null && c > 0 && (
+                  <span style={{ fontSize:10, fontWeight:700, color: t.color, marginLeft:4, flexShrink:0 }}>
+                    {estMb < 1 ? `~${(estKb).toFixed(0)}KB` : `~${estMb.toFixed(1)}MB`}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontWeight:900, fontSize:20, letterSpacing:"-0.03em", color: c === null ? "var(--ink-mute)" : "var(--ink)", lineHeight:1, marginBottom:8 }}>
+                {loading ? <span className="t-mute" style={{fontSize:14}}>…</span> : c === null ? "—" : c.toLocaleString()}
+              </div>
+              {/* Mini proportion bar */}
+              <div style={{ height:4, background:"var(--line)", borderRadius:999, overflow:"hidden" }}>
+                <div style={{
+                  height:"100%", width: loading ? "0%" : `${rowPct}%`,
+                  background: t.color, borderRadius:999,
+                  transition:"width 900ms cubic-bezier(.22,1,.36,1)",
+                  opacity: 0.85,
+                }} />
               </div>
             </div>
           );
         })}
       </div>
-
-      {refreshedAt && (
-        <div className="t-mute text-xs" style={{ marginTop: 12, textAlign: "right" }}>
-          อัปเดตล่าสุด: {refreshedAt.toLocaleTimeString("th-TH")}
-        </div>
-      )}
     </div>
   );
 }
