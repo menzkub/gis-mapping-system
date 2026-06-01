@@ -1554,13 +1554,34 @@ function parseDeviceAd(ua = "") {
 
 /* ---------- Users ---------- */
 function AdminUsers({ data, setData, addAudit, currentUser }) {
-  const [q, setQ]             = useStateAd("");
-  const [edit, setEdit]       = useStateAd(null);
-  const [saving, setSaving]   = useStateAd(false);
-  const [pwModal, setPwModal] = useStateAd(null); // { user, history, loading }
+  const [q, setQ]                     = useStateAd("");
+  const [statusFilter, setStatusFilter] = useStateAd("");
+  const [edit, setEdit]               = useStateAd(null);
+  const [saving, setSaving]           = useStateAd(false);
+  const [pwModal, setPwModal]         = useStateAd(null);
+  const tableRef = React.useRef(null);
   const confirm = useConfirm();
   const toast   = useToast();
-  const list = data.users.filter(u => !q || `${u.username} ${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
+
+  const filterFn = (u) => {
+    if (statusFilter === "active")    return u.status === "active";
+    if (statusFilter === "pending")   return u.status === "pending";
+    if (statusFilter === "banned")    return u.status === "banned";
+    if (statusFilter === "admin")     return u.role === "admin";
+    if (statusFilter === "user")      return u.role === "user";
+    if (statusFilter === "with2fa")   return !!u.require_2fa;
+    if (statusFilter === "no2fa")     return !u.require_2fa;
+    if (statusFilter === "pwExpired") { const d = pwDaysLeft(u); return !u.pw_force_change && d !== null && d <= 0; }
+    return true;
+  };
+  const list = data.users.filter(u =>
+    filterFn(u) && (!q || `${u.username} ${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()))
+  );
+
+  const goFilter = (key) => {
+    setStatusFilter(key);
+    setTimeout(() => tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
 
   const toggle2FA = async (u) => {
     const enabling = !u.require_2fa;
@@ -1736,17 +1757,28 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         {/* Stat cards row */}
         <div className="au-stat-grid" style={{ marginBottom: 14 }}>
           {[
-            { label: "ทั้งหมด",       value: total,     icon: "users",   color: "#6b2c91", bg: "rgba(107,44,145,0.1)" },
-            { label: "ใช้งานได้",    value: active,    icon: "check",   color: "#10b981", bg: "rgba(16,185,129,0.1)" },
-            { label: "รออนุมัติ",   value: pending,   icon: "bell",    color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-            { label: "ระงับ",       value: banned,    icon: "close",   color: "#ef4444", bg: "rgba(239,68,68,0.1)"  },
-            { label: "Admin",       value: admins,    icon: "settings",color: "#f47b20", bg: "rgba(244,123,32,0.1)" },
-            { label: "เปิด 2FA",    value: with2fa,   icon: "lock",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
-            { label: "รหัสผ่านหมดอายุ", value: pwExpired, icon: "warning", color: "#dc2626", bg: "rgba(220,38,38,0.1)" },
-          ].map(({ label, value, icon, color, bg }) => (
-            <div key={label} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+            { label: "ทั้งหมด",          value: total,     icon: "users",   color: "#6b2c91", bg: "rgba(107,44,145,0.1)",  filter: "" },
+            { label: "ใช้งานได้",        value: active,    icon: "check",   color: "#10b981", bg: "rgba(16,185,129,0.1)",  filter: "active" },
+            { label: "รออนุมัติ",        value: pending,   icon: "bell",    color: "#f59e0b", bg: "rgba(245,158,11,0.1)",  filter: "pending" },
+            { label: "ระงับ",            value: banned,    icon: "close",   color: "#ef4444", bg: "rgba(239,68,68,0.1)",   filter: "banned" },
+            { label: "Admin",            value: admins,    icon: "settings",color: "#f47b20", bg: "rgba(244,123,32,0.1)",  filter: "admin" },
+            { label: "เปิด 2FA",         value: with2fa,   icon: "lock",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)",  filter: "with2fa" },
+            { label: "รหัสผ่านหมดอายุ", value: pwExpired, icon: "warning", color: "#dc2626", bg: "rgba(220,38,38,0.1)",   filter: "pwExpired" },
+          ].map(({ label, value, icon, color, bg, filter }) => {
+            const isActive = statusFilter === filter;
+            return (
+            <div key={label} onClick={() => goFilter(isActive ? "" : filter)} style={{
+              background: isActive ? `${bg.replace("0.1","0.18")}` : "var(--surface)",
+              border: `1px solid ${isActive ? color + "55" : "var(--line)"}`,
+              borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8,
+              cursor: "pointer", transition: "border 0.2s, box-shadow 0.2s",
+              boxShadow: isActive ? `0 0 0 2px ${color}33` : "none",
+            }}
+              onMouseEnter={e => { if (!isActive) e.currentTarget.style.borderColor = color + "55"; }}
+              onMouseLeave={e => { if (!isActive) e.currentTarget.style.borderColor = "var(--line)"; }}
+            >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span className="text-sm t-mute" style={{ fontWeight: 600 }}>{label}</span>
+                <span className="text-sm t-mute" style={{ fontWeight: 600, color: isActive ? color : undefined }}>{label}</span>
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: bg, display: "grid", placeItems: "center" }}>
                   <Icon name={icon} size={15} style={{ color }} />
                 </div>
@@ -1755,9 +1787,12 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               <div style={{ height: 4, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
                 <div style={{ height: "100%", borderRadius: 999, background: color, width: `${pct(value)}%`, transition: "width 600ms ease" }} />
               </div>
-              <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{pct(value)}% ของทั้งหมด</div>
+              <div style={{ fontSize: 11, color: "var(--ink-mute)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>{pct(value)}% ของทั้งหมด</span>
+                {isActive && <span style={{ fontSize: 10, fontWeight: 700, color, background: bg, padding: "1px 6px", borderRadius: 6 }}>กรองอยู่</span>}
+              </div>
             </div>
-          ))}
+          );})}
         </div>
 
         {/* Role & 2FA breakdown */}
@@ -1768,12 +1803,12 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               <Icon name="users" size={14} /> สัดส่วน Role
             </div>
             {[
-              { label: "User", value: total - admins, color: "#8b3fc4" },
-              { label: "Admin", value: admins,         color: "#f47b20" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ marginBottom: 10 }}>
+              { label: "User", value: total - admins, color: "#8b3fc4", filter: "user" },
+              { label: "Admin", value: admins,         color: "#f47b20", filter: "admin" },
+            ].map(({ label, value, color, filter }) => (
+              <div key={label} onClick={() => goFilter(statusFilter === filter ? "" : filter)} style={{ marginBottom: 10, cursor: "pointer", borderRadius: 8, padding: "4px 6px", margin: "0 -6px 6px", background: statusFilter === filter ? `${color}15` : "transparent", transition: "background 0.2s" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span className="text-sm" style={{ fontWeight: 600 }}>{label}</span>
+                  <span className="text-sm" style={{ fontWeight: 600, color: statusFilter === filter ? color : undefined }}>{label}</span>
                   <span className="text-sm t-mute">{value} คน · {pct(value)}%</span>
                 </div>
                 <div style={{ height: 8, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
@@ -1789,14 +1824,14 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               <Icon name="lock" size={14} /> สถานะ 2FA & การเข้าถึง
             </div>
             {[
-              { label: "เปิด 2FA",   value: with2fa,        color: "#3b82f6" },
-              { label: "ไม่มี 2FA",  value: total - with2fa, color: "#94a3b8" },
-              { label: "ใช้งานได้",  value: active,          color: "#10b981" },
-              { label: "รออนุมัติ", value: pending,         color: "#f59e0b" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ marginBottom: 8 }}>
+              { label: "เปิด 2FA",   value: with2fa,        color: "#3b82f6", filter: "with2fa" },
+              { label: "ไม่มี 2FA",  value: total - with2fa, color: "#94a3b8", filter: "no2fa" },
+              { label: "ใช้งานได้",  value: active,          color: "#10b981", filter: "active" },
+              { label: "รออนุมัติ", value: pending,         color: "#f59e0b", filter: "pending" },
+            ].map(({ label, value, color, filter }) => (
+              <div key={label} onClick={() => goFilter(statusFilter === filter ? "" : filter)} style={{ marginBottom: 8, cursor: "pointer", borderRadius: 8, padding: "3px 6px", margin: "0 -6px 4px", background: statusFilter === filter ? `${color}15` : "transparent", transition: "background 0.2s" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                  <span className="text-sm" style={{ fontWeight: 600 }}>{label}</span>
+                  <span className="text-sm" style={{ fontWeight: 600, color: statusFilter === filter ? color : undefined }}>{label}</span>
                   <span className="text-sm t-mute">{value} คน</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
@@ -1809,14 +1844,28 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       </div>
 
       {/* ── User Table Card ── */}
-      <div className="card card-elev">
+      <div className="card card-elev" ref={tableRef}>
       {/* Header */}
-      <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
+      <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: statusFilter ? 8 : 16 }}>
         <div>
           <div className="text-lg fw-7">ผู้ใช้งาน ({list.length})</div>
           <div className="t-mute text-sm">อนุมัติบัญชีใหม่ · ระงับ · แก้ไขข้อมูล</div>
         </div>
         <input className="input au-search" style={{ width: 280, height: 38 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาชื่อ / username / email" />
+      </div>
+      {statusFilter && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+          <span style={{ fontSize: 11, color: "var(--ink-mute)", fontWeight: 600 }}>กรองตาม:</span>
+          <button onClick={() => setStatusFilter("")} style={{
+            display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 99,
+            background: "rgba(107,44,145,0.1)", border: "1px solid rgba(107,44,145,0.3)",
+            color: "var(--pea-purple-600)", fontSize: 12, fontWeight: 700, cursor: "pointer",
+          }}>
+            {{active:"ใช้งานได้", pending:"รออนุมัติ", banned:"ระงับ", admin:"Admin", user:"User", with2fa:"เปิด 2FA", no2fa:"ไม่มี 2FA", pwExpired:"รหัสผ่านหมดอายุ"}[statusFilter] || statusFilter}
+            <Icon name="close" size={11} />
+          </button>
+        </div>
+      )}
       </div>
 
       {/* Desktop: table */}

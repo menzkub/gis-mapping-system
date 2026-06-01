@@ -1197,16 +1197,18 @@ function useDeployStatus() {
 function DeployStatusDot() {
   const [open, setOpen] = useStateApp(false);
   const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync, refetch } = useDeployStatus();
+  const { t, lang } = useLang();
 
   const pending  = !isLoading && deployedHash && ghHash && !inSync;
   const dotColor = isLoading ? "#9ca3af" : inSync ? "#059669" : "#d97706";
-  const dotLabel = isLoading ? "กำลังตรวจสอบ…" : inSync ? "ระบบเป็นปัจจุบัน" : "มีการอัปเดตรอ Deploy";
+  const dotLabel = isLoading ? t("deployChecking") : inSync ? t("deployCurrent") : t("deployPending");
 
   const fmtDate = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
-    return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" }) +
-      " · " + d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+    const loc = lang === "en" ? "en-GB" : "th-TH";
+    return d.toLocaleDateString(loc, { day: "numeric", month: "short" }) +
+      " · " + d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -1252,38 +1254,38 @@ function DeployStatusDot() {
                 animation: isLoading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
               }} />
               <span style={{ fontWeight: 700, fontSize: 13, color: dotColor, flex: 1 }}>{dotLabel}</span>
-              <span style={{ fontSize: 10, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Deploy</span>
+              <span style={{ fontSize: 10, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("deployLabel")}</span>
             </div>
 
             {/* Deployed version */}
             <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>🌐 กำลังรันบนเว็บ</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>🌐 {t("deployRunning")}</div>
               {loading ? (
-                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployChecking")}</div>
               ) : deployed ? (
                 <>
                   <code style={{ fontSize: 12, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "#059669", background: "rgba(5,150,105,0.1)", padding: "1px 7px", borderRadius: 5 }}>{deployedHash}</code>
                   <div style={{ fontSize: 11, color: "var(--ink)", marginTop: 4, lineHeight: 1.4 }}>{deployed.message}</div>
                   <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 2 }}>{fmtDate(deployed.date)}</div>
                 </>
-              ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่พบข้อมูล version.json</div>}
+              ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployNoVersion")}</div>}
             </div>
 
             {/* GitHub latest */}
             <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>☁️ ล่าสุดบน GitHub</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>☁️ {t("deployLatestGH")}</div>
               {ghLoading ? (
-                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployChecking")}</div>
               ) : ghCommit ? (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <code style={{ fontSize: 12, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "var(--pea-purple-600)", background: "rgba(139,63,196,0.12)", padding: "1px 7px", borderRadius: 5 }}>{ghHash}</code>
-                    {pending && <span style={{ fontSize: 9, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.3)", padding: "1px 5px", borderRadius: 4 }}>รอ Deploy</span>}
+                    {pending && <span style={{ fontSize: 9, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.3)", padding: "1px 5px", borderRadius: 4 }}>{t("deployAwait")}</span>}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--ink)", marginTop: 4, lineHeight: 1.4 }}>{ghCommit.commit?.message?.split("\n")[0] || "—"}</div>
                   <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 2 }}>{fmtDate(ghCommit.commit?.author?.date)} · {ghCommit.commit?.author?.name}</div>
                 </>
-              ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่สามารถเชื่อมต่อ GitHub API</div>}
+              ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployNoGH")}</div>}
             </div>
 
             {/* Action buttons */}
@@ -1296,7 +1298,7 @@ function DeployStatusDot() {
                 opacity: isLoading ? 0.6 : 1,
               }}>
                 <Icon name="refresh" size={13} style={{ animation: isLoading ? "pea-spin 0.8s linear infinite" : "none" }} />
-                ตรวจสอบอีกครั้ง
+                {t("deployRecheck")}
               </button>
               <button onClick={() => {
                 const url = new URL(window.location.href);
@@ -1309,13 +1311,11 @@ function DeployStatusDot() {
                 color: "var(--pea-purple-600)", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
               }}>
                 <Icon name="download" size={13} />
-                โหลดเวอร์ชันใหม่
+                {t("deployLoadNew")}
               </button>
             </div>
             <div style={{ padding: "0 14px 10px", fontSize: 10, color: "var(--ink-mute)", lineHeight: 1.5 }}>
-              {pending
-                ? "GitHub Pages ใช้เวลา 1–3 นาทีหลัง push — กด ตรวจสอบอีกครั้ง เมื่อ deploy เสร็จ"
-                : "กด โหลดเวอร์ชันใหม่ เพื่อดึงไฟล์ล่าสุดจาก GitHub Pages (bypass cache)"}
+              {pending ? t("deployHintPending") : t("deployHintSync")}
             </div>
           </div>
         </>

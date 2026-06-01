@@ -31,6 +31,15 @@ const TRANSLATIONS = {
     themeDark: "โหมดมืด", themeLight: "โหมดสว่าง",
     mapStreet: "Street", mapSatellite: "Satellite",
 
+    // ── Deploy status popup ────────────────────────────────
+    deployChecking: "กำลังตรวจสอบ…", deployCurrent: "ระบบเป็นปัจจุบัน", deployPending: "มีการอัปเดตรอ Deploy",
+    deployRunning: "กำลังรันบนเว็บ", deployLatestGH: "ล่าสุดบน GitHub",
+    deployAwait: "รอ Deploy", deployRecheck: "ตรวจสอบอีกครั้ง", deployLoadNew: "โหลดเวอร์ชันใหม่",
+    deployNoVersion: "ไม่พบข้อมูล version.json", deployNoGH: "ไม่สามารถเชื่อมต่อ GitHub API",
+    deployHintPending: "GitHub Pages ใช้เวลา 1–3 นาทีหลัง push — กด ตรวจสอบอีกครั้ง เมื่อ deploy เสร็จ",
+    deployHintSync: "กด โหลดเวอร์ชันใหม่ เพื่อดึงไฟล์ล่าสุดจาก GitHub Pages (bypass cache)",
+    deployLabel: "Deploy",
+
     // ── Notification panel ─────────────────────────────────
     pendingApproval: "บัญชีรอการอนุมัติ", recentActivity: "กิจกรรมล่าสุด",
     noNotifications: "ไม่มีการแจ้งเตือน", andMore: "และอีก", people: "คน…",
@@ -196,6 +205,15 @@ const TRANSLATIONS = {
     switchLang: "เปลี่ยนเป็นภาษาไทย",
     themeDark: "Dark mode", themeLight: "Light mode",
     mapStreet: "Street", mapSatellite: "Satellite",
+
+    // ── Deploy status popup ────────────────────────────────
+    deployChecking: "Checking…", deployCurrent: "Up to date", deployPending: "Update awaiting deploy",
+    deployRunning: "Running on web", deployLatestGH: "Latest on GitHub",
+    deployAwait: "Awaiting Deploy", deployRecheck: "Re-check", deployLoadNew: "Load New Version",
+    deployNoVersion: "version.json not found", deployNoGH: "Cannot connect to GitHub API",
+    deployHintPending: "GitHub Pages takes 1–3 min after push — press Re-check when done",
+    deployHintSync: "Press Load New Version to get latest files from GitHub Pages (bypass cache)",
+    deployLabel: "Deploy",
 
     // ── Notification panel ─────────────────────────────────
     pendingApproval: "accounts pending approval", recentActivity: "Recent Activity",
