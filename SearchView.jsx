@@ -519,21 +519,34 @@ function NavigationPanel({ target, kind, onClose }) {
   const [gpsState, setGpsState] = useStateNav("loading"); // loading | ok | denied
   const [userPos, setUserPos] = useStateNav(null);
 
+  const watchRef = React.useRef(null);
+
+  const stopWatch = () => {
+    if (watchRef.current != null) {
+      navigator.geolocation.clearWatch(watchRef.current);
+      watchRef.current = null;
+    }
+  };
+
   const doGPS = () => {
     setGpsState("loading");
     setUserPos(null);
     if (!navigator.geolocation) { setGpsState("denied"); return; }
-    navigator.geolocation.getCurrentPosition(
+    stopWatch();
+    watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy });
         setGpsState("ok");
       },
       () => setGpsState("denied"),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
-  useEffectNav(() => { doGPS(); }, []);
+  useEffectNav(() => {
+    doGPS();
+    return stopWatch;
+  }, []);
 
   // Only calculate distance when we have actual GPS — never use hardcoded fallback
   const from = userPos;
@@ -553,6 +566,9 @@ function NavigationPanel({ target, kind, onClose }) {
     : gpsState === "ok"
       ? `${t("currentPos")} (${userPos.lat.toFixed(4)}, ${userPos.lng.toFixed(4)})`
       : t("unknownPos");
+  const accLabel = gpsState === "ok" && userPos.acc != null
+    ? (userPos.acc <= 20 ? `±${userPos.acc.toFixed(0)} m ✓` : userPos.acc <= 100 ? `±${userPos.acc.toFixed(0)} m` : `±${userPos.acc.toFixed(0)} m — ต่ำ`)
+    : null;
 
   const googleUrl = userPos
     ? `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`
@@ -630,7 +646,7 @@ function NavigationPanel({ target, kind, onClose }) {
         </div>
 
         {/* GPS status */}
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--line)" }}>
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--line)" }}>
           {gpsState === "loading" && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-mute)" }}>
               <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: "50%", border: "2px solid var(--line)", borderTopColor: "var(--pea-purple-500)", animation: "pea-spin 0.8s linear infinite" }} />
@@ -638,8 +654,20 @@ function NavigationPanel({ target, kind, onClose }) {
             </div>
           )}
           {gpsState === "ok" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#16a34a", fontWeight: 600 }}>
-              <span>✓</span> {t("gpsOkMsg")}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, flexWrap: "wrap" }}>
+              <span style={{ color: "#16a34a" }}>✓</span>
+              <span style={{ color: "#16a34a", fontWeight: 600, flex: 1 }}>
+                {t("gpsOkMsg")}
+                {accLabel && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 500, opacity: 0.75 }}>{accLabel}</span>}
+              </span>
+              <button onClick={doGPS} style={{
+                display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
+                borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.3)",
+                color: "var(--pea-purple-600)", flexShrink: 0,
+              }}>
+                <Icon name="refresh" size={12} /> อัปเดตตำแหน่ง
+              </button>
             </div>
           )}
           {gpsState === "denied" && (

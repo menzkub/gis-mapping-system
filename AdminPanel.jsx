@@ -2903,9 +2903,11 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [locating, setLocating] = useStateAd(false);
   const [viewportLoading, setViewportLoading] = useStateAd(false);
   const viewportLoadIdRef = React.useRef(0);
-  const [mapSearchOpen, setMapSearchOpen] = useStateAd(false);
   const [mapSearchQ, setMapSearchQ] = useStateAd("");
+  const [mapSearchResults, setMapSearchResults] = useStateAd([]);
+  const [mapSearching, setMapSearching] = useStateAd(false);
   const mapSearchRef = React.useRef(null);
+  const mapSearchTimerRef = React.useRef(null);
   const toast = useToast();
 
   const loadCorrections = React.useCallback(async () => {
@@ -3199,32 +3201,40 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     cursor: "pointer", transition: "all 140ms",
   });
 
-  const mapSearchResults = React.useMemo(() => {
-    const q = mapSearchQ.trim().toLowerCase();
-    if (!q || q.length < 2) return [];
-    const results = [];
-    for (const m of meters) {
-      if (
-        (m.TAG && m.TAG.toLowerCase().includes(q)) ||
-        (m.PEANO && m.PEANO.toLowerCase().includes(q)) ||
-        (m.ACCOUNTNUM && m.ACCOUNTNUM.toLowerCase().includes(q))
-      ) {
-        results.push({ type: "M", p: m, label: m.PEANO || m.TAG, sub: m.TAG });
-        if (results.length >= 8) break;
-      }
-    }
-    for (const tr of trs) {
-      if (results.length >= 8) break;
-      if (
-        (tr.TAG && tr.TAG.toLowerCase().includes(q)) ||
-        (tr.PEANO_TR && tr.PEANO_TR.toLowerCase().includes(q)) ||
-        (tr.LOCATION && tr.LOCATION.toLowerCase().includes(q))
-      ) {
-        results.push({ type: "T", p: tr, label: tr.PEANO_TR || tr.TAG, sub: tr.LOCATION || tr.TAG });
-      }
-    }
-    return results;
-  }, [mapSearchQ, meters, trs]);
+  useEffectAd(() => {
+    const q = mapSearchQ.trim();
+    if (q.length < 2) { setMapSearchResults([]); setMapSearching(false); return; }
+    setMapSearching(true);
+    clearTimeout(mapSearchTimerRef.current);
+    mapSearchTimerRef.current = setTimeout(async () => {
+      try {
+        const [{ data: mRows }, { data: tRows }] = await Promise.all([
+          _supabase.from("meters")
+            .select("objectid,tag,peano,latitude,longitude,route,feederid")
+            .or(`peano.ilike.%${q}%,tag.ilike.%${q}%`)
+            .limit(6),
+          _supabase.from("transformers")
+            .select("objectid,tag,peano_tr,latitude,longitude,location")
+            .or(`peano_tr.ilike.%${q}%,tag.ilike.%${q}%,location.ilike.%${q}%`)
+            .limit(4),
+        ]);
+        const results = [];
+        (mRows || []).forEach(r => results.push({
+          type: "M",
+          p: { OBJECTID: r.objectid, TAG: r.tag, PEANO: r.peano, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, ROUTE: r.route, FEEDERID: r.feederid },
+          label: r.peano || r.tag, sub: r.tag !== r.peano ? r.tag : (r.route || ""),
+        }));
+        (tRows || []).forEach(r => results.push({
+          type: "T",
+          p: { OBJECTID: r.objectid, TAG: r.tag, PEANO_TR: r.peano_tr, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, LOCATION: r.location },
+          label: r.peano_tr || r.tag, sub: r.location || r.tag,
+        }));
+        setMapSearchResults(results);
+      } catch (_) { setMapSearchResults([]); }
+      setMapSearching(false);
+    }, 380);
+    return () => clearTimeout(mapSearchTimerRef.current);
+  }, [mapSearchQ]);
 
   const flyToResult = (r) => {
     const lat = r.p.LATITUDE;
@@ -3232,7 +3242,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     if (!lat || !lng || !mapRef.current) return;
     mapRef.current.flyTo([lat, lng], 19, { duration: 1.0 });
     setMapSearchQ("");
-    setMapSearchOpen(false);
+    setMapSearchResults([]);
   };
 
   return (
@@ -3293,14 +3303,6 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           </button>
         )}
 
-        {/* Search toggle button */}
-        {loadState === "done" && (
-          <button onClick={() => { setMapSearchOpen(o => !o); setTimeout(() => mapSearchRef.current?.focus(), 50); }}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1px solid " + (mapSearchOpen ? "var(--pea-purple-400)" : "var(--line)"), background: mapSearchOpen ? "rgba(139,63,196,0.12)" : "var(--surface-2)", color: mapSearchOpen ? "var(--pea-purple-600)" : "var(--ink-mute)", cursor: "pointer", flexShrink: 0 }}>
-            <Icon name="search" size={13} />
-            <span className="amc-search-label">ค้นหา</span>
-          </button>
-        )}
 
         <div style={{ flex: 1 }} />
 
@@ -3332,43 +3334,59 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         </div>
       </div>
 
-      {/* ── Map search panel ── */}
-      {mapSearchOpen && loadState === "done" && (
-        <div style={{ flexShrink: 0, borderBottom: "1px solid var(--line)", background: "var(--surface)", padding: "8px 12px", position: "relative", zIndex: 20 }}>
-          <div style={{ position: "relative" }}>
-            <Icon name="search" size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }} />
+      {/* ── Search bar (always visible once loaded) ── */}
+      {loadState === "done" && (
+        <div style={{ flexShrink: 0, borderBottom: "1px solid var(--line)", background: "var(--surface)", padding: "10px 14px", position: "relative", zIndex: 20 }}>
+          <div style={{
+            position: "relative", borderRadius: 14, overflow: "visible",
+            border: "1.5px solid " + (mapSearchQ ? "var(--pea-purple-400)" : "var(--line)"),
+            background: "var(--surface-2)", transition: "border-color 180ms",
+          }}>
+            <div style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--pea-purple-500)", display: "flex" }}>
+              {mapSearching
+                ? <span style={{ display: "inline-block", width: 15, height: 15, borderRadius: "50%", border: "2px solid var(--pea-purple-300)", borderTopColor: "var(--pea-purple-600)", animation: "pea-spin 0.7s linear infinite" }} />
+                : <Icon name="search" size={15} />
+              }
+            </div>
             <input
               ref={mapSearchRef}
               value={mapSearchQ}
               onChange={e => setMapSearchQ(e.target.value)}
-              placeholder="ค้นหา TAG, PEANO, ACCOUNTNUM, สถานที่…"
-              style={{ width: "100%", padding: "8px 36px 8px 34px", borderRadius: 10, border: "1px solid var(--pea-purple-300)", background: "var(--surface-2)", color: "var(--ink)", fontSize: 13, fontWeight: 500, outline: "none", boxSizing: "border-box" }}
+              placeholder="ค้นหา PEANO, TAG, สถานที่… (ค้นหาจากทั้งหมด)"
+              style={{ width: "100%", padding: "10px 38px 10px 40px", background: "transparent", border: "none", outline: "none", color: "var(--ink)", fontSize: 13, fontWeight: 500, boxSizing: "border-box" }}
             />
             {mapSearchQ && (
-              <button onClick={() => setMapSearchQ("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--ink-mute)", cursor: "pointer", padding: 4, display: "flex" }}>
-                <Icon name="close" size={13} />
+              <button onClick={() => { setMapSearchQ(""); setMapSearchResults([]); }} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--ink-mute)", cursor: "pointer", padding: 4, display: "flex", borderRadius: 6 }}>
+                <Icon name="close" size={14} />
               </button>
             )}
           </div>
-          {mapSearchQ.trim().length >= 2 && (
-            <div style={{ marginTop: 6, maxHeight: 240, overflowY: "auto", borderRadius: 10, border: "1px solid var(--line)", background: "var(--surface)", boxShadow: "0 4px 16px rgba(0,0,0,0.12)" }}>
+
+          {/* Results dropdown */}
+          {mapSearchQ.trim().length >= 2 && !mapSearching && (
+            <div style={{ marginTop: 6, borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)", overflow: "hidden" }}>
               {mapSearchResults.length === 0 ? (
-                <div style={{ padding: "12px 14px", fontSize: 13, color: "var(--ink-mute)", textAlign: "center" }}>ไม่พบข้อมูล</div>
+                <div style={{ padding: "14px 16px", textAlign: "center", color: "var(--ink-mute)", fontSize: 13 }}>
+                  <div style={{ fontSize: 18, marginBottom: 4 }}>🔍</div>
+                  ไม่พบข้อมูลสำหรับ "{mapSearchQ}"
+                </div>
               ) : mapSearchResults.map((r, i) => (
                 <button key={i} onClick={() => flyToResult(r)} style={{
-                  display: "flex", alignItems: "center", gap: 10, width: "100%",
-                  padding: "10px 14px", background: "transparent", border: "none",
+                  display: "flex", alignItems: "center", gap: 12, width: "100%",
+                  padding: "11px 14px", background: "transparent", border: "none",
                   borderBottom: i < mapSearchResults.length - 1 ? "1px solid var(--line)" : "none",
                   cursor: "pointer", textAlign: "left",
                 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 11, color: "white", background: r.type === "M" ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "linear-gradient(135deg,#ea580c,#f47b20)" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, color: "white", background: r.type === "M" ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "linear-gradient(135deg,#ea580c,#f47b20)" }}>
                     {r.type === "M" ? "M" : "▲"}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</div>
                     {r.sub && r.sub !== r.label && <div style={{ fontSize: 11, color: "var(--ink-mute)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.sub}</div>}
                   </div>
-                  <Icon name="location" size={13} style={{ color: "var(--pea-purple-400)", flexShrink: 0 }} />
+                  <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4, color: "var(--pea-purple-400)", fontSize: 11, fontWeight: 700 }}>
+                    <Icon name="location" size={12} /> นำทาง
+                  </div>
                 </button>
               ))}
             </div>
