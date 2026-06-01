@@ -2899,6 +2899,179 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   );
 }
 
+function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
+  const miniMapRef = React.useRef(null);
+  const miniMapInst = React.useRef(null);
+  const newMarkerRef = React.useRef(null);
+  const [newLat, setNewLat] = useStateAd(target.p.LATITUDE);
+  const [newLng, setNewLng] = useStateAd(target.p.LONGITUDE);
+  const [note, setNote] = useStateAd("");
+  const [submitting, setSubmitting] = useStateAd(false);
+
+  useEffectAd(() => {
+    if (!miniMapRef.current || miniMapInst.current) return;
+    const map = L.map(miniMapRef.current, { center: [target.p.LATITUDE, target.p.LONGITUDE], zoom: 17, zoomControl: true });
+    L.tileLayer(TILE_LAYERS.street.url, { attribution: TILE_LAYERS.street.attribution, maxZoom: 19 }).addTo(map);
+    // Old position — red fixed dot
+    const oldIcon = L.divIcon({ className: "", html: `<div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>`, iconSize: [14,14], iconAnchor: [7,7] });
+    L.marker([target.p.LATITUDE, target.p.LONGITUDE], { icon: oldIcon }).addTo(map).bindTooltip(t("corrOldCoord"), { permanent: false });
+    // New position — green draggable dot
+    const newIcon = L.divIcon({ className: "", html: `<div style="width:18px;height:18px;border-radius:50%;background:#16a34a;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:move"></div>`, iconSize: [18,18], iconAnchor: [9,9] });
+    const nm = L.marker([target.p.LATITUDE, target.p.LONGITUDE], { icon: newIcon, draggable: true }).addTo(map).bindTooltip(t("corrNewCoord"), { permanent: false });
+    nm.on('drag dragend', () => {
+      const ll = nm.getLatLng();
+      setNewLat(+ll.lat.toFixed(6));
+      setNewLng(+ll.lng.toFixed(6));
+    });
+    newMarkerRef.current = nm;
+    miniMapInst.current = map;
+    return () => { if (miniMapInst.current) { miniMapInst.current.remove(); miniMapInst.current = null; } };
+  }, []);
+
+  useEffectAd(() => {
+    if (newMarkerRef.current && isFinite(newLat) && isFinite(newLng))
+      newMarkerRef.current.setLatLng([newLat, newLng]);
+  }, [newLat, newLng]);
+
+  const samePos = Math.abs(newLat - target.p.LATITUDE) < 0.00001 && Math.abs(newLng - target.p.LONGITUDE) < 0.00001;
+
+  const handleSubmit = async () => {
+    if (samePos || submitting) return;
+    setSubmitting(true);
+    await onSubmit({ newLat, newLng, note });
+    setSubmitting(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9950, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div className="card card-elev fade-up" style={{ maxWidth: 580, width: "100%", padding: 0, overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg,#ea580c,#f47b20)", color: "white", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            📍
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>{t("corrReportBtn")}</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{target.isMeter ? "Meter" : "Transformer"} · <span style={{ fontFamily: "monospace" }}>{target.p.TAG}</span></div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 20, lineHeight: 1 }}>✕</button>
+        </div>
+
+        {/* Body: mini-map left, form right */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          <div ref={miniMapRef} style={{ height: 280, borderRight: "1px solid var(--line)" }} />
+          <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", marginBottom: 4 }}>
+                🔴 {t("corrOldCoord")}
+              </div>
+              <div style={{ fontSize: 11, fontFamily: "monospace", background: "var(--surface-2)", padding: "5px 9px", borderRadius: 7, color: "var(--ink-mute)" }}>
+                {target.p.LATITUDE.toFixed(6)}, {target.p.LONGITUDE.toFixed(6)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>🟢 {t("corrNewCoord")}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LAT</div>
+                  <input className="input" type="number" step="0.000001" value={newLat} onChange={e => setNewLat(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "5px 7px" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LNG</div>
+                  <input className="input" type="number" step="0.000001" value={newLng} onChange={e => setNewLng(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "5px 7px" }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 4 }}>* {t("corrDragHint")}</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{t("corrNote")}</div>
+              <textarea className="input" placeholder={t("corrNote") + "…"} value={note} onChange={e => setNote(e.target.value)}
+                style={{ width: "100%", minHeight: 68, resize: "none", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "10px 16px", borderTop: "1px solid var(--line)", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="btn btn-outline" onClick={onClose}>{t ? t("cancel") : "ยกเลิก"}</button>
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting || samePos}
+            style={{ background: submitting || samePos ? undefined : "linear-gradient(135deg,#ea580c,#f47b20)" }}>
+            {submitting ? "…" : `📍 ${t("corrSubmit")}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CorrectionReviewPanel({ corrections, onApprove, onReject, onClose, t }) {
+  const pending = corrections.filter(c => c.status === "pending");
+  return (
+    <div style={{
+      width: 320, flexShrink: 0, background: "var(--surface)", borderLeft: "1px solid var(--line)",
+      display: "flex", flexDirection: "column", boxShadow: "-4px 0 20px rgba(0,0,0,0.12)",
+    }}>
+      <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ fontWeight: 800, fontSize: 13, flex: 1 }}>
+          {t("corrReviewBtn")}
+          {pending.length > 0 && (
+            <span style={{ marginLeft: 7, background: "#ea580c", color: "white", borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 800 }}>
+              {pending.length}
+            </span>
+          )}
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 16 }}>✕</button>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+        {pending.length === 0 && (
+          <div style={{ textAlign: "center", padding: "28px 12px", color: "var(--ink-mute)", fontSize: 13 }}>
+            ✓ {t("corrNoPending")}
+          </div>
+        )}
+        {pending.map(c => (
+          <div key={c.id} style={{ background: "var(--surface-2)", borderRadius: 12, padding: 12, border: "1px solid var(--line)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: 6, color: "white", fontWeight: 900, fontSize: 10,
+                background: c.record_type === "meter" ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "linear-gradient(135deg,#ea580c,#f47b20)",
+                display: "grid", placeItems: "center", flexShrink: 0
+              }}>{c.record_type === "meter" ? "M" : "▲"}</div>
+              <div style={{ fontWeight: 700, fontSize: 11, fontFamily: "monospace", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.record_tag}</div>
+              <span style={{ fontSize: 9, background: "#f59e0b22", color: "#b45309", border: "1px solid #f59e0b44", borderRadius: 6, padding: "2px 5px", fontWeight: 700, flexShrink: 0 }}>{t("corrPending")}</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginBottom: 7 }}>
+              <div style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)", borderRadius: 7, padding: "5px 7px" }}>
+                <div style={{ fontSize: 9, color: "#ef4444", fontWeight: 700, marginBottom: 2 }}>🔴 {t("corrOldCoord")}</div>
+                <div style={{ fontSize: 10, fontFamily: "monospace", lineHeight: 1.6 }}>{(+c.old_lat).toFixed(5)}<br/>{(+c.old_lng).toFixed(5)}</div>
+              </div>
+              <div style={{ background: "rgba(22,163,74,0.07)", border: "1px solid rgba(22,163,74,0.18)", borderRadius: 7, padding: "5px 7px" }}>
+                <div style={{ fontSize: 9, color: "#16a34a", fontWeight: 700, marginBottom: 2 }}>🟢 {t("corrNewCoord")}</div>
+                <div style={{ fontSize: 10, fontFamily: "monospace", lineHeight: 1.6 }}>{(+c.new_lat).toFixed(5)}<br/>{(+c.new_lng).toFixed(5)}</div>
+              </div>
+            </div>
+            {c.note && (
+              <div style={{ fontSize: 11, color: "var(--ink-mute)", background: "var(--surface)", borderRadius: 6, padding: "4px 7px", marginBottom: 7 }}>
+                {c.note}
+              </div>
+            )}
+            <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 7 }}>
+              {t("corrSubmittedBy")}: {c.submitted_by_username || "—"} · {c.submitted_at ? new Date(c.submitted_at).toLocaleDateString("th-TH") : ""}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              <button className="btn" onClick={() => onReject(c)} style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)", fontSize: 12, padding: "6px 0" }}>
+                ✕ {t("corrReject")}
+              </button>
+              <button className="btn btn-primary" onClick={() => onApprove(c)} style={{ background: "linear-gradient(135deg,#16a34a,#22c55e)", fontSize: 12, padding: "6px 0" }}>
+                ✓ {t("corrApprove")}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection) {
   const icon = L.divIcon({
     className: "",
