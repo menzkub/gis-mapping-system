@@ -14,7 +14,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
     trs: t("admTrs"), map: t("admMap"),
     import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
-    guide: t("admGuide"),
+    guide: t("admGuide"), security: t("admSecurity"),
     dev: t("admDev"),
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
@@ -25,10 +25,11 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"trs",       icon:"tr",        label:t("admMobTrs")     },
     { id:"map",       icon:"map",       label:t("admMobMap")     },
     { id:"import",    icon:"upload",    label:t("admMobImport")  },
-    { id:"audit",     icon:"history",   label:t("admMobAudit")   },
-    { id:"settings",  icon:"settings",  label:t("admSettings")   },
-    { id:"guide",     icon:"book",      label:t("admMobGuide")   },
-    { id:"dev",       icon:"code",      label:t("admMobDev")     },
+    { id:"audit",     icon:"history",   label:t("admMobAudit")    },
+    { id:"security",  icon:"lock",      label:t("admMobSecurity") },
+    { id:"settings",  icon:"settings",  label:t("admSettings")    },
+    { id:"guide",     icon:"book",      label:t("admMobGuide")    },
+    { id:"dev",       icon:"code",      label:t("admMobDev")      },
   ];
 
   return (
@@ -97,6 +98,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         {tab === "map"       && <AdminMapTab data={data} currentUser={currentUser} addAudit={addAudit} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "audit"     && <AdminAudit />}
+        {tab === "security"  && <AdminSecurity data={data} />}
         {tab === "settings"  && <AdminSettings
           maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
           maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
@@ -3454,6 +3456,302 @@ const ALL_ACTIONS = [
   "create_tr","update_tr","delete_tr",
   "approve_user","ban_user","update_user","import_csv","export_csv","create_user",
 ];
+/* ─────────── Security Panel ─────────── */
+function AdminSecurity({ data }) {
+  const { t, lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
+  const [auditEvents, setAuditEvents] = useStateAd([]);
+  const [loading, setLoading]         = useStateAd(true);
+  const [lastChecked, setLastChecked] = useStateAd(null);
+  const toast = useToast();
+
+  const fetchAudit = React.useCallback(async () => {
+    setLoading(true);
+    const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const { data: rows, error } = await _supabase
+      .from("audit_log")
+      .select("id,action,user_id,detail,created_at")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (!error && rows) setAuditEvents(rows);
+    setLoading(false);
+    setLastChecked(new Date());
+  }, []);
+
+  useEffectAd(() => { fetchAudit(); }, []);
+
+  // ── Score Calculation ─────────────────────────────────────────
+  const users     = data.users || [];
+  const total     = users.length || 1;
+  const admins    = users.filter(u => u.role === "admin");
+  const with2fa   = users.filter(u => u.require_2fa).length;
+  const admins2fa = admins.filter(u => u.require_2fa).length;
+  const pwExpired = users.filter(u => {
+    if (u.pw_force_change) return false;
+    if (!u.password_changed_at) return false;
+    return (Date.now() - new Date(u.password_changed_at)) > 45 * 24 * 3600 * 1000;
+  }).length;
+  const now24h  = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const now7d   = new Date(Date.now() - 7  * 24 * 3600 * 1000).toISOString();
+
+  const pwFails24h   = auditEvents.filter(e => e.action === "reset_password_failed" && e.created_at >= now24h).length;
+  const unlocks7d    = auditEvents.filter(e => e.action === "unlock_password" && e.created_at >= now7d).length;
+  const dis2fa7d     = auditEvents.filter(e => e.action === "disable_2fa" && e.created_at >= now7d).length;
+  const bans7d       = auditEvents.filter(e => e.action === "ban_user" && e.created_at >= now7d).length;
+
+  // Threat: rapid logins — same user >5 logins in 24h
+  const loginMap = {};
+  auditEvents.filter(e => e.action === "login" && e.created_at >= now24h).forEach(e => {
+    loginMap[e.user_id] = (loginMap[e.user_id] || 0) + 1;
+  });
+  const rapidLogins = Object.values(loginMap).filter(c => c > 5).length;
+
+  const isHttps     = window.location.protocol === "https:";
+  const allAdminsOk = admins.length === 0 || admins2fa === admins.length;
+  const twoFaRate   = total > 0 ? with2fa / total : 0;
+  const pwOk        = pwExpired === 0;
+  const noThreats   = pwFails24h === 0 && rapidLogins === 0;
+
+  // Score components (max 100)
+  const scoreHttps    = isHttps   ? 20 : 0;
+  const scoreAdmin2fa = admins.length === 0 ? 20 : Math.round(admins2fa / admins.length * 20);
+  const score2faRate  = Math.round(twoFaRate * 10);
+  const scorePwComp   = Math.max(0, 15 - pwExpired * 3);
+  const scoreActivity = Math.max(0, 20 - pwFails24h * 4 - rapidLogins * 5 - bans7d * 2);
+  const scoreDb       = loading ? 10 : 15;
+  const totalScore    = Math.min(100, scoreHttps + scoreAdmin2fa + score2faRate + scorePwComp + scoreActivity + scoreDb);
+
+  const statusColor = totalScore >= 80 ? "#10b981" : totalScore >= 60 ? "#f59e0b" : "#ef4444";
+  const statusBg    = totalScore >= 80 ? "rgba(16,185,129,0.1)" : totalScore >= 60 ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)";
+  const statusLabel = totalScore >= 80 ? s("ปลอดภัย","Secure") : totalScore >= 60 ? s("มีความเสี่ยง","Warning") : s("ต้องดำเนินการ","Critical");
+
+  // ── Gauge SVG ──────────────────────────────────────────────────
+  const GAUGE_R = 54, GAUGE_CX = 64, GAUGE_CY = 64;
+  const circum   = 2 * Math.PI * GAUGE_R;
+  const dashLen  = circum * (totalScore / 100);
+
+  // ── Checks ────────────────────────────────────────────────────
+  const checks = [
+    {
+      label: s("การเชื่อมต่อ HTTPS","HTTPS Connection"),
+      ok: isHttps, score: scoreHttps, max: 20,
+      desc: isHttps ? s("ข้อมูลถูกเข้ารหัส TLS","Data encrypted with TLS") : s("⚠️ ควรใช้ HTTPS เท่านั้น","⚠️ HTTPS required for security"),
+      fix: isHttps ? null : s("ตรวจสอบการตั้งค่า GitHub Pages หรือ CDN","Check GitHub Pages or CDN settings"),
+    },
+    {
+      label: s("2FA สำหรับ Admin","Admin 2FA"),
+      ok: allAdminsOk, score: scoreAdmin2fa, max: 20,
+      desc: `${admins2fa}/${admins.length} ${s("บัญชี Admin มี 2FA","admin accounts have 2FA")}`,
+      fix: allAdminsOk ? null : s("เปิด 2FA ให้บัญชี Admin ทุกบัญชีใน จัดการผู้ใช้","Enable 2FA for all Admin accounts in User Management"),
+    },
+    {
+      label: s("อัตราการใช้ 2FA","2FA Adoption Rate"),
+      ok: twoFaRate >= 0.5, score: score2faRate, max: 10,
+      desc: `${Math.round(twoFaRate * 100)}% ${s("ของผู้ใช้มี 2FA","of users have 2FA")} (${with2fa}/${total})`,
+      fix: twoFaRate < 0.5 ? s("แนะนำให้เปิด 2FA สำหรับผู้ใช้ทุกคน","Enable 2FA for all users") : null,
+    },
+    {
+      label: s("รหัสผ่านตามนโยบาย","Password Compliance"),
+      ok: pwOk, score: scorePwComp, max: 15,
+      desc: pwOk ? s("ไม่มีรหัสผ่านหมดอายุ","No expired passwords") : `${pwExpired} ${s("บัญชีรหัสผ่านหมดอายุ","accounts with expired passwords")}`,
+      fix: pwOk ? null : s("ไปที่ จัดการผู้ใช้ → ปลดล็อครหัสผ่านที่หมดอายุ","Go to User Management → unlock expired passwords"),
+    },
+    {
+      label: s("กิจกรรมต้องสงสัย (24 ชม.)","Suspicious Activity (24h)"),
+      ok: noThreats, score: scoreActivity, max: 20,
+      desc: noThreats
+        ? s("ไม่พบกิจกรรมต้องสงสัย","No suspicious activity detected")
+        : `${pwFails24h > 0 ? `reset password fail ×${pwFails24h}` : ""} ${rapidLogins > 0 ? `rapid login ×${rapidLogins}` : ""}`.trim(),
+      fix: noThreats ? null : s("ตรวจสอบ Audit Log — อาจมีความพยายามเข้าถึงโดยไม่ได้รับอนุญาต","Review Audit Log — possible unauthorized access attempts"),
+    },
+    {
+      label: s("การเชื่อมต่อฐานข้อมูล","Database Connection"),
+      ok: !loading, score: scoreDb, max: 15,
+      desc: loading ? s("กำลังตรวจสอบ…","Checking…") : s("Supabase เชื่อมต่อและทำงานปกติ","Supabase connected and operational"),
+      fix: null,
+    },
+  ];
+
+  // ── Recent threats ─────────────────────────────────────────────
+  const threats = [
+    ...auditEvents.filter(e => e.action === "reset_password_failed").slice(0, 5).map(e => ({ ...e, threat: "pw_fail", icon: "🔑", color: "#ef4444" })),
+    ...auditEvents.filter(e => e.action === "ban_user").slice(0, 5).map(e => ({ ...e, threat: "ban", icon: "🚫", color: "#f59e0b" })),
+    ...auditEvents.filter(e => e.action === "disable_2fa").slice(0, 3).map(e => ({ ...e, threat: "2fa_off", icon: "🔓", color: "#f59e0b" })),
+    ...auditEvents.filter(e => e.action === "unlock_password").slice(0, 5).map(e => ({ ...e, threat: "unlock", icon: "🗝️", color: "#6b7280" })),
+  ].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 12);
+
+  const fmtDate = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString(lang === "en" ? "en-GB" : "th-TH", { day:"numeric", month:"short" }) + " " +
+           d.toLocaleTimeString(lang === "en" ? "en-GB" : "th-TH", { hour:"2-digit", minute:"2-digit" });
+  };
+
+  const threatLabels = {
+    pw_fail: s("รีเซ็ตรหัสผ่านล้มเหลว","Password reset failed"),
+    ban:     s("ระงับบัญชีผู้ใช้","User account suspended"),
+    "2fa_off": s("ปิด 2FA","2FA disabled"),
+    unlock:  s("ปลดล็อครหัสผ่านหมดอายุ","Unlocked expired password"),
+  };
+
+  return (
+    <div className="f-col f-gap-4 fade-up" style={{ maxWidth: 900, margin: "0 auto" }}>
+
+      {/* ── Score + Status header ─────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 20, alignItems: "center",
+        background: "var(--surface)", border: `1px solid ${statusColor}44`, borderRadius: 18,
+        padding: "20px 24px", boxShadow: `0 0 0 3px ${statusColor}18` }}>
+
+        {/* Gauge */}
+        <svg width={128} height={128} viewBox="0 0 128 128">
+          <circle cx={GAUGE_CX} cy={GAUGE_CY} r={GAUGE_R} fill="none" stroke="var(--line)" strokeWidth={10} />
+          <circle cx={GAUGE_CX} cy={GAUGE_CY} r={GAUGE_R} fill="none"
+            stroke={statusColor} strokeWidth={10}
+            strokeDasharray={`${dashLen} ${circum - dashLen}`}
+            strokeDashoffset={circum * 0.25}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 1s ease, stroke 0.5s ease" }}
+          />
+          <text x={GAUGE_CX} y={GAUGE_CY - 4} textAnchor="middle" fill={statusColor}
+            fontSize={26} fontWeight={900} fontFamily="IBM Plex Mono,monospace">{totalScore}</text>
+          <text x={GAUGE_CX} y={GAUGE_CY + 14} textAnchor="middle" fill="var(--ink-mute)"
+            fontSize={11} fontWeight={700}>/100</text>
+        </svg>
+
+        {/* Labels */}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 22, fontWeight: 900, color: statusColor }}>{s("คะแนนความปลอดภัย","Security Score")}</span>
+            <span style={{ padding: "4px 12px", borderRadius: 99, background: statusBg, color: statusColor, fontSize: 13, fontWeight: 800, border: `1px solid ${statusColor}44` }}>
+              {statusLabel}
+            </span>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 12 }}>
+            {s("วิเคราะห์จาก: HTTPS, 2FA, นโยบายรหัสผ่าน, กิจกรรมต้องสงสัยใน 24 ชม.","Analyzed from: HTTPS, 2FA, password policy, suspicious activity in last 24h")}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <button onClick={fetchAudit} disabled={loading} style={{
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10,
+              background: "rgba(107,44,145,0.1)", border: "1px solid rgba(107,44,145,0.3)",
+              color: "var(--pea-purple-600)", fontSize: 12, fontWeight: 700, cursor: loading ? "wait" : "pointer",
+            }}>
+              <Icon name="refresh" size={13} style={{ animation: loading ? "pea-spin 0.8s linear infinite" : "none" }} />
+              {loading ? s("กำลังตรวจสอบ…","Checking…") : s("ตรวจสอบอีกครั้ง","Re-check")}
+            </button>
+            {lastChecked && <span style={{ fontSize: 11, color: "var(--ink-mute)" }}>
+              {s("ตรวจสอบล่าสุด","Last checked")}: {fmtDate(lastChecked.toISOString())}
+            </span>}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Security Checks Grid ──────────────────────────── */}
+      <div>
+        <div className="text-sm fw-7 t-mute" style={{ marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+          {s("รายการตรวจสอบความปลอดภัย","Security Checks")}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {checks.map(c => (
+            <div key={c.label} style={{
+              display: "grid", gridTemplateColumns: "28px 1fr auto", gap: 12, alignItems: "start",
+              background: "var(--surface)", border: `1px solid ${c.ok ? "var(--line)" : "#f59e0b55"}`,
+              borderRadius: 12, padding: "12px 16px",
+              boxShadow: c.ok ? "none" : "0 0 0 2px rgba(245,158,11,0.1)",
+            }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, display: "grid", placeItems: "center", flexShrink: 0,
+                background: c.ok ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)" }}>
+                <Icon name={c.ok ? "check" : "warning"} size={14} style={{ color: c.ok ? "#10b981" : "#f59e0b" }} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{c.label}</div>
+                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{c.desc}</div>
+                {c.fix && <div style={{ fontSize: 11, color: "#d97706", marginTop: 4, fontWeight: 600 }}>→ {c.fix}</div>}
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 900, color: c.ok ? "#10b981" : "#f59e0b", fontFamily: "IBM Plex Mono,monospace" }}>{c.score}</div>
+                <div style={{ fontSize: 10, color: "var(--ink-mute)" }}>/{c.max} {s("คะแนน","pts")}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Threat Activity ───────────────────────────────── */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div className="text-sm fw-7 t-mute" style={{ textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            {s("กิจกรรมที่น่าสังเกต (7 วันย้อนหลัง)","Notable Activity (Last 7 Days)")}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[
+              { label: s("รีเซ็ตรหัสล้มเหลว","PW Reset Fail"), count: pwFails24h, color: "#ef4444", sub: "24h" },
+              { label: s("ระงับบัญชี","Banned"), count: bans7d, color: "#f59e0b", sub: "7d" },
+              { label: s("ปิด 2FA","2FA Off"), count: dis2fa7d, color: "#6b7280", sub: "7d" },
+            ].map(({ label, count, color, sub }) => (
+              <div key={label} style={{ textAlign: "center", padding: "6px 12px", borderRadius: 10,
+                background: count > 0 ? `${color}18` : "var(--surface-2)",
+                border: `1px solid ${count > 0 ? color + "44" : "var(--line)"}` }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: count > 0 ? color : "var(--ink-mute)", fontFamily: "monospace" }}>{count}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--ink-mute)", whiteSpace: "nowrap" }}>{label}</div>
+                <div style={{ fontSize: 9, color: "var(--ink-mute)" }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden" }}>
+          {loading ? (
+            <div style={{ padding: 20, textAlign: "center", color: "var(--ink-mute)", fontSize: 13 }}>
+              <Icon name="refresh" size={16} style={{ animation: "pea-spin 0.8s linear infinite", marginRight: 6 }} />
+              {s("กำลังโหลด Audit Log…","Loading Audit Log…")}
+            </div>
+          ) : threats.length === 0 ? (
+            <div style={{ padding: 24, textAlign: "center" }}>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>✅</div>
+              <div style={{ fontWeight: 700, color: "#10b981" }}>{s("ไม่พบกิจกรรมต้องสงสัย","No suspicious activity found")}</div>
+              <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 4 }}>{s("ระบบทำงานปกติใน 7 วันที่ผ่านมา","System operated normally in the last 7 days")}</div>
+            </div>
+          ) : (
+            <div>
+              {threats.map((ev, i) => (
+                <div key={ev.id} style={{
+                  display: "grid", gridTemplateColumns: "32px 1fr auto",
+                  gap: 10, alignItems: "center", padding: "10px 16px",
+                  borderBottom: i < threats.length - 1 ? "1px solid var(--line)" : "none",
+                }}>
+                  <span style={{ fontSize: 18, textAlign: "center" }}>{ev.icon}</span>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: ev.color }}>{threatLabels[ev.threat]}</div>
+                    {ev.detail && <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 1 }}>{ev.detail}</div>}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-mute)", whiteSpace: "nowrap" }}>{fmtDate(ev.created_at)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Recommendations ───────────────────────────────── */}
+      {checks.some(c => !c.ok) && (
+        <div style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 14, padding: "16px 20px" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="warning" size={15} style={{ color: "#f59e0b" }} />
+            {s("คำแนะนำเพื่อเพิ่มความปลอดภัย","Security Recommendations")}
+          </div>
+          {checks.filter(c => !c.ok && c.fix).map((c, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 13 }}>
+              <span style={{ color: "#f59e0b", fontWeight: 800, flexShrink: 0 }}>{i + 1}.</span>
+              <span><b>{c.label}:</b> {c.fix}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────── Audit Log ─────────── */
 const PAGE_SIZE = 50;
 
 function AdminAudit() {

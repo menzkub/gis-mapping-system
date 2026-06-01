@@ -1033,16 +1033,18 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
-    version: "v3.0", date: "1 มิ.ย. 2569", tag: "พิกัด & UX",
+    version: "v3.0", date: "1 มิ.ย. 2569", tag: "Security & Map",
     tagColor: "#10b981", items: [
       { cat: "new",  text: { th: "แจ้งแก้ไขพิกัด: กด marker → ลากหมุด/กดแผนที่/ใช้ GPS เพื่อวางพิกัดใหม่ → ส่งคำขอรอ Admin อนุมัติ", en: "Coordinate correction: tap marker → drag pin/tap map/use GPS to set new coords → submit for Admin approval" } },
       { cat: "new",  text: { th: "Admin: แผง 'คำขอแก้ไข' แสดงรายการ Pending พร้อมปุ่ม อนุมัติ / ปฏิเสธ", en: "Admin: 'Correction Requests' panel shows pending items with Approve / Reject buttons" } },
       { cat: "new",  text: { th: "ปุ่ม GPS 'ใช้ตำแหน่งปัจจุบัน' ในหน้าแจ้งแก้ไขพิกัด — สะดวกสำหรับใช้งานที่หน้างาน", en: "GPS 'Use Current Location' button in correction modal — convenient for field use" } },
+      { cat: "new",  text: { th: "แดชบอร์ดผู้ใช้: การ์ดสถิติ (ทั้งหมด/Active/Pending/Banned/Admin/2FA/รหัสหมดอายุ) กดได้ — filter ตารางและ scroll ลงทันที", en: "User dashboard: stat cards (Total/Active/Pending/Banned/Admin/2FA/PwExpired) are clickable — filter table and scroll instantly" } },
+      { cat: "new",  text: { th: "ความปลอดภัย: แท็บใหม่ใน Admin — คะแนนความปลอดภัย (0-100) + รายการตรวจสอบ 6 รายการ + ตรวจจับกิจกรรมต้องสงสัยจาก Audit Log", en: "Security: new Admin tab — security score (0-100) + 6 security checks + threat detection from Audit Log" } },
       { cat: "ux",   text: { th: "Basemap เปลี่ยนจาก tab แบนเป็น dropdown picker (Street / Satellite) ทั้ง Topbar และ Admin Map", en: "Basemap changed from flat tabs to dropdown picker (Street / Satellite) on Topbar and Admin Map" } },
       { cat: "fix",  text: { th: "นำ Dark basemap ออก — ใช้ Street / Satellite เท่านั้น", en: "Remove Dark basemap — Street / Satellite only" } },
-      { cat: "new",  text: { th: "Deploy popup: ปุ่ม 'ตรวจสอบอีกครั้ง' (refetch status) และ 'โหลดเวอร์ชันใหม่' (force reload + bypass cache)", en: "Deploy popup: 'Re-check' button (refetch status) and 'Load New Version' button (force reload + bypass cache)" } },
-      { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออก เนื่องจาก body{overflow:hidden} clip เกิน viewport — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped by body{overflow:hidden} past viewport — now renders full A4 width" } },
-      { cat: "fix",  text: { th: "เมนู Settings: Dark mode / Light mode label เปลี่ยนตามภาษาระบบ", en: "Settings menu: Dark mode / Light mode label now follows system language" } },
+      { cat: "new",  text: { th: "Deploy popup: ปุ่ม 'ตรวจสอบอีกครั้ง' (refetch) และ 'โหลดเวอร์ชันใหม่' (force reload bypass cache) + ข้อความตามภาษา", en: "Deploy popup: 'Re-check' (refetch) and 'Load New Version' (force reload bypass cache) + bilingual labels" } },
+      { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออก (body{overflow:hidden}) — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped by body{overflow:hidden} — now renders full A4 width" } },
+      { cat: "fix",  text: { th: "เมนู Settings: Dark/Light mode + Deploy popup เปลี่ยนภาษาตามระบบทั้งหมด", en: "Settings menu: Dark/Light mode + Deploy popup all follow system language" } },
     ],
   },
   {
@@ -1985,6 +1987,32 @@ function UserGuide({ role }) {
                 <UGStep n={2} text={ug("เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏที่มุมหน้าจอ","Enable 'Show Developer Button' — a floating button appears at screen corner")} />
                 <UGStep n={3} text={ug("ลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้อัตโนมัติ","Drag the button to desired position — position is saved automatically")} />
                 <UGNote>{ug("ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด","Both Maintenance Mode and Developer Info cards can be collapsed by clicking the header")}</UGNote>
+              </div>
+            </UGSection>
+
+            <UGSection icon="lock" title={ug("ความปลอดภัย","Security Monitoring")} badge="admin" expandSignal={expandSig}>
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  [ug("รายการตรวจสอบ","Check"), ug("ความหมาย","Meaning"), ug("คะแนนสูงสุด","Max Score")],
+                  ["HTTPS", ug("การเชื่อมต่อเข้ารหัส TLS","Encrypted TLS connection"), "20"],
+                  [ug("Admin 2FA","Admin 2FA"), ug("ทุกบัญชี Admin มี 2FA","All Admin accounts have 2FA"), "20"],
+                  [ug("อัตราการใช้ 2FA","2FA Adoption"), ug("สัดส่วน user ที่เปิด 2FA","% of users with 2FA enabled"), "10"],
+                  [ug("รหัสผ่านตามนโยบาย","Password Compliance"), ug("ไม่มีรหัสผ่านหมดอายุ","No expired passwords"), "15"],
+                  [ug("กิจกรรมต้องสงสัย","Suspicious Activity"), ug("ไม่มี pw_reset_failed หรือ rapid login ใน 24 ชม.","No pw_reset_failed or rapid login in 24h"), "20"],
+                  [ug("ฐานข้อมูล","Database"), ug("Supabase เชื่อมต่อปกติ","Supabase connected"), "15"],
+                ]} />
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("ระดับความปลอดภัย","Security Levels")}</div>
+                <UGTable rows={[
+                  [ug("คะแนน","Score"), ug("สถานะ","Status"), ug("ความหมาย","Meaning")],
+                  ["≥ 80", ug("🟢 ปลอดภัย","🟢 Secure"), ug("ผ่านตรวจสอบส่วนใหญ่","Most checks passed")],
+                  ["60–79", ug("🟡 มีความเสี่ยง","🟡 Warning"), ug("มีรายการที่ต้องแก้ไข","Some items need attention")],
+                  ["< 60", ug("🔴 ต้องดำเนินการ","🔴 Critical"), ug("มีปัญหาสำคัญ — ดำเนินการทันที","Serious issues — act immediately")],
+                ]} />
+                <UGStep n={1} text={ug("ไปที่ Admin → ความปลอดภัย — ระบบโหลด Audit Log 7 วันย้อนหลังอัตโนมัติ","Go to Admin → Security — system auto-loads 7-day Audit Log")} />
+                <UGStep n={2} text={ug("ดูคะแนนรวมในวงกลม + สถานะ (ปลอดภัย/มีความเสี่ยง/ต้องดำเนินการ)","Check overall score in the gauge + status (Secure/Warning/Critical)")} />
+                <UGStep n={3} text={ug("ตรวจสอบรายการตรวจสอบทีละรายการ — รายการที่ไม่ผ่านจะแสดงวิธีแก้ไข","Review each check — failed items show how to fix")} />
+                <UGStep n={4} text={ug("ดูส่วน 'กิจกรรมที่น่าสังเกต' — แสดง event ต้องสงสัยจาก Audit Log","View 'Notable Activity' — shows suspicious events from Audit Log")} />
+                <UGTip>{ug("กด 'ตรวจสอบอีกครั้ง' เพื่อ refresh ข้อมูล Audit Log สดทันที","Press 'Re-check' to refresh Audit Log data instantly")}</UGTip>
               </div>
             </UGSection>
 
