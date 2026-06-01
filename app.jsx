@@ -3792,32 +3792,37 @@ function App() {
 
         {/* Maintenance Mode Warning Banner — admin only */}
         {maintenanceMode && currentUser.role === "admin" && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 12,
-            padding: "10px 20px",
-            background: "linear-gradient(90deg,#7c2d12,#9a3412,#c2410c)",
-            color: "white", flexShrink: 0, flexWrap: "wrap",
-            borderBottom: "2px solid rgba(255,255,255,0.15)",
-          }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
-              <Icon name="warning" size={16} />
-              ⚠️ ระบบปิดปรับปรุงอยู่
-            </span>
-            <span style={{ fontSize: 12, opacity: 0.9, flex: 1 }}>
-              ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้ในขณะนี้
-              {maintenanceUntil && ` · คาดว่าเปิดให้บริการ: ${new Date(maintenanceUntil).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
-            </span>
-            <button
-              onClick={() => { setRoute("admin"); setAdminTab("settings"); }}
-              style={{
-                padding: "5px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.5)",
-                background: "rgba(255,255,255,0.15)", color: "white",
-                cursor: "pointer", fontSize: 12, fontWeight: 700, flexShrink: 0,
-                backdropFilter: "blur(4px)",
-              }}
-            >
-              <Icon name="settings" size={12} /> เปิดระบบ
-            </button>
+          <div style={{ position: "relative", flexShrink: 0, overflow: "hidden" }}>
+            {/* Hazard stripe background */}
+            <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(-45deg, #f59e0b 0px, #f59e0b 11px, #111 11px, #111 22px)" }} />
+            {/* Dark overlay — content layer */}
+            <div style={{
+              position: "relative", display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 20px", flexWrap: "wrap",
+              background: "rgba(5, 2, 0, 0.78)",
+            }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 900, fontSize: 13, color: "#fde047", flexShrink: 0, letterSpacing: "0.02em", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+                <Icon name="warning" size={16} style={{ color: "#fbbf24" }} />
+                ⚠ ระบบปิดปรับปรุงอยู่
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.92)", flex: 1, textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}>
+                ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้ในขณะนี้
+                {maintenanceUntil && ` · คาดว่าเปิดให้บริการ: ${new Date(maintenanceUntil).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+              </span>
+              <button
+                onClick={() => { setRoute("admin"); setAdminTab("settings"); }}
+                style={{
+                  padding: "5px 14px", borderRadius: 999,
+                  border: "1.5px solid #f59e0b",
+                  background: "#f59e0b", color: "#000",
+                  cursor: "pointer", fontSize: 12, fontWeight: 900, flexShrink: 0,
+                  display: "flex", alignItems: "center", gap: 5,
+                  boxShadow: "0 2px 8px rgba(245,158,11,0.4)",
+                }}
+              >
+                <Icon name="settings" size={12} /> เปิดระบบ
+              </button>
+            </div>
           </div>
         )}
 
