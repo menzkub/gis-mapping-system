@@ -2732,12 +2732,17 @@ function DevInfoButton({ devInfo }) {
   const dragging = React.useRef(false);
   const moved = React.useRef(false);
   const offset = React.useRef({ x: 0, y: 0 });
+  const btnRef = React.useRef(null);
 
   useEffectApp(() => {
-    const clamp = (p) => ({
-      x: Math.min(Math.max(0, p.x), window.innerWidth  - 160),
-      y: Math.min(Math.max(0, p.y), window.innerHeight - 60),
-    });
+    const clamp = (p) => {
+      const w = btnRef.current ? btnRef.current.offsetWidth  : 120;
+      const h = btnRef.current ? btnRef.current.offsetHeight : 44;
+      return {
+        x: Math.min(Math.max(0, p.x), window.innerWidth  - w),
+        y: Math.min(Math.max(0, p.y), window.innerHeight - h),
+      };
+    };
 
     const onMove = (cx, cy) => {
       if (!dragging.current) return;
@@ -2781,6 +2786,7 @@ function DevInfoButton({ devInfo }) {
   return (
     <>
       <button
+        ref={btnRef}
         onMouseDown={e => startDrag(e.clientX, e.clientY)}
         onTouchStart={e => { if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
         onClick={() => { if (!moved.current) setOpen(true); }}
