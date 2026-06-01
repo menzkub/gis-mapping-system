@@ -3093,9 +3093,10 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     tLayerRef.current = L.layerGroup().addTo(map);
     map.on("zoomend", () => setTimeout(() => setZoomTick(t => t + 1), 80));
     mapRef.current = map;
-    // Ensure Leaflet knows the container size after layout settles
-    setTimeout(() => map.invalidateSize(), 100);
-    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
+    // Call invalidateSize whenever the container is resized (handles flex layout settling)
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(containerRef.current);
+    return () => { ro.disconnect(); if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, []);
 
   // Switch base tile layer
