@@ -1041,7 +1041,7 @@ const CHANGELOG = [
       { cat: "new",  text: { th: "แดชบอร์ดผู้ใช้: การ์ดสถิติ (ทั้งหมด/Active/Pending/Banned/Admin/2FA/รหัสหมดอายุ) กดได้ — filter ตารางและ scroll ลงทันที", en: "User dashboard: stat cards (Total/Active/Pending/Banned/Admin/2FA/PwExpired) are clickable — filter table and scroll instantly" } },
       { cat: "new",  text: { th: "ความปลอดภัย: แท็บใหม่ใน Admin — คะแนนความปลอดภัย (0-100) + รายการตรวจสอบ 6 รายการ + ตรวจจับกิจกรรมต้องสงสัยจาก Audit Log", en: "Security: new Admin tab — security score (0-100) + 6 security checks + threat detection from Audit Log" } },
       { cat: "new",  text: { th: "PWA: ติดตั้งแอปบน iOS และ Android ได้ผ่าน 'เพิ่มลงหน้าจอหลัก' — icon, offline cache, standalone mode", en: "PWA: install app on iOS & Android via 'Add to Home Screen' — icon, offline cache, standalone mode" } },
-      { cat: "new",  text: { th: "Web Push Notification: Admin ส่งการแจ้งเตือนถึงมือถือทุกเครื่องทันที — preset 4 แบบ (ปิดระบบ/อัปเดต/กลับมาแล้ว/แจ้งด่วน)", en: "Web Push Notifications: Admin sends instant alerts to all mobile devices — 4 presets (Maintenance/Update/Back Online/Alert)" } },
+      { cat: "new",  text: { th: "Web Push Notification (Admin เท่านั้น): Admin ส่งการแจ้งเตือนถึงอุปกรณ์ที่ subscribe ทุกเครื่องทันที — preset 4 แบบ (ปิดระบบ/อัปเดต/กลับมาแล้ว/แจ้งด่วน)", en: "Web Push Notification (Admin only): Admin sends instant push alerts to all subscribed devices — 4 presets (Maintenance/Update/Back Online/Alert)" } },
       { cat: "fix",  text: { th: "DateTimePicker บนมือถือ: เปลี่ยนเป็น bottom sheet เลื่อนขึ้นจากล่าง — ปฏิทิน + เวลา + ปุ่มยืนยันครบในจอเดียว", en: "DateTimePicker on mobile: bottom sheet slides up from screen bottom — calendar, time picker, confirm all visible" } },
       { cat: "ux",   text: { th: "Basemap เปลี่ยนจาก tab แบนเป็น dropdown picker (Street / Satellite) ทั้ง Topbar และ Admin Map", en: "Basemap changed from flat tabs to dropdown picker (Street / Satellite) on Topbar and Admin Map" } },
       { cat: "ux",   text: { th: "Hero stat card รูปแบบเดียวกันทุก view (คู่มือ/อัปเดต/Dev) — ตัวเลขเรียงระดับเดียว + ปุ่มขยาย/ยุบรวมเป็นปุ่มเดียว", en: "Hero stat cards unified across all views — numbers baseline-aligned + expand/collapse merged into single toggle" } },
@@ -1897,12 +1897,10 @@ function UserGuide({ role }) {
             <UGStep n={4} text={ug("เปิดแอปจาก icon บน home screen — ทำงานแบบ standalone ไม่มี browser bar","Open app from home screen icon — works standalone without browser bar")} />
             <UGTip>{ug("หลังอัปเดตโค้ด ระบบจะโหลด version ใหม่ในรอบถัดไปที่เปิดแอป หรือกด 'โหลดเวอร์ชันใหม่' ใน Deploy popup","After code updates, the app loads the new version on next open, or press 'Load New Version' in the Deploy popup")}</UGTip>
 
-            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("เปิดรับการแจ้งเตือน","Enable Push Notifications")}</div>
-            <UGStep n={1} text={ug("ไปที่ Admin → ตั้งค่า → การ์ด 'ส่งการแจ้งเตือน Push'","Go to Admin → Settings → 'Push Notifications' card")} />
-            <UGStep n={2} text={ug("กดปุ่ม 'เปิดการแจ้งเตือน' — ระบบขอสิทธิ์ผ่าน browser","Press 'Enable Notifications' — browser asks for permission")} />
-            <UGStep n={3} text={ug("กด 'อนุญาต' บนกล่อง dialog ที่ขึ้นมา","Tap 'Allow' on the permission dialog")} />
-            <UGNote>{ug("iOS: หากขึ้นว่า 'ถูกบล็อก' ให้ไปที่ Settings → เลื่อนหา GIS Meter → เปิด Allow Notifications แล้วกลับมากด 'ลองอีกครั้ง'","iOS: if 'Blocked' appears, go to Settings → find GIS Meter → enable Allow Notifications, then tap 'Try Again'")}</UGNote>
-            <UGNote>{ug("ต้องเปิดแอปจาก home screen icon เท่านั้น (ไม่รองรับใน browser tab ปกติ บน iOS)","Must open from home screen icon — not supported in regular browser tab on iOS")}</UGNote>
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("การแจ้งเตือน Push","Push Notifications")}</div>
+            <UGNote>{ug("การแจ้งเตือน Push ถูกส่งโดย Admin เท่านั้น — ผู้ใช้งานจะได้รับแจ้งเตือนเมื่อ Admin ส่งประกาศสำคัญ เช่น ปิดระบบ อัปเดต หรือแจ้งด่วน","Push notifications are sent by Admin only — users receive alerts when Admin sends important announcements such as maintenance, updates, or urgent notices")}</UGNote>
+            <UGNote>{ug("ต้องติดตั้งแอปบน home screen (PWA) และเปิดอนุญาตการแจ้งเตือนก่อน จึงจะได้รับแจ้งเตือน","App must be installed on home screen (PWA) and notification permission must be allowed to receive alerts")}</UGNote>
+            <UGNote>{ug("iOS: ต้องใช้ iOS 16.4 ขึ้นไป และเปิดจาก home screen เท่านั้น — ไม่รองรับใน browser tab ปกติ","iOS: requires iOS 16.4+ and must be opened from home screen — not supported in regular browser tab")}</UGNote>
           </div>
         </UGSection>
 
@@ -2036,12 +2034,17 @@ function UserGuide({ role }) {
               </div>
             </UGSection>
 
-            <UGSection icon="bell" title={ug("ส่ง Push Notification","Send Push Notifications")} badge="admin" expandSignal={expandSig}>
+            <UGSection icon="bell" title={ug("ส่ง Push Notification (Admin เท่านั้น)","Send Push Notifications (Admin Only)")} badge="admin" expandSignal={expandSig}>
               <div style={{ marginTop: 12 }}>
+                <UGNote>{ug("สิทธิ์ส่งการแจ้งเตือน Push เป็นของ Admin เท่านั้น — ผู้ใช้งานทั่วไปไม่สามารถส่งได้","Push notification sending is Admin-only — regular users cannot send notifications")}</UGNote>
+                <div style={{ fontWeight: 700, margin: "12px 0 8px" }}>{ug("เปิดใช้งานการแจ้งเตือนบนอุปกรณ์ Admin (ครั้งแรก)","Enable notifications on Admin device (first time)")}</div>
                 <UGStep n={1} text={ug("ไปที่ Admin → ตั้งค่า → เลื่อนลงถึงการ์ด 'ส่งการแจ้งเตือน Push'","Go to Admin → Settings → scroll to 'Push Notifications' card")} />
-                <UGStep n={2} text={ug("ตรวจสอบสถานะ 'เปิดการแจ้งเตือนแล้ว' (จุดเขียว) ก่อนส่ง","Check that 'Notifications enabled' (green dot) is showing before sending")} />
-                <UGStep n={3} text={ug("เลือกเทมเพลตด่วน หรือพิมพ์หัวข้อ+ข้อความเอง","Select a quick template or type a custom title + message")} />
-                <UGStep n={4} text={ug("กด 'ส่งการแจ้งเตือน' — ระบบส่งถึงทุกเครื่องที่อนุญาตทันที","Press 'Send Notification' — alerts all subscribed devices instantly")} />
+                <UGStep n={2} text={ug("กดปุ่ม 'เปิดการแจ้งเตือน' → กด 'อนุญาต' บน dialog — จุดเขียวจะปรากฏ","Press 'Enable Notifications' → tap 'Allow' on dialog — green dot will appear")} />
+                <UGNote>{ug("iOS: ต้องเปิดจาก home screen (PWA) + iOS 16.4+ ถ้าขึ้น 'ถูกบล็อก' → ไปที่ Settings → GIS Meter → Allow Notifications → กด 'ลองอีกครั้ง'","iOS: must open from home screen (PWA) + iOS 16.4+ · If 'Blocked' appears → Settings → GIS Meter → Allow Notifications → tap 'Try Again'")}</UGNote>
+                <div style={{ fontWeight: 700, margin: "12px 0 8px" }}>{ug("ส่งการแจ้งเตือน","Send Notification")}</div>
+                <UGStep n={3} text={ug("ตรวจสอบสถานะ 'เปิดการแจ้งเตือนแล้ว' (จุดเขียว) ก่อนส่ง","Confirm 'Notifications enabled' (green dot) before sending")} />
+                <UGStep n={4} text={ug("เลือกเทมเพลตด่วน หรือพิมพ์หัวข้อ+ข้อความเอง","Select a quick template or type a custom title + message")} />
+                <UGStep n={5} text={ug("กด 'ส่งการแจ้งเตือน' — ระบบส่งถึงทุกเครื่องที่ subscribe ทันที","Press 'Send Notification' — instantly alerts all subscribed devices")} />
                 <UGTable rows={[
                   [ug("เทมเพลต","Template"), ug("ใช้เมื่อ","Use when")],
                   [ug("🔧 ปิดระบบชั่วคราว","🔧 Maintenance"), ug("แจ้งก่อนปิดระบบเพื่อบำรุงรักษา","Notify before taking system offline")],
@@ -2049,8 +2052,7 @@ function UserGuide({ role }) {
                   [ug("✅ ระบบกลับมาแล้ว","✅ Back Online"), ug("แจ้งหลังซ่อมบำรุงเสร็จ","Notify after maintenance is complete")],
                   [ug("⚠️ แจ้งเตือนด่วน","⚠️ Alert"), ug("ประกาศสำคัญเร่งด่วน","Urgent announcements")],
                 ]} />
-                <UGNote>{ug("ผู้ใช้ที่ไม่ได้อนุญาต push permission จะไม่ได้รับแจ้งเตือน — แนะนำให้แจ้งผู้ใช้เปิดสิทธิ์ก่อน","Users without push permission won't receive alerts — advise users to enable permission first")}</UGNote>
-                <UGTip>{ug("ระบบลบ subscription ที่หมดอายุ (410 Gone) อัตโนมัติหลังส่งทุกครั้ง","Expired subscriptions (410 Gone) are automatically removed after each send")}</UGTip>
+                <UGTip>{ug("ระบบลบ subscription ที่หมดอายุ (410 Gone) อัตโนมัติหลังส่งทุกครั้ง","Expired subscriptions (410 Gone) are automatically cleaned up after each send")}</UGTip>
               </div>
             </UGSection>
 
@@ -3073,7 +3075,7 @@ function App() {
   // Auto-subscribe when user logs in and permission was already granted
   useEffectApp(() => {
     if (!currentUser) return;
-    if (Notification.permission === "granted") subscribePush();
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") subscribePush();
   }, [currentUser?.id]);
 
   // Re-read Notification.permission when user returns to the tab/app
@@ -3823,8 +3825,30 @@ function App() {
   );
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight:"100vh", display:"grid", placeItems:"center", background:"#1b0926", color:"white", padding:24, fontFamily:"monospace" }}>
+          <div style={{ maxWidth:600, width:"100%" }}>
+            <div style={{ fontSize:22, fontWeight:800, color:"#f47b20", marginBottom:12 }}>⚠ Application Error</div>
+            <div style={{ fontSize:13, color:"#d4abff", marginBottom:16, lineHeight:1.6 }}>{this.state.error.message}</div>
+            <div style={{ background:"#321148", padding:14, borderRadius:10, fontSize:11, color:"#a78bfa", wordBreak:"break-all", whiteSpace:"pre-wrap" }}>
+              {this.state.error.stack || "No stack trace available"}
+            </div>
+            <button onClick={() => location.reload()} style={{ marginTop:16, padding:"10px 24px", background:"#8b3fc4", color:"white", border:"none", borderRadius:8, fontSize:14, cursor:"pointer" }}>Reload</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <LanguageProvider><App /></LanguageProvider>
+  <ErrorBoundary><LanguageProvider><App /></LanguageProvider></ErrorBoundary>
 );
 
 // Global error handler — แสดง crash แทนหน้าขาว

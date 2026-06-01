@@ -1559,19 +1559,21 @@ ORDER BY mean_exec_time DESC LIMIT 10;`}</CodeBlock>
           ]} />
 
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Push Notification Flow</div>
-          <CodeBlock>{`1. User เปิดแอปจาก home screen (PWA)
-2. subscribePush() ใน app.jsx:
+          <CodeBlock>{`1. Admin เปิดแอปจาก home screen (PWA) → ไปที่ Settings → กด 'เปิดการแจ้งเตือน'
+   [Admin เท่านั้นที่มีสิทธิ์ subscribe และส่งการแจ้งเตือน]
+
+2. subscribePush() ใน app.jsx (Admin เท่านั้น):
    - Notification.requestPermission() → 'granted'
    - reg.pushManager.subscribe({ VAPID_PUBLIC_KEY })
    - upsert subscription jsonb → push_subscriptions table
 
-3. Admin กด 'ส่งการแจ้งเตือน':
+3. Admin กด 'ส่งการแจ้งเตือน' (Admin Settings → Push card):
    - POST /functions/v1/push-notify
    - Header: Authorization: Bearer <admin JWT>
    - Body: { title, body, url }
 
 4. Edge Function (push-notify/index.ts):
-   - ตรวจสอบ JWT → role === 'admin'
+   - ตรวจสอบ JWT → role === 'admin' (non-admin ถูก reject 403)
    - SELECT * FROM push_subscriptions
    - webpush.sendNotification(subscription, payload)
    - DELETE subscriptions ที่ 410 Gone (expired)
@@ -4095,8 +4097,7 @@ function DateTimePicker({ value, onChange }) {
       " " + String(parsed.getHours()).padStart(2,"0") + ":" + String(parsed.getMinutes()).padStart(2,"0")
     : "";
 
-  /* Shared calendar panel content (used in both dropdown and bottom sheet) */
-  function CalendarPanel() {
+  function renderCalPanel() {
     return (
       <React.Fragment>
         {/* Month nav */}
@@ -4229,7 +4230,8 @@ function DateTimePicker({ value, onChange }) {
           <React.Fragment>
             {/* Backdrop */}
             <div onClick={() => setOpen(false)} style={{
-              position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9998,
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(0,0,0,0.55)", zIndex: 9998,
             }} />
             {/* Sheet */}
             <div ref={dropRef} style={{
@@ -4248,7 +4250,7 @@ function DateTimePicker({ value, onChange }) {
               </div>
               {/* Scrollable content */}
               <div style={{ overflowY: "auto", flex: 1 }}>
-                <CalendarPanel />
+                {renderCalPanel()}
               </div>
             </div>
           </React.Fragment>
@@ -4261,7 +4263,7 @@ function DateTimePicker({ value, onChange }) {
             overflow: "hidden", minWidth: 320,
             maxHeight: "calc(100vh - 40px)", overflowY: "auto",
           }}>
-            <CalendarPanel />
+            {renderCalPanel()}
           </div>
         ),
         document.body
