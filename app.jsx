@@ -1069,6 +1069,24 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.1", date: "2 มิ.ย. 2569", tag: "UX/UI & Fix",
+    tagColor: "#6366f1", items: [
+      { cat: "ux",   text: { th: "Dashboard: ตัวเลข StatCard ปรับขนาดอัตโนมัติ (FitText) ด้วย ResizeObserver — ไม่ว่าจะกี่หลักก็ไม่ล้น", en: "Dashboard: StatCard numbers auto-resize (FitText) via ResizeObserver — no overflow regardless of digit count" } },
+      { cat: "new",  text: { th: "Dashboard KVA: แยกแสดง PEA / Customer — frontend fallback หากยังไม่ได้อัปเดต RPC", en: "Dashboard KVA: breakdown by PEA / Customer — frontend fallback if RPC not yet updated" } },
+      { cat: "ux",   text: { th: "Dashboard ไอคอน: มิเตอร์ → M (meter-m), หม้อแปลง → สามเหลี่ยม (tr-tri)", en: "Dashboard icons: Meter → M (meter-m), Transformer → triangle (tr-tri)" } },
+      { cat: "ux",   text: { th: "Dashboard Donut บนมือถือ: เปลี่ยนเป็น row (donut ซ้าย + legend ขวา) ดูสมดุลกว่าเดิม", en: "Dashboard Donut on mobile: changed to row layout (donut left + legend right) for balanced look" } },
+      { cat: "fix",  text: { th: "แผนที่ภาพรวม Admin: แก้แสดงไม่เต็มความสูง — flex chain ถูกต้อง + double-rAF invalidateSize", en: "Admin overview map: fix partial height — correct flex chain + double-rAF invalidateSize" } },
+      { cat: "new",  text: { th: "แผนที่ภาพรวม: คลิก cluster (วงกลมตัวเลข) → zoom เข้าพื้นที่กลุ่มนั้น แล้วคลิก marker รายตัวได้", en: "Overview map: click cluster bubble → zoom into group area, then click individual markers" } },
+      { cat: "ux",   text: { th: "แผนที่ภาพรวม ค้นหา: เพิ่ม accountnum field + บังคับคีย์บอร์ดตัวเลขบนมือถือ", en: "Overview map search: add accountnum field + force numeric keyboard on mobile" } },
+      { cat: "fix",  text: { th: "ป้องกัน iOS Safari ซูมเมื่อแตะ input — font-size: 16px บน input ทุกช่อง ≤768px", en: "Prevent iOS Safari auto-zoom on input focus — font-size: 16px on all inputs ≤768px" } },
+      { cat: "fix",  text: { th: "ไม่มีหน้าจอขาว Flash: เพิ่ม background: #1b0926 ใน <head> ก่อน CSS โหลด", en: "No white flash: add background: #1b0926 in <head> before CSS loads" } },
+      { cat: "fix",  text: { th: "ออกจากระบบ 403: แก้ token หมดอายุ → force clear state แม้ signOut() ล้มเหลว", en: "Logout 403: fix expired token — force clear state even when signOut() fails" } },
+      { cat: "fix",  text: { th: "หน้า 2FA Verify: บังคับ dark theme เสมอ — card สีเข้ม, ตัวเลข OTP ขนาดใหญ่ขึ้น (32px)", en: "2FA Verify screen: always dark theme — dark card, larger OTP digits (32px)" } },
+      { cat: "ux",   text: { th: "ระบบนำทาง: แสดงหมายเหตุ 'คำนวณที่ 40 กม./ชม.' ใต้เวลาโดยประมาณ", en: "Navigation: show note 'Calculated at 40 km/h' below estimated travel time" } },
+      { cat: "fix",  text: { th: "SearchView: แผนที่ไม่เต็มความสูงบน desktop — แก้ flex chain (flex:1 + minHeight:0) ตลอด chain", en: "SearchView: map not full height on desktop — fix flex chain (flex:1 + minHeight:0) throughout" } },
+    ],
+  },
+  {
     version: "v3.0", date: "1 มิ.ย. 2569", tag: "Security & Map",
     tagColor: "#10b981", items: [
       { cat: "new",  text: { th: "แจ้งแก้ไขพิกัด: กด marker → ลากหมุด/กดแผนที่/ใช้ GPS เพื่อวางพิกัดใหม่ → ส่งคำขอรอ Admin อนุมัติ", en: "Coordinate correction: tap marker → drag pin/tap map/use GPS to set new coords → submit for Admin approval" } },
