@@ -1,0 +1,38 @@
+name: Update version.json
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'version.json'
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Write version.json
+        run: |
+          cat > version.json << EOF
+          {
+            "commit": "$(git rev-parse HEAD)",
+            "shortCommit": "$(git rev-parse --short HEAD)",
+            "message": $(git log -1 --pretty=%s | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().strip()))"),
+            "date": "$(git log -1 --pretty=%cI)",
+            "branch": "main"
+          }
+          EOF
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          git diff --cached --quiet || git commit -m "chore: update version.json [skip ci]"
+          git push
