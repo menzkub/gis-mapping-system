@@ -268,8 +268,12 @@ function DbUsageCard() {
     setLoading(true);
     const result = {};
     await Promise.all(DB_TABLES.map(async t => {
-      const { count, error } = await _supabase.from(t.table).select("*", { count: "exact", head: true });
-      result[t.key] = error ? null : (count ?? 0);
+      try {
+        const { count, error } = await _supabase.from(t.table).select("*", { count: "exact", head: true });
+        result[t.key] = error ? null : (count ?? 0);
+      } catch (_) {
+        result[t.key] = null;
+      }
     }));
     setCounts(result);
     setRefreshedAt(new Date());
@@ -851,7 +855,7 @@ function AdminDevGuide() {
       });
       clone.style.cssText += ";width:820px;max-width:820px;margin:0;";
       const wrap = document.createElement("div");
-      wrap.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;pointer-events:none;z-index:2147483647;overflow:visible;background:#0d0714;";
+      wrap.style.cssText = "position:fixed;left:0;top:0;width:820px;pointer-events:none;z-index:2147483647;overflow:visible;background:#0d0714;";
       wrap.appendChild(clone);
       document.body.appendChild(wrap);
       document.body.style.overflow = "visible";
@@ -2843,6 +2847,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [corrections, setCorrections] = useStateAd([]);
   const [showReview, setShowReview] = useStateAd(false);
   const [locating, setLocating] = useStateAd(false);
+  const [viewportLoading, setViewportLoading] = useStateAd(false);
+  const viewportLoadIdRef = React.useRef(0);
   const toast = useToast();
 
   const loadCorrections = React.useCallback(async () => {
@@ -3050,11 +3056,41 @@ function AdminMapTab({ data, currentUser, addAudit }) {
       }
     };
 
-    if (showM) drawLayer(meters, "meter", mLayerRef);
-    else mLayerRef.current.clearLayers();
-
     if (showT) drawLayer(trs, "tr", tLayerRef);
     else tLayerRef.current.clearLayers();
+
+    if (showM) {
+      if (z >= 14) {
+        // Viewport-based query: load only meters in the current map bounds
+        const bounds = map.getBounds();
+        const loadId = ++viewportLoadIdRef.current;
+        setViewportLoading(true);
+        mLayerRef.current.clearLayers();
+        _supabase.from("meters")
+          .select("objectid,tag,peano,latitude,longitude,feederid,route")
+          .gte("latitude", bounds.getSouth()).lte("latitude", bounds.getNorth())
+          .gte("longitude", bounds.getWest()).lte("longitude", bounds.getEast())
+          .limit(3000)
+          .then(({ data: rows, error }) => {
+            if (viewportLoadIdRef.current !== loadId) return;
+            setViewportLoading(false);
+            if (!error && rows) {
+              const pts = rows.filter(r => +r.latitude && +r.longitude).map(r => ({
+                OBJECTID: r.objectid, TAG: r.tag || String(r.objectid),
+                PEANO: r.peano || "", LATITUDE: +r.latitude, LONGITUDE: +r.longitude,
+                FEEDERID: r.feederid || "", ROUTE: r.route || "",
+              }));
+              drawLayer(pts, "meter", mLayerRef);
+            }
+          });
+      } else {
+        setViewportLoading(false);
+        drawLayer(meters, "meter", mLayerRef);
+      }
+    } else {
+      mLayerRef.current.clearLayers();
+      setViewportLoading(false);
+    }
   }, [meters, trs, showM, showT, loadState, zoomTick, corrBtnLabel]);
 
   // Fit bounds on first data load
@@ -3109,46 +3145,71 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
 
-      {/* ── Controls bar ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "var(--surface)", borderBottom: "1px solid var(--line)", flexShrink: 0, flexWrap: "wrap" }}>
-        <button style={btnStyle(showM, "#6b2c91")} onClick={() => setShowM(s => !s)}>
-          <span style={{ background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", color: "white", borderRadius: 6, padding: "1px 6px", fontWeight: 900, fontSize: 11 }}>M</span>
-          {t("admMobMeters")}
-          <span style={{ opacity: 0.7 }}>{(totalM || meters.length).toLocaleString()}</span>
-        </button>
-        <button style={btnStyle(showT, "#ea580c")} onClick={() => setShowT(s => !s)}>
-          <span style={{ background: "linear-gradient(135deg,#ea580c,#f47b20)", color: "white", borderRadius: 6, padding: "1px 6px", fontWeight: 900, fontSize: 11 }}>▲</span>
-          {t("admMobTrs")}
-          <span style={{ opacity: 0.7 }}>{(totalT || trs.length).toLocaleString()}</span>
-        </button>
+      {/* ── Controls bar (compact single row) ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "var(--surface)", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+
+        {/* Segmented M + TR layer toggles */}
+        <div style={{ display: "flex", borderRadius: 22, overflow: "hidden", border: "1px solid var(--line)", background: "var(--surface-2)", flexShrink: 0 }}>
+          <button onClick={() => setShowM(s => !s)} style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
+            border: "none", borderRight: "1px solid var(--line)", cursor: "pointer",
+            background: showM ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
+            color: showM ? "white" : "var(--ink-mute)", fontSize: 12, fontWeight: 800,
+            transition: "all 140ms",
+          }}>
+            <span style={{ background: showM ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#6b2c91,#8b3fc4)", color: "white", borderRadius: 5, padding: "1px 5px", fontWeight: 900, fontSize: 10 }}>M</span>
+            <span>{fmtStat(totalM || meters.length)}</span>
+          </button>
+          <button onClick={() => setShowT(s => !s)} style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
+            border: "none", cursor: "pointer",
+            background: showT ? "linear-gradient(135deg,#ea580c,#f47b20)" : "transparent",
+            color: showT ? "white" : "var(--ink-mute)", fontSize: 12, fontWeight: 800,
+            transition: "all 140ms",
+          }}>
+            <span style={{ background: showT ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#ea580c,#f47b20)", color: "white", borderRadius: 5, padding: "1px 4px", fontWeight: 900, fontSize: 10 }}>▲</span>
+            <span>{fmtStat(totalT || trs.length)}</span>
+          </button>
+        </div>
+
+        {/* Correction review button (compact — same row) */}
+        {loadState === "done" && (
+          <button onClick={() => setShowReview(s => !s)} style={{
+            display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 20,
+            fontSize: 12, fontWeight: 700, flexShrink: 0,
+            border: "1px solid " + (showReview ? "#ea580c" : "var(--line)"),
+            background: showReview ? "rgba(234,88,12,0.1)" : "var(--surface-2)",
+            color: showReview ? "#ea580c" : "var(--ink-mute)", cursor: "pointer",
+          }}>
+            📋
+            {corrections.filter(c => c.status === "pending").length > 0 ? (
+              <span style={{ background: "#ea580c", color: "white", borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 800 }}>
+                {corrections.filter(c => c.status === "pending").length}
+              </span>
+            ) : (
+              <span style={{ fontSize: 11 }}>{t("corrReviewBtn")}</span>
+            )}
+          </button>
+        )}
 
         <div style={{ flex: 1 }} />
 
-        {/* Basemap dropdown */}
+        {/* Basemap dropdown (icon-only, compact) */}
         <div style={{ position: "relative" }}>
-          <button
-            style={btnStyle(false, "var(--pea-purple-600)")}
-            onClick={() => setShowBaseMenu(s => !s)}
-          >
-            <Icon name={baseMap === "satellite" ? "layers" : "map"} size={13} />
-            {baseMap === "satellite" ? t("mapSatellite") : t("mapStreet")}
-            <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+          <button style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", borderRadius: 20, border: "1px solid var(--line)", background: "var(--surface-2)", color: "var(--ink-mute)", cursor: "pointer", fontWeight: 700 }} onClick={() => setShowBaseMenu(s => !s)}>
+            <Icon name={baseMap === "satellite" ? "layers" : "map"} size={14} />
+            <span style={{ fontSize: 9, opacity: 0.6, lineHeight: 1 }}>▾</span>
           </button>
           {showBaseMenu && (
             <>
             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
-            <div style={{
-              position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 600,
-              background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.18)", overflow: "hidden", minWidth: 130,
-            }}>
+            <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.18)", overflow: "hidden", minWidth: 130 }}>
               {[["street", "map", t("mapStreet")], ["satellite", "layers", t("mapSatellite")]].map(([k, icon, label]) => (
                 <button key={k} onClick={() => { setBaseMap(k); setShowBaseMenu(false); }} style={{
                   display: "flex", alignItems: "center", gap: 8, width: "100%",
                   padding: "9px 14px", background: baseMap === k ? "var(--pea-purple-50)" : "transparent",
                   color: baseMap === k ? "var(--pea-purple-600)" : "var(--ink)",
-                  border: "none", cursor: "pointer", fontSize: 13, fontWeight: baseMap === k ? 700 : 500,
-                  textAlign: "left",
+                  border: "none", cursor: "pointer", fontSize: 13, fontWeight: baseMap === k ? 700 : 500, textAlign: "left",
                 }}>
                   <Icon name={icon} size={14} />
                   {label}
@@ -3159,43 +3220,6 @@ function AdminMapTab({ data, currentUser, addAudit }) {
             </>
           )}
         </div>
-
-        {/* Current location button */}
-        <button style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
-          border: "1px solid " + (locating ? "#3b82f6" : "var(--line)"),
-          background: locating ? "rgba(59,130,246,0.12)" : "var(--surface-2)",
-          color: locating ? "#3b82f6" : "var(--ink-mute)", cursor: "pointer",
-          transition: "all 140ms",
-        }} onClick={flyToLocation} disabled={locating} title="ตำแหน่งปัจจุบัน">
-          <Icon name="navigation" size={13} style={{ transform: locating ? "none" : undefined, animation: locating ? "pea-spin 1s linear infinite" : "none" }} />
-          {locating ? "กำลังค้นหา…" : "ตำแหน่งฉัน"}
-        </button>
-
-        {/* Correction review button */}
-        {loadState === "done" && (
-          <button style={{
-            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
-            border: "1px solid " + (showReview ? "#ea580c" : "var(--line)"),
-            background: showReview ? "rgba(234,88,12,0.1)" : "var(--surface-2)",
-            color: showReview ? "#ea580c" : "var(--ink-mute)", cursor: "pointer",
-          }} onClick={() => setShowReview(s => !s)}>
-            📋 {t("corrReviewBtn")}
-            {corrections.filter(c => c.status === "pending").length > 0 && (
-              <span style={{ background: "#ea580c", color: "white", borderRadius: 999, padding: "0 5px", fontSize: 10, fontWeight: 800 }}>
-                {corrections.filter(c => c.status === "pending").length}
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Sample note */}
-        {loadState === "done" && totalM > 0 && meters.length < totalM && (
-          <div style={{ width: "100%", fontSize: 11, color: "var(--ink-mute)", paddingTop: 2 }}>
-            {t("mapSampleNote").replace("{n}", meters.length.toLocaleString()).replace("{total}", totalM.toLocaleString())}
-          </div>
-        )}
       </div>
 
       {/* ── Loading overlay ── */}
@@ -3222,6 +3246,50 @@ function AdminMapTab({ data, currentUser, addAudit }) {
 
       {/* ── Map + side panel wrapper ── */}
       <div style={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
+
+        {/* Floating: location button (bottom-right) */}
+        {loadState !== "loading" && (
+          <button onClick={flyToLocation} disabled={locating} style={{
+            position: "absolute", bottom: 22, right: 14, zIndex: 500,
+            display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 24,
+            background: "var(--surface)", border: "1px solid var(--line)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.28)",
+            color: locating ? "#3b82f6" : "var(--ink)",
+            fontSize: 13, fontWeight: 700, cursor: locating ? "default" : "pointer",
+            backdropFilter: "blur(8px)", transition: "all 140ms",
+          }}>
+            <Icon name="navigation" size={15} style={{ color: locating ? "#3b82f6" : "var(--pea-purple-500)", animation: locating ? "pea-spin 1s linear infinite" : "none" }} />
+            {locating ? "กำลังค้นหา…" : "ตำแหน่งฉัน"}
+          </button>
+        )}
+
+        {/* Floating: viewport loading indicator (top-center) */}
+        {viewportLoading && (
+          <div style={{
+            position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", zIndex: 500,
+            background: "rgba(107,44,145,0.88)", backdropFilter: "blur(6px)",
+            color: "white", fontSize: 11, fontWeight: 700,
+            padding: "6px 16px", borderRadius: 20, pointerEvents: "none",
+            display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap",
+          }}>
+            <div style={{ width: 11, height: 11, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "white", animation: "pea-spin 0.8s linear infinite" }} />
+            กำลังโหลดมิเตอร์ในพื้นที่…
+          </div>
+        )}
+
+        {/* Floating: sample note (top-center, only when M sampled and not viewport loading) */}
+        {loadState === "done" && showM && !viewportLoading && totalM > 0 && meters.length < totalM && (
+          <div style={{
+            position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", zIndex: 500,
+            background: "rgba(0,0,0,0.62)", backdropFilter: "blur(4px)",
+            color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: 600,
+            padding: "5px 14px", borderRadius: 20, pointerEvents: "none",
+            whiteSpace: "nowrap", maxWidth: "90%", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {t("mapSampleNote").replace("{n}", meters.length.toLocaleString()).replace("{total}", totalM.toLocaleString())}
+          </div>
+        )}
+
         <div ref={containerRef} style={{ flex: 1 }} />
         {showReview && (
           <CorrectionReviewPanel
@@ -4474,11 +4542,13 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
   const toggleExport = async () => {
     setExportLoading(true);
     const newVal = !allowExport;
-    const { error } = await _supabase.from("settings")
-      .upsert({ key: "allow_export", value: String(newVal), updated_at: new Date().toISOString(), updated_by: currentUser.username },
-               { onConflict: "key" });
+    const { error, count } = await _supabase.from("settings")
+      .update({ value: String(newVal), updated_at: new Date().toISOString(), updated_by: currentUser.username })
+      .eq("key", "allow_export")
+      .select("key", { count: "exact", head: true });
     setExportLoading(false);
     if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    if (count === 0) { toast?.("ไม่พบ row 'allow_export' ใน settings — กรุณาเพิ่มด้วย SQL ก่อน", "error"); return; }
     setAllowExport(newVal);
     addAudit({
       user:   currentUser.username,
@@ -4953,24 +5023,29 @@ function DocDownloadSection() {
     const clone = el.cloneNode(true);
     clone.style.cssText += ";width:560px;max-width:560px;margin:0;";
     const w = document.createElement("div");
-    w.style.cssText = `position:fixed;left:-9999px;top:0;width:560px;pointer-events:none;z-index:2147483647;overflow:visible;background:${bg};`;
+    // Render on top of viewport (z-index max) so html2canvas can capture fonts/text fully
+    w.style.cssText = `position:fixed;left:0;top:0;width:560px;pointer-events:none;z-index:2147483647;overflow:visible;background:${bg};`;
     w.appendChild(clone);
     return w;
+  }
+
+  async function waitFonts() {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
   }
 
   async function dlPdf(ref, filename, key, bg) {
     const el = ref.current;
     if (!el || typeof html2pdf === "undefined") { toast?.("html2pdf ยังไม่พร้อม", "error"); return; }
     setBusy(key);
+    await waitFonts();
     const wrap = makeWrap(el, bg);
     document.body.appendChild(wrap);
-    document.body.style.overflow = "visible";
-    const cleanup = () => { document.body.removeChild(wrap); document.body.style.overflow = ""; setBusy(null); };
+    const cleanup = () => { try { document.body.removeChild(wrap); } catch(_) {} setBusy(null); };
     html2pdf().set({
       margin: [12, 10, 12, 10],
       filename,
       image: { type: "jpeg", quality: 0.97 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: bg, windowWidth: 560 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: bg, windowWidth: 560 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     }).from(wrap.firstChild).save().then(cleanup).catch(cleanup);
   }
@@ -4978,19 +5053,14 @@ function DocDownloadSection() {
   async function dlPng(ref, filename, key, bg) {
     const el = ref.current;
     if (!el) return;
+    const canvasFn = window.html2canvas || null;
+    if (!canvasFn) { toast?.("html2canvas ยังไม่โหลด กรุณารอสักครู่แล้วลองใหม่", "error"); return; }
     setBusy(key);
+    await waitFonts();
     const wrap = makeWrap(el, bg);
     document.body.appendChild(wrap);
-    document.body.style.overflow = "visible";
-    const cleanup = () => { document.body.removeChild(wrap); document.body.style.overflow = ""; setBusy(null); };
-    const canvasFn = typeof window.html2canvas !== "undefined" ? window.html2canvas : null;
-    if (!canvasFn) {
-      // Fallback: export PDF instead
-      toast?.("โหลด PNG ไม่ได้ในตอนนี้ — กรุณาใช้ PDF แทน", "info");
-      cleanup();
-      return;
-    }
-    canvasFn(wrap.firstChild, { scale: 2, useCORS: true, backgroundColor: bg, width: 560 })
+    const cleanup = () => { try { document.body.removeChild(wrap); } catch(_) {} setBusy(null); };
+    canvasFn(wrap.firstChild, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: bg, width: 560 })
       .then(canvas => {
         const a = document.createElement("a");
         a.download = filename;
