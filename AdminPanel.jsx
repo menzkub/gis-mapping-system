@@ -3011,47 +3011,48 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
 
         {/* Body: mini-map left, form right */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-          <div ref={miniMapRef} style={{ height: 280, borderRight: "1px solid var(--line)" }} />
-          <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div ref={miniMapRef} style={{ height: 320, borderRight: "1px solid var(--line)" }} />
+          <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", height: 320 }}>
+            {/* Old coords */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", marginBottom: 4 }}>
-                🔴 {t("corrOldCoord")}
-              </div>
-              <div style={{ fontSize: 11, fontFamily: "monospace", background: "var(--surface-2)", padding: "5px 9px", borderRadius: 7, color: "var(--ink-mute)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginBottom: 3 }}>🔴 {t("corrOldCoord")}</div>
+              <div style={{ fontSize: 11, fontFamily: "monospace", background: "var(--surface-2)", padding: "4px 8px", borderRadius: 7, color: "var(--ink-mute)" }}>
                 {target.p.LATITUDE.toFixed(6)}, {target.p.LONGITUDE.toFixed(6)}
               </div>
             </div>
+            {/* New coords */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>🟢 {t("corrNewCoord")}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
-                <div>
-                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LAT</div>
-                  <input className="input" type="number" step="0.000001" value={newLat} onChange={e => setNewLat(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "5px 7px" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LNG</div>
-                  <input className="input" type="number" step="0.000001" value={newLng} onChange={e => setNewLng(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "5px 7px" }} />
-                </div>
-              </div>
-              <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 4 }}>* {t("corrDragHint")}</div>
-              {/* GPS button */}
+              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 5 }}>🟢 {t("corrNewCoord")}</div>
+              {/* GPS button — primary action for field use */}
               <button onClick={useMyLocation} disabled={locating} style={{
-                marginTop: 8, width: "100%", padding: "7px 0", borderRadius: 10,
-                border: "1px solid #2563eb44", background: locating ? "rgba(37,99,235,0.06)" : "rgba(37,99,235,0.09)",
+                width: "100%", padding: "8px 0", borderRadius: 10, marginBottom: 7,
+                border: "1px solid #2563eb55", background: locating ? "rgba(37,99,235,0.06)" : "rgba(37,99,235,0.1)",
                 color: "#2563eb", fontSize: 12, fontWeight: 700, cursor: locating ? "wait" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
-                <span style={{ fontSize: 14, animation: locating ? "pea-spin 1s linear infinite" : "none", display: "inline-block" }}>
+                <span style={{ fontSize: 15, animation: locating ? "pea-spin 1s linear infinite" : "none", display: "inline-block" }}>
                   {locating ? "⏳" : "📡"}
                 </span>
                 {locating ? "กำลังรับพิกัด GPS…" : "ใช้ตำแหน่งปัจจุบัน (GPS)"}
               </button>
-              {gpsError && <div style={{ fontSize: 10, color: "#ef4444", marginTop: 4 }}>{gpsError}</div>}
+              {gpsError && <div style={{ fontSize: 10, color: "#ef4444", marginBottom: 4 }}>{gpsError}</div>}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LAT</div>
+                  <input className="input" type="number" step="0.000001" value={newLat} onChange={e => setNewLat(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "4px 6px" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LNG</div>
+                  <input className="input" type="number" step="0.000001" value={newLng} onChange={e => setNewLng(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "4px 6px" }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 9, color: "var(--ink-mute)", marginTop: 3 }}>* {t("corrDragHint")}</div>
             </div>
+            {/* Note */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{t("corrNote")}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 3 }}>{t("corrNote")}</div>
               <textarea className="input" placeholder={t("corrNote") + "…"} value={note} onChange={e => setNote(e.target.value)}
-                style={{ width: "100%", minHeight: 68, resize: "none", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+                style={{ width: "100%", minHeight: 54, resize: "none", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
           </div>
         </div>
