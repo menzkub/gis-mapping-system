@@ -888,6 +888,8 @@ function DevBadge({ color, children }) {
 }
 
 function AdminDevGuide() {
+  const { lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
   const guideRef = React.useRef(null);
   const [pdfLoading, setPdfLoading] = useStateAd(false);
 
@@ -952,7 +954,7 @@ function AdminDevGuide() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Developer Documentation</div>
             <div className="dg-title">GIS Meter & Transformer</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>คู่มือสำหรับนักพัฒนา — โครงสร้างโค้ด, ฐานข้อมูล, API และ Helpers</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>{s("คู่มือสำหรับนักพัฒนา — โครงสร้างโค้ด, ฐานข้อมูล, API และ Helpers", "Developer guide — code structure, database, API and helpers")}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
@@ -965,7 +967,7 @@ function AdminDevGuide() {
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)" }}>
-            <Icon name="history" size={10} /> อัปเดตล่าสุด: {GUIDE_VERSION.date}
+            <Icon name="history" size={10} /> {s("อัปเดตล่าสุด:", "Last updated:")} {GUIDE_VERSION.date}
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)" }}>
             <Icon name="package" size={10} /> {GUIDE_VERSION.version}
@@ -975,10 +977,10 @@ function AdminDevGuide() {
         {/* Stat cards */}
         <div className="dg-sgrid">
           {[
-            { label: "หัวข้อ",       value: 15, icon: "book",     sub: "sections" },
-            { label: "ไฟล์ระบบ",    value: 13, icon: "package",  sub: "source files" },
-            { label: "ตาราง DB",    value: 7,  icon: "database", sub: "tables" },
-            { label: "ตัวอย่างโค้ด", value: 18, icon: "code",     sub: "code blocks" },
+            { label: s("หัวข้อ","Sections"),       value: 15, icon: "book",     sub: "sections" },
+            { label: s("ไฟล์ระบบ","Files"),        value: 13, icon: "package",  sub: "source files" },
+            { label: s("ตาราง DB","DB Tables"),    value: 7,  icon: "database", sub: "tables" },
+            { label: s("ตัวอย่างโค้ด","Code Blocks"), value: 18, icon: "code",  sub: "code blocks" },
           ].map(({ label, value, icon, sub }) => (
             <div key={label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
@@ -995,17 +997,17 @@ function AdminDevGuide() {
         <div className="dg-btns">
           <button onClick={expandSig.open ? collapseAll : expandAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
             <Icon name={expandSig.open ? "chevRight" : "chevDown"} size={13} />
-            {expandSig.open ? "ยุบทั้งหมด" : "ขยายทั้งหมด"}
+            {expandSig.open ? s("ยุบทั้งหมด","Collapse All") : s("ขยายทั้งหมด","Expand All")}
           </button>
           <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 8, padding: "7px 14px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, opacity: pdfLoading ? 0.7 : 1 }}>
             <Icon name="download" size={13} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} />
-            {pdfLoading ? "กำลังสร้าง…" : "โหลด PDF"}
+            {pdfLoading ? s("กำลังสร้าง…","Generating…") : s("โหลด PDF","Download PDF")}
           </button>
         </div>
       </div>
 
       {/* ─── SECTION: Architecture ─── */}
-      <GuideSection icon="cpu" title="สถาปัตยกรรมระบบ (Architecture)" expandSignal={expandSig}>
+      <GuideSection icon="cpu" title={s("สถาปัตยกรรมระบบ (Architecture)","System Architecture")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTip>ระบบนี้ไม่มี build step — แก้ไขไฟล์ .jsx แล้ว git push ได้เลย ไม่ต้อง npm install หรือ webpack</GuideTip>
           <CodeBlock>{`Browser
@@ -1046,7 +1048,7 @@ Supabase Edge Functions:
       </GuideSection>
 
       {/* ─── SECTION: Files ─── */}
-      <GuideSection icon="package" title="ไฟล์และหน้าที่" expandSignal={expandSig}>
+      <GuideSection icon="package" title={s("ไฟล์และหน้าที่","Files & Responsibilities")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["ไฟล์", "บทบาท", "ขนาด"],
@@ -1068,7 +1070,7 @@ Supabase Edge Functions:
       </GuideSection>
 
       {/* ─── SECTION: Database ─── */}
-      <GuideSection icon="database" title="ฐานข้อมูล Supabase" expandSignal={expandSig}>
+      <GuideSection icon="database" title={s("ฐานข้อมูล Supabase","Supabase Database")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>การเชื่อมต่อ</div>
           <CodeBlock>{`// config.js
@@ -1238,7 +1240,7 @@ formatThaiDate(new Date()); // "2025-05-30 14:32:00"`}</CodeBlock>
       </GuideSection>
 
       {/* ─── SECTION: i18n ─── */}
-      <GuideSection icon="book" title="ระบบภาษา i18n (lang.jsx)" expandSignal={expandSig}>
+      <GuideSection icon="book" title={s("ระบบภาษา i18n (lang.jsx)","i18n Language System (lang.jsx)")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <CodeBlock>{`// 1. ใน component — ดึง t() จาก useLang
 const { t } = useLang();
@@ -1260,7 +1262,7 @@ t("myNewKey")  // แสดงตามภาษาปัจจุบัน`}</C
       </GuideSection>
 
       {/* ─── SECTION: CSS ─── */}
-      <GuideSection icon="sun" title="CSS Design System (styles.css)" expandSignal={expandSig}>
+      <GuideSection icon="sun" title={s("CSS Design System (styles.css)","CSS Design System (styles.css)")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Color Tokens</div>
           <CodeBlock>{`/* Brand Colors */
@@ -1470,7 +1472,7 @@ const {
       </GuideSection>
 
       {/* ─── SECTION: Adding Features ─── */}
-      <GuideSection icon="plus" title="วิธีเพิ่มฟีเจอร์ใหม่" expandSignal={expandSig}>
+      <GuideSection icon="plus" title={s("วิธีเพิ่มฟีเจอร์ใหม่","How to Add New Features")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>เพิ่ม Admin Tab ใหม่</div>
           <GuideStep n={1} text="เพิ่ม key ใน lang.jsx (ทั้ง th และ en): admMyTab: 'ชื่อแท็บ'" />
@@ -1524,7 +1526,7 @@ addAudit({
       </GuideSection>
 
       {/* ─── SECTION: Deploy ─── */}
-      <GuideSection icon="link" title="Deploy & การพัฒนา" expandSignal={expandSig}>
+      <GuideSection icon="link" title={s("Deploy & การพัฒนา","Deploy & Development")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["Task", "Command / วิธี"],
@@ -1627,7 +1629,7 @@ git log --oneline   # copy 7 ตัวแรก เช่น a1b2c3d`}</CodeBloc
       </GuideSection>
 
       {/* ─── SECTION: Supabase Ops & Troubleshooting ─── */}
-      <GuideSection icon="database" title="การจัดการ & แก้ปัญหา Supabase" expandSignal={expandSig}>
+      <GuideSection icon="database" title={s("การจัดการ & แก้ปัญหา Supabase","Supabase Management & Troubleshooting")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
 
           {/* ── ลำดับการโหลดข้อมูล ── */}

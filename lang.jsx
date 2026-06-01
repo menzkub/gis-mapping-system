@@ -39,6 +39,20 @@ const TRANSLATIONS = {
     deployHintPending: "GitHub Pages ใช้เวลา 1–3 นาทีหลัง push — กด ตรวจสอบอีกครั้ง เมื่อ deploy เสร็จ",
     deployHintSync: "กด โหลดเวอร์ชันใหม่ เพื่อดึงไฟล์ล่าสุดจาก GitHub Pages (bypass cache)",
     deployLabel: "Deploy",
+    deployStatusTitle: "Deployment Status",
+    deployNoData: "ไม่พบข้อมูล",
+    deployFooterNote: "GitHub Pages มักใช้เวลา 1–3 นาทีหลัง push · repo: menzkub/gis-mapping-system",
+
+    // ── Changelog view ─────────────────────────────────────
+    clTitle: "ประวัติการปรับปรุง UX/UI",
+    clSubtitle: "บันทึกการพัฒนาและปรับปรุงระบบทั้งหมด — อัปเดตโดย Claude AI",
+    clLastUpdate: "อัปเดตล่าสุด:",
+    clVersions: "เวอร์ชัน",
+    clNewFeatures: "ฟีเจอร์ใหม่",
+    clLatest: "ล่าสุด",
+    clFooter: "ประวัตินี้บันทึกการพัฒนาโดย Claude AI — หากพบปัญหาหรือต้องการปรับปรุงเพิ่มเติม กรุณาติดต่อนักพัฒนาระบบ",
+    catNew: "ใหม่", catFix: "แก้ไข", catPerf: "ประสิทธิภาพ",
+    devBy: "พัฒนาโดย", devFooter: "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
 
     // ── Notification panel ─────────────────────────────────
     pendingApproval: "บัญชีรอการอนุมัติ", recentActivity: "กิจกรรมล่าสุด",
@@ -215,6 +229,20 @@ const TRANSLATIONS = {
     deployHintPending: "GitHub Pages takes 1–3 min after push — press Re-check when done",
     deployHintSync: "Press Load New Version to get latest files from GitHub Pages (bypass cache)",
     deployLabel: "Deploy",
+    deployStatusTitle: "Deployment Status",
+    deployNoData: "No data found",
+    deployFooterNote: "GitHub Pages takes 1–3 min after push · repo: menzkub/gis-mapping-system",
+
+    // ── Changelog view ─────────────────────────────────────
+    clTitle: "UX/UI Improvement History",
+    clSubtitle: "Full development and improvement records — updated by Claude AI",
+    clLastUpdate: "Last updated:",
+    clVersions: "Versions",
+    clNewFeatures: "New Features",
+    clLatest: "Latest",
+    clFooter: "This history is maintained by Claude AI — for issues or improvements, contact the system developer",
+    catNew: "New", catFix: "Fix", catPerf: "Performance",
+    devBy: "Developed by", devFooter: "Built for internal use — Provincial Electricity Authority (PEA)",
 
     // ── Notification panel ─────────────────────────────────
     pendingApproval: "accounts pending approval", recentActivity: "Recent Activity",

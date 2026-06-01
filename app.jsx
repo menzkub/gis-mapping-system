@@ -1186,10 +1186,10 @@ const CHANGELOG = [
 ];
 
 const CAT_META = {
-  new:  { label: "ใหม่",      bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#047857" },
-  ux:   { label: "UX/UI",     bg: "rgba(139,63,196,0.12)",  border: "rgba(139,63,196,0.3)",  text: "var(--pea-purple-600)" },
-  fix:  { label: "แก้ไข",    bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  text: "#1d4ed8" },
-  perf: { label: "ประสิทธิภาพ", bg: "rgba(244,123,32,0.12)", border: "rgba(244,123,32,0.3)", text: "var(--pea-orange-600)" },
+  new:  { label: { th: "ใหม่",         en: "New" },         bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#047857" },
+  ux:   { label: { th: "UX/UI",        en: "UX/UI" },       bg: "rgba(139,63,196,0.12)",  border: "rgba(139,63,196,0.3)",  text: "var(--pea-purple-600)" },
+  fix:  { label: { th: "แก้ไข",        en: "Fix" },         bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  text: "#1d4ed8" },
+  perf: { label: { th: "ประสิทธิภาพ", en: "Performance" }, bg: "rgba(244,123,32,0.12)", border: "rgba(244,123,32,0.3)", text: "var(--pea-orange-600)" },
 };
 
 // ── Shared deploy-data hook ──────────────────────────────────────────────
@@ -1364,6 +1364,7 @@ function DeployStatusDot() {
 
 // ── DeploymentStatus — full card in ChangelogView ────────────────────────
 function DeploymentStatus() {
+  const { t } = useLang();
   const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync } = useDeployStatus();
 
   const fmtDate = (iso) => {
@@ -1376,7 +1377,7 @@ function DeploymentStatus() {
   const statusColor  = isLoading ? "#6b7280" : inSync ? "#059669" : "#d97706";
   const statusBg     = isLoading ? "rgba(107,114,128,0.1)" : inSync ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)";
   const statusBorder = isLoading ? "rgba(107,114,128,0.25)" : inSync ? "rgba(5,150,105,0.25)" : "rgba(217,119,6,0.25)";
-  const statusLabel  = isLoading ? "กำลังตรวจสอบ…" : inSync ? "ระบบเป็นปัจจุบัน" : "มีการอัปเดตรอ Deploy";
+  const statusLabel  = isLoading ? t("deployChecking") : inSync ? t("deployCurrent") : t("deployPending");
 
   return (
     <div style={{ marginBottom: 24, borderRadius: 16, border: `1px solid ${statusBorder}`, background: statusBg, overflow: "hidden" }}>
@@ -1387,7 +1388,7 @@ function DeploymentStatus() {
           animation: isLoading ? "pea-pulse 1.4s ease-in-out infinite" : "none",
         }} />
         <span style={{ fontWeight: 700, fontSize: 14, color: statusColor }}>{statusLabel}</span>
-        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Deployment Status</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-mute)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>{t("deployStatusTitle")}</span>
       </div>
 
       {/* Two columns */}
@@ -1395,10 +1396,10 @@ function DeploymentStatus() {
         {/* Deployed */}
         <div style={{ padding: "14px 18px", borderRight: `1px solid ${statusBorder}` }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 8 }}>
-            🌐 กำลังรันบนเว็บไซต์
+            🌐 {t("deployRunning")}
           </div>
           {loading ? (
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployChecking")}</div>
           ) : deployed ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -1410,17 +1411,17 @@ function DeploymentStatus() {
               <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{fmtDate(deployed.date)}</div>
             </>
           ) : (
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่พบข้อมูล</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployNoData")}</div>
           )}
         </div>
 
         {/* GitHub latest */}
         <div style={{ padding: "14px 18px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 8 }}>
-            ☁️ ล่าสุดบน GitHub
+            ☁️ {t("deployLatestGH")}
           </div>
           {ghLoading ? (
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployChecking")}</div>
           ) : ghCommit ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -1429,7 +1430,7 @@ function DeploymentStatus() {
                 </code>
                 {!inSync && ghHash && deployedHash && (
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.12)", border: "1px solid rgba(217,119,6,0.25)", padding: "1px 6px", borderRadius: 4 }}>
-                    รอ Deploy
+                    {t("deployAwait")}
                   </span>
                 )}
               </div>
@@ -1441,22 +1442,22 @@ function DeploymentStatus() {
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่สามารถเชื่อมต่อ GitHub API</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployNoGH")}</div>
           )}
         </div>
       </div>
 
       {/* Footer note */}
       <div style={{ padding: "8px 18px 10px", borderTop: `1px solid ${statusBorder}`, fontSize: 11, color: "var(--ink-mute)" }}>
-        GitHub Pages มักใช้เวลา 1–3 นาทีหลัง push · repo: <b>menzkub/gis-mapping-system</b>
+        {t("deployFooterNote")}
       </div>
     </div>
   );
 }
 
 function ChangelogView() {
-  const { lang } = useLang();
-  const clText = (t) => (t && typeof t === "object") ? (t[lang] ?? t.th) : t;
+  const { lang, t } = useLang();
+  const clText = (item) => (item && typeof item === "object") ? (item[lang] ?? item.th) : item;
   const [collapsed, setCollapsed] = useStateApp(() => new Set(CHANGELOG.slice(1).map(v => v.version)));
   const toggleVer = (version) => setCollapsed(prev => {
     const next = new Set(prev);
@@ -1493,13 +1494,13 @@ function ChangelogView() {
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Release Notes</div>
-              <div className="cl-title">ประวัติการปรับปรุง UX/UI</div>
+              <div className="cl-title">{t("clTitle")}</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>
-                บันทึกการพัฒนาและปรับปรุงระบบทั้งหมด — อัปเดตโดย Claude AI
+                {t("clSubtitle")}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.9)" }}>
-                  <Icon name="history" size={10} /> อัปเดตล่าสุด: {CHANGELOG[0].date}
+                  <Icon name="history" size={10} /> {t("clLastUpdate")} {CHANGELOG[0].date}
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.9)" }}>
                   <Icon name="package" size={10} /> {CHANGELOG[0].version} · {CHANGELOG[0].tag}
@@ -1511,10 +1512,10 @@ function ChangelogView() {
           {/* Summary stat grid */}
           <div className="cl-sgrid">
             {[
-              { label: "เวอร์ชัน",   value: CHANGELOG.length, icon: "package", sub: "versions" },
-              { label: "ฟีเจอร์ใหม่", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "new").length, 0), icon: "bolt", sub: "new features" },
+              { label: t("clVersions"),   value: CHANGELOG.length, icon: "package", sub: "versions" },
+              { label: t("clNewFeatures"), value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "new").length, 0), icon: "bolt", sub: "new features" },
               { label: "UX/UI",      value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "ux").length, 0), icon: "sun", sub: "improvements" },
-              { label: "แก้ไข",     value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "fix").length, 0), icon: "check", sub: "bug fixes" },
+              { label: t("catFix"),  value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "fix").length, 0), icon: "check", sub: "bug fixes" },
             ].map(({ label, value, icon, sub }) => (
               <div key={label} style={{ background: "rgba(255,255,255,0.08)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.12)", display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
@@ -1535,7 +1536,7 @@ function ChangelogView() {
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
           {Object.entries(CAT_META).map(([k, m]) => (
             <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: m.bg, border: `1px solid ${m.border}`, color: m.text }}>
-              {m.label}
+              {clText(m.label)}
             </span>
           ))}
         </div>
@@ -1583,7 +1584,7 @@ function ChangelogView() {
                       background: "rgba(16,185,129,0.15)", color: "#047857",
                       border: "1px solid rgba(16,185,129,0.3)",
                     }}>
-                      <Icon name="check" size={10} /> ล่าสุด
+                      <Icon name="check" size={10} /> {t("clLatest")}
                     </span>
                   )}
                   <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
@@ -1607,7 +1608,7 @@ function ChangelogView() {
                             display: "inline-block", padding: "2px 7px", borderRadius: 6, fontSize: 10,
                             fontWeight: 700, flexShrink: 0, marginTop: 1,
                             background: m.bg, border: `1px solid ${m.border}`, color: m.text,
-                          }}>{m.label}</span>
+                          }}>{clText(m.label)}</span>
                           <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>{clText(item.text)}</span>
                         </div>
                       );
@@ -1623,7 +1624,7 @@ function ChangelogView() {
         <div style={{ marginTop: 32, padding: "16px 20px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)", display: "flex", alignItems: "center", gap: 12 }}>
           <Icon name="info" size={16} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.5 }}>
-            ประวัตินี้บันทึกการพัฒนาโดย Claude AI — หากพบปัญหาหรือต้องการปรับปรุงเพิ่มเติม กรุณาติดต่อนักพัฒนาระบบ
+            {t("clFooter")}
           </span>
         </div>
       </div>
@@ -2680,6 +2681,7 @@ function ForcePasswordChangeScreen({ currentUser, supabaseUser, onComplete }) {
 
 // ── DevInfo floating button & modal ───────────────────────────────────────
 function DevInfoModal({ devInfo, onClose }) {
+  const { t } = useLang();
   const [expanded, setExpanded] = useStateApp(false);
   const initials = (devInfo.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   const hasDetails = devInfo.database || devInfo.stack || devInfo.systems;
@@ -2756,7 +2758,7 @@ function DevInfoModal({ devInfo, onClose }) {
           )}
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-            <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{devInfo.footer || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)"}</div>
+            <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{devInfo.footer || t("devFooter")}</div>
             {devInfo.version && (
               <span className="badge" style={{ fontSize: 10, background: "rgba(107,44,145,0.12)", color: "#6b2c91", borderRadius: 999, padding: "3px 9px", fontWeight: 700 }}>v{devInfo.version}</span>
             )}
@@ -2768,6 +2770,7 @@ function DevInfoModal({ devInfo, onClose }) {
 }
 
 function DevInfoButton({ devInfo }) {
+  const { t } = useLang();
   const [open, setOpen] = useStateApp(false);
   const getSavedPos = () => {
     try {
@@ -2853,7 +2856,7 @@ function DevInfoButton({ devInfo }) {
           <Icon name="code" size={14} />
         </span>
         <div style={{ lineHeight: 1.2 }}>
-          <div style={{ fontSize: 9, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>พัฒนาโดย</div>
+          <div style={{ fontSize: 9, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("devBy")}</div>
           <div style={{ fontSize: 13 }}>{firstName}</div>
         </div>
       </button>
