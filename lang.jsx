@@ -98,7 +98,7 @@ const TRANSLATIONS = {
     etaLabel: "เวลาโดยประมาณ (รถยนต์)",
     gpsOkMsg: "ได้รับตำแหน่ง GPS แล้ว — ระยะทางคำนวณจากตำแหน่งปัจจุบัน",
     gpsDeniedMsg: "ไม่สามารถรับ GPS ได้ — กรุณาอนุญาตการเข้าถึงตำแหน่ง",
-    retryBtn: "ลองอีกครั้ง", googleMapsBtn: "Google Maps", appleMapsBtn: "Apple Maps",
+    retryBtn: "ลองอีกครั้ง", updatePosBtn: "อัปเดตตำแหน่ง", googleMapsBtn: "Google Maps", appleMapsBtn: "Apple Maps",
     minutesUnit: "นาที", hoursUnit: "ชม.", kmUnit: "กม.",
 
     // ── Export dialog ──────────────────────────────────────
@@ -289,7 +289,7 @@ const TRANSLATIONS = {
     etaLabel: "Est. Time (Driving)",
     gpsOkMsg: "GPS acquired — distance calculated from your position",
     gpsDeniedMsg: "GPS unavailable — please allow location access",
-    retryBtn: "Retry", googleMapsBtn: "Google Maps", appleMapsBtn: "Apple Maps",
+    retryBtn: "Retry", updatePosBtn: "Update Location", googleMapsBtn: "Google Maps", appleMapsBtn: "Apple Maps",
     minutesUnit: "min", hoursUnit: "hr", kmUnit: "km",
 
     // ── Export dialog ──────────────────────────────────────

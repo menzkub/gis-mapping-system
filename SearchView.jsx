@@ -666,7 +666,7 @@ function NavigationPanel({ target, kind, onClose }) {
                 background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.3)",
                 color: "var(--pea-purple-600)", flexShrink: 0,
               }}>
-                <Icon name="refresh" size={12} /> อัปเดตตำแหน่ง
+                <Icon name="refresh" size={12} /> {t("updatePosBtn")}
               </button>
             </div>
           )}
