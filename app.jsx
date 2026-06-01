@@ -1040,7 +1040,8 @@ const CHANGELOG = [
       { cat: "new",  text: { th: "ปุ่ม GPS 'ใช้ตำแหน่งปัจจุบัน' ในหน้าแจ้งแก้ไขพิกัด — สะดวกสำหรับใช้งานที่หน้างาน", en: "GPS 'Use Current Location' button in correction modal — convenient for field use" } },
       { cat: "ux",   text: { th: "Basemap เปลี่ยนจาก tab แบนเป็น dropdown picker (Street / Satellite) ทั้ง Topbar และ Admin Map", en: "Basemap changed from flat tabs to dropdown picker (Street / Satellite) on Topbar and Admin Map" } },
       { cat: "fix",  text: { th: "นำ Dark basemap ออก — ใช้ Street / Satellite เท่านั้น", en: "Remove Dark basemap — Street / Satellite only" } },
-      { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออกไปด้านซ้าย — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped to left side — now renders full A4 width" } },
+      { cat: "new",  text: { th: "Deploy popup: ปุ่ม 'ตรวจสอบอีกครั้ง' (refetch status) และ 'โหลดเวอร์ชันใหม่' (force reload + bypass cache)", en: "Deploy popup: 'Re-check' button (refetch status) and 'Load New Version' button (force reload + bypass cache)" } },
+      { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออก เนื่องจาก body{overflow:hidden} clip เกิน viewport — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped by body{overflow:hidden} past viewport — now renders full A4 width" } },
       { cat: "fix",  text: { th: "เมนู Settings: Dark mode / Light mode label เปลี่ยนตามภาษาระบบ", en: "Settings menu: Dark mode / Light mode label now follows system language" } },
     ],
   },
@@ -1671,22 +1672,24 @@ function UserGuide({ role }) {
           s.height = "auto";
         }
       });
-      // Mount invisible at origin — position:fixed+left:-9999 causes html2canvas to clip at viewport edge
       clone.style.cssText += ";width:820px;max-width:820px;margin:0;";
       const wrap = document.createElement("div");
       wrap.style.cssText = "position:fixed;left:0;top:0;width:820px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#f5f4f6;";
       wrap.appendChild(clone);
       document.body.appendChild(wrap);
+      // body { overflow: hidden } clips html2canvas past viewport width — override temporarily
+      document.body.style.overflow = "visible";
+      const cleanup = (wrap) => { document.body.removeChild(wrap); document.body.style.overflow = ""; setPdfLoading(false); };
       html2pdf().set({
         margin: [10, 8, 10, 8],
         filename: "คู่มือการใช้งาน-GIS-Meter.pdf",
         image: { type: "jpeg", quality: 0.97 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6", windowWidth: 820, width: 820 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6", windowWidth: 820 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["css", "legacy"], avoid: [".card", "li", "tr"] },
       }).from(clone).save()
-        .then(() => { document.body.removeChild(wrap); setPdfLoading(false); })
-        .catch(() => { document.body.removeChild(wrap); setPdfLoading(false); });
+        .then(() => cleanup(wrap))
+        .catch(() => cleanup(wrap));
     }, 450); // Wait for accordion animation to complete
   }
 
@@ -1993,6 +1996,8 @@ function UserGuide({ role }) {
                   [ug("สิทธิ์","Access"), ug("Admin เท่านั้น","Admin only")],
                   [ug("ข้อมูล","Content"), ug("Timeline ทุก version พร้อมวันที่, category chip, stat summary","Timeline of every version with dates, category chips, stat summary")],
                   ["Deploy Status dot", ug("จุดสีใน Topbar — 🟢 ปัจจุบัน / 🟡 รอ Deploy / ⚫ กำลังโหลด","Colored dot in Topbar — 🟢 Current / 🟡 Awaiting Deploy / ⚫ Loading")],
+                  [ug("ตรวจสอบอีกครั้ง","Re-check"), ug("ปุ่มใน deploy popup — refetch version.json + GitHub API ดูว่า deploy เสร็จแล้วหรือยัง","Button in deploy popup — refetch version.json + GitHub API to see if deploy finished")],
+                  [ug("โหลดเวอร์ชันใหม่","Load New Version"), ug("ปุ่มใน deploy popup — force reload หน้าเว็บด้วย ?v=timestamp เพื่อดึง JS/CSS ใหม่ bypass cache","Button in deploy popup — force reload with ?v=timestamp to get fresh JS/CSS bypassing cache")],
                 ]} />
                 <UGStep n={1} text={ug("กดแท็บ 'อัปเดต ⚡' ใน sidebar — timeline แสดงทุก version ตั้งแต่ v2.0","Press 'Updates ⚡' in sidebar — timeline shows all versions since v2.0")} />
                 <UGStep n={2} text={ug("การ์ด Deployment Status ด้านบน timeline — เปรียบเทียบ hash ที่รันกับ GitHub latest","Deployment Status card above timeline — compares running hash with GitHub latest")} />

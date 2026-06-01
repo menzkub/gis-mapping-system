@@ -743,16 +743,18 @@ function AdminDevGuide() {
       wrap.style.cssText = "position:fixed;left:0;top:0;width:820px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#0d0714;";
       wrap.appendChild(clone);
       document.body.appendChild(wrap);
+      document.body.style.overflow = "visible";
+      const cleanup = (w) => { document.body.removeChild(w); document.body.style.overflow = ""; setPdfLoading(false); };
       html2pdf().set({
         margin: [10, 8, 10, 8],
         filename: "DevGuide-GIS-Meter.pdf",
         image: { type: "jpeg", quality: 0.97 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#0d0714", windowWidth: 820, width: 820 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#0d0714", windowWidth: 820 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["css", "legacy"], avoid: [".card", "li"] },
       }).from(clone).save()
-        .then(() => { document.body.removeChild(wrap); setPdfLoading(false); })
-        .catch(() => { document.body.removeChild(wrap); setPdfLoading(false); });
+        .then(() => cleanup(wrap))
+        .catch(() => cleanup(wrap));
     }, 450);
   }
 
