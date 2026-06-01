@@ -1,7 +1,7 @@
 {
-  "commit": "7aea0007b6c21548cca029e57154cd7e97cdf7f3",
-  "shortCommit": "7aea000",
-  "message": "fix: translate changelog nav label to English",
-  "date": "2026-06-01T18:32:05+00:00",
+  "commit": "bce910f67cced23b25d4706582d0d0ef9a041686",
+  "shortCommit": "bce910f",
+  "message": "Create update-version.yml",
+  "date": "2026-06-02T01:48:34+07:00",
   "branch": "main"
 }
