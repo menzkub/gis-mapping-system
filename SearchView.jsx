@@ -652,11 +652,16 @@ function NavigationPanel({ target, kind, onClose }) {
                 {displayDist > 0 ? `${displayDist.toFixed(2)} ${t("kmUnit")}` : distance != null ? `${distance.toFixed(2)} ${t("kmUnit")}` : "—"}
               </div>
             </div>
-            <div>
+            <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>{t("etaLabel")}</div>
               <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
                 {displayEta != null ? (displayEta < 60 ? `${displayEta} ${t("minutesUnit")}` : `${Math.floor(displayEta/60)} ${t("hoursUnit")} ${displayEta%60} ${t("minutesUnit")}`) : eta != null ? (eta < 60 ? `${eta} ${t("minutesUnit")}` : `${Math.floor(eta/60)} ${t("hoursUnit")} ${eta%60} ${t("minutesUnit")}`) : "—"}
               </div>
+              {eta != null && (
+                <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+                  คำนวณที่ 40 กม./ชม.
+                </div>
+              )}
             </div>
           </div>
         </div>

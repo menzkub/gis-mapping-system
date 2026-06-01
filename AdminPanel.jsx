@@ -33,10 +33,10 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
   ];
 
   return (
-    <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
+    <div className="f-col" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
       <style>{`
-        .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; }
-        .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; }
+        .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; min-height: 0; }
+        .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
         @keyframes adm-spin { to { transform: rotate(360deg); } }
         .adm-spin { animation: adm-spin 1.2s linear infinite; }
         /* Mobile admin tab bar */
@@ -519,7 +519,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
 }
 
 /* ---------- Guide ---------- */
-const GUIDE_VERSION = { version: "v3.0", date: "1 มิ.ย. 2569" };
+const GUIDE_VERSION = { version: "v3.1", date: "2 มิ.ย. 2569" };
 
 function GuideSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateAd(false);
@@ -857,18 +857,28 @@ function AdminGuide() {
       {/* ─── SECTION: ประวัติ UX/UI ─── */}
       <GuideSection icon="bolt" title={s("ประวัติการปรับปรุง UX/UI", "UX/UI Changelog")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>v3.1 — 2 มิ.ย. 2569 {s("(ล่าสุด)", "(latest)")}</div>
           <GuideTable rows={[
-            [s("รายการ", "Item"), s("รายละเอียด", "Details")],
+            [s("รายการ", "Feature"), s("รายละเอียด", "Details")],
+            [s("Dashboard — FitText", "Dashboard — FitText"), s("ตัวเลข StatCard ย่อ/ขยายอัตโนมัติด้วย ResizeObserver ไม่ต้องแก้ code", "StatCard numbers auto-resize via ResizeObserver — no code change needed")],
+            [s("Dashboard — KVA แยก", "Dashboard — KVA split"), s("แยกแสดง PEA / Customer ในการ์ด KVA", "KVA card breakdown by PEA vs Customer")],
+            [s("Dashboard — ไอคอน", "Dashboard — Icons"), s("มิเตอร์ → M (meter-m), หม้อแปลง → สามเหลี่ยม (tr-tri)", "Meter → M icon (meter-m), Transformer → triangle (tr-tri)")],
+            [s("Dashboard — Donut", "Dashboard — Donut"), s("วงกลมอยู่กึ่งกลาง + ใหญ่ขึ้นบนมือถือ (200px) / iPad (180px)", "Donut centered + larger on mobile (200px) / iPad (180px)")],
+            [s("แผนที่ภาพรวม — สูง", "Overview map — height"), s("แก้ flex chain ให้แผนที่เต็มความสูง + ResizeObserver invalidateSize", "Fixed flex chain for full-height map + ResizeObserver invalidateSize")],
+            [s("ค้นหา — แผนที่เต็ม", "Search — full map"), s("แก้ SearchView ให้แผนที่เต็ม desktop", "Fixed SearchView map full-height on desktop")],
+            [s("ค้นหา — คีย์บอร์ด", "Search — keyboard"), s("แผนที่ภาพรวม: inputMode='numeric' บังคับคีย์บอร์ดตัวเลข", "Overview map: inputMode='numeric' forces numeric keyboard")],
+            [s("ป้องกัน iOS zoom", "iOS zoom prevention"), s("font-size: 16px บน input ทุกช่อง ≤768px ป้องกัน Safari ซูม", "font-size: 16px on all inputs ≤768px prevents iOS Safari auto-zoom")],
+            [s("Logout 403", "Logout 403"), s("แก้ออกจากระบบไม่ได้เมื่อ token หมดอายุ — force clear state", "Fixed logout stuck on expired token — force clear auth state")],
+            [s("ตั้งค่า — card spacing", "Settings — spacing"), s("แก้ DocDownload / PushNotify ถูก nest ใน DevInfo card", "Fixed DocDownload/PushNotify nested inside DevInfo card")],
+            [s("ไม่มีหน้าจอขาว", "No white flash"), s("เพิ่ม background: #1b0926 ใน <head> ป้องกัน flash ขณะโหลด", "Added background: #1b0926 in <head> to prevent white flash on reload")],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>v3.0 — 1 มิ.ย. 2569</div>
+          <GuideTable rows={[
+            [s("รายการ", "Feature"), s("รายละเอียด", "Details")],
             [s("ตำแหน่ง", "Location"), s("Sidebar ไอคอน ⚡ 'อัปเดต' — เฉพาะ Admin", "Sidebar ⚡ 'อัปเดต' icon — Admin only")],
             [s("ข้อมูล", "Data"), s("Timeline ทุก version พร้อมวันที่และ category chip", "Timeline of all versions with dates and category chips")],
-            [s("Category", "Category"), s("ใหม่ (เขียว) / UX/UI (ม่วง) / แก้ไข (น้ำเงิน) / ประสิทธิภาพ (ส้ม)", "new · UX/UI · fix · perf")],
             [s("Deploy Status dot", "Deploy Status dot"), s("จุดสีใน Topbar คลิกดู popup: 🟢 ปัจจุบัน / 🟡 รอ Deploy / ⚫ โหลด", "Colored dot in Topbar: 🟢 up-to-date / 🟡 pending / ⚫ loading")],
-            [s("Deployment Status card", "Deployment Status card"), s("การ์ดเปรียบเทียบ hash ที่รันบนเว็บ vs GitHub latest", "Card comparing deployed hash vs GitHub latest commit")],
           ]} />
-          <GuideStep n={1} text={s("กดแท็บ 'อัปเดต ⚡' ใน sidebar — เห็นได้เฉพาะ Admin", "Click 'อัปเดต ⚡' in sidebar — visible to Admin only")} />
-          <GuideStep n={2} text={s("การ์ด Deployment Status ด้านบน timeline แสดงสถานะ deploy ปัจจุบัน", "Deployment Status card above timeline shows current deploy state")} />
-          <GuideStep n={3} text={s("กดจุดสีใน Topbar ดู popup สถานะ deploy ได้ทันทีโดยไม่ต้องเปิดหน้า อัปเดต", "Click the status dot in Topbar to see deploy status popup instantly")} />
-          <GuideStep n={4} text={s("Timeline dot สี = สีประจำ version — ล่าสุดมี badge 'ล่าสุด' สีเขียว", "Timeline dot color = version color — latest has green 'ล่าสุด' badge")} />
           <GuideTip>{s("เพิ่ม version ใหม่ใน CHANGELOG array (app.jsx) + อัปเดต version.json ทุกครั้งที่ push", "Add new version in CHANGELOG array (app.jsx) + update version.json on every push")}</GuideTip>
         </div>
       </GuideSection>
@@ -1010,10 +1020,10 @@ function AdminDevGuide() {
         {/* Stat cards */}
         <div className="dg-sgrid">
           {[
-            { label: s("หัวข้อ","Sections"),       value: 15, icon: "book",     sub: "sections" },
+            { label: s("หัวข้อ","Sections"),       value: 16, icon: "book",     sub: "sections" },
             { label: s("ไฟล์ระบบ","Files"),        value: 13, icon: "package",  sub: "source files" },
             { label: s("ตาราง DB","DB Tables"),    value: 7,  icon: "database", sub: "tables" },
-            { label: s("ตัวอย่างโค้ด","Code Blocks"), value: 18, icon: "code",  sub: "code blocks" },
+            { label: s("ตัวอย่างโค้ด","Code Blocks"), value: 22, icon: "code",  sub: "code blocks" },
           ].map(({ label, value, icon, sub }) => (
             <div key={label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
@@ -1582,6 +1592,104 @@ addAudit({
             ["IBM Plex Mono", "—", "Google Fonts", "Font mono สำหรับ code/ID"],
           ]} />
           <GuideNote>ไม่มี package.json, node_modules, หรือ build pipeline — เพิ่ม dependency ใหม่ได้โดยเพิ่ม script tag ใน index.html</GuideNote>
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: Recent UX/UI Changes ─── */}
+      <GuideSection icon="bolt" title={s("การอัปเดต UX/UI ล่าสุด (v3.1)","Recent UX/UI Updates (v3.1)")} expandSignal={expandSig}>
+        <div style={{ marginTop: 12 }}>
+
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>FitText — Auto-Resize Dashboard Numbers <DevBadge color="purple">components.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["Prop", "Type", "Default", "คำอธิบาย"],
+            ["maxSize", "number", "30", "font-size สูงสุด (px)"],
+            ["minSize", "number", "12", "font-size ต่ำสุด (px)"],
+            ["children", "ReactNode", "—", "ตัวเลขหรือข้อความที่ต้องการ fit"],
+          ]} />
+          <CodeBlock>{`// ใช้ใน StatCard แทนข้อความธรรมดา
+<FitText maxSize={30} minSize={10}>{value}</FitText>
+
+// ทำงานอย่างไร:
+// 1. ตั้ง font-size = maxSize
+// 2. ถ้า scrollWidth > offsetWidth → ลด size ทีละ 0.5px
+// 3. ResizeObserver re-run เมื่อ container เปลี่ยนขนาด`}</CodeBlock>
+          <GuideNote>FitText ใช้ ResizeObserver — ทำงานได้ทั้งใน grid, flex, และ responsive layout โดยไม่ต้อง manual breakpoint</GuideNote>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Dashboard KVA — PEA / Customer Split <DevBadge color="purple">AdminPanel.jsx</DevBadge><DevBadge color="blue">Supabase SQL</DevBadge></div>
+          <GuideTable rows={[
+            ["SQL field", "คำอธิบาย"],
+            ["total_kva", "SUM ทั้งหมดของ transformers.kva"],
+            ["pea_kva",   "SUM เฉพาะ owner_tr = 'PEA'"],
+            ["cust_kva",  "SUM เฉพาะ owner_tr = 'Customer'"],
+          ]} />
+          <CodeBlock>{`-- เพิ่มใน get_dashboard_stats() RPC (Supabase SQL Editor)
+'pea_kva',  (SELECT COALESCE(sum(kva),0) FROM public.transformers WHERE owner_tr='PEA'),
+'cust_kva', (SELECT COALESCE(sum(kva),0) FROM public.transformers WHERE owner_tr='Customer'),
+
+// StatCard breakdown prop (AdminPanel.jsx)
+<StatCard label={t("dbKva")} value={fmtStat(totalKva)} icon="bolt" accent="blue"
+  breakdown={[
+    { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4" },
+    { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6" },
+  ]}
+/>`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>iOS Auto-Zoom Prevention <DevBadge color="gray">styles.css</DevBadge></div>
+          <CodeBlock>{`/* iOS Safari ซูมเข้าอัตโนมัติเมื่อ font-size < 16px */
+@media (max-width: 768px) {
+  input, textarea, select,
+  input[type="text"], input[type="search"], input[type="number"],
+  input[type="email"], input[type="password"], input[type="tel"] {
+    font-size: 16px !important;
+  }
+}`}</CodeBlock>
+          <GuideTip>ใส่ไว้ท้าย styles.css เพื่อ override ทุก component — ไม่ต้องแก้แต่ละ input แยก</GuideTip>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Flex Height Chain — Admin Map & SearchView <DevBadge color="gray">styles.css</DevBadge><DevBadge color="purple">AdminPanel.jsx</DevBadge></div>
+          <GuideNote>ปัญหาคลาสสิก: ใช้ height:"100%" ใน flex child ไม่ได้ผล — ต้องใช้ flex:1 + minHeight:0 ตลอด chain</GuideNote>
+          <CodeBlock>{`/* styles.css */
+.app-main { display: flex; flex-direction: column; }  /* ← สำคัญ */
+.adm-body.adm-map-body { display: flex; flex-direction: column; }
+
+/* AdminPanel.jsx */
+// AdminPanel root — เป็น flex child ของ route-view
+<div className="f-col" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+
+// AdminMapTab root — เป็น flex child ของ .adm-body
+<div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+
+// Map + panel wrapper
+<div style={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
+  <div ref={containerRef} style={{ flex: 1 }} />  {/* ← Leaflet container */}
+</div>`}</CodeBlock>
+          <CodeBlock>{`// Leaflet invalidateSize — ใช้ ResizeObserver + double-rAF
+const ro = new ResizeObserver(() => map.invalidateSize());
+ro.observe(containerRef.current);
+// บังคับ render หลัง flex layout settle
+requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Logout 403 Fix <DevBadge color="orange">app.jsx</DevBadge></div>
+          <CodeBlock>{`// เมื่อ session หมดอายุ signOut() คืน 403 → ไม่ trigger onAuthStateChange
+// วิธีแก้: try-catch + force clear state
+const doLogout = async () => {
+  try { await _supabase.auth.signOut(); } catch (_) {}
+  setCurrentUser(null);   // ← force clear เสมอ
+  setAppState("unauthed");
+};`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>White Flash Prevention <DevBadge color="gray">index.html</DevBadge></div>
+          <CodeBlock>{`<!-- index.html — ใน <head> ก่อน CSS ใดๆ -->
+<style>html,body{margin:0;padding:0;background:#1b0926;}</style>
+<!-- ป้องกัน flash ขาวระหว่างที่ browser โหลด CSS หลัก -->`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Service Worker Cache — Bump Strategy <DevBadge color="gray">service-worker.js</DevBadge></div>
+          <CodeBlock>{`// service-worker.js — เพิ่มเลข version ทุกครั้งที่ deploy
+const CACHE = "gis-meter-v14";  // ← bump ทุกครั้ง
+
+// Cache-first strategy: ถ้ามีใน cache ใช้ cache ก่อน
+// install event: pre-cache ไฟล์ทั้งหมด
+// activate event: ลบ cache เก่าทิ้ง
+// ⚠ ถ้าลืม bump → user ยังได้ไฟล์เก่าอยู่`}</CodeBlock>
         </div>
       </GuideSection>
 
@@ -3093,9 +3201,10 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     tLayerRef.current = L.layerGroup().addTo(map);
     map.on("zoomend", () => setTimeout(() => setZoomTick(t => t + 1), 80));
     mapRef.current = map;
-    // Call invalidateSize whenever the container is resized (handles flex layout settling)
     const ro = new ResizeObserver(() => map.invalidateSize());
     ro.observe(containerRef.current);
+    // Force correct tile render after flex layout fully settles
+    requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
     return () => { ro.disconnect(); if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, []);
 
@@ -3282,7 +3391,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative" }}>
       <style>{`
         .amc-bar  { display:flex; align-items:center; gap:6px; padding:6px 12px; background:var(--surface); border-bottom:1px solid var(--line); flex-shrink:0; }
         .amc-pill { display:flex; border-radius:22px; overflow:hidden; border:1px solid var(--line); background:var(--surface-2); flex-shrink:0; }
