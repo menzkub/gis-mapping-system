@@ -3387,7 +3387,7 @@ function App() {
         <aside className="app-sidebar" style={{
           background: "linear-gradient(180deg, #1b0926 0%, #321148 50%, #1b0926 100%)",
           color: "white", padding: "22px 16px", display: "flex", flexDirection: "column", gap: 0,
-          borderRight: "1px solid rgba(255,255,255,0.06)", overflow: "hidden",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
         }}>
           <div className="sidebar-brand" style={{ padding: "4px 6px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -3404,7 +3404,7 @@ function App() {
               </div>
             </div>
           </div>
-          <nav className="sidebar-nav f-col f-gap-2" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", marginTop: 16, paddingBottom: 8, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.15) transparent" }}>
+          <nav className="sidebar-nav f-col f-gap-2 sidebar-nav-scroll">
             {navItems.map(it => (
               <React.Fragment key={it.id}>
                 <button
@@ -3451,7 +3451,7 @@ function App() {
             ))}
           </nav>
 
-          <div className="sidebar-user" style={{ flexShrink: 0, marginTop: 12, padding: 14, background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="sidebar-user" style={{ marginTop: "auto", flexShrink: 0, padding: 14, background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
                 {currentUser.name?.[0] || currentUser.username[0]}

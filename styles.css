@@ -347,6 +347,23 @@ a { color: inherit; text-decoration: none; }
   .app-sidebar { padding: 26px 18px !important; }
 }
 
+/* ── Desktop sidebar: overflow + scrollable nav ────────────── */
+@media (min-width: 641px) {
+  .app-sidebar { overflow: hidden; }
+  .sidebar-nav-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 16px;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
+  }
+  .sidebar-nav-scroll::-webkit-scrollbar { width: 4px; }
+  .sidebar-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+}
+
 /* ── Tablet (641–1024px): collapsible sidebar ──────────────── */
 @media (min-width: 641px) and (max-width: 1024px) {
   .app-root {
@@ -396,6 +413,7 @@ a { color: inherit; text-decoration: none; }
     gap: 0 !important;
     border-right: 0 !important;
     border-top: 1px solid rgba(255,255,255,0.12);
+    overflow: visible !important;
   }
   .sidebar-brand,
   .sidebar-user { display: none !important; }

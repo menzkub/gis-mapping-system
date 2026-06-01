@@ -1,7 +1,7 @@
 {
-  "commit": "fix-map-controls-sidebar-location-export",
+  "commit": "fix-mobile-nav-sidebar-location-btn",
   "shortCommit": "pending",
-  "message": "fix: controls bar desktop size, location btn visible, sidebar scroll, export row detect",
-  "date": "2026-06-01T20:00:00+00:00",
+  "message": "fix: mobile bottom nav overflow, sidebar desktop scroll, location pin button",
+  "date": "2026-06-01T21:00:00+00:00",
   "branch": "main"
 }

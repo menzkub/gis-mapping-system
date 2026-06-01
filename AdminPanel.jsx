@@ -3292,19 +3292,39 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         )}
       </div>
 
-      {/* Floating: location button — outside overflow:hidden so it's never clipped */}
+      {/* Floating: location pin button (Google Maps style) — outside overflow:hidden */}
       {loadState !== "loading" && (
-        <button onClick={flyToLocation} disabled={locating} style={{
-          position: "absolute", bottom: 22, right: 18, zIndex: 900,
-          display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 24,
-          background: "var(--surface)", border: "1px solid var(--line)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.28)",
-          color: locating ? "#3b82f6" : "var(--ink)",
-          fontSize: 13, fontWeight: 700, cursor: locating ? "default" : "pointer",
-          backdropFilter: "blur(8px)", transition: "all 140ms",
-        }}>
-          <Icon name="navigation" size={15} style={{ color: locating ? "#3b82f6" : "var(--pea-purple-500)", animation: locating ? "pea-spin 1s linear infinite" : "none" }} />
-          {locating ? "กำลังค้นหา…" : "ตำแหน่งฉัน"}
+        <button
+          onClick={flyToLocation}
+          disabled={locating}
+          title="ตำแหน่งของฉัน"
+          style={{
+            position: "absolute", bottom: 90, right: 14, zIndex: 900,
+            width: 44, height: 44, borderRadius: "50%", padding: 0,
+            background: "white", border: "2px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.30)",
+            display: "grid", placeItems: "center",
+            cursor: locating ? "default" : "pointer",
+            transition: "box-shadow 150ms, transform 150ms",
+          }}
+        >
+          {locating ? (
+            <div style={{
+              width: 20, height: 20, borderRadius: "50%",
+              border: "2.5px solid rgba(66,133,244,0.25)",
+              borderTopColor: "#4285f4",
+              animation: "pea-spin 0.8s linear infinite",
+            }} />
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="4" fill="#4285f4"/>
+              <circle cx="12" cy="12" r="4" fill="#4285f4" opacity="0.25" style={{ transformOrigin:"center", transform:"scale(2.4)" }}/>
+              <line x1="12" y1="2" x2="12" y2="6" stroke="#4285f4" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="12" y1="18" x2="12" y2="22" stroke="#4285f4" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="2" y1="12" x2="6" y2="12" stroke="#4285f4" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="18" y1="12" x2="22" y2="12" stroke="#4285f4" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          )}
         </button>
       )}
 
