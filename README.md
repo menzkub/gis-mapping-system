@@ -4,7 +4,7 @@
 
 # PEA Meter & Transformer — GIS Mapping System
 
-ระบบสารสนเทศภูมิศาสตร์สำหรับการไฟฟ้าส่วนภูมิภาค  
+ระบบสารสนเทศภูมิศาสตร์สำหรับการไฟฟ้าส่วนภูมิภาค สาขาฝาง จังหวัดเชียงใหม่ 
 จัดการข้อมูล **มิเตอร์ไฟฟ้า** และ **หม้อแปลงไฟฟ้า** พร้อมแผนที่ Real-time
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-menzkub.github.io-8b3fc4?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
