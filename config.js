@@ -8,6 +8,7 @@
 
 const SUPABASE_URL  = "https://yohlqjoogvuslemuwjij.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvaGxxam9vZ3Z1c2xlbXV3amlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTE4NjksImV4cCI6MjA5NDc4Nzg2OX0._5NPLRThQU0Y6O_CyxtOKLJpPx4ZBmwn67WbqK8apy8";
+const VAPID_PUBLIC_KEY = "BFs4q5QYmjcUOAY0WTRMRvYrDH7s95SZM5f5elTAS7-UHK409H-ZV8z_6dekwddvKR339FsCl3jgWajLLxmMLHk";
 
 // supabase-js v2 is loaded via CDN before this script.
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -143,6 +144,8 @@ async function loadAll(table) {
 
 Object.assign(window, {
   _supabase,
+  SUPABASE_URL,
+  VAPID_PUBLIC_KEY,
   toMeter, fromMeter,
   toTransformer, fromTransformer,
   toProfile, fromProfilePatch,

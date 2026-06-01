@@ -1,4 +1,4 @@
-const CACHE = "gis-meter-v1";
+const CACHE = "gis-meter-v2";
 
 const STATIC = [
   "/gis-mapping-system/",
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // ไฟล์แอป → cache first, fallback network
+  // ไฟล์แอป → cache first, fallback network (network updates cache silently)
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;
@@ -58,6 +58,33 @@ self.addEventListener("fetch", (e) => {
         }
         return res;
       });
+    })
+  );
+});
+
+// ── Push Notification ──────────────────────────────────────────────────────
+self.addEventListener("push", (e) => {
+  let payload = { title: "GIS Meter", body: "มีการแจ้งเตือนใหม่", url: "/gis-mapping-system/" };
+  try { payload = { ...payload, ...e.data.json() }; } catch (_) {}
+  e.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body:    payload.body,
+      icon:    "/gis-mapping-system/icon-192.png",
+      badge:   "/gis-mapping-system/icon-192.png",
+      vibrate: [200, 100, 200],
+      data:    { url: payload.url },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const target = e.notification.data?.url ?? "/gis-mapping-system/";
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      const existing = wins.find((w) => w.url.includes("gis-mapping-system"));
+      if (existing) return existing.focus();
+      return clients.openWindow(target);
     })
   );
 });

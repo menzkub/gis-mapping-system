@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, pushPermission, subscribePush, unsubscribePush }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -104,7 +104,8 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
           maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
           addAudit={addAudit} currentUser={currentUser}
-          devInfo={devInfo} setDevInfo={setDevInfo} />}
+          devInfo={devInfo} setDevInfo={setDevInfo}
+          pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />}
         {tab === "guide"     && <AdminGuide />}
         {tab === "dev"       && currentUser.role === "admin" && <AdminDevGuide />}
       </div>
@@ -4155,7 +4156,7 @@ function DateTimePicker({ value, onChange }) {
 /* ---------- Settings ---------- */
 const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
 
-function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo }) {
+function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo, pushPermission, subscribePush, unsubscribePush }) {
   const [loading, setLoading] = useStateAd(false);
   const [savingMsg, setSavingMsg] = useStateAd(false);
   const [localMsg, setLocalMsg] = useStateAd(maintenanceMessage || DEFAULT_MSG);
@@ -4417,7 +4418,151 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
             </div>
           </div>
         )}
+
+        {/* ── Push Notification ── */}
+        <PushNotifySection
+          pushPermission={pushPermission}
+          subscribePush={subscribePush}
+          unsubscribePush={unsubscribePush}
+          currentUser={currentUser}
+          addAudit={addAudit}
+        />
       </div>
+    </div>
+  );
+}
+
+function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, currentUser, addAudit }) {
+  const toast   = useToast();
+  const { lang } = useLang();
+  const th = (t, e) => lang === "en" ? e : t;
+
+  const [title, setTitle]     = useStateAd("");
+  const [body, setBody]       = useStateAd("");
+  const [sending, setSending] = useStateAd(false);
+  const [subbing, setSubbing] = useStateAd(false);
+  const [result, setResult]   = useStateAd(null);
+
+  const isSupported = pushPermission !== "unsupported" && "PushManager" in window;
+  const isGranted   = pushPermission === "granted";
+  const isDenied    = pushPermission === "denied";
+
+  const PRESETS = [
+    { icon: "🔧", label: th("ปิดระบบชั่วคราว","Maintenance"), title: th("ปิดระบบชั่วคราว","System Maintenance"), body: th("ระบบจะปิดให้บริการชั่วคราวเพื่อปรับปรุง กรุณาลองใหม่ในภายหลัง","The system will be temporarily unavailable for maintenance. Please try again later.") },
+    { icon: "⚡", label: th("อัปเดตระบบ","Update"), title: th("อัปเดตระบบใหม่","System Updated"), body: th("ระบบได้รับการอัปเดตเวอร์ชันใหม่แล้ว กรุณารีเฟรชหน้าเว็บ","A new version is available. Please refresh the app.") },
+    { icon: "✅", label: th("ระบบกลับมาแล้ว","Back Online"), title: th("ระบบกลับมาใช้งานได้แล้ว","System Back Online"), body: th("ระบบกลับมาให้บริการตามปกติแล้ว","The system is back online and working normally.") },
+    { icon: "⚠️", label: th("แจ้งเตือนด่วน","Alert"), title: th("แจ้งเตือนด่วน","Urgent Alert"), body: th("มีประกาศสำคัญจากทีมผู้ดูแลระบบ กรุณาตรวจสอบ","There is an important announcement from the admin team.") },
+  ];
+
+  const handleSubscribe = async () => {
+    setSubbing(true);
+    const res = await subscribePush();
+    setSubbing(false);
+    if (res === "granted") toast?.(th("เปิดการแจ้งเตือนสำเร็จ","Notifications enabled"), "success");
+    else if (res === "denied") toast?.(th("ถูกบล็อกการแจ้งเตือน กรุณาอนุญาตใน Browser Settings","Blocked — allow in browser settings"), "error");
+  };
+
+  const handleSend = async () => {
+    if (!title.trim() || !body.trim()) { toast?.(th("กรุณากรอกหัวข้อและข้อความ","Enter title and message"), "error"); return; }
+    setSending(true); setResult(null);
+    const { data: { session } } = await _supabase.auth.getSession();
+    const res = await fetch(
+      `${window.SUPABASE_URL || "https://yohlqjoogvuslemuwjij.supabase.co"}/functions/v1/push-notify`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ title, body, url: "/gis-mapping-system/" }),
+      }
+    );
+    setSending(false);
+    if (res.ok) {
+      const j = await res.json();
+      setResult(j);
+      addAudit({ user: currentUser.username, action: "push_notify", target: "all_users", detail: `ส่งแจ้งเตือน: ${title}` });
+      toast?.(th(`ส่งสำเร็จ ${j.sent} เครื่อง`, `Sent to ${j.sent} device(s)`), "success");
+      setTitle(""); setBody("");
+    } else {
+      toast?.(th("เกิดข้อผิดพลาดในการส่ง","Failed to send"), "error");
+    }
+  };
+
+  return (
+    <div className="card card-elev" style={{ marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <Icon name="bell" size={18} color="white" />
+        </div>
+        <div>
+          <div className="fw-7 text-md">{th("ส่งการแจ้งเตือน Push","Push Notifications")}</div>
+          <div className="t-mute text-sm">{th("แจ้งเตือนผู้ใช้ทุกคนบนมือถือทันที","Send instant alerts to all mobile users")}</div>
+        </div>
+      </div>
+
+      {!isSupported ? (
+        <div className="badge badge-amber" style={{ fontSize: 12, padding: "6px 12px" }}>
+          {th("Browser นี้ไม่รองรับ Push Notification","Push notifications not supported in this browser")}
+        </div>
+      ) : isDenied ? (
+        <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "var(--red)" }}>
+          <b>{th("ถูกบล็อก:","Blocked:")}</b> {th("ไปที่ Browser Settings → ค้นหาเว็บนี้ → อนุญาต Notification","Go to Browser Settings → find this site → allow Notifications")}
+        </div>
+      ) : !isGranted ? (
+        <div>
+          <div className="t-mute text-sm" style={{ marginBottom: 12 }}>
+            {th("กดเพื่อขอสิทธิ์รับการแจ้งเตือนบนอุปกรณ์นี้ก่อน จากนั้นสามารถส่งถึงผู้ใช้ทุกคนได้","Enable notifications on this device first, then send to all users")}
+          </div>
+          <button className="btn btn-primary" style={{ height: 42 }} disabled={subbing} onClick={handleSubscribe}>
+            <Icon name="bell" size={15} /> {subbing ? th("กำลังเปิด…","Enabling…") : th("เปิดการแจ้งเตือน","Enable Notifications")}
+          </button>
+        </div>
+      ) : (
+        <div className="f-col f-gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", flexShrink: 0 }} />
+            <span className="text-sm" style={{ color: "#10b981", fontWeight: 700 }}>{th("เปิดการแจ้งเตือนแล้ว","Notifications enabled")}</span>
+            <button onClick={unsubscribePush} className="text-sm t-mute" style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "auto", textDecoration: "underline", fontSize: 11 }}>
+              {th("ปิด","Disable")}
+            </button>
+          </div>
+
+          {/* Preset buttons */}
+          <div>
+            <div className="text-sm fw-6" style={{ marginBottom: 8 }}>{th("เทมเพลตด่วน","Quick Templates")}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {PRESETS.map(p => (
+                <button key={p.label} onClick={() => { setTitle(p.title); setBody(p.body); }}
+                  style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    border: "1px solid var(--line)", background: "var(--surface-2)", color: "var(--ink)" }}>
+                  {p.icon} {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
+            <label className="field-label">{th("หัวข้อ","Title")}</label>
+            <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder={th("เช่น ปิดระบบชั่วคราว","e.g. System Maintenance")} />
+          </div>
+          <div className="field">
+            <label className="field-label">{th("ข้อความ","Message")}</label>
+            <textarea className="input" value={body} onChange={e => setBody(e.target.value)} rows={3}
+              placeholder={th("รายละเอียดของการแจ้งเตือน…","Notification details…")}
+              style={{ resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }} />
+          </div>
+
+          {result && (
+            <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13 }}>
+              ✅ {th(`ส่งสำเร็จ ${result.sent}/${result.total} เครื่อง`, `Sent ${result.sent}/${result.total} device(s)`)}
+              {result.failed > 0 && <span className="t-mute"> · {th(`หมดอายุ ${result.failed} เครื่อง`,"expired")}</span>}
+            </div>
+          )}
+
+          <button className="btn btn-primary" style={{ height: 44, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", boxShadow: "0 8px 22px rgba(107,44,145,0.35)" }}
+            disabled={sending || !title.trim() || !body.trim()} onClick={handleSend}>
+            <Icon name="bell" size={15} /> {sending ? th("กำลังส่ง…","Sending…") : th("ส่งแจ้งเตือนทันที","Send Now")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

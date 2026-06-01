@@ -2777,6 +2777,9 @@ function App() {
   });
   const [daysUntilExpiry, setDaysUntilExpiry] = useStateApp(null);
   const [idleWarnSecs, setIdleWarnSecs] = useStateApp(null);
+  const [pushPermission, setPushPermission] = useStateApp(() =>
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -2970,6 +2973,44 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, [loadAppData]);
+
+  // ── Push Notification subscription ───────────────────────────────────────
+  const subscribePush = React.useCallback(async () => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return "unsupported";
+    const permission = await Notification.requestPermission();
+    setPushPermission(permission);
+    if (permission !== "granted") return permission;
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) await existing.unsubscribe();
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: window.VAPID_PUBLIC_KEY,
+    });
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) return "no-session";
+    await _supabase.from("push_subscriptions").upsert(
+      { user_id: session.user.id, subscription: sub.toJSON() },
+      { onConflict: "user_id" }
+    );
+    return "granted";
+  }, []);
+
+  const unsubscribePush = React.useCallback(async () => {
+    if (!("serviceWorker" in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session) await _supabase.from("push_subscriptions").delete().eq("user_id", session.user.id);
+    setPushPermission("default");
+  }, []);
+
+  // Auto-subscribe when user logs in and permission was already granted
+  useEffectApp(() => {
+    if (!currentUser) return;
+    if (Notification.permission === "granted") subscribePush();
+  }, [currentUser?.id]);
 
   // ── Auto-logout หลังไม่ใช้งาน 30 นาที (warning 2 นาทีก่อน) ──────────────
   useEffectApp(() => {
@@ -3651,7 +3692,8 @@ function App() {
               maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
               maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
               maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
-              devInfo={devInfo} setDevInfo={setDevInfo} />
+              devInfo={devInfo} setDevInfo={setDevInfo}
+              pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />
           )}
         </main>
 
