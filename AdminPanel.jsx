@@ -2690,6 +2690,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const tileRef      = React.useRef(null);
   const mLayerRef    = React.useRef(null);
   const tLayerRef    = React.useRef(null);
+  const locMarkerRef = React.useRef(null);
 
   const [loadState, setLoadState] = useStateAd("idle"); // idle | loading | done | error
   const [progress,  setProgress]  = useStateAd(0);
@@ -2704,6 +2705,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [corrTarget, setCorrTarget] = useStateAd(null);  // { p, isMeter }
   const [corrections, setCorrections] = useStateAd([]);
   const [showReview, setShowReview] = useStateAd(false);
+  const [locating, setLocating] = useStateAd(false);
   const toast = useToast();
 
   const loadCorrections = React.useCallback(async () => {
@@ -2927,6 +2929,37 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     if (bounds.isValid()) mapRef.current.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
   }, [loadState]);
 
+  const flyToLocation = () => {
+    if (!navigator.geolocation) { toast?.("เบราว์เซอร์ไม่รองรับ GPS", "error"); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocating(false);
+        const { latitude: lat, longitude: lng } = coords;
+        if (!mapRef.current) return;
+        mapRef.current.flyTo([lat, lng], 16, { duration: 1.2 });
+        if (locMarkerRef.current) { locMarkerRef.current.remove(); locMarkerRef.current = null; }
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="width:20px;height:20px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 0 0 4px rgba(59,130,246,0.35)"></div>`,
+          iconSize: [20, 20], iconAnchor: [10, 10],
+        });
+        locMarkerRef.current = L.marker([lat, lng], { icon })
+          .bindPopup(`<b>ตำแหน่งปัจจุบัน</b><br>±${Math.round(coords.accuracy)} ม.`)
+          .addTo(mapRef.current)
+          .openPopup();
+      },
+      (err) => {
+        setLocating(false);
+        const msg = err.code === 1 ? "ไม่ได้รับอนุญาต GPS — กรุณาอนุญาตในเบราว์เซอร์"
+                  : err.code === 2 ? "ไม่พบสัญญาณ GPS"
+                  : "หมดเวลารอ GPS";
+        toast?.(msg, "error");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const btnStyle = (active, accent) => ({
     display: "flex", alignItems: "center", gap: 6,
     padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
@@ -2966,7 +2999,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           </button>
           {showBaseMenu && (
             <>
-            <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
             <div style={{
               position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 600,
               background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10,
@@ -2989,6 +3022,19 @@ function AdminMapTab({ data, currentUser, addAudit }) {
             </>
           )}
         </div>
+
+        {/* Current location button */}
+        <button style={{
+          display: "flex", alignItems: "center", gap: 5,
+          padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
+          border: "1px solid " + (locating ? "#3b82f6" : "var(--line)"),
+          background: locating ? "rgba(59,130,246,0.12)" : "var(--surface-2)",
+          color: locating ? "#3b82f6" : "var(--ink-mute)", cursor: "pointer",
+          transition: "all 140ms",
+        }} onClick={flyToLocation} disabled={locating} title="ตำแหน่งปัจจุบัน">
+          <Icon name="navigation" size={13} style={{ transform: locating ? "none" : undefined, animation: locating ? "pea-spin 1s linear infinite" : "none" }} />
+          {locating ? "กำลังค้นหา…" : "ตำแหน่งฉัน"}
+        </button>
 
         {/* Correction review button */}
         {loadState === "done" && (
