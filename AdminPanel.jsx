@@ -1868,7 +1868,6 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
           </button>
         </div>
       )}
-      </div>
 
       {/* Desktop: table */}
       <div className="au-dt">
