@@ -4964,6 +4964,8 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
 }
 
 // ── Infographic: User Quick Guide ─────────────────────────────────────────
+const LOGO_SVG_USER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="56" height="56"><defs><linearGradient id="ugBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b4dca"/><stop offset="100%" stop-color="#1b0926"/></linearGradient><linearGradient id="ugBolt" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#ffcf8a"/><stop offset="100%" stop-color="#f47b20"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#ugBg)"/><rect width="64" height="32" rx="15" fill="rgba(255,255,255,0.05)"/><path d="M 36 7 L 16 36 H 28 L 20 57 L 48 28 H 36 L 44 7 Z" fill="url(#ugBolt)"/></svg>`;
+
 function UserQuickGuideCard() {
   const W = 560;
   const steps = [
@@ -4975,54 +4977,133 @@ function UserQuickGuideCard() {
     { emoji: "📲", title: "ติดตั้งเป็นแอป (PWA)", lines: ["iOS: Safari → กดปุ่ม Share → 'เพิ่มลงหน้าจอหลัก'", "Android: Chrome → เมนู → 'Add to Home Screen'"] },
   ];
   return (
-    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#1b0926", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
+    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#0d0714", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>🏢</div>
+          <div dangerouslySetInnerHTML={{ __html: LOGO_SVG_USER }} style={{ flexShrink: 0 }} />
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", marginBottom: 3 }}>คู่มือเริ่มต้นใช้งาน</div>
-            <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>GIS Meter &amp; Transformer</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>คู่มือเริ่มต้นใช้งาน · User Guide</div>
+            <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.1 }}>GIS Meter &amp; Transformer</div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>ระบบสารสนเทศภูมิศาสตร์ PEA — สำหรับผู้ใช้งานทั่วไป</div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-          {["ค้นหามิเตอร์/หม้อแปลง","นำทาง GPS","แจ้งแก้ไขพิกัด","ติดตั้งเป็นแอป"].map(t => (
-            <span key={t} style={{ padding: "3px 11px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.9)" }}>{t}</span>
+        <div style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
+          {["🔍 ค้นหามิเตอร์/หม้อแปลง","📍 นำทาง GPS","📝 แจ้งแก้ไขพิกัด","📱 ติดตั้งเป็นแอป"].map(lbl => (
+            <span key={lbl} style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.9)" }}>{lbl}</span>
           ))}
         </div>
       </div>
-      {/* Steps */}
-      <div style={{ padding: "24px 28px" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 16 }}>ขั้นตอนการใช้งาน</div>
-        {steps.map((step, i) => (
-          <div key={i} style={{ display: "flex", gap: 14, marginBottom: 18 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid #a78bfa" }}>{step.emoji}</div>
-              {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: "rgba(167,139,250,0.25)", marginTop: 4 }} />}
+
+      {/* App Screen Preview */}
+      <div style={{ background: "#1b0926", padding: "20px 28px", borderBottom: "1px solid #2d1052" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 14 }}>📱 ตัวอย่างหน้าตาระบบ</div>
+        <div style={{ display: "flex", gap: 14 }}>
+          {/* Search Screen Mockup */}
+          <div style={{ flex: 1, background: "#0d0714", borderRadius: 14, overflow: "hidden", border: "1px solid #2d1052", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+            {/* Mock Topbar */}
+            <div style={{ background: "#1b0926", padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid #2d1052" }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(135deg,#9b4dca,#1b0926)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="14" height="14"><path d="M 36 7 L 16 36 H 28 L 20 57 L 48 28 H 36 L 44 7 Z" fill="#ffcf8a"/></svg>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#f3eefa" }}>GIS Meter & TR</span>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#2d1052", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8 }}>🌙</div>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#2d1052", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8 }}>🔔</div>
+              </div>
             </div>
-            <div style={{ flex: 1, paddingTop: 6 }}>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "#f3eefa", marginBottom: 5 }}>{i + 1}. {step.title}</div>
+            {/* Mock Search */}
+            <div style={{ padding: "10px 10px 6px" }}>
+              <div style={{ background: "#2d1052", borderRadius: 8, padding: "7px 10px", fontSize: 10, color: "#a78bfa", display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span>🔍</span><span style={{ opacity: 0.7 }}>ค้นหา TAG, PEANO, สถานที่...</span>
+              </div>
+              {[
+                { tag: "10001234", type: "M", loc: "ถ.พระราม 9, กรุงเทพ", color: "#8b3fc4" },
+                { tag: "TR-00456", type: "T", loc: "สุขุมวิท 24, กทม.", color: "#d97706" },
+                { tag: "10005678", type: "M", loc: "ลาดพร้าว 71, กทม.", color: "#8b3fc4" },
+              ].map((r, i) => (
+                <div key={i} style={{ marginBottom: 6, background: "#1b0926", borderRadius: 8, padding: "8px 10px", display: "flex", gap: 8, alignItems: "center", border: "1px solid #2d1052" }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 7, background: r.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "white", flexShrink: 0 }}>{r.type}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: "#f3eefa" }}>{r.tag}</div>
+                    <div style={{ fontSize: 9, color: "#7c6094" }}>📍 {r.loc}</div>
+                  </div>
+                  <div style={{ fontSize: 9, padding: "2px 7px", borderRadius: 6, background: "rgba(139,63,196,0.2)", color: "#a78bfa", fontWeight: 700, flexShrink: 0 }}>นำทาง</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Map Screen Mockup */}
+          <div style={{ flex: 1, borderRadius: 14, overflow: "hidden", border: "1px solid #2d3f6e", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", minHeight: 170 }}>
+            {/* Satellite background */}
+            <div style={{ position: "relative", height: 170, background: "linear-gradient(155deg,#1a3a50 0%,#1e4a35 40%,#152040 100%)" }}>
+              {/* Grid lines */}
+              <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)", backgroundSize: "20px 20px" }} />
+              {/* Roads */}
+              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.12)" }} />
+              <div style={{ position: "absolute", top: 0, bottom: 0, left: "40%", width: 3, background: "rgba(255,255,255,0.08)" }} />
+              {/* Purple meter dots */}
+              {[[22,28],[55,42],[40,18],[80,60],[30,80],[70,30]].map(([x,y],i) => (
+                <div key={i} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, width: 9, height: 9, borderRadius: "50%", background: "#8b3fc4", boxShadow: "0 0 5px rgba(139,63,196,0.7)", border: "1.5px solid rgba(255,255,255,0.4)" }} />
+              ))}
+              {/* Orange transformer dots */}
+              {[[60,50],[15,65]].map(([x,y],i) => (
+                <div key={i} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, width: 11, height: 11, borderRadius: "50%", background: "#d97706", boxShadow: "0 0 6px rgba(217,119,6,0.7)", border: "1.5px solid rgba(255,255,255,0.4)" }} />
+              ))}
+              {/* GPS pin */}
+              <div style={{ position: "absolute", left: "50%", top: "55%", width: 14, height: 14, borderRadius: "50%", background: "#4285f4", boxShadow: "0 0 0 4px rgba(66,133,244,0.25)", border: "2px solid white" }} />
+              {/* Zoom controls */}
+              <div style={{ position: "absolute", right: 8, top: 8, display: "flex", flexDirection: "column", gap: 2, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }}>
+                {["+","−"].map(c => (
+                  <div key={c} style={{ width: 20, height: 20, background: "rgba(255,255,255,0.9)", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#333" }}>{c}</div>
+                ))}
+              </div>
+              {/* Legend */}
+              <div style={{ position: "absolute", bottom: 8, left: 8, background: "rgba(13,7,20,0.85)", borderRadius: 8, padding: "5px 8px", display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#8b3fc4" }} /><span style={{ fontSize: 9, color: "#f3eefa", fontWeight: 700 }}>มิเตอร์</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#d97706" }} /><span style={{ fontSize: 9, color: "#f3eefa", fontWeight: 700 }}>หม้อแปลง</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <div style={{ flex: 1, textAlign: "center", fontSize: 10, color: "#7c6094", fontWeight: 600 }}>หน้าค้นหา</div>
+          <div style={{ flex: 1, textAlign: "center", fontSize: 10, color: "#7c6094", fontWeight: 600 }}>แผนที่ภาพรวม</div>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div style={{ padding: "20px 28px 0" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 14 }}>📋 ขั้นตอนการใช้งาน</div>
+        {steps.map((step, i) => (
+          <div key={i} style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, border: "2px solid rgba(167,139,250,0.5)" }}>{step.emoji}</div>
+              {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: "rgba(167,139,250,0.2)", marginTop: 4 }} />}
+            </div>
+            <div style={{ flex: 1, paddingTop: 4 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#f3eefa", marginBottom: 4 }}>{i + 1}. {step.title}</div>
               {step.lines.map((ln, j) => (
                 <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 3 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#f47b20", marginTop: 7, flexShrink: 0 }} />
-                  <div style={{ fontSize: 13, color: "rgba(243,238,250,0.8)", lineHeight: 1.6 }}>{ln}</div>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#f47b20", marginTop: 6, flexShrink: 0 }} />
+                  <div style={{ fontSize: 12, color: "rgba(243,238,250,0.75)", lineHeight: 1.6 }}>{ln}</div>
                 </div>
               ))}
             </div>
           </div>
         ))}
       </div>
+
       {/* Footer */}
-      <div style={{ margin: "0 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(139,63,196,0.15)", border: "1px solid rgba(139,63,196,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ margin: "12px 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(139,63,196,0.12)", border: "1px solid rgba(139,63,196,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>เข้าใช้งานได้ที่</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
+          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 2 }}>เข้าใช้งานได้ที่</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#a78bfa", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>เวอร์ชัน</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#f47b20" }}>v3.0 · 1 มิ.ย. 2569</div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+          <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.0 · Active</span>
+          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.4)" }}>PEA GIS · 1 มิ.ย. 2569</div>
         </div>
       </div>
     </div>
@@ -5030,6 +5111,8 @@ function UserQuickGuideCard() {
 }
 
 // ── Infographic: Admin Quick Guide ────────────────────────────────────────
+const LOGO_SVG_ADMIN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="56" height="56"><defs><linearGradient id="agBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b4dca"/><stop offset="100%" stop-color="#1b0926"/></linearGradient><linearGradient id="agBolt" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#ffcf8a"/><stop offset="100%" stop-color="#f47b20"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#agBg)"/><rect width="64" height="32" rx="15" fill="rgba(255,255,255,0.05)"/><path d="M 36 7 L 16 36 H 28 L 20 57 L 48 28 H 36 L 44 7 Z" fill="url(#agBolt)"/></svg>`;
+
 function AdminQuickGuideCard() {
   const W = 560;
   const steps = [
@@ -5041,57 +5124,123 @@ function AdminQuickGuideCard() {
     { emoji: "📋", title: "Audit Log & ความปลอดภัย", badge: "Admin → บันทึก / ความปลอดภัย", lines: ["บันทึกทุก action: login, แก้ไขข้อมูล, เปลี่ยนรหัส, 2FA", "คะแนนความปลอดภัย (0-100) + ตรวจจับกิจกรรมต้องสงสัย"] },
   ];
   return (
-    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#1b0926", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
+    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#0d0714", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg,#1b0926 0%,#4f1e6e 50%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden", borderBottom: "2px solid #6b2c91" }}>
-        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(244,123,32,0.1)" }} />
+      <div style={{ background: "linear-gradient(135deg,#1b0926 0%,#4f1e6e 50%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(244,123,32,0.1)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(244,123,32,0.18)", border: "2px solid rgba(244,123,32,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>⚙️</div>
+          <div dangerouslySetInnerHTML={{ __html: LOGO_SVG_ADMIN }} style={{ flexShrink: 0 }} />
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 3 }}>Admin Quick Reference</div>
-            <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>GIS Meter &amp; Transformer</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>คู่มืออ้างอิงสำหรับผู้ดูแลระบบ</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", marginBottom: 2 }}>Admin Quick Reference · คู่มือ Admin</div>
+            <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.1 }}>GIS Meter &amp; Transformer</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>คู่มืออ้างอิงสำหรับผู้ดูแลระบบ PEA</div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-          {["จัดการผู้ใช้","Import/Export","Push Notification","Maintenance Mode","Audit Log"].map(t => (
-            <span key={t} style={{ padding: "3px 11px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "rgba(255,255,255,0.9)" }}>{t}</span>
+        <div style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
+          {["👥 จัดการผู้ใช้","📦 Import/Export","🔔 Push Notification","🔧 Maintenance","📊 Audit Log"].map(lbl => (
+            <span key={lbl} style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "rgba(255,255,255,0.9)" }}>{lbl}</span>
           ))}
         </div>
       </div>
+
+      {/* Admin Dashboard Preview */}
+      <div style={{ background: "#1b0926", padding: "20px 28px", borderBottom: "1px solid #2d1052" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#f97316", marginBottom: 14 }}>🖥️ ตัวอย่าง Admin Dashboard</div>
+        {/* Mock sidebar + content layout */}
+        <div style={{ background: "#0d0714", borderRadius: 14, overflow: "hidden", border: "1px solid #2d1052", display: "flex", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+          {/* Mock Sidebar */}
+          <div style={{ width: 130, background: "#100520", borderRight: "1px solid #2d1052", padding: "12px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 10px 10px", borderBottom: "1px solid #2d1052", marginBottom: 8 }}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20"><defs><linearGradient id="sbBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b4dca"/><stop offset="100%" stop-color="#1b0926"/></linearGradient></defs><rect width="64" height="64" rx="12" fill="url(#sbBg)"/><path d="M 36 7 L 16 36 H 28 L 20 57 L 48 28 H 36 L 44 7 Z" fill="#ffcf8a"/></svg>
+              <span style={{ fontSize: 9, fontWeight: 800, color: "#f3eefa" }}>GIS Meter</span>
+            </div>
+            {[
+              { icon: "🔍", label: "ค้นหา" },
+              { icon: "👤", label: "บัญชีฉัน" },
+              { icon: "⚡", label: "อัปเดต" },
+              { icon: "⚙️", label: "Admin", active: true },
+            ].map(it => (
+              <div key={it.label} style={{ padding: "7px 10px", display: "flex", alignItems: "center", gap: 7, background: it.active ? "rgba(139,63,196,0.2)" : "transparent", borderLeft: it.active ? "3px solid #8b3fc4" : "3px solid transparent", marginBottom: 2 }}>
+                <span style={{ fontSize: 11 }}>{it.icon}</span>
+                <span style={{ fontSize: 10, fontWeight: it.active ? 800 : 600, color: it.active ? "#f3eefa" : "#7c6094" }}>{it.label}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: "1px solid #2d1052", marginTop: 8, padding: "8px 10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,#8b3fc4,#f47b20)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "white" }}>A</div>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#f3eefa" }}>Admin</div>
+                  <div style={{ fontSize: 8, color: "#7c6094" }}>@admin</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Mock Main Content */}
+          <div style={{ flex: 1, padding: "10px 12px" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "#f97316", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Dashboard</div>
+            {/* Stat cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 10 }}>
+              {[
+                { num: "247", label: "ผู้ใช้", icon: "👥", c: "#8b3fc4" },
+                { num: "1,890", label: "มิเตอร์", icon: "📦", c: "#059669" },
+                { num: "342", label: "หม้อแปลง", icon: "⚡", c: "#3b82f6" },
+                { num: "3", label: "รออนุมัติ", icon: "⏳", c: "#d97706" },
+              ].map((c, i) => (
+                <div key={i} style={{ background: "#1b0926", borderRadius: 8, padding: "6px 7px", border: `1px solid ${c.c}30`, textAlign: "center" }}>
+                  <div style={{ fontSize: 12 }}>{c.icon}</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: c.c }}>{c.num}</div>
+                  <div style={{ fontSize: 8, color: "#7c6094" }}>{c.label}</div>
+                </div>
+              ))}
+            </div>
+            {/* Mock DB usage bar */}
+            <div style={{ background: "#1b0926", borderRadius: 8, padding: "7px 10px", border: "1px solid #2d1052" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#f3eefa" }}>Database Usage</span>
+                <span style={{ fontSize: 9, color: "#059669", fontWeight: 700 }}>2.4 MB / 500 MB</span>
+              </div>
+              <div style={{ height: 6, background: "#2d1052", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ width: "5%", height: "100%", background: "linear-gradient(90deg,#059669,#34d399)", borderRadius: 3 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Steps */}
-      <div style={{ padding: "24px 28px" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f47b20", marginBottom: 16 }}>ฟีเจอร์หลักของ Admin</div>
+      <div style={{ padding: "20px 28px 0" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#f97316", marginBottom: 14 }}>📋 ฟีเจอร์หลักของ Admin</div>
         {steps.map((step, i) => (
-          <div key={i} style={{ display: "flex", gap: 14, marginBottom: 18 }}>
+          <div key={i} style={{ display: "flex", gap: 14, marginBottom: 16 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#321148,#f47b20)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid #f47b20" }}>{step.emoji}</div>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#321148,#f47b20)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, border: "2px solid rgba(244,123,32,0.5)" }}>{step.emoji}</div>
               {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: "rgba(244,123,32,0.2)", marginTop: 4 }} />}
             </div>
-            <div style={{ flex: 1, paddingTop: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <div style={{ fontWeight: 800, fontSize: 15, color: "#f3eefa" }}>{i + 1}. {step.title}</div>
-                <span style={{ padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.3)", color: "#ffba7a", flexShrink: 0 }}>{step.badge}</span>
+            <div style={{ flex: 1, paddingTop: 4 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 4, flexWrap: "wrap" }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: "#f3eefa" }}>{i + 1}. {step.title}</div>
+                <span style={{ padding: "1px 7px", borderRadius: 5, fontSize: 9, fontWeight: 700, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.3)", color: "#ffba7a", whiteSpace: "nowrap" }}>{step.badge}</span>
               </div>
               {step.lines.map((ln, j) => (
                 <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 3 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa", marginTop: 7, flexShrink: 0 }} />
-                  <div style={{ fontSize: 13, color: "rgba(243,238,250,0.8)", lineHeight: 1.6 }}>{ln}</div>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa", marginTop: 6, flexShrink: 0 }} />
+                  <div style={{ fontSize: 12, color: "rgba(243,238,250,0.75)", lineHeight: 1.6 }}>{ln}</div>
                 </div>
               ))}
             </div>
           </div>
         ))}
       </div>
+
       {/* Footer */}
-      <div style={{ margin: "0 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ margin: "12px 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>URL ระบบ</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#ffba7a", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
+          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 2 }}>URL ระบบ</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#ffba7a", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>เวอร์ชัน</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#f47b20" }}>v3.0 · 1 มิ.ย. 2569</div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+          <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference</span>
+          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.4)" }}>PEA GIS · 1 มิ.ย. 2569</div>
         </div>
       </div>
     </div>
@@ -5184,6 +5333,8 @@ function DocDownloadSection() {
     },
   ];
 
+  const [open, setOpen] = useStateAd(true);
+
   return (
     <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
       {/* Hidden infographic refs */}
@@ -5192,19 +5343,24 @@ function DocDownloadSection() {
         <div ref={adminRef}><AdminQuickGuideCard /></div>
       </div>
 
-      {/* Header */}
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 12 }}>
+      {/* Header — clickable to collapse */}
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: "100%", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12,
+        background: "transparent", border: "none", borderBottom: open ? "1px solid var(--line)" : "none",
+        cursor: "pointer", textAlign: "left",
+      }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
           <Icon name="download" size={18} style={{ color: "var(--pea-purple-500)" }} />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>เอกสารสำหรับแจกผู้ใช้ใหม่</div>
           <div className="t-mute text-sm">ดาวน์โหลด PDF หรือ PNG เพื่อส่งต่อผ่าน Line / Email</div>
         </div>
-      </div>
+        <Icon name={open ? "chevDown" : "chevRight"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+      </button>
 
       {/* Cards */}
-      <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {open && <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
         {guides.map(g => (
           <div key={g.key} style={{ padding: "14px 16px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: `${g.accent}18`, border: `1px solid ${g.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{g.icon}</div>
@@ -5236,7 +5392,7 @@ function DocDownloadSection() {
           <Icon name="info" size={12} style={{ flexShrink: 0 }} />
           PDF เหมาะพิมพ์แจก · PNG เหมาะส่งใน Line / Facebook
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
