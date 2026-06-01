@@ -2883,6 +2883,7 @@ function App() {
   const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
   const [maintenanceMessage, setMaintenanceMessage] = useStateApp("");
   const [maintenanceUntil, setMaintenanceUntil] = useStateApp("");
+  const [allowExport, setAllowExport] = useStateApp(true);
   const [showNotif, setShowNotif] = useStateApp(false);
   const [refreshing, setRefreshing] = useStateApp(false);
   const [refreshMsg, setRefreshMsg] = useStateApp(null); // null | "loading" | "done" | "error"
@@ -2937,6 +2938,7 @@ function App() {
       setMaintenanceMode(isMaintenance);
       setMaintenanceMessage(settingsMap["maintenance_message"] || "");
       setMaintenanceUntil(settingsMap["maintenance_until"] || "");
+      setAllowExport(settingsMap["allow_export"] !== "false");
       setDevInfo({
         name:       settingsMap["dev_name"]       || "",
         position:   settingsMap["dev_position"]   || "",
@@ -3810,6 +3812,7 @@ function App() {
               baseMap={baseMap}
               currentUser={currentUser}
               onLogSearch={(entry) => addAudit(entry)}
+              allowExport={allowExport}
             />
           )}
           {route === "profile" && (
@@ -3829,6 +3832,7 @@ function App() {
               maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
               maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
               devInfo={devInfo} setDevInfo={setDevInfo}
+              allowExport={allowExport} setAllowExport={setAllowExport}
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />
           )}
         </main>

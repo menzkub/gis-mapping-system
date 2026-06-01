@@ -9,7 +9,7 @@ const {
 /* ============================================================
    SearchView — PEA Meter + PEA TR tabs (server-side search)
    ============================================================ */
-function SearchView({ data, baseMap, onLogSearch, currentUser }) {
+function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = true }) {
   const { t } = useLang();
   const [tab, setTab]               = useStateS("meter");
   const [query, setQuery]           = useStateS("");
@@ -236,9 +236,19 @@ function SearchView({ data, baseMap, onLogSearch, currentUser }) {
               ))}
             </div>
 
-            <button className="search-export-btn btn btn-outline" style={{ height: 54, borderRadius: 16, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
-              <Icon name="download" size={15} /> {t("exportLabel")}
-            </button>
+            {(allowExport || currentUser?.role === "admin") ? (
+              <button className="search-export-btn btn btn-outline" style={{ height: 54, borderRadius: 16, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
+                <Icon name="download" size={15} /> {t("exportLabel")}
+              </button>
+            ) : (
+              <div className="search-export-btn" title="Admin ปิดการ Export ข้อมูล" style={{
+                height: 54, borderRadius: 16, flexShrink: 0, display: "flex", alignItems: "center",
+                gap: 6, padding: "0 16px", background: "var(--soft)", border: "1px solid var(--soft-border)",
+                color: "var(--ink-mute)", fontSize: 13, fontWeight: 600, cursor: "not-allowed", userSelect: "none",
+              }}>
+                <Icon name="lock" size={15} /> {t("exportLabel")}
+              </div>
+            )}
           </div>
         </div>
 

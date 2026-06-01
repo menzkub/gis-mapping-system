@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, pushPermission, subscribePush, unsubscribePush }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, pushPermission, subscribePush, unsubscribePush }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -105,6 +105,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
           addAudit={addAudit} currentUser={currentUser}
           devInfo={devInfo} setDevInfo={setDevInfo}
+          allowExport={allowExport} setAllowExport={setAllowExport}
           pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />}
         {tab === "guide"     && <AdminGuide />}
         {tab === "dev"       && currentUser.role === "admin" && <AdminDevGuide />}
@@ -4351,7 +4352,7 @@ function DateTimePicker({ value, onChange }) {
 /* ---------- Settings ---------- */
 const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
 
-function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo, pushPermission, subscribePush, unsubscribePush }) {
+function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo, allowExport, setAllowExport, pushPermission, subscribePush, unsubscribePush }) {
   const [loading, setLoading] = useStateAd(false);
   const [savingMsg, setSavingMsg] = useStateAd(false);
   const [localMsg, setLocalMsg] = useStateAd(maintenanceMessage || DEFAULT_MSG);
@@ -4360,7 +4361,28 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
   const [savingDev, setSavingDev] = useStateAd(false);
   const [openMaint, setOpenMaint] = useStateAd(true);
   const [openDev, setOpenDev] = useStateAd(false);
+  const [openExport, setOpenExport] = useStateAd(false);
+  const [exportLoading, setExportLoading] = useStateAd(false);
   const toast = useToast();
+
+  const toggleExport = async () => {
+    setExportLoading(true);
+    const newVal = !allowExport;
+    const { error } = await _supabase.from("settings")
+      .upsert({ key: "allow_export", value: String(newVal), updated_at: new Date().toISOString(), updated_by: currentUser.username },
+               { onConflict: "key" });
+    setExportLoading(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    setAllowExport(newVal);
+    addAudit({
+      user:   currentUser.username,
+      action: newVal ? "enable_export" : "disable_export",
+      target: "system",
+      detail: `${newVal ? "เปิด" : "ปิด"} การ Export ข้อมูลสำหรับผู้ใช้งานทั่วไป`,
+    });
+    toast?.(newVal ? "✅ เปิดการ Export ข้อมูลแล้ว" : "🔒 ปิดการ Export ข้อมูลแล้ว — ผู้ใช้ทั่วไปโหลดข้อมูลไม่ได้",
+      newVal ? "success" : "warning");
+  };
 
   const setDev = (key, val) => setLocalDev(d => ({ ...d, [key]: val }));
 
@@ -4449,6 +4471,55 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
       <div>
         <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>System</div>
         <div className="t-display" style={{ fontSize: 24 }}>ตั้งค่าระบบ</div>
+      </div>
+
+      {/* ── Export Control Card ── */}
+      <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
+        <button onClick={() => setOpenExport(o => !o)}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: allowExport ? "rgba(59,130,246,0.1)" : "rgba(239,68,68,0.1)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="download" size={18} style={{ color: allowExport ? "#3b82f6" : "#ef4444" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15 }}>
+              ควบคุมการ Export ข้อมูล
+              {allowExport
+                ? <span className="badge" style={{ fontSize: 10, background: "rgba(59,130,246,0.12)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.3)" }}>เปิดอยู่</span>
+                : <span className="badge" style={{ fontSize: 10, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>🔒 ปิดอยู่</span>}
+            </div>
+            <div className="t-mute text-sm">อนุญาต/ห้ามผู้ใช้ทั่วไป Export ข้อมูลเป็น CSV</div>
+          </div>
+          <Icon name={openExport ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+        </button>
+        {openExport && (
+          <div className="fade-up" style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, paddingTop: 16 }}>
+              <div className="t-mute text-sm" style={{ lineHeight: 1.7 }}>
+                เมื่อ <b>ปิด</b> — ผู้ใช้งานทั่วไปจะเห็นปุ่ม Export ถูกล็อก ไม่สามารถดาวน์โหลดข้อมูลได้<br />
+                <b>Admin ยังคง Export ได้เสมอ</b> ไม่ว่าจะตั้งค่าอย่างไร
+              </div>
+              <button onClick={toggleExport} disabled={exportLoading}
+                title={allowExport ? "คลิกเพื่อปิดการ Export" : "คลิกเพื่อเปิดการ Export"}
+                style={{ width: 60, height: 32, borderRadius: 999, flexShrink: 0, cursor: "pointer",
+                  background: allowExport ? "#3b82f6" : "var(--line)",
+                  position: "relative", transition: "background 250ms", border: "none", opacity: exportLoading ? 0.6 : 1 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "white",
+                  position: "absolute", top: 4, left: allowExport ? 32 : 4,
+                  transition: "left 250ms", boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }} />
+              </button>
+            </div>
+            {!allowExport && (
+              <div className="badge fade-up" style={{ marginTop: 14, padding: "10px 14px", width: "100%", display: "flex", gap: 8, boxSizing: "border-box", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#ef4444" }}>
+                <Icon name="lock" size={15} /> ปิดการ Export แล้ว — ผู้ใช้ทั่วไปไม่สามารถดาวน์โหลดข้อมูลได้
+              </div>
+            )}
+            {allowExport && (
+              <div className="badge badge-green fade-up" style={{ marginTop: 14, padding: "10px 14px", width: "100%", display: "flex", gap: 8, boxSizing: "border-box" }}>
+                <Icon name="download" size={15} /> ผู้ใช้งานทั่วไปสามารถ Export ข้อมูลได้
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Maintenance Mode — Collapsible Card */}
