@@ -1,0 +1,26 @@
+{
+  "name": "ระบบ GIS มิเตอร์-หม้อแปลง",
+  "short_name": "GIS Meter",
+  "description": "ระบบสารสนเทศภูมิศาสตร์ มิเตอร์และหม้อแปลง",
+  "start_url": "/gis-mapping-system/",
+  "scope": "/gis-mapping-system/",
+  "display": "standalone",
+  "background_color": "#1b0926",
+  "theme_color": "#6b2c91",
+  "orientation": "portrait-primary",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

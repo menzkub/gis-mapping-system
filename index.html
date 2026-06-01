@@ -6,7 +6,13 @@
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
   <title>ระบบสารสนเทศภูมิศาสตร์</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
-  <link rel="apple-touch-icon" href="logo.svg" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6b2c91" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GIS Meter" />
 
   <!-- DNS prefetch + preconnect สำหรับทุก CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,5 +61,14 @@
   <script type="text/babel" src="SearchView.jsx"></script>
   <script type="text/babel" src="AdminPanel.jsx"></script>
   <script type="text/babel" src="app.jsx"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/gis-mapping-system/service-worker.js")
+          .catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
