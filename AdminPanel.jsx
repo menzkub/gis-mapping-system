@@ -1564,6 +1564,17 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     if (toastMsg) toast?.(toastMsg, "success");
   };
 
+  const approveUser = async (u) => {
+    const ok = await confirm({
+      title: "อนุมัติบัญชีผู้ใช้",
+      message: <>อนุมัติให้ <b>{u.name}</b> (@{u.username}) เข้าใช้งานระบบได้?</>,
+      target: `@${u.username}`,
+      confirmText: "อนุมัติบัญชี",
+      tone: "primary",
+    });
+    if (ok) await updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`);
+  };
+
   const banUser = async (u) => {
     const ok = await confirm({
       title: "ระงับผู้ใช้งาน",
@@ -1573,6 +1584,28 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       tone: "danger",
     });
     if (ok) await updateUser(u.id, { status: "banned" }, "ban_user", `ระงับบัญชี ${u.username}`, `ระงับบัญชี ${u.name}`);
+  };
+
+  const unbanUser = async (u) => {
+    const ok = await confirm({
+      title: "ปลดระงับผู้ใช้งาน",
+      message: <>ปลดระงับบัญชี <b>{u.name}</b> (@{u.username}) ให้เข้าสู่ระบบได้อีกครั้ง?</>,
+      target: `@${u.username}`,
+      confirmText: "ปลดระงับ",
+      tone: "primary",
+    });
+    if (ok) await updateUser(u.id, { status: "active" }, "approve_user", `ปลดระงับ ${u.username}`, `ปลดระงับ ${u.name}`);
+  };
+
+  const confirmEdit = async (u) => {
+    const ok = await confirm({
+      title: "แก้ไขข้อมูลผู้ใช้",
+      message: <>ต้องการแก้ไขข้อมูลของ <b>{u.name}</b> (@{u.username})?</>,
+      target: `@${u.username}`,
+      confirmText: "เปิดแก้ไข",
+      tone: "primary",
+    });
+    if (ok) setEdit({ ...u });
   };
 
   const unlockPw = async (u) => {
@@ -1760,7 +1793,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       {/* Desktop: table */}
       <div className="au-dt">
         <table className="table">
-          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "รหัสผ่าน", "เข้าใช้ล่าสุด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "รหัสผ่าน", "เข้าใช้ล่าสุด", "การจัดการ"].map(h => <th key={h}>{h}</th>)}</tr></thead>
           <tbody>
             {list.map(u => {
               const dl = pwDaysLeft(u);
@@ -1822,7 +1855,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                 <td onClick={e => e.stopPropagation()}>
                   <div className="row-action">
                     {u.status === "pending" && (
-                      <button className="btn-icon" title="อนุมัติ" onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`)}>
+                      <button className="btn-icon" title="อนุมัติ" onClick={() => approveUser(u)}>
                         <Icon name="check" size={14} />
                       </button>
                     )}
@@ -1832,11 +1865,11 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                       </button>
                     )}
                     {u.status === "banned" && (
-                      <button className="btn-icon" title="ปลดระงับ" onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `ปลดระงับ ${u.username}`, `ปลดระงับ ${u.name}`)}>
+                      <button className="btn-icon" title="ปลดระงับ" onClick={() => unbanUser(u)}>
                         <Icon name="check" size={14} />
                       </button>
                     )}
-                    <button className="btn-icon" title="แก้ไข" onClick={() => setEdit({ ...u })}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" title="แก้ไข" onClick={() => confirmEdit(u)}><Icon name="edit" size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -1921,7 +1954,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
                 {isPending && (
                   <button className="btn btn-primary btn-sm" style={{ height: 34, fontSize: 12 }}
-                    onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `อนุมัติบัญชี ${u.username}`, `อนุมัติ ${u.name} แล้ว`)}>
+                    onClick={() => approveUser(u)}>
                     <Icon name="check" size={13} /> อนุมัติบัญชี
                   </button>
                 )}
@@ -1933,7 +1966,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                 )}
                 {isBanned && (
                   <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12 }}
-                    onClick={() => updateUser(u.id, { status: "active" }, "approve_user", `ปลดระงับ ${u.username}`, `ปลดระงับ ${u.name}`)}>
+                    onClick={() => unbanUser(u)}>
                     <Icon name="check" size={13} /> ปลดระงับ
                   </button>
                 )}
@@ -1948,7 +1981,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   <Icon name="history" size={13} /> ประวัติรหัสผ่าน
                 </button>
                 <button className="btn btn-outline btn-sm" style={{ height: 34, fontSize: 12, marginLeft: "auto" }}
-                  onClick={() => setEdit({ ...u })}>
+                  onClick={() => confirmEdit(u)}>
                   <Icon name="edit" size={13} /> แก้ไข
                 </button>
               </div>
