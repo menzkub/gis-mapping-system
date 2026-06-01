@@ -3388,6 +3388,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
               value={mapSearchQ}
               onChange={e => setMapSearchQ(e.target.value)}
               placeholder="ค้นหา PEANO, TAG, สถานที่… (ค้นหาจากทั้งหมด)"
+              inputMode="numeric"
               style={{ width: "100%", padding: "10px 38px 10px 40px", background: "transparent", border: "none", outline: "none", color: "var(--ink)", fontSize: 13, fontWeight: 500, boxSizing: "border-box" }}
             />
             {mapSearchQ && (
