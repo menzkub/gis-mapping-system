@@ -1,7 +1,7 @@
 {
-  "commit": "4146cd4",
-  "shortCommit": "4146cd4",
-  "message": "feat(deploy): refetch + load-new-version buttons in deploy popup",
-  "date": "2026-06-01T12:30:00+00:00",
+  "commit": "2cf2aa9",
+  "shortCommit": "2cf2aa9",
+  "message": "fix(pdf): override body{overflow:hidden} — content fills full A4 width",
+  "date": "2026-06-01T13:00:00+00:00",
   "branch": "main"
 }
