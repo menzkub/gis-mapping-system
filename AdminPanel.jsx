@@ -4913,6 +4913,7 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
   const { lang } = useLang();
   const th = (t, e) => lang === "en" ? e : t;
 
+  const [open, setOpen]       = useStateAd(false);
   const [title, setTitle]     = useStateAd("");
   const [body, setBody]       = useStateAd("");
   const [sending, setSending] = useStateAd(false);
@@ -4964,16 +4965,24 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
   };
 
   return (
-    <div className="card card-elev" style={{ marginTop: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+    <div className="card card-elev" style={{ marginTop: 24, padding: 0, overflow: "hidden" }}>
+      {/* Collapsible header */}
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 12,
+        padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+      }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-          <Icon name="bell" size={18} color="white" />
+          <Icon name="bell" size={18} style={{ color: "white" }} />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div className="fw-7 text-md">{th("ส่งการแจ้งเตือน Push","Push Notifications")}</div>
           <div className="t-mute text-sm">{th("แจ้งเตือนผู้ใช้ทุกคนบนมือถือทันที","Send instant alerts to all mobile users")}</div>
         </div>
-      </div>
+        <Icon name={open ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+      </button>
+
+      {open && <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
+        <div style={{ height: 16 }} />
 
       {!isSupported ? (
         <div className="badge badge-amber" style={{ fontSize: 12, padding: "6px 12px" }}>
@@ -5060,6 +5069,7 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
           </button>
         </div>
       )}
+      </div>}
     </div>
   );
 }

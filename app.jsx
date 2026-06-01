@@ -317,14 +317,14 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         </div>
       )}
 
-      {/* ── 2FA Status (read-only — admin manages via Users panel) ── */}
+      {/* ── 2FA Status ── */}
       {tab === "password" && (
         <div className="card card-elev fade-up" style={{ maxWidth: 480, marginBottom: 4 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{t("f2FA")}</div>
               <div className="t-mute text-sm">
-                {mfaStatus ? "เปิดใช้งานอยู่" : "ยังไม่ได้เปิดใช้งาน"}
+                {mfaStatus === null ? "กำลังตรวจสอบ…" : mfaStatus ? "เปิดใช้งานอยู่" : "ยังไม่ได้เปิดใช้งาน"}
               </div>
             </div>
             <span style={{
@@ -333,14 +333,42 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
               color: mfaStatus ? "#16a34a" : "#dc2626",
               border: `1px solid ${mfaStatus ? "#16a34a44" : "#ef444444"}`,
             }}>
-              {mfaStatus === null ? "กำลังโหลด…" : mfaStatus ? "🔒 เปิดอยู่" : "ปิดอยู่"}
+              {mfaStatus === null ? "…" : mfaStatus ? "🔒 เปิดอยู่" : "ปิดอยู่"}
             </span>
           </div>
-          <div className="t-mute text-xs" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Icon name="info" size={13} />
-            การเปิด/ปิด 2FA ดำเนินการโดยผู้ดูแลระบบ (Admin) เท่านั้น
-          </div>
+          {mfaStatus === false && (
+            <div>
+              <div className="t-mute text-xs" style={{ marginBottom: 10, lineHeight: 1.6 }}>
+                เพิ่มชั้นความปลอดภัยด้วย Authenticator App — ระบบจะขอรหัส 6 หลักทุกครั้งที่ login
+              </div>
+              <button className="btn btn-primary" style={{ height: 38, fontSize: 13 }}
+                onClick={() => setShow2FASetup(true)}>
+                <Icon name="lock" size={14} /> เปิดใช้งาน 2FA
+              </button>
+            </div>
+          )}
+          {mfaStatus === true && (
+            <div className="t-mute text-xs" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Icon name="info" size={13} />
+              หากต้องการปิด 2FA กรุณาติดต่อผู้ดูแลระบบ (Admin)
+            </div>
+          )}
         </div>
+      )}
+      {/* MFASetup modal portal */}
+      {show2FASetup && ReactDOM.createPortal(
+        <MFASetupScreen
+          currentUser={currentUser}
+          onComplete={async () => {
+            setMfaStatus(true);
+            setShow2FASetup(false);
+            await addAudit({ user: currentUser.username, action: "enable_2fa", target: currentUser.username, detail: "เปิด 2FA ด้วยตนเอง" });
+            toast?.("เปิด 2FA สำเร็จ — บัญชีมีความปลอดภัยมากขึ้น", "success");
+          }}
+          onCancel={() => setShow2FASetup(false)}
+          completeBtnLabel="กลับไปโปรไฟล์"
+        />,
+        document.body
       )}
 
       {/* ── Change Password ── */}
