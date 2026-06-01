@@ -1,7 +1,7 @@
 {
-  "commit": "feat-hover-animations-export-fix",
-  "shortCommit": "f96d037",
-  "message": "feat: viewport meters, compact map UI, PNG fix, export RLS fix, premium hover animations",
-  "date": "2026-06-01T18:00:00+00:00",
+  "commit": "fix-modal-position-mobile",
+  "shortCommit": "e92c901",
+  "message": "fix: modal position:fixed broken on mobile by ancestor transform",
+  "date": "2026-06-01T19:00:00+00:00",
   "branch": "main"
 }
