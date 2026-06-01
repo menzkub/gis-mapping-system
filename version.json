@@ -1,7 +1,7 @@
 {
-  "commit": "467adc4",
-  "shortCommit": "467adc4",
-  "message": "feat: dashboard clickable cards + filter + deploy popup i18n",
-  "date": "2026-06-01T14:00:00+00:00",
+  "commit": "ad77567",
+  "shortCommit": "ad77567",
+  "message": "feat(security): Security tab — score gauge + 6 checks + threat detection",
+  "date": "2026-06-01T15:00:00+00:00",
   "branch": "main"
 }
