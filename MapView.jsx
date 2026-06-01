@@ -10,12 +10,6 @@ const TILE_LAYERS = {
     label: "Street",
     dark: false,
   },
-  dark: {
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    attribution: "© OpenStreetMap, © CARTO",
-    label: "Dark",
-    dark: true,
-  },
   satellite: {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "Tiles © Esri",

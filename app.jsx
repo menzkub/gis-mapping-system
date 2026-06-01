@@ -3208,7 +3208,7 @@ function App() {
           {/* Map layer switcher — only on search page */}
           {route === "search" && (
             <div className="topbar-mapswitcher tabs" style={{ padding: 4 }}>
-              {Object.entries(TILE_LAYERS).filter(([k]) => k !== "dark").map(([k]) => (
+              {Object.entries(TILE_LAYERS).map(([k]) => (
                 <button key={k} className={"tab " + (baseMap === k ? "active" : "")} style={{ height: 36, padding: "0 14px", fontSize: 12 }} onClick={() => setBaseMap(k)}>
                   <Icon name={k === "satellite" ? "layers" : "map"} size={12} />
                   {k === "satellite" ? t("mapSatellite") : t("mapStreet")}

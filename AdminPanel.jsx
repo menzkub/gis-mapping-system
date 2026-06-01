@@ -94,7 +94,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
-        {tab === "map"       && <AdminMapTab data={data} />}
+        {tab === "map"       && <AdminMapTab data={data} currentUser={currentUser} addAudit={addAudit} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "audit"     && <AdminAudit />}
         {tab === "settings"  && <AdminSettings
@@ -2519,7 +2519,8 @@ function AdminTrs({ addAudit, currentUser }) {
 
 /* ---------- Import ---------- */
 /* ---------- Admin Overview Map ---------- */
-function AdminMapTab({ data }) {
+function AdminMapTab({ data, currentUser, addAudit }) {
+  const { t } = useLang();
   const containerRef = React.useRef(null);
   const mapRef       = React.useRef(null);
   const tileRef      = React.useRef(null);
@@ -2533,6 +2534,7 @@ function AdminMapTab({ data }) {
   const [showM,     setShowM]     = useStateAd(true);
   const [showT,     setShowT]     = useStateAd(true);
   const [baseMap,   setBaseMap]   = useStateAd("street");
+  const [showBaseMenu, setShowBaseMenu] = useStateAd(false);
   const [zoomTick,  setZoomTick]  = useStateAd(0);
   const [loadKey,   setLoadKey]   = useStateAd(0); // increment to retry
 
@@ -2718,16 +2720,40 @@ function AdminMapTab({ data }) {
 
         <div style={{ flex: 1 }} />
 
-        {/* Basemap switcher */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {Object.entries(TILE_LAYERS).map(([k, v]) => (
-            <button key={k} onClick={() => setBaseMap(k)} style={{
-              padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer",
-              background: baseMap === k ? "var(--pea-purple-600)" : "var(--surface-2)",
-              color: baseMap === k ? "white" : "var(--ink-mute)",
-              border: "1px solid var(--line)",
-            }}>{v.label}</button>
-          ))}
+        {/* Basemap dropdown */}
+        <div style={{ position: "relative" }}>
+          <button
+            style={btnStyle(false, "var(--pea-purple-600)")}
+            onClick={() => setShowBaseMenu(s => !s)}
+          >
+            <Icon name={baseMap === "satellite" ? "layers" : "map"} size={13} />
+            {baseMap === "satellite" ? t("mapSatellite") : t("mapStreet")}
+            <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+          </button>
+          {showBaseMenu && (
+            <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
+            <div style={{
+              position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 600,
+              background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.18)", overflow: "hidden", minWidth: 130,
+            }}>
+              {[["street", "map", t("mapStreet")], ["satellite", "layers", t("mapSatellite")]].map(([k, icon, label]) => (
+                <button key={k} onClick={() => { setBaseMap(k); setShowBaseMenu(false); }} style={{
+                  display: "flex", alignItems: "center", gap: 8, width: "100%",
+                  padding: "9px 14px", background: baseMap === k ? "var(--pea-purple-50)" : "transparent",
+                  color: baseMap === k ? "var(--pea-purple-600)" : "var(--ink)",
+                  border: "none", cursor: "pointer", fontSize: 13, fontWeight: baseMap === k ? 700 : 500,
+                  textAlign: "left",
+                }}>
+                  <Icon name={icon} size={14} />
+                  {label}
+                  {baseMap === k && <span style={{ marginLeft: "auto", color: "var(--pea-purple-600)" }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            </>
+          )}
         </div>
 
         {/* Sample note */}

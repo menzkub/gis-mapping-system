@@ -1,7 +1,7 @@
 {
-  "commit": "bcddcc6",
-  "shortCommit": "bcddcc6",
-  "message": "feat(ipad): collapsible sidebar — hamburger toggle + backdrop overlay",
-  "date": "2026-05-31T16:00:00+00:00",
+  "commit": "f3a91d2",
+  "shortCommit": "f3a91d2",
+  "message": "feat(map): remove dark basemap, dropdown map-view picker with i18n labels",
+  "date": "2026-06-01T10:00:00+00:00",
   "branch": "main"
 }
