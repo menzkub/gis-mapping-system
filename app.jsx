@@ -1033,6 +1033,18 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.0", date: "1 มิ.ย. 2569", tag: "พิกัด & UX",
+    tagColor: "#10b981", items: [
+      { cat: "new",  text: { th: "แจ้งแก้ไขพิกัด: กด marker → ลากหมุด/กดแผนที่/ใช้ GPS เพื่อวางพิกัดใหม่ → ส่งคำขอรอ Admin อนุมัติ", en: "Coordinate correction: tap marker → drag pin/tap map/use GPS to set new coords → submit for Admin approval" } },
+      { cat: "new",  text: { th: "Admin: แผง 'คำขอแก้ไข' แสดงรายการ Pending พร้อมปุ่ม อนุมัติ / ปฏิเสธ", en: "Admin: 'Correction Requests' panel shows pending items with Approve / Reject buttons" } },
+      { cat: "new",  text: { th: "ปุ่ม GPS 'ใช้ตำแหน่งปัจจุบัน' ในหน้าแจ้งแก้ไขพิกัด — สะดวกสำหรับใช้งานที่หน้างาน", en: "GPS 'Use Current Location' button in correction modal — convenient for field use" } },
+      { cat: "ux",   text: { th: "Basemap เปลี่ยนจาก tab แบนเป็น dropdown picker (Street / Satellite) ทั้ง Topbar และ Admin Map", en: "Basemap changed from flat tabs to dropdown picker (Street / Satellite) on Topbar and Admin Map" } },
+      { cat: "fix",  text: { th: "นำ Dark basemap ออก — ใช้ Street / Satellite เท่านั้น", en: "Remove Dark basemap — Street / Satellite only" } },
+      { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออกไปด้านซ้าย — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped to left side — now renders full A4 width" } },
+      { cat: "fix",  text: { th: "เมนู Settings: Dark mode / Light mode label เปลี่ยนตามภาษาระบบ", en: "Settings menu: Dark mode / Light mode label now follows system language" } },
+    ],
+  },
+  {
     version: "v2.9", date: "31 พ.ค. 2569", tag: "2FA & UI",
     tagColor: "#8b3fc4", items: [
       { cat: "fix",  text: { th: "แก้ไข QR Code 2FA: เปลี่ยนเป็น Canvas rendering (สแกนได้ทุก device, iOS Safari)", en: "Fix 2FA QR Code: Canvas rendering — scannable on all devices incl. iOS Safari" } },
@@ -1623,16 +1635,17 @@ function UserGuide({ role }) {
           s.height = "auto";
         }
       });
-      // Mount off-screen so html2canvas can measure it
+      // Mount invisible at origin — position:fixed+left:-9999 causes html2canvas to clip at viewport edge
+      clone.style.cssText += ";width:820px;max-width:820px;margin:0;";
       const wrap = document.createElement("div");
-      wrap.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;background:#f5f4f6;";
+      wrap.style.cssText = "position:fixed;left:0;top:0;width:820px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#f5f4f6;";
       wrap.appendChild(clone);
       document.body.appendChild(wrap);
       html2pdf().set({
         margin: [10, 8, 10, 8],
         filename: "คู่มือการใช้งาน-GIS-Meter.pdf",
         image: { type: "jpeg", quality: 0.97 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6", windowWidth: 820 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6", windowWidth: 820, width: 820 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["css", "legacy"], avoid: [".card", "li", "tr"] },
       }).from(clone).save()
@@ -1671,10 +1684,10 @@ function UserGuide({ role }) {
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 16 }}>
             {[
-              { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 12 : 5,  icon: "book",    sub: "sections" },
-              { label: ug("ขั้นตอน","Steps"), value: isAdmin ? 41 : 16, icon: "check",   sub: "steps" },
-              { label: ug("ฟีเจอร์","Features"),  value: isAdmin ? 12 : 8,  icon: "bolt",    sub: "features" },
-              { label: ug("เคล็ดลับ","Tips"), value: isAdmin ? 16 : 7,  icon: "warning", sub: "tips & notes" },
+              { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 13 : 5,  icon: "book",    sub: "sections" },
+              { label: ug("ขั้นตอน","Steps"), value: isAdmin ? 49 : 20, icon: "check",   sub: "steps" },
+              { label: ug("ฟีเจอร์","Features"),  value: isAdmin ? 13 : 9,  icon: "bolt",    sub: "features" },
+              { label: ug("เคล็ดลับ","Tips"), value: isAdmin ? 17 : 8,  icon: "warning", sub: "tips & notes" },
             ].map(({ label, value, icon, sub }) => (
               <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -1745,17 +1758,24 @@ function UserGuide({ role }) {
           <div style={{ marginTop: 12 }}>
             <UGTable rows={[
               [ug("ฟีเจอร์","Feature"), ug("วิธีใช้","How to use")],
-              [ug("สลับ Street/Satellite","Switch Street/Satellite"), ug("กดปุ่ม Street หรือ Satellite บน Topbar","Press Street or Satellite button on Topbar")],
+              [ug("สลับ Street/Satellite","Switch Street/Satellite"), ug("กดปุ่ม dropdown มุมมองแผนที่บน Topbar → เลือก Street หรือ Satellite","Press basemap dropdown on Topbar → choose Street or Satellite")],
               ["Cluster", ug("กดปุ่ม Cluster บนแผนที่ — รวมกลุ่ม marker","Press Cluster on map — groups nearby markers")],
               ["Heatmap", ug("กดปุ่ม Heatmap — แสดงความหนาแน่นพื้นที่","Press Heatmap — shows density overlay")],
               ["Split View", ug("กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน","Press Split — table and map side by side")],
               [ug("คัดลอกพิกัด","Copy coordinates"), ug("คลิก marker → กดปุ่ม Copy lat/lng","Click marker → press Copy lat/lng button")],
+              [ug("แจ้งแก้ไขพิกัด","Report Wrong Coords"), ug("คลิก marker → กด 'แจ้งแก้ไขพิกัด' → วางพิกัดใหม่ → ส่งคำขอ","Click marker → press 'Report Coords' → place new pin → submit")],
             ]} />
             <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("นำทาง GPS","GPS Navigation")}</div>
             <UGStep n={1} text={ug("คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง","Click a marker on the map or press Navigate in the table")} />
             <UGStep n={2} text={ug("ระบบขอสิทธิ์ตำแหน่งปัจจุบัน — กด 'Allow'","System requests location permission — press 'Allow'")} />
             <UGStep n={3} text={ug("ระบบคำนวณระยะทางและเวลาโดยประมาณ","System calculates distance and estimated time")} />
             <UGStep n={4} text={ug("กด 'นำทาง' เพื่อเปิด Google Maps หรือ Apple Maps","Press 'Navigate' to open Google Maps or Apple Maps")} />
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("แจ้งแก้ไขพิกัดที่ไม่ถูกต้อง","Reporting Wrong Coordinates")}</div>
+            <UGStep n={1} text={ug("คลิก marker ของมิเตอร์หรือหม้อแปลงที่พิกัดไม่ตรง → กดปุ่ม 'แจ้งแก้ไขพิกัด'","Click the marker of the meter or transformer with wrong coords → press 'Report Coords'")} />
+            <UGStep n={2} text={ug("ในหน้าต่าง: กด '📡 ใช้ตำแหน่งปัจจุบัน (GPS)' เพื่อรับพิกัดจาก GPS หรือลากหมุดสีเขียวบนแผนที่","In the modal: press '📡 Use Current Location (GPS)' to get GPS coords, or drag the green pin on the mini-map")} />
+            <UGStep n={3} text={ug("หรือกดตรงจุดที่ต้องการบนแผนที่ — หมุดจะย้ายไปทันที","Or tap anywhere on the mini-map — the pin moves instantly")} />
+            <UGStep n={4} text={ug("ใส่หมายเหตุ (ถ้ามี) แล้วกด 'ส่งคำขอแก้ไข' — ระบบส่งให้ Admin พิจารณา","Add a note (optional) then press 'Submit Correction' — sent to Admin for review")} />
+            <UGTip>{ug("หลัง Admin อนุมัติ พิกัดในระบบจะอัปเดตอัตโนมัติ","After Admin approves, the system coordinates are updated automatically")}</UGTip>
           </div>
         </UGSection>
 
@@ -1872,6 +1892,24 @@ function UserGuide({ role }) {
                 <UGStep n={3} text={ug("ตรวจสอบ Preview 10 แถวแรก — ตรวจสอบหัวคอลัมน์","Check Preview of first 10 rows — verify column headers")} />
                 <UGStep n={4} text={ug("กด 'นำเข้าข้อมูล' — ระบบ upsert ตาม OBJECTID (500 rows/รอบ)","Press 'Import' — system upserts by OBJECTID (500 rows/batch)")} />
                 <UGTip>{ug("ถ้า OBJECTID ซ้ำ ระบบจะ update ข้อมูลเดิม ไม่สร้างรายการใหม่","If OBJECTID exists, system updates the record instead of creating a new one")}</UGTip>
+              </div>
+            </UGSection>
+
+            <UGSection icon="map" title={ug("แผนที่ภาพรวม & อนุมัติแก้ไขพิกัด","Overview Map & Coordinate Corrections")} badge="admin" expandSignal={expandSig}>
+              <div style={{ marginTop: 12 }}>
+                <UGTable rows={[
+                  [ug("ฟีเจอร์","Feature"), ug("วิธีใช้","How to use")],
+                  [ug("มุมมองแผนที่","Basemap"), ug("กด dropdown 'Street / Satellite' บนแผนที่ Admin","Press 'Street / Satellite' dropdown on Admin map")],
+                  [ug("คำขอแก้ไขพิกัด","Correction Requests"), ug("กดปุ่ม '📋 คำขอแก้ไข (N)' — N = จำนวนที่รอ","Press '📋 Correction Requests (N)' — N = pending count")],
+                  [ug("อนุมัติ","Approve"), ug("กดปุ่ม 'อนุมัติ' — พิกัดในตาราง Meter/TR จะอัปเดตทันที","Press 'Approve' — Meter/TR table coords update immediately")],
+                  [ug("ปฏิเสธ","Reject"), ug("กดปุ่ม 'ปฏิเสธ' — คำขอถูกยกเลิก ไม่มีการเปลี่ยนแปลง","Press 'Reject' — request cancelled, no changes made")],
+                ]} />
+                <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("ขั้นตอนอนุมัติพิกัด","Coordinate Approval Steps")}</div>
+                <UGStep n={1} text={ug("ไปที่ Admin → แผนที่ภาพรวม — สังเกตตัวเลขสีส้มที่ปุ่ม '📋 คำขอแก้ไข'","Go to Admin → Overview Map — notice orange count on '📋 Correction Requests' button")} />
+                <UGStep n={2} text={ug("กดปุ่มนั้น — แผงด้านขวาแสดงรายการ pending พร้อมพิกัดเดิม (🔴) และพิกัดใหม่ (🟢)","Press the button — right panel shows pending items with old (🔴) and new (🟢) coords")} />
+                <UGStep n={3} text={ug("ตรวจสอบพิกัดที่ส่งมา เปรียบเทียบ lat/lng เดิมกับใหม่","Review submitted coords, compare old vs new lat/lng")} />
+                <UGStep n={4} text={ug("กด 'อนุมัติ' เพื่อบันทึกพิกัดใหม่ลงฐานข้อมูล หรือ 'ปฏิเสธ' เพื่อยกเลิก","Press 'Approve' to save new coords to DB, or 'Reject' to cancel")} />
+                <UGNote>{ug("การอนุมัติพิกัดจะอัปเดตทั้งตาราง meters/transformers และ marker บนแผนที่ทันที","Approving coords updates both the meters/transformers table and map markers immediately")}</UGNote>
               </div>
             </UGSection>
 

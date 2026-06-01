@@ -494,17 +494,24 @@ function AdminGuide() {
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             [s("ฟีเจอร์", "Feature"), s("วิธีใช้", "How to use")],
-            [s("สลับ Map/Satellite", "Street/Satellite Toggle"), s("กดปุ่ม Street/Satellite บน Topbar", "Click Street/Satellite button on Topbar")],
+            [s("สลับ Street/Satellite", "Street/Satellite"), s("กด dropdown มุมมองแผนที่บน Topbar → เลือก Street หรือ Satellite", "Press basemap dropdown on Topbar → choose Street or Satellite")],
             ["Cluster", s("กดปุ่ม Cluster บนแผนที่ — รวมกลุ่ม marker ให้ดูง่าย", "Click Cluster on map — groups markers for clarity")],
             ["Heatmap", s("กดปุ่ม Heatmap — แสดงความหนาแน่นพื้นที่", "Click Heatmap — shows density overlay")],
             ["Split View", s("กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน", "Click Split — table and map side by side")],
             [s("คัดลอกพิกัด", "Copy Coordinates"), s("คลิกที่ marker → กดปุ่ม Copy พิกัด lat/lng", "Click marker → Copy lat/lng coordinates")],
+            [s("แจ้งแก้ไขพิกัด", "Report Coords"), s("คลิก marker → กด 'แจ้งแก้ไขพิกัด' → วางพิกัดใหม่ → ส่ง", "Click marker → 'Report Coords' → place new pin → submit")],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("นำทาง GPS", "GPS Navigation")}</div>
           <GuideStep n={1} text={s("คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง", "Click a marker on the map or the navigate button in the table")} />
           <GuideStep n={2} text={s("ระบบขอสิทธิ์ตำแหน่งปัจจุบันจาก browser — กด 'Allow'", "Browser requests location permission — click 'Allow'")} />
           <GuideStep n={3} text={s("ระบบคำนวณระยะทางและเวลาโดยประมาณ", "System calculates estimated distance and travel time")} />
           <GuideStep n={4} text={s("กด 'นำทาง' เพื่อเปิด Google Maps หรือ Apple Maps", "Click 'Navigate' to open Google Maps or Apple Maps")} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("แจ้งแก้ไขพิกัดที่ไม่ถูกต้อง", "Reporting Wrong Coordinates")}</div>
+          <GuideStep n={1} text={s("คลิก marker ที่พิกัดไม่ถูกต้อง → กด 'แจ้งแก้ไขพิกัด' ใน popup", "Click marker with wrong coords → press 'Report Coords' in popup")} />
+          <GuideStep n={2} text={s("กด '📡 ใช้ตำแหน่งปัจจุบัน (GPS)' เพื่อรับพิกัดจาก GPS ของอุปกรณ์", "Press '📡 Use Current Location (GPS)' to get device GPS coords")} />
+          <GuideStep n={3} text={s("หรือลากหมุดสีเขียวบนแผนที่ย่อย หรือกดตรงจุดที่ต้องการ", "Or drag the green pin on mini-map, or tap the target location")} />
+          <GuideStep n={4} text={s("ใส่หมายเหตุ (ถ้ามี) แล้วกด 'ส่งคำขอแก้ไข' — Admin ต้องอนุมัติก่อนพิกัดจะถูกอัปเดต", "Add a note (optional) → 'Submit Correction' — Admin must approve before coords are updated")} />
+          <GuideTip>{s("Admin อนุมัติผ่าน แผนที่ภาพรวม → ปุ่ม '📋 คำขอแก้ไข' — พิกัดอัปเดต DB ทันทีเมื่ออนุมัติ", "Admin approves via Overview Map → '📋 Correction Requests' — coords update DB immediately on approval")}</GuideTip>
         </div>
       </GuideSection>
 
@@ -731,15 +738,16 @@ function AdminDevGuide() {
           s.overflow = "visible"; s.maxHeight = "none"; s.height = "auto";
         }
       });
+      clone.style.cssText += ";width:820px;max-width:820px;margin:0;";
       const wrap = document.createElement("div");
-      wrap.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;background:#0d0714;";
+      wrap.style.cssText = "position:fixed;left:0;top:0;width:820px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#0d0714;";
       wrap.appendChild(clone);
       document.body.appendChild(wrap);
       html2pdf().set({
         margin: [10, 8, 10, 8],
         filename: "DevGuide-GIS-Meter.pdf",
         image: { type: "jpeg", quality: 0.97 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#0d0714", windowWidth: 820 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#0d0714", windowWidth: 820, width: 820 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["css", "legacy"], avoid: [".card", "li"] },
       }).from(clone).save()
