@@ -1,7 +1,7 @@
 {
-  "commit": "feat-sidebar-dt-collapse",
+  "commit": "feat-map-search",
   "shortCommit": "pending",
-  "message": "feat: Desktop sidebar collapsible — toggle button in topbar, persists to localStorage, smooth grid-column transition",
-  "date": "2026-06-01T22:30:00+00:00",
+  "message": "feat: Map search panel — search by TAG/PEANO/ACCOUNTNUM/Location, fly to result at zoom 19",
+  "date": "2026-06-01T23:30:00+00:00",
   "branch": "main"
 }
