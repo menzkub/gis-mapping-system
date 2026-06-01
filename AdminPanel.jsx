@@ -2537,6 +2537,74 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [showBaseMenu, setShowBaseMenu] = useStateAd(false);
   const [zoomTick,  setZoomTick]  = useStateAd(0);
   const [loadKey,   setLoadKey]   = useStateAd(0); // increment to retry
+  const [corrTarget, setCorrTarget] = useStateAd(null);  // { p, isMeter }
+  const [corrections, setCorrections] = useStateAd([]);
+  const [showReview, setShowReview] = useStateAd(false);
+  const toast = useToast();
+
+  const loadCorrections = React.useCallback(async () => {
+    const { data: rows } = await _supabase
+      .from("coordinate_corrections")
+      .select("*")
+      .order("submitted_at", { ascending: false });
+    if (rows) setCorrections(rows);
+  }, []);
+
+  useEffectAd(() => {
+    if (loadState === "done") loadCorrections();
+  }, [loadState]);
+
+  const submitCorrection = async ({ newLat, newLng, note }) => {
+    const { error } = await _supabase.from("coordinate_corrections").insert({
+      record_type: corrTarget.isMeter ? "meter" : "transformer",
+      record_id: corrTarget.p.OBJECTID,
+      record_tag: corrTarget.p.TAG,
+      old_lat: corrTarget.p.LATITUDE,
+      old_lng: corrTarget.p.LONGITUDE,
+      new_lat: newLat,
+      new_lng: newLng,
+      note: note || null,
+      submitted_by_username: currentUser?.username || "user",
+      status: "pending",
+    });
+    if (!error) {
+      setCorrTarget(null);
+      loadCorrections();
+      toast?.(t("corrSubmitOk"), "success");
+    }
+  };
+
+  const approveCorrection = async (corr) => {
+    const table = corr.record_type === "meter" ? "meters" : "transformers";
+    const { error } = await _supabase.from(table)
+      .update({ latitude: +corr.new_lat, longitude: +corr.new_lng })
+      .eq("objectid", corr.record_id);
+    if (!error) {
+      await _supabase.from("coordinate_corrections").update({
+        status: "approved",
+        reviewed_by_username: currentUser?.username || "admin",
+        reviewed_at: new Date().toISOString(),
+      }).eq("id", corr.id);
+      setCorrections(prev => prev.map(c => c.id === corr.id ? { ...c, status: "approved" } : c));
+      if (corr.record_type === "meter") {
+        setMeters(prev => prev.map(m => m.OBJECTID === corr.record_id ? { ...m, LATITUDE: +corr.new_lat, LONGITUDE: +corr.new_lng } : m));
+      } else {
+        setTrs(prev => prev.map(tr => tr.OBJECTID === corr.record_id ? { ...tr, LATITUDE: +corr.new_lat, LONGITUDE: +corr.new_lng } : tr));
+      }
+      toast?.(t("corrApprovedMsg"), "success");
+    }
+  };
+
+  const rejectCorrection = async (corr) => {
+    await _supabase.from("coordinate_corrections").update({
+      status: "rejected",
+      reviewed_by_username: currentUser?.username || "admin",
+      reviewed_at: new Date().toISOString(),
+    }).eq("id", corr.id);
+    setCorrections(prev => prev.map(c => c.id === corr.id ? { ...c, status: "rejected" } : c));
+  };
+
+  const handleCorrection = React.useCallback(target => setCorrTarget(target), []);
 
   const totalM = data?.dashStats?.meter_count || 0;
   const totalT = data?.dashStats?.tr_count    || 0;
@@ -2658,7 +2726,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         });
         cells.forEach(group => {
           if (group.length === 1) {
-            makeAdmMarker(group[0], symbol, isMeter, accent, accent2).addTo(layerRef.current);
+            makeAdmMarker(group[0], symbol, isMeter, accent, accent2, handleCorrection).addTo(layerRef.current);
           } else {
             const lat = group.reduce((s, p) => s + p.LATITUDE, 0) / group.length;
             const lng = group.reduce((s, p) => s + p.LONGITUDE, 0) / group.length;
@@ -2673,7 +2741,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           }
         });
       } else {
-        points.forEach(p => makeAdmMarker(p, symbol, isMeter, accent, accent2).addTo(layerRef.current));
+        points.forEach(p => makeAdmMarker(p, symbol, isMeter, accent, accent2, handleCorrection).addTo(layerRef.current));
       }
     };
 
@@ -2756,6 +2824,23 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           )}
         </div>
 
+        {/* Correction review button */}
+        {loadState === "done" && (
+          <button style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
+            border: "1px solid " + (showReview ? "#ea580c" : "var(--line)"),
+            background: showReview ? "rgba(234,88,12,0.1)" : "var(--surface-2)",
+            color: showReview ? "#ea580c" : "var(--ink-mute)", cursor: "pointer",
+          }} onClick={() => setShowReview(s => !s)}>
+            📋 {t("corrReviewBtn")}
+            {corrections.filter(c => c.status === "pending").length > 0 && (
+              <span style={{ background: "#ea580c", color: "white", borderRadius: 999, padding: "0 5px", fontSize: 10, fontWeight: 800 }}>
+                {corrections.filter(c => c.status === "pending").length}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Sample note */}
         {loadState === "done" && totalM > 0 && meters.length < totalM && (
           <div style={{ width: "100%", fontSize: 11, color: "var(--ink-mute)", paddingTop: 2 }}>
@@ -2786,19 +2871,44 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         </div>
       )}
 
-      {/* ── Map container ── */}
-      <div ref={containerRef} style={{ flex: 1 }} />
+      {/* ── Map + side panel wrapper ── */}
+      <div style={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
+        <div ref={containerRef} style={{ flex: 1 }} />
+        {showReview && (
+          <CorrectionReviewPanel
+            corrections={corrections}
+            onApprove={approveCorrection}
+            onReject={rejectCorrection}
+            onClose={() => setShowReview(false)}
+            t={t}
+          />
+        )}
+      </div>
+
+      {/* Correction modal */}
+      {corrTarget && (
+        <CorrectionModal
+          target={corrTarget}
+          currentUser={currentUser}
+          onClose={() => setCorrTarget(null)}
+          onSubmit={submitCorrection}
+          t={t}
+        />
+      )}
     </div>
   );
 }
 
-function makeAdmMarker(p, symbol, isMeter, accent, accent2) {
+function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection) {
   const icon = L.divIcon({
     className: "",
     html: `<div class="pea-marker${isMeter ? "" : " tr"}"><span>${symbol}</span></div>`,
     iconSize: [36, 36], iconAnchor: [18, 32], popupAnchor: [0, -30],
   });
   const marker = L.marker([p.LATITUDE, p.LONGITUDE], { icon, riseOnHover: true });
+  const corrBtn = `<button data-adm-corr style="margin-top:8px;width:100%;padding:5px 0;border-radius:8px;border:1px solid #ea580c44;background:rgba(234,88,12,0.08);color:#ea580c;font-size:11px;font-weight:700;cursor:pointer">
+  📍 แจ้งแก้ไขพิกัด
+</button>`;
   const popup = isMeter
     ? `<div style="padding:10px 14px;min-width:180px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -2807,6 +2917,7 @@ function makeAdmMarker(p, symbol, isMeter, accent, accent2) {
         </div>
         <div style="font-size:11px;color:var(--ink-mute)">Feeder: <b>${p.FEEDERID||"—"}</b> · Route: <b>${p.ROUTE||"—"}</b></div>
         <div style="font-size:11px;margin-top:4px;font-family:monospace;color:var(--ink-mute)">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
+        ${corrBtn}
       </div>`
     : `<div style="padding:10px 14px;min-width:180px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -2815,8 +2926,15 @@ function makeAdmMarker(p, symbol, isMeter, accent, accent2) {
         </div>
         <div style="font-size:11px;color:var(--ink-mute)">${p.KVA} kVA · ${p.PHASE}Φ · ${p.VOLTAGE} kV · Feeder: <b>${p.FEEDER1||"—"}</b></div>
         <div style="font-size:11px;margin-top:4px;font-family:monospace;color:var(--ink-mute)">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
+        ${corrBtn}
       </div>`;
   marker.bindPopup(popup, { maxWidth: 280 });
+  if (onCorrection) {
+    marker.on('popupopen', () => {
+      const btn = marker.getPopup().getElement()?.querySelector('[data-adm-corr]');
+      if (btn) btn.onclick = () => { marker.closePopup(); onCorrection({ p, isMeter }); };
+    });
+  }
   return marker;
 }
 
