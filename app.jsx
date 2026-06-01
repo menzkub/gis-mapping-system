@@ -1426,6 +1426,12 @@ function DeploymentStatus() {
 function ChangelogView() {
   const { lang } = useLang();
   const clText = (t) => (t && typeof t === "object") ? (t[lang] ?? t.th) : t;
+  const [collapsed, setCollapsed] = useStateApp(() => new Set(CHANGELOG.slice(1).map(v => v.version)));
+  const toggleVer = (version) => setCollapsed(prev => {
+    const next = new Set(prev);
+    next.has(version) ? next.delete(version) : next.add(version);
+    return next;
+  });
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
       <style>{`
@@ -1523,11 +1529,12 @@ function ChangelogView() {
                 background: "var(--surface)", borderRadius: 16, border: "1px solid var(--line)",
                 overflow: "hidden", boxShadow: vi === 0 ? `0 4px 24px ${ver.tagColor}22` : "none",
               }}>
-                {/* Card header */}
-                <div style={{
+                {/* Card header — clickable to collapse/expand */}
+                <div onClick={() => toggleVer(ver.version)} style={{
                   padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
-                  borderBottom: "1px solid var(--line)",
+                  borderBottom: collapsed.has(ver.version) ? "none" : "1px solid var(--line)",
                   background: vi === 0 ? `linear-gradient(135deg, ${ver.tagColor}18, transparent)` : "transparent",
+                  cursor: "pointer", userSelect: "none",
                 }}>
                   <div style={{
                     fontFamily: "'Courier New',monospace", fontVariantLigatures: "none",
@@ -1548,25 +1555,34 @@ function ChangelogView() {
                       <Icon name="check" size={10} /> ล่าสุด
                     </span>
                   )}
-                  <div style={{ marginLeft: "auto", fontSize: 12, color: "var(--ink-mute)", fontWeight: 500 }}>{ver.date}</div>
+                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, color: "var(--ink-mute)", fontWeight: 500 }}>{ver.date}</span>
+                    <Icon
+                      name={collapsed.has(ver.version) ? "chevRight" : "chevDown"}
+                      size={15}
+                      style={{ color: "var(--ink-mute)", transition: "transform 180ms", flexShrink: 0 }}
+                    />
+                  </div>
                 </div>
 
                 {/* Items */}
-                <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
-                  {ver.items.map((item, ii) => {
-                    const m = CAT_META[item.cat] || CAT_META.new;
-                    return (
-                      <div key={ii} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                        <span style={{
-                          display: "inline-block", padding: "2px 7px", borderRadius: 6, fontSize: 10,
-                          fontWeight: 700, flexShrink: 0, marginTop: 1,
-                          background: m.bg, border: `1px solid ${m.border}`, color: m.text,
-                        }}>{m.label}</span>
-                        <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>{clText(item.text)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {!collapsed.has(ver.version) && (
+                  <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                    {ver.items.map((item, ii) => {
+                      const m = CAT_META[item.cat] || CAT_META.new;
+                      return (
+                        <div key={ii} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                          <span style={{
+                            display: "inline-block", padding: "2px 7px", borderRadius: 6, fontSize: 10,
+                            fontWeight: 700, flexShrink: 0, marginTop: 1,
+                            background: m.bg, border: `1px solid ${m.border}`, color: m.text,
+                          }}>{m.label}</span>
+                          <span style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>{clText(item.text)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           ))}
