@@ -240,6 +240,112 @@ function AdminDashboard({ data }) {
           </div>
         ))}
       </div>
+
+      {/* Supabase DB usage */}
+      <DbUsageCard />
+    </div>
+  );
+}
+
+// ── Supabase Database Usage Card ─────────────────────────────────────────
+function DbUsageCard() {
+  const DB_TABLES = [
+    { key: "meters",      table: "meters",                 label: "PEA มิเตอร์",        color: "#6b2c91", kb: 1.5 },
+    { key: "trs",         table: "transformers",           label: "PEA หม้อแปลง",       color: "#f47b20", kb: 1.5 },
+    { key: "profiles",    table: "profiles",               label: "ผู้ใช้งาน",           color: "#10b981", kb: 0.5 },
+    { key: "audit",       table: "audit_log",              label: "Audit Log",           color: "#64748b", kb: 0.4 },
+    { key: "push",        table: "push_subscriptions",     label: "Push Subscriptions",  color: "#8b5cf6", kb: 2.0 },
+    { key: "corrections", table: "coordinate_corrections", label: "คำขอแก้ไขพิกัด",   color: "#0ea5e9", kb: 0.5 },
+    { key: "settings",    table: "settings",               label: "Settings",            color: "#94a3b8", kb: 0.1 },
+  ];
+  const FREE_LIMIT_MB = 500;
+
+  const [counts, setCounts] = useStateAd(null);
+  const [loading, setLoading] = useStateAd(true);
+  const [refreshedAt, setRefreshedAt] = useStateAd(null);
+
+  async function load() {
+    setLoading(true);
+    const result = {};
+    await Promise.all(DB_TABLES.map(async t => {
+      const { count, error } = await _supabase.from(t.table).select("*", { count: "exact", head: true });
+      result[t.key] = error ? null : (count ?? 0);
+    }));
+    setCounts(result);
+    setRefreshedAt(new Date());
+    setLoading(false);
+  }
+
+  useEffectAd(() => { load(); }, []);
+
+  const totalEstKb = counts
+    ? DB_TABLES.reduce((acc, t) => acc + ((counts[t.key] ?? 0) * t.kb), 0)
+    : 0;
+  const totalEstMb = totalEstKb / 1024;
+  const pct = Math.min((totalEstMb / FREE_LIMIT_MB) * 100, 100);
+  const barColor = pct < 50 ? "#10b981" : pct < 75 ? "#f59e0b" : "#ef4444";
+
+  return (
+    <div className="card card-elev">
+      <div className="f-between" style={{ marginBottom: 16 }}>
+        <div>
+          <div className="t-eyebrow" style={{ marginBottom: 2 }}>SUPABASE</div>
+          <div className="text-lg fw-7">Database Usage</div>
+        </div>
+        <button onClick={load} disabled={loading}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10,
+            background: "var(--surface-2)", border: "1px solid var(--line)", cursor: loading ? "default" : "pointer",
+            fontSize: 12, fontWeight: 700, color: "var(--ink-mute)", opacity: loading ? 0.5 : 1, transition: "opacity 200ms" }}>
+          <Icon name="refresh" size={13} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
+          รีเฟรช
+        </button>
+      </div>
+
+      {/* Estimated size progress bar */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+          <span className="text-sm fw-6">ประมาณการพื้นที่ใช้งาน (Estimated)</span>
+          <span className="t-mute text-sm mono">{loading ? "…" : `${totalEstMb.toFixed(1)} MB / ${FREE_LIMIT_MB} MB`}</span>
+        </div>
+        <div style={{ height: 10, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: loading ? "0%" : `${pct}%`, borderRadius: 999, background: barColor, transition: "width 800ms cubic-bezier(.22,1,.36,1)" }} />
+        </div>
+        <div className="t-mute text-xs" style={{ marginTop: 5 }}>
+          * ประมาณการจาก row count — ดูขนาดจริงที่{" "}
+          <span style={{ color: "var(--pea-purple-400)", fontWeight: 600 }}>Supabase Dashboard → Database → Storage</span>
+        </div>
+      </div>
+
+      {/* Per-table breakdown */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {DB_TABLES.map(t => {
+          const c = counts?.[t.key];
+          const estMb = ((c ?? 0) * t.kb / 1024);
+          return (
+            <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px", borderRadius: 10, background: "var(--surface-2)" }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: t.color, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="text-xs t-mute" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label}</div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: c === null ? "var(--ink-mute)" : "var(--ink)" }}>
+                  {loading ? "…" : c === null ? "—" : c.toLocaleString()}
+                  {!loading && c !== null && c > 0 && (
+                    <span className="t-mute" style={{ fontWeight: 500, fontSize: 11, marginLeft: 4 }}>
+                      ~{estMb < 1 ? `${(estMb * 1024).toFixed(0)}KB` : `${estMb.toFixed(1)}MB`}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {refreshedAt && (
+        <div className="t-mute text-xs" style={{ marginTop: 12, textAlign: "right" }}>
+          อัปเดตล่าสุด: {refreshedAt.toLocaleTimeString("th-TH")}
+        </div>
+      )}
     </div>
   );
 }
