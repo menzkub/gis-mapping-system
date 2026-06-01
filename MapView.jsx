@@ -121,7 +121,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
       const initial = kind === "meter" ? "M" : "T";
       const icon = L.divIcon({
         className: "",
-        html: `<div class="pea-marker ${kind === "tr" ? "tr" : ""} ${isSelected ? "selected" : ""}"><span>${initial}</span></div>`,
+        html: `<div class="pea-marker ${kind === "tr" ? "tr" : ""} ${isSelected ? "selected" : ""}" style="position:relative;overflow:visible"><div class="pea-marker-pulse"></div><div class="pea-marker-pulse pea-marker-pulse-2"></div><span>${initial}</span></div>`,
         iconSize: [36, 36],
         iconAnchor: [18, 32],
         popupAnchor: [0, -28],

@@ -129,50 +129,51 @@ function AdminDashboard({ data }) {
   const trCount    = +(s.tr_count     || 0);
   const totalKva   = +(s.total_kva    || 0);
   const peaMeters  = +(s.pea_meters   || 0);
-  const custMeters = +(s.cust_meters  || 0);
+  // Fix: custMeters = anything not counted as PEA (handles NULL/unclassified rows)
+  const custMeters = Math.max(+(s.cust_meters || 0), meterCount - peaMeters);
   const peaTr      = +(s.pea_tr       || 0);
   const custTr     = +(s.cust_tr      || 0);
-  const pending    = data.users.filter(u => u.status === "pending").length;
 
   const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
-  const recent = data.auditLog.slice(0, 5);
+
+  const grandTotal = meterCount + trCount;
+  const donutSegs = [
+    { v: peaMeters,  color: "#8b3fc4", label: "PEA Meter",  glow: "rgba(139,63,196,0.6)" },
+    { v: custMeters, color: "#c084fc", label: "Cust. Meter", glow: "rgba(192,132,252,0.4)" },
+    { v: peaTr,      color: "#f47b20", label: "PEA TR",      glow: "rgba(244,123,32,0.6)" },
+    { v: custTr,     color: "#fbbf24", label: "Cust. TR",    glow: "rgba(251,191,36,0.4)" },
+  ];
 
   return (
     <div className="f-col f-gap-4 fade-up">
       <style>{`
-        .db-stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+        .db-stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
         .db-mid-grid  { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
-        .db-donut-row { display: flex; align-items: center; gap: 20px; }
-        .db-donut-row svg { width: 130px; height: 130px; flex-shrink: 0; }
-        .db-act-row   { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid var(--line); }
-        .db-act-avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: white; flex-shrink: 0; }
-        /* iPad (641–1024px) */
+        .db-donut-wrap { display: flex; align-items: center; gap: 24px; }
+        @keyframes dbLegBar { from { width: 0 } }
+        @keyframes dbSegIn  { from { opacity:0; transform:scale(0.92) } to { opacity:1; transform:none } }
+        @keyframes dbNumUp  { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+        /* iPad */
         @media (min-width: 641px) and (max-width: 1024px) {
-          .db-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+          .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 12px; }
           .db-mid-grid  { grid-template-columns: 1fr 1fr; gap: 14px; }
-          .db-donut-row { flex-direction: column; gap: 14px; }
-          .db-donut-row svg { width: 100px !important; height: 100px !important; align-self: center; }
-          .db-donut-row .db-legend-list { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+          .db-donut-wrap { flex-direction: column; gap: 16px; }
         }
         @media (max-width: 640px) {
-          .db-stat-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+          .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
           .db-mid-grid  { grid-template-columns: 1fr; }
-          .db-donut-row { flex-direction: column; align-items: stretch; gap: 12px; }
-          .db-donut-row svg { width: 110px; height: 110px; align-self: center; }
-          .db-donut-row .db-legend-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-          .db-act-target { display: none; }
+          .db-donut-wrap { flex-direction: column; align-items: stretch; gap: 16px; }
         }
       `}</style>
 
-      {/* Stat cards — 4 cols desktop, 2×2 mobile */}
+      {/* Stat cards — 3 cols (removed Users) */}
       <div className="db-stat-grid">
-        <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter"  accent="purple" />
-        <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr"     accent="orange" />
+        <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter" accent="purple" />
+        <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr"    accent="orange" />
         <StatCard label={t("dbKva")}    value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue" />
-        <StatCard label={t("dbUsers")}  value={fmtStat(data.users.length)} delta={pending > 0 ? pending : 0} icon="users" accent="green" />
       </div>
 
-      {/* Feeder + Donut — side-by-side desktop, stacked mobile */}
+      {/* Feeder + Donut */}
       <div className="db-mid-grid">
         <div className="card card-elev">
           <div className="f-between" style={{ marginBottom: 16 }}>
@@ -187,16 +188,15 @@ function AdminDashboard({ data }) {
           ) : (
             <div className="f-col f-gap-3">
               {feederStats.map(([f, n], i) => {
-                const max = feederStats[0][1];
-                const pct = (n / max) * 100;
+                const pct = (n / feederStats[0][1]) * 100;
                 return (
-                  <div key={f} className="fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+                  <div key={f} style={{ animation: `fade-up 320ms ${i * 50}ms both` }}>
                     <div className="f-between" style={{ marginBottom: 4 }}>
                       <div className="fw-6 text-sm">{f}</div>
                       <div className="t-mute text-sm">{n.toLocaleString()} {t("dbItems")}</div>
                     </div>
                     <div style={{ height: 8, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: "linear-gradient(90deg,var(--pea-purple-600),var(--pea-orange-500))", transition: "width 600ms var(--ease-out)" }} />
+                      <div style={{ height: "100%", width: `${pct}%`, borderRadius: 999, background: "linear-gradient(90deg,var(--pea-purple-600),var(--pea-orange-500))", animation: `dbLegBar 700ms ${i * 60 + 200}ms var(--ease-out) both`, transition: "width 600ms var(--ease-out)" }} />
                     </div>
                   </div>
                 );
@@ -205,43 +205,23 @@ function AdminDashboard({ data }) {
           )}
         </div>
 
-        <div className="card card-elev">
-          <div className="text-lg fw-7" style={{ marginBottom: 14 }}>{t("dbByType")}</div>
-          <div className="db-donut-row">
-            <Donut peaMeters={peaMeters} custMeters={custMeters} peaTr={peaTr} custTr={custTr} displayTotal={meterCount + trCount} />
-            <div className="db-legend-list f-col f-gap-2 text-sm">
-              <Legend color="#6b2c91" label="PEA Meter"      value={peaMeters.toLocaleString()} />
-              <Legend color="#b67dee" label="Cust. Meter"    value={custMeters.toLocaleString()} />
-              <Legend color="#f47b20" label="PEA TR"         value={peaTr.toLocaleString()} />
-              <Legend color="#ffba7a" label="Cust. TR"       value={custTr.toLocaleString()} />
+        {/* Premium Donut card */}
+        <div className="card card-elev" style={{ background: "linear-gradient(145deg, var(--surface) 0%, var(--soft) 100%)" }}>
+          <div style={{ marginBottom: 18 }}>
+            <div className="t-eyebrow" style={{ marginBottom: 2 }}>สัดส่วนตามประเภท</div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{grandTotal.toLocaleString()} <span className="t-mute" style={{ fontSize: 13, fontWeight: 500 }}>รายการ</span></div>
+          </div>
+          <div className="db-donut-wrap">
+            <PremiumDonut segs={donutSegs} grandTotal={grandTotal} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+              {donutSegs.map((seg, i) => (
+                <DonutLegendRow key={seg.label} seg={seg} total={grandTotal} delay={i * 80} />
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent activity */}
-      <div className="card card-elev">
-        <div className="f-between" style={{ marginBottom: 8 }}>
-          <div className="text-lg fw-7">{t("dbRecentAct")}</div>
-          <div className="t-mute text-sm">{recent.length} รายการ</div>
-        </div>
-        {recent.length === 0 ? (
-          <div className="t-mute text-sm" style={{ padding: "16px 0" }}>{t("dbNoActivity")}</div>
-        ) : recent.map(r => (
-          <div key={r.id} className="db-act-row">
-            <div className="db-act-avatar" style={{ background: "linear-gradient(135deg,#6b2c91,#8b3fc4)" }}>
-              {(r.user || "?")[0].toUpperCase()}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="text-sm fw-6" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.detail || "—"}</div>
-              <div className="t-mute text-xs" style={{ marginTop: 2 }}>{r.at.slice(0, 16)} · <span style={{ fontWeight: 600 }}>@{r.user}</span></div>
-            </div>
-            <div className={"badge " + actionBadge(r.action)} style={{ flexShrink: 0, fontSize: 11 }}>{actionLabel(r.action)}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Supabase DB usage */}
       <DbUsageCard />
     </div>
   );
@@ -406,40 +386,83 @@ function DbUsageCard() {
   );
 }
 
-function Legend({ color, label, value }) {
+function DonutLegendRow({ seg, total, delay }) {
+  const pct = total > 0 ? (seg.v / total) * 100 : 0;
   return (
-    <div className="f-gap-2 flex" style={{ alignItems: "center" }}>
-      <div style={{ width: 12, height: 12, borderRadius: 4, background: color }} />
-      <div className="fw-6">{label}</div>
-      <div className="t-mute mono">{value}</div>
+    <div style={{ animation: `dbSegIn 320ms ${delay}ms var(--ease-out) both` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: seg.color, boxShadow: `0 0 6px ${seg.glow}`, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>{seg.label}</span>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 800, color: "var(--ink)", fontFamily: "'IBM Plex Mono',monospace", animation: `dbNumUp 400ms ${delay + 100}ms both` }}>
+          {seg.v.toLocaleString()}
+        </span>
+      </div>
+      <div style={{ height: 5, background: "var(--line)", borderRadius: 999, overflow: "hidden" }}>
+        <div style={{
+          height: "100%", borderRadius: 999,
+          background: `linear-gradient(90deg, ${seg.color}, ${seg.glow.replace("0.", "0.7").replace(")", ")")})`,
+          boxShadow: `0 0 6px ${seg.glow}`,
+          animation: `dbLegBar 700ms ${delay + 150}ms var(--ease-out) both`,
+          width: `${pct}%`,
+        }} />
+      </div>
+      <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 2, textAlign: "right" }}>{pct.toFixed(1)}%</div>
     </div>
   );
 }
 
-function Donut({ peaMeters, custMeters, peaTr, custTr, displayTotal }) {
-  const total = peaMeters + custMeters + peaTr + custTr || 1;
-  const shown = displayTotal || total;
-  const segs = [
-    { v: peaMeters,  color: "#6b2c91" },
-    { v: custMeters, color: "#b67dee" },
-    { v: peaTr,      color: "#f47b20" },
-    { v: custTr,     color: "#ffba7a" },
-  ];
-  const C = 2 * Math.PI * 42;
+function PremiumDonut({ segs, grandTotal }) {
+  const total = segs.reduce((s, x) => s + x.v, 0) || 1;
+  const R = 52; const W = 16; const C = 2 * Math.PI * R;
+  const GAP = 2.5;
+  const activeSegs = segs.filter(s => s.v > 0);
+  const usableC = C - GAP * activeSegs.length;
   let offset = 0;
+  const rendered = segs.map((s) => {
+    if (s.v <= 0) return null;
+    const len = (s.v / total) * usableC;
+    const el = { ...s, len, offset };
+    offset += len + GAP;
+    return el;
+  }).filter(Boolean);
+
   return (
-    <svg viewBox="0 0 120 120" style={{ width: 140, height: 140 }}>
-      <circle cx="60" cy="60" r="42" fill="none" stroke="var(--line)" strokeWidth="14" />
-      {segs.map((s, i) => {
-        const len = (s.v / total) * C;
-        const dash = `${len} ${C - len}`;
-        const el = <circle key={i} cx="60" cy="60" r="42" fill="none" stroke={s.color} strokeWidth="14" strokeDasharray={dash} strokeDashoffset={-offset} transform="rotate(-90 60 60)" strokeLinecap="butt" />;
-        offset += len;
-        return el;
-      })}
-      <text x="60" y="58" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: "var(--ink)" }}>{shown.toLocaleString()}</text>
-      <text x="60" y="74" textAnchor="middle" style={{ fontSize: 9, fill: "var(--ink-mute)", fontWeight: 600, letterSpacing: "0.1em" }}>TOTAL</text>
-    </svg>
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <svg viewBox="0 0 140 140" width="140" height="140" style={{ overflow: "visible", display: "block" }}>
+        <defs>
+          {rendered.map((s, i) => (
+            <radialGradient key={i} id={`dg${i}`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={s.color} stopOpacity="1" />
+              <stop offset="100%" stopColor={s.color} stopOpacity="0.75" />
+            </radialGradient>
+          ))}
+        </defs>
+        {/* Track */}
+        <circle cx="70" cy="70" r={R} fill="none" stroke="var(--line)" strokeWidth={W} />
+        {/* Segments */}
+        {rendered.map((s, i) => (
+          <circle key={i} cx="70" cy="70" r={R} fill="none"
+            stroke={s.color}
+            strokeWidth={W}
+            strokeDasharray={`${s.len} ${C - s.len}`}
+            strokeDashoffset={-s.offset}
+            transform="rotate(-90 70 70)"
+            strokeLinecap="round"
+            style={{
+              filter: `drop-shadow(0 0 5px ${s.glow})`,
+              animation: `dbSegIn 500ms ${i * 100 + 100}ms var(--ease-out) both`,
+            }}
+          />
+        ))}
+        {/* Center */}
+        <text x="70" y="65" textAnchor="middle" style={{ fontSize: 20, fontWeight: 900, fill: "var(--ink)", letterSpacing: "-0.02em", animation: "dbNumUp 500ms 400ms both" }}>
+          {grandTotal.toLocaleString()}
+        </text>
+        <text x="70" y="80" textAnchor="middle" style={{ fontSize: 8, fill: "var(--ink-mute)", fontWeight: 700, letterSpacing: "0.14em" }}>TOTAL</text>
+      </svg>
+    </div>
   );
 }
 

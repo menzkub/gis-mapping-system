@@ -379,7 +379,7 @@ function AuthScreen({ initialError }) {
         <AnimatedPowerGrid />
 
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14 }}>
-          <img src="logo.svg" alt="PEA" style={{ width: 56, height: 56, borderRadius: 16, boxShadow: "0 12px 32px rgba(139,63,196,0.5)", flexShrink: 0 }} />
+          <img src="logo.svg" alt="PEA" style={{ width: 56, height: 56, borderRadius: 16, boxShadow: "0 12px 32px rgba(139,63,196,0.5)", flexShrink: 0, animation: "authLogoFloat 5s ease-in-out infinite" }} />
           <div>
             <div className="t-eyebrow" style={{ color: "#ffba7a" }}>PEA</div>
             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em" }}>Meter &amp; TR Search</div>
@@ -401,8 +401,8 @@ function AuthScreen({ initialError }) {
             {t("authBrandDesc")}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {["PEA Meter", "PEA TR", "Satellite Map", "Heatmap", "Navigation"].map(label => (
-              <div key={label} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)", padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, color: "white" }}>
+            {["PEA Meter", "PEA TR", "Satellite Map", "Heatmap", "Navigation"].map((label, idx) => (
+              <div key={label} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)", padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, color: "white", animation: `authBadgeIn 420ms ${idx * 90 + 300}ms var(--ease-out) both` }}>
                 {label}
               </div>
             ))}
@@ -420,7 +420,7 @@ function AuthScreen({ initialError }) {
         {/* Mobile-only hero header */}
         <div className="auth-hero">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <img src="logo.svg" alt="PEA" style={{ width: 50, height: 50, borderRadius: 14, boxShadow: "0 8px 24px rgba(139,63,196,0.45)", flexShrink: 0 }} />
+            <img src="logo.svg" alt="PEA" style={{ width: 50, height: 50, borderRadius: 14, boxShadow: "0 8px 24px rgba(139,63,196,0.45)", flexShrink: 0, animation: "authLogoFloat 5s ease-in-out infinite" }} />
             <div>
               <div style={{ fontSize: 10, letterSpacing: "0.2em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA FANG</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>Meter &amp; TR Search</div>

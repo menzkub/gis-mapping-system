@@ -441,7 +441,6 @@ function ResultCard({ item: p, kind, selected, onClick, onNavigate, index, copyC
   return (
     <button
       onClick={onClick}
-      className="fade-up"
       style={{
         width: "100%", textAlign: "left",
         padding: "14px 16px",
@@ -449,7 +448,7 @@ function ResultCard({ item: p, kind, selected, onClick, onNavigate, index, copyC
         borderLeft: `3px solid ${selected ? (isMeter ? "var(--pea-purple-500)" : "var(--pea-orange-500)") : "transparent"}`,
         borderBottom: "1px solid var(--line)",
         display: "flex", gap: 12,
-        animationDelay: `${Math.min(index * 18, 200)}ms`,
+        animation: `resultStagger 280ms ${Math.min(index * 40, 350)}ms var(--ease-out) both`,
         cursor: "pointer",
       }}
     >
@@ -518,6 +517,8 @@ function NavigationPanel({ target, kind, onClose }) {
   const dest = { lat: target.LATITUDE, lng: target.LONGITUDE };
   const [gpsState, setGpsState] = useStateNav("loading"); // loading | ok | denied
   const [userPos, setUserPos] = useStateNav(null);
+  const [displayDist, setDisplayDist] = useStateNav(0);
+  const [displayEta, setDisplayEta] = useStateNav(null);
 
   const watchRef = React.useRef(null);
 
@@ -560,6 +561,21 @@ function NavigationPanel({ target, kind, onClose }) {
       })()
     : null;
   const eta = distance ? Math.max(1, Math.round((distance * 1.3 / 40) * 60)) : null;
+
+  useEffectNav(() => {
+    if (distance == null) { setDisplayDist(0); setDisplayEta(null); return; }
+    const dur = 900;
+    const start = performance.now();
+    const tick = (now) => {
+      const p = Math.min((now - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setDisplayDist(distance * ease);
+      setDisplayEta(eta ? Math.round(eta * ease) : null);
+      if (p < 1) requestAnimationFrame(tick);
+      else { setDisplayDist(distance); setDisplayEta(eta); }
+    };
+    requestAnimationFrame(tick);
+  }, [distance]);
 
   const originLabel = gpsState === "loading"
     ? t("findingGPS")
@@ -632,14 +648,14 @@ function NavigationPanel({ target, kind, onClose }) {
           <div className="f-between" style={{ marginTop: 18, position: "relative" }}>
             <div>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>{t("distanceLabel")}</div>
-              <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
-                {distance != null ? `${distance.toFixed(2)} ${t("kmUnit")}` : "—"}
+              <div className="t-display" style={{ fontSize: 26, fontWeight: 800, animation: displayDist > 0 ? "distCountUp 400ms var(--ease-out) both" : "none" }}>
+                {displayDist > 0 ? `${displayDist.toFixed(2)} ${t("kmUnit")}` : distance != null ? `${distance.toFixed(2)} ${t("kmUnit")}` : "—"}
               </div>
             </div>
             <div>
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.1em" }}>{t("etaLabel")}</div>
               <div className="t-display" style={{ fontSize: 26, fontWeight: 800 }}>
-                {eta != null ? (eta < 60 ? `${eta} ${t("minutesUnit")}` : `${Math.floor(eta/60)} ${t("hoursUnit")} ${eta%60} ${t("minutesUnit")}`) : "—"}
+                {displayEta != null ? (displayEta < 60 ? `${displayEta} ${t("minutesUnit")}` : `${Math.floor(displayEta/60)} ${t("hoursUnit")} ${displayEta%60} ${t("minutesUnit")}`) : eta != null ? (eta < 60 ? `${eta} ${t("minutesUnit")}` : `${Math.floor(eta/60)} ${t("hoursUnit")} ${eta%60} ${t("minutesUnit")}`) : "—"}
               </div>
             </div>
           </div>

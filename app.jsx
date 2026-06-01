@@ -3826,6 +3826,7 @@ function App() {
           </div>
         )}
 
+          <div key={route} className="route-view" style={{ flex: 1, overflow: "hidden", position: "relative", display: "flex", flexDirection: "column" }}>
           {route === "search" && (
             <SearchView
               data={data}
@@ -3855,6 +3856,7 @@ function App() {
               allowExport={allowExport} setAllowExport={setAllowExport}
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />
           )}
+          </div>
         </main>
 
         <DevInfoButton devInfo={devInfo} />
