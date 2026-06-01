@@ -147,7 +147,35 @@ function EmptyState({ icon = "search", title, hint }) {
 /* ============================================================
    StatCard (used in dashboard)
    ============================================================ */
-function StatCard({ label, value, delta, icon, accent = "purple" }) {
+/* Auto-shrinks text to always fit its container — no hardcoded sizes needed */
+function FitText({ children, maxSize = 30, minSize = 12 }) {
+  const ref = useRef(null);
+  const fit = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.fontSize = maxSize + "px";
+    let size = maxSize;
+    while (el.scrollWidth > el.offsetWidth + 1 && size > minSize) {
+      size -= 0.5;
+      el.style.fontSize = size + "px";
+    }
+  }, [maxSize, minSize]);
+  useEffect(() => {
+    fit();
+    if (!ref.current) return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, [children, fit]);
+  return (
+    <div ref={ref} style={{ overflow: "hidden", whiteSpace: "nowrap", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em", color: "var(--ink)", marginTop: 4 }}>
+      {children}
+    </div>
+  );
+}
+
+/* breakdown: [{ label, value, color }] — optional sub-stats shown below main value */
+function StatCard({ label, value, delta, icon, accent = "purple", breakdown }) {
   const colorMap = {
     purple: ["#6b2c91", "#8b3fc4"],
     orange: ["#f47b20", "#ffba7a"],
@@ -170,7 +198,20 @@ function StatCard({ label, value, delta, icon, accent = "purple" }) {
         )}
       </div>
       <div className="t-mute text-xs fw-6" style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-      <div className="fw-8 t-display" style={{ marginTop: 4, color: "var(--ink)", fontSize: String(value).length <= 7 ? 30 : String(value).length <= 10 ? 24 : 18, lineHeight: 1.15, letterSpacing: String(value).length > 7 ? "-0.02em" : 0 }}>{value}</div>
+      <FitText>{value}</FitText>
+      {breakdown && (
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3, borderTop: "1px solid var(--line)", paddingTop: 8 }}>
+          {breakdown.map((b, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--ink-mute)", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: b.color, display: "inline-block", flexShrink: 0 }} />
+                {b.label}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "var(--ink)" }}>{b.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

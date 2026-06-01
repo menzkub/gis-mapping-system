@@ -336,7 +336,7 @@ a { color: inherit; text-decoration: none; }
 }
 .app-sidebar { grid-area: sidebar; }
 .app-topbar { grid-area: topbar; }
-.app-main { grid-area: main; overflow: auto; }
+.app-main { grid-area: main; overflow: auto; display: flex; flex-direction: column; }
 
 /* Default: sidebar toggle hidden; shown only on ≥1025px via media query above */
 .sidebar-dt-toggle { display: none; }

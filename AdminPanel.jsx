@@ -127,7 +127,9 @@ function AdminDashboard({ data }) {
   const s = data.dashStats || {};
   const meterCount = +(s.meter_count  || 0);
   const trCount    = +(s.tr_count     || 0);
-  const totalKva   = +(s.total_kva    || 0);
+  const totalKva   = Math.round(+(s.total_kva || 0));
+  const peaKva     = Math.round(+(s.pea_kva  || 0));
+  const custKva    = Math.round(+(s.cust_kva || 0) || Math.max(0, totalKva - peaKva));
   const peaMeters  = +(s.pea_meters   || 0);
   // Fix: custMeters = anything not counted as PEA (handles NULL/unclassified rows)
   const custMeters = Math.max(+(s.cust_meters || 0), meterCount - peaMeters);
@@ -150,6 +152,7 @@ function AdminDashboard({ data }) {
         .db-stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
         .db-mid-grid  { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
         .db-donut-wrap { display: flex; align-items: center; gap: 24px; }
+        .db-donut-svg  { width: 140px; height: 140px; }
         @keyframes dbLegBar { from { width: 0 } }
         @keyframes dbSegIn  { from { opacity:0; transform:scale(0.92) } to { opacity:1; transform:none } }
         @keyframes dbNumUp  { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
@@ -157,12 +160,14 @@ function AdminDashboard({ data }) {
         @media (min-width: 641px) and (max-width: 1024px) {
           .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 12px; }
           .db-mid-grid  { grid-template-columns: 1fr 1fr; gap: 14px; }
-          .db-donut-wrap { flex-direction: column; gap: 16px; }
+          .db-donut-wrap { flex-direction: column; align-items: center; gap: 16px; }
+          .db-donut-svg  { width: 180px; height: 180px; }
         }
         @media (max-width: 640px) {
           .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
           .db-mid-grid  { grid-template-columns: 1fr; }
-          .db-donut-wrap { flex-direction: column; align-items: stretch; gap: 16px; }
+          .db-donut-wrap { flex-direction: column; align-items: center; gap: 16px; }
+          .db-donut-svg  { width: 200px; height: 200px; }
         }
       `}</style>
 
@@ -170,7 +175,12 @@ function AdminDashboard({ data }) {
       <div className="db-stat-grid">
         <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter" accent="purple" />
         <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr"    accent="orange" />
-        <StatCard label={t("dbKva")}    value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue" />
+        <StatCard label={t("dbKva")}    value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
+          breakdown={[
+            { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4" },
+            { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6" },
+          ]}
+        />
       </div>
 
       {/* Feeder + Donut */}
@@ -430,7 +440,7 @@ function PremiumDonut({ segs, grandTotal }) {
 
   return (
     <div style={{ position: "relative", flexShrink: 0 }}>
-      <svg viewBox="0 0 140 140" width="140" height="140" style={{ overflow: "visible", display: "block" }}>
+      <svg viewBox="0 0 140 140" className="db-donut-svg" style={{ overflow: "visible", display: "block" }}>
         <defs>
           {rendered.map((s, i) => (
             <radialGradient key={i} id={`dg${i}`} cx="50%" cy="50%" r="50%">
@@ -3083,6 +3093,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     tLayerRef.current = L.layerGroup().addTo(map);
     map.on("zoomend", () => setTimeout(() => setZoomTick(t => t + 1), 80));
     mapRef.current = map;
+    // Ensure Leaflet knows the container size after layout settles
+    setTimeout(() => map.invalidateSize(), 100);
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, []);
 

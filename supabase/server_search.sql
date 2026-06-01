@@ -46,6 +46,8 @@ RETURNS JSON LANGUAGE SQL SECURITY DEFINER STABLE AS $$
     'meter_count',  (SELECT count(*)          FROM public.meters),
     'tr_count',     (SELECT count(*)          FROM public.transformers),
     'total_kva',    (SELECT COALESCE(sum(kva), 0) FROM public.transformers),
+    'pea_kva',      (SELECT COALESCE(sum(kva), 0) FROM public.transformers WHERE owner_tr = 'PEA'),
+    'cust_kva',     (SELECT COALESCE(sum(kva), 0) FROM public.transformers WHERE owner_tr = 'Customer'),
     'pea_meters',   (SELECT count(*) FROM public.meters      WHERE owner    = 'PEA'),
     'cust_meters',  (SELECT count(*) FROM public.meters      WHERE owner    = 'Customer'),
     'pea_tr',       (SELECT count(*) FROM public.transformers WHERE owner_tr = 'PEA'),
