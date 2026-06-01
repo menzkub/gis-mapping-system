@@ -3156,6 +3156,7 @@ function App() {
     { id: "map",       icon: "map",       label: t("admMap")       },
     { id: "import",    icon: "upload",    label: t("admImport")    },
     { id: "audit",     icon: "history",   label: t("admAudit")     },
+    { id: "security",  icon: "lock",      label: t("admSecurity")  },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
     ...(isAdmin ? [{ id: "dev", icon: "code", label: t("admDev") }] : []),
