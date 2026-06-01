@@ -771,13 +771,11 @@ function AdminDevGuide() {
         .dg-hero  { padding: 24px 28px; }
         .dg-title { font-size: 22px; font-weight: 800; line-height: 1.2; }
         .dg-sgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 16px; }
-        .dg-btns  { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+        .dg-btns  { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
         @media (max-width: 520px) {
           .dg-hero  { padding: 16px; }
           .dg-title { font-size: 17px; }
           .dg-sgrid { grid-template-columns: repeat(2,1fr) !important; gap: 8px; }
-          .dg-btns  { flex-direction: column; }
-          .dg-btns button { width: 100%; justify-content: center; }
         }
       `}</style>
       {/* Hero */}
@@ -818,27 +816,26 @@ function AdminDevGuide() {
             { label: "ตาราง DB",    value: 6,  icon: "database", sub: "tables" },
             { label: "ตัวอย่างโค้ด", value: 15, icon: "code",     sub: "code blocks" },
           ].map(({ label, value, icon, sub }) => (
-            <div key={label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                <Icon name={icon} size={13} style={{ color: "rgba(255,255,255,0.5)" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>{label}</span>
+            <div key={label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
+                <Icon name={icon} size={12} style={{ color: "rgba(255,255,255,0.5)", marginTop: 1, flexShrink: 0 }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", lineHeight: 1.35 }}>{label}</span>
               </div>
               <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{value}</div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>{sub}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Expand/Collapse + Download buttons */}
+        {/* Toggle expand/collapse + Download — single row */}
         <div className="dg-btns">
-          <button onClick={expandAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-            <Icon name="chevDown" size={13} /> ขยายทั้งหมด
+          <button onClick={expandSig.open ? collapseAll : expandAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+            <Icon name={expandSig.open ? "chevRight" : "chevDown"} size={13} />
+            {expandSig.open ? "ยุบทั้งหมด" : "ขยายทั้งหมด"}
           </button>
-          <button onClick={collapseAll} style={{ background: "rgba(139,63,196,0.2)", border: "1px solid rgba(139,63,196,0.4)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-            <Icon name="chevRight" size={13} /> ยุบทั้งหมด
-          </button>
-          <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)", opacity: pdfLoading ? 0.7 : 1 }}>
-            <Icon name="download" size={14} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} /> {pdfLoading ? "กำลังสร้าง PDF…" : "ดาวน์โหลดเอกสาร PDF"}
+          <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 8, padding: "7px 14px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, opacity: pdfLoading ? 0.7 : 1 }}>
+            <Icon name="download" size={13} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} />
+            {pdfLoading ? "กำลังสร้าง…" : "โหลด PDF"}
           </button>
         </div>
       </div>
@@ -3950,14 +3947,12 @@ const TH_MONTHS = ["มกราคม","กุมภาพันธ์","มี
 const TH_DAYS   = ["อา","จ","อ","พ","พฤ","ศ","ส"];
 
 function DateTimePicker({ value, onChange }) {
-  /* Renders dropdown via ReactDOM.createPortal → escapes overflow/transform parents */
-  /* value = "YYYY-MM-DDTHH:MM" or "" */
   const [open, setOpen] = useStateAd(false);
-  const [dropPos, setDropPos] = useStateAd({ top: 0, left: 0, width: 280, openUp: false });
-  const ref    = React.useRef(null);
+  const [dropPos, setDropPos] = useStateAd({ top: 0, left: 0, width: 300, openUp: false });
+  const isMobile = () => window.innerWidth <= 600;
+  const ref     = React.useRef(null);
   const dropRef = React.useRef(null);
 
-  /* Parse value */
   const parsed = React.useMemo(() => {
     if (!value) return null;
     const d = new Date(value);
@@ -3971,10 +3966,10 @@ function DateTimePicker({ value, onChange }) {
   const [selHour,   setSelHour]   = useStateAd(parsed ? parsed.getHours()   : 8);
   const [selMin,    setSelMin]    = useStateAd(parsed ? parsed.getMinutes() : 0);
 
-  /* Close on outside click — check both trigger ref and portal dropdown ref */
   useEffectAd(() => {
     if (!open) return;
     const handler = (e) => {
+      if (isMobile()) return; // bottom sheet uses its own backdrop
       const inTrigger = ref.current?.contains(e.target);
       const inDrop    = dropRef.current?.contains(e.target);
       if (!inTrigger && !inDrop) setOpen(false);
@@ -3987,7 +3982,6 @@ function DateTimePicker({ value, onChange }) {
     };
   }, [open]);
 
-  /* Sync external value changes */
   useEffectAd(() => {
     if (!value) { setSelDate(""); return; }
     const d = new Date(value);
@@ -4001,12 +3995,9 @@ function DateTimePicker({ value, onChange }) {
 
   function confirm(date, h, m) {
     if (!date) return;
-    const hh = String(h).padStart(2,"0");
-    const mm = String(m).padStart(2,"0");
-    onChange(`${date}T${hh}:${mm}`);
+    onChange(`${date}T${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`);
     setOpen(false);
   }
-
   function prevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
     else setViewMonth(m => m - 1);
@@ -4016,7 +4007,6 @@ function DateTimePicker({ value, onChange }) {
     else setViewMonth(m => m + 1);
   }
 
-  /* Calendar grid */
   const firstDay  = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMon = new Date(viewYear, viewMonth + 1, 0).getDate();
   const cells = [];
@@ -4027,155 +4017,180 @@ function DateTimePicker({ value, onChange }) {
   const todayStr = now.toISOString().slice(0,10);
   const selYM    = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}`;
 
-  /* Display string */
   const displayVal = parsed
     ? parsed.toLocaleDateString("th-TH", { day:"numeric", month:"short", year:"numeric" }) +
       " " + String(parsed.getHours()).padStart(2,"0") + ":" + String(parsed.getMinutes()).padStart(2,"0")
     : "";
 
+  /* Shared calendar panel content (used in both dropdown and bottom sheet) */
+  function CalendarPanel() {
+    return (
+      <React.Fragment>
+        {/* Month nav */}
+        <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 8px", gap: 6 }}>
+          <button type="button" onClick={prevMonth} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <Icon name="chevLeft" size={14} />
+          </button>
+          <div style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 15 }}>
+            {TH_MONTHS[viewMonth]} {viewYear + 543}
+          </div>
+          <button type="button" onClick={nextMonth} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <Icon name="chevRight" size={14} />
+          </button>
+        </div>
+
+        {/* Day headers */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px", gap: 2 }}>
+          {TH_DAYS.map(d => (
+            <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", padding: "4px 0" }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Day cells */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px 10px", gap: 3 }}>
+          {cells.map((day, idx) => {
+            if (!day) return <div key={idx} />;
+            const ds = `${selYM}-${String(day).padStart(2,"0")}`;
+            const isToday = ds === todayStr;
+            const isSel   = ds === selDate;
+            return (
+              <button key={idx} type="button" onClick={() => setSelDate(ds)} style={{
+                height: 38, borderRadius: 8, border: "none", cursor: "pointer",
+                fontSize: 14, fontWeight: isSel || isToday ? 700 : 400,
+                background: isSel ? "var(--pea-purple-500)" : isToday ? "rgba(139,63,196,0.12)" : "transparent",
+                color: isSel ? "white" : isToday ? "var(--pea-purple-500)" : "var(--text)",
+                outline: isToday && !isSel ? "1px solid rgba(139,63,196,0.35)" : "none",
+                transition: "background 100ms",
+              }}>{day}</button>
+            );
+          })}
+        </div>
+
+        {/* Time selector */}
+        <div style={{ borderTop: "1px solid var(--line)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+          <Icon name="history" size={15} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-mute)", flexShrink: 0 }}>เวลา</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+            <button type="button" onClick={() => setSelHour(h => (h - 1 + 24) % 24)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <Icon name="chevLeft" size={12} />
+            </button>
+            <div style={{ width: 38, textAlign: "center", fontWeight: 700, fontSize: 17, fontFamily: "monospace" }}>
+              {String(selHour).padStart(2,"0")}
+            </div>
+            <button type="button" onClick={() => setSelHour(h => (h + 1) % 24)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <Icon name="chevRight" size={12} />
+            </button>
+          </div>
+          <span style={{ fontWeight: 700, fontSize: 17, color: "var(--ink-mute)" }}>:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <button type="button" onClick={() => setSelMin(m => (m - 5 + 60) % 60)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <Icon name="chevLeft" size={12} />
+            </button>
+            <div style={{ width: 38, textAlign: "center", fontWeight: 700, fontSize: 17, fontFamily: "monospace" }}>
+              {String(selMin).padStart(2,"0")}
+            </div>
+            <button type="button" onClick={() => setSelMin(m => (m + 5) % 60)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <Icon name="chevRight" size={12} />
+            </button>
+          </div>
+        </div>
+
+        {/* Confirm / Cancel buttons */}
+        <div style={{ padding: "0 14px 16px", display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => setOpen(false)} style={{ flex: 1, height: 42, borderRadius: 10, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", fontSize: 14, fontWeight: 600, color: "var(--ink-mute)" }}>
+            ยกเลิก
+          </button>
+          <button type="button" disabled={!selDate} onClick={() => confirm(selDate, selHour, selMin)} style={{
+            flex: 2, height: 42, borderRadius: 10, border: "none",
+            cursor: selDate ? "pointer" : "not-allowed", fontSize: 14, fontWeight: 700,
+            background: selDate ? "linear-gradient(135deg,#8b3fc4,#6b2c91)" : "var(--line)",
+            color: selDate ? "white" : "var(--ink-mute)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          }}>
+            <Icon name="check" size={15} /> ยืนยัน
+          </button>
+        </div>
+      </React.Fragment>
+    );
+  }
+
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => {
-          if (!open && ref.current) {
-            const r = ref.current.getBoundingClientRect();
-            const dropH = 420; // estimated dropdown height
-            const openUp = r.bottom + dropH > window.innerHeight - 16;
-            setDropPos({
-              top:    openUp ? r.top - dropH - 4 : r.bottom + 4,
-              left:   Math.max(8, Math.min(r.left, window.innerWidth - Math.max(r.width, 300) - 8)),
-              width:  Math.max(r.width, 300),
-              openUp,
-            });
-          }
-          setOpen(o => !o);
-        }}
-        style={{
-          width: "100%", display: "flex", alignItems: "center", gap: 10,
-          padding: "11px 14px", borderRadius: 12,
-          border: open ? "1px solid var(--pea-purple-500)" : "1px solid var(--line)",
-          background: "var(--bg)", cursor: "pointer", textAlign: "left",
-          boxShadow: open ? "0 0 0 3px rgba(139,63,196,0.15)" : "none",
-          transition: "all 150ms",
-        }}
-      >
+      {/* Trigger button */}
+      <button type="button" onClick={() => {
+        if (!open && ref.current && !isMobile()) {
+          const r = ref.current.getBoundingClientRect();
+          const dropH = 440;
+          const openUp = r.bottom + dropH > window.innerHeight - 16;
+          setDropPos({
+            top:   openUp ? r.top - dropH - 4 : r.bottom + 4,
+            left:  Math.max(8, Math.min(r.left, window.innerWidth - 320 - 8)),
+            width: Math.max(r.width, 320),
+          });
+        }
+        setOpen(o => !o);
+      }} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 10,
+        padding: "11px 14px", borderRadius: 12,
+        border: open ? "1px solid var(--pea-purple-500)" : "1px solid var(--line)",
+        background: "var(--bg)", cursor: "pointer", textAlign: "left",
+        boxShadow: open ? "0 0 0 3px rgba(139,63,196,0.15)" : "none",
+        transition: "all 150ms",
+      }}>
         <Icon name="history" size={16} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
         <span style={{ flex: 1, fontSize: 14, color: displayVal ? "var(--text)" : "var(--ink-mute)", fontFamily: "inherit" }}>
           {displayVal || "เลือกวันที่และเวลา…"}
         </span>
         {value && (
-          <span
-            onMouseDown={e => { e.stopPropagation(); onChange(""); setSelDate(""); }}
-            style={{ padding: "2px 4px", borderRadius: 6, cursor: "pointer", color: "var(--ink-mute)", display: "flex", alignItems: "center" }}
-          >
+          <span onMouseDown={e => { e.stopPropagation(); onChange(""); setSelDate(""); }}
+            style={{ padding: "2px 4px", borderRadius: 6, cursor: "pointer", color: "var(--ink-mute)", display: "flex", alignItems: "center" }}>
             <Icon name="close" size={13} />
           </span>
         )}
         <Icon name={open ? "chevUp" : "chevDown"} size={14} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
       </button>
 
-      {/* Dropdown — rendered via createPortal at document.body to escape overflow/transform parents */}
       {open && ReactDOM.createPortal(
-        <div ref={dropRef} className="fade-up" style={{
-          position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width,
-          background: "var(--surface)", borderRadius: 16, zIndex: 9999,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
-          overflow: "hidden", minWidth: 300,
-        }}>
-          {/* Month nav */}
-          <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 8px", gap: 6 }}>
-            <button type="button" onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-              <Icon name="chevLeft" size={14} />
-            </button>
-            <div style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 14 }}>
-              {TH_MONTHS[viewMonth]} {viewYear + 543}
-            </div>
-            <button type="button" onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-              <Icon name="chevRight" size={14} />
-            </button>
-          </div>
-
-          {/* Day headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px", gap: 2 }}>
-            {TH_DAYS.map(d => (
-              <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", padding: "4px 0" }}>{d}</div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px 10px", gap: 2 }}>
-            {cells.map((day, idx) => {
-              if (!day) return <div key={idx} />;
-              const ds = `${selYM}-${String(day).padStart(2,"0")}`;
-              const isToday = ds === todayStr;
-              const isSel   = ds === selDate;
-              return (
-                <button
-                  key={idx} type="button"
-                  onClick={() => setSelDate(ds)}
-                  style={{
-                    height: 34, borderRadius: 8, border: "none", cursor: "pointer",
-                    fontSize: 13, fontWeight: isSel || isToday ? 700 : 400,
-                    background: isSel ? "var(--pea-purple-500)" : isToday ? "rgba(139,63,196,0.12)" : "transparent",
-                    color: isSel ? "white" : isToday ? "var(--pea-purple-500)" : "var(--text)",
-                    outline: isToday && !isSel ? "1px solid rgba(139,63,196,0.35)" : "none",
-                    transition: "background 100ms",
-                  }}
-                >{day}</button>
-              );
-            })}
-          </div>
-
-          {/* Time selector */}
-          <div style={{ borderTop: "1px solid var(--line)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-            <Icon name="history" size={14} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-mute)", flexShrink: 0 }}>เวลา</span>
-            {/* Hour */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-              <button type="button" onClick={() => setSelHour(h => (h - 1 + 24) % 24)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <Icon name="chevLeft" size={12} />
-              </button>
-              <div style={{ width: 34, textAlign: "center", fontWeight: 700, fontSize: 15, fontFamily: "monospace" }}>
-                {String(selHour).padStart(2,"0")}
+        window.innerWidth <= 600 ? (
+          /* ── Mobile: bottom sheet ── */
+          <React.Fragment>
+            {/* Backdrop */}
+            <div onClick={() => setOpen(false)} style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9998,
+            }} />
+            {/* Sheet */}
+            <div ref={dropRef} style={{
+              position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999,
+              background: "var(--surface)",
+              borderRadius: "20px 20px 0 0",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.4)",
+              border: "1px solid var(--line)",
+              borderBottom: "none",
+              display: "flex", flexDirection: "column",
+              maxHeight: "90vh",
+            }}>
+              {/* Handle */}
+              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
+                <div style={{ width: 40, height: 4, borderRadius: 99, background: "var(--line)" }} />
               </div>
-              <button type="button" onClick={() => setSelHour(h => (h + 1) % 24)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <Icon name="chevRight" size={12} />
-              </button>
-            </div>
-            <span style={{ fontWeight: 700, color: "var(--ink-mute)" }}>:</span>
-            {/* Minute */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <button type="button" onClick={() => setSelMin(m => (m - 5 + 60) % 60)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <Icon name="chevLeft" size={12} />
-              </button>
-              <div style={{ width: 34, textAlign: "center", fontWeight: 700, fontSize: 15, fontFamily: "monospace" }}>
-                {String(selMin).padStart(2,"0")}
+              {/* Scrollable content */}
+              <div style={{ overflowY: "auto", flex: 1 }}>
+                <CalendarPanel />
               </div>
-              <button type="button" onClick={() => setSelMin(m => (m + 5) % 60)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                <Icon name="chevRight" size={12} />
-              </button>
             </div>
+          </React.Fragment>
+        ) : (
+          /* ── Desktop: positioned dropdown ── */
+          <div ref={dropRef} className="fade-up" style={{
+            position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width,
+            background: "var(--surface)", borderRadius: 16, zIndex: 9999,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
+            overflow: "hidden", minWidth: 320,
+            maxHeight: "calc(100vh - 40px)", overflowY: "auto",
+          }}>
+            <CalendarPanel />
           </div>
-
-          {/* Confirm */}
-          <div style={{ padding: "0 12px 14px", display: "flex", gap: 8 }}>
-            <button type="button" onClick={() => setOpen(false)} style={{ flex: 1, height: 38, borderRadius: 10, border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink-mute)" }}>
-              ยกเลิก
-            </button>
-            <button
-              type="button" disabled={!selDate}
-              onClick={() => confirm(selDate, selHour, selMin)}
-              style={{ flex: 2, height: 38, borderRadius: 10, border: "none", cursor: selDate ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700,
-                background: selDate ? "linear-gradient(135deg,#8b3fc4,#6b2c91)" : "var(--line)",
-                color: selDate ? "white" : "var(--ink-mute)",
-              }}
-            >
-              <Icon name="check" size={14} style={{ marginRight: 6 }} /> ยืนยัน
-            </button>
-          </div>
-        </div>,
+        ),
         document.body
       )}
     </div>

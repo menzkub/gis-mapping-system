@@ -1426,14 +1426,12 @@ function ChangelogView() {
       <style>{`
         .cl-hero  { padding: 24px 28px; }
         .cl-title { font-size: 22px; font-weight: 800; }
-        .cl-chips { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
-        .cl-chip  { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 14px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 8px; }
+        .cl-sgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 16px; }
         .cl-hash  { font-family: 'Courier New',monospace; font-variant-ligatures: none; font-feature-settings: "liga" 0; }
         @media (max-width: 520px) {
           .cl-hero  { padding: 16px; }
           .cl-title { font-size: 17px; }
-          .cl-chips { gap: 6px; margin-top: 14px; }
-          .cl-chip  { padding: 7px 11px; flex: 1 1 calc(50% - 6px); min-width: 0; }
+          .cl-sgrid { grid-template-columns: repeat(2,1fr) !important; gap: 8px; }
         }
       `}</style>
       <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 20px 48px" }}>
@@ -1468,18 +1466,21 @@ function ChangelogView() {
             </div>
           </div>
 
-          {/* Summary chips */}
-          <div className="cl-chips">
+          {/* Summary stat grid */}
+          <div className="cl-sgrid">
             {[
-              { label: "เวอร์ชัน", value: CHANGELOG.length, icon: "package" },
-              { label: "ฟีเจอร์ใหม่", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "new").length, 0), icon: "bolt" },
-              { label: "UX/UI", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "ux").length, 0), icon: "sun" },
-              { label: "แก้ไข", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "fix").length, 0), icon: "check" },
-            ].map(({ label, value, icon }) => (
-              <div key={label} className="cl-chip">
-                <Icon name={icon} size={13} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
-                <span style={{ fontSize: 20, fontWeight: 900, lineHeight: 1, marginLeft: "auto" }}>{value}</span>
+              { label: "เวอร์ชัน",   value: CHANGELOG.length, icon: "package", sub: "versions" },
+              { label: "ฟีเจอร์ใหม่", value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "new").length, 0), icon: "bolt", sub: "new features" },
+              { label: "UX/UI",      value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "ux").length, 0), icon: "sun", sub: "improvements" },
+              { label: "แก้ไข",     value: CHANGELOG.reduce((a, v) => a + v.items.filter(i => i.cat === "fix").length, 0), icon: "check", sub: "bug fixes" },
+            ].map(({ label, value, icon, sub }) => (
+              <div key={label} style={{ background: "rgba(255,255,255,0.08)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.12)", display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
+                  <Icon name={icon} size={12} style={{ color: "rgba(255,255,255,0.5)", marginTop: 1, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", lineHeight: 1.35 }}>{label}</span>
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{sub}</div>
               </div>
             ))}
           </div>
@@ -1714,15 +1715,12 @@ function UserGuide({ role }) {
         .ug-hero   { padding: 24px 28px; }
         .ug-sgrid  { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 16px; }
         .ug-title  { font-size: 22px; font-weight: 800; line-height: 1.2; }
-        .ug-btns   { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-        .ug-btns-l { display: flex; gap: 6px; }
+        .ug-btns   { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
         @media (max-width: 520px) {
           .ug-hero  { padding: 16px; }
           .ug-sgrid { grid-template-columns: repeat(2,1fr) !important; gap: 8px; }
           .ug-title { font-size: 17px; }
-          .ug-btns  { flex-direction: column; align-items: stretch; margin-top: 12px; }
-          .ug-btns-l { flex-direction: row; }
-          .ug-btns button { width: 100%; justify-content: center; }
+          .ug-btns  { margin-top: 12px; }
         }
       `}</style>
       <div ref={guideRef} style={{ maxWidth: 820, margin: "0 auto", padding: "24px 20px 40px" }}>
@@ -1754,35 +1752,31 @@ function UserGuide({ role }) {
           <div className="ug-sgrid">
             {[
               { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 13 : 5,  icon: "book",    sub: "sections" },
-              { label: ug("ขั้นตอน","Steps"), value: isAdmin ? 49 : 20, icon: "check",   sub: "steps" },
+              { label: ug("ขั้นตอน","Steps"),     value: isAdmin ? 49 : 20, icon: "check",   sub: "steps" },
               { label: ug("ฟีเจอร์","Features"),  value: isAdmin ? 13 : 9,  icon: "bolt",    sub: "features" },
-              { label: ug("เคล็ดลับ","Tips"), value: isAdmin ? 17 : 8,  icon: "warning", sub: "tips & notes" },
+              { label: ug("เคล็ดลับ","Tips"),     value: isAdmin ? 17 : 8,  icon: "warning", sub: "tips & notes" },
             ].map(({ label, value, icon, sub }) => (
-              <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <Icon name={icon} size={13} />
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>{label}</span>
+              <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.15)", display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
+                  <Icon name={icon} size={12} style={{ marginTop: 1, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", lineHeight: 1.35 }}>{label}</span>
                 </div>
                 <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{value}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>{sub}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>{sub}</div>
               </div>
             ))}
           </div>
 
-          {/* Expand/Collapse + Download buttons */}
+          {/* Toggle expand/collapse + Download — single row */}
           <div className="ug-btns">
-            <div className="ug-btns-l">
-              <button onClick={expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-                <Icon name="chevDown" size={13} /> {ug("ขยายทั้งหมด","Expand All")}
-              </button>
-              <button onClick={collapseAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "6px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
-                <Icon name="chevRight" size={13} /> {ug("ยุบทั้งหมด","Collapse All")}
-              </button>
-            </div>
+            <button onClick={expandSig.open ? collapseAll : expandAll} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white", borderRadius: 8, padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+              <Icon name={expandSig.open ? "chevRight" : "chevDown"} size={13} />
+              {expandSig.open ? ug("ยุบทั้งหมด","Collapse All") : ug("ขยายทั้งหมด","Expand All")}
+            </button>
             {isAdmin && (
-              <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)", opacity: pdfLoading ? 0.7 : 1 }}>
-                <Icon name="download" size={14} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} />
-                {pdfLoading ? ug("กำลังสร้าง PDF…", "Generating PDF…") : ug("ดาวน์โหลดคู่มือ PDF", "Download Guide PDF")}
+              <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 8, padding: "7px 14px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, opacity: pdfLoading ? 0.7 : 1 }}>
+                <Icon name="download" size={13} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} />
+                {pdfLoading ? ug("กำลังสร้าง…","Generating…") : ug("โหลด PDF","PDF")}
               </button>
             )}
           </div>
