@@ -3,6 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{margin:0;padding:0;background:#1b0926;}
+    #splash{
+      position:fixed;inset:0;z-index:99999;
+      background:radial-gradient(130% 110% at 10% 0%,#8b3fc4 0%,#321148 55%,#1b0926 100%);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+      transition:opacity .45s cubic-bezier(.4,0,.2,1);
+    }
+    #splash.out{opacity:0;pointer-events:none;}
+    #splash-logo{
+      width:88px;height:88px;border-radius:26px;
+      box-shadow:0 0 0 1px rgba(139,63,196,.35),0 24px 64px rgba(139,63,196,.55);
+      animation:sp-float 2.4s ease-in-out infinite;
+    }
+    #splash-title{
+      margin-top:22px;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.01em;
+      font-family:'IBM Plex Sans Thai',system-ui,sans-serif;
+      animation:sp-in .55s .1s both;
+    }
+    #splash-sub{
+      margin-top:5px;font-size:12px;color:rgba(255,255,255,.45);font-weight:500;
+      font-family:'IBM Plex Sans Thai',system-ui,sans-serif;letter-spacing:.04em;
+      animation:sp-in .55s .22s both;
+    }
+    #splash-ring{
+      margin-top:36px;width:38px;height:38px;
+      border:2.5px solid rgba(139,63,196,.22);
+      border-top-color:#a855f7;border-radius:50%;
+      animation:sp-spin .75s linear infinite,sp-in .4s .35s both;
+    }
+    @keyframes sp-float{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-9px) scale(1.04);}}
+    @keyframes sp-spin{to{transform:rotate(360deg);}}
+    @keyframes sp-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  </style>
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
   <title>ระบบสารสนเทศภูมิศาสตร์</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
@@ -54,6 +88,12 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" crossorigin="anonymous"></script>
 </head>
 <body>
+  <div id="splash" aria-hidden="true">
+    <img id="splash-logo" src="logo.svg" alt="" />
+    <div id="splash-title">PEA Meter &amp; TR</div>
+    <div id="splash-sub">ระบบสารสนเทศภูมิศาสตร์</div>
+    <div id="splash-ring"></div>
+  </div>
   <div id="root"></div>
 
   <!-- Supabase client + mappers (must load before JSX files) -->
