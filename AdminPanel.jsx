@@ -5101,19 +5101,19 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
             </div>
           </div>
         )}
-
-        {/* ── Document Downloads ── */}
-        <DocDownloadSection />
-
-        {/* ── Push Notification ── */}
-        <PushNotifySection
-          pushPermission={pushPermission}
-          subscribePush={subscribePush}
-          unsubscribePush={unsubscribePush}
-          currentUser={currentUser}
-          addAudit={addAudit}
-        />
       </div>
+
+      {/* ── Document Downloads ── */}
+      <DocDownloadSection />
+
+      {/* ── Push Notification ── */}
+      <PushNotifySection
+        pushPermission={pushPermission}
+        subscribePush={subscribePush}
+        unsubscribePush={unsubscribePush}
+        currentUser={currentUser}
+        addAudit={addAudit}
+      />
     </div>
   );
 }
