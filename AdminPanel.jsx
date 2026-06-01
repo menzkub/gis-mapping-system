@@ -3144,42 +3144,48 @@ function AdminMapTab({ data, currentUser, addAudit }) {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
+      <style>{`
+        .amc-bar  { display:flex; align-items:center; gap:6px; padding:6px 12px; background:var(--surface); border-bottom:1px solid var(--line); flex-shrink:0; }
+        .amc-pill { display:flex; border-radius:22px; overflow:hidden; border:1px solid var(--line); background:var(--surface-2); flex-shrink:0; }
+        .amc-pill-btn { display:flex; align-items:center; gap:5px; padding:5px 12px; border:none; cursor:pointer; font-size:12px; font-weight:800; transition:all 140ms; }
+        .amc-pill-btn-m { border-right:1px solid var(--line); }
+        .amc-badge { border-radius:5px; padding:1px 4px; font-weight:900; font-size:10px; color:white; }
+        .amc-corr-btn { display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:700; flex-shrink:0; cursor:pointer; }
+        @media (min-width: 641px) {
+          .amc-bar       { padding:11px 20px; gap:12px; }
+          .amc-pill-btn  { padding:8px 18px; font-size:14px; }
+          .amc-badge     { font-size:12px; padding:2px 8px; }
+          .amc-corr-btn  { padding:8px 16px; font-size:13px; }
+        }
+      `}</style>
 
-      {/* ── Controls bar (compact single row) ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "var(--surface)", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+      {/* ── Controls bar (responsive single row) ── */}
+      <div className="amc-bar">
 
         {/* Segmented M + TR layer toggles */}
-        <div style={{ display: "flex", borderRadius: 22, overflow: "hidden", border: "1px solid var(--line)", background: "var(--surface-2)", flexShrink: 0 }}>
-          <button onClick={() => setShowM(s => !s)} style={{
-            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
-            border: "none", borderRight: "1px solid var(--line)", cursor: "pointer",
+        <div className="amc-pill">
+          <button onClick={() => setShowM(s => !s)} className="amc-pill-btn amc-pill-btn-m" style={{
             background: showM ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
-            color: showM ? "white" : "var(--ink-mute)", fontSize: 12, fontWeight: 800,
-            transition: "all 140ms",
+            color: showM ? "white" : "var(--ink-mute)",
           }}>
-            <span style={{ background: showM ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#6b2c91,#8b3fc4)", color: "white", borderRadius: 5, padding: "1px 5px", fontWeight: 900, fontSize: 10 }}>M</span>
+            <span className="amc-badge" style={{ background: showM ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#6b2c91,#8b3fc4)" }}>M</span>
             <span>{fmtStat(totalM || meters.length)}</span>
           </button>
-          <button onClick={() => setShowT(s => !s)} style={{
-            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
-            border: "none", cursor: "pointer",
+          <button onClick={() => setShowT(s => !s)} className="amc-pill-btn" style={{
             background: showT ? "linear-gradient(135deg,#ea580c,#f47b20)" : "transparent",
-            color: showT ? "white" : "var(--ink-mute)", fontSize: 12, fontWeight: 800,
-            transition: "all 140ms",
+            color: showT ? "white" : "var(--ink-mute)",
           }}>
-            <span style={{ background: showT ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#ea580c,#f47b20)", color: "white", borderRadius: 5, padding: "1px 4px", fontWeight: 900, fontSize: 10 }}>▲</span>
+            <span className="amc-badge" style={{ background: showT ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#ea580c,#f47b20)" }}>▲</span>
             <span>{fmtStat(totalT || trs.length)}</span>
           </button>
         </div>
 
-        {/* Correction review button (compact — same row) */}
+        {/* Correction review button (same row) */}
         {loadState === "done" && (
-          <button onClick={() => setShowReview(s => !s)} style={{
-            display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 20,
-            fontSize: 12, fontWeight: 700, flexShrink: 0,
+          <button onClick={() => setShowReview(s => !s)} className="amc-corr-btn" style={{
             border: "1px solid " + (showReview ? "#ea580c" : "var(--line)"),
             background: showReview ? "rgba(234,88,12,0.1)" : "var(--surface-2)",
-            color: showReview ? "#ea580c" : "var(--ink-mute)", cursor: "pointer",
+            color: showReview ? "#ea580c" : "var(--ink-mute)",
           }}>
             📋
             {corrections.filter(c => c.status === "pending").length > 0 ? (
@@ -3187,7 +3193,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
                 {corrections.filter(c => c.status === "pending").length}
               </span>
             ) : (
-              <span style={{ fontSize: 11 }}>{t("corrReviewBtn")}</span>
+              <span>{t("corrReviewBtn")}</span>
             )}
           </button>
         )}
@@ -3247,22 +3253,6 @@ function AdminMapTab({ data, currentUser, addAudit }) {
       {/* ── Map + side panel wrapper ── */}
       <div style={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
 
-        {/* Floating: location button (bottom-right) */}
-        {loadState !== "loading" && (
-          <button onClick={flyToLocation} disabled={locating} style={{
-            position: "absolute", bottom: 22, right: 14, zIndex: 500,
-            display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 24,
-            background: "var(--surface)", border: "1px solid var(--line)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.28)",
-            color: locating ? "#3b82f6" : "var(--ink)",
-            fontSize: 13, fontWeight: 700, cursor: locating ? "default" : "pointer",
-            backdropFilter: "blur(8px)", transition: "all 140ms",
-          }}>
-            <Icon name="navigation" size={15} style={{ color: locating ? "#3b82f6" : "var(--pea-purple-500)", animation: locating ? "pea-spin 1s linear infinite" : "none" }} />
-            {locating ? "กำลังค้นหา…" : "ตำแหน่งฉัน"}
-          </button>
-        )}
-
         {/* Floating: viewport loading indicator (top-center) */}
         {viewportLoading && (
           <div style={{
@@ -3301,6 +3291,22 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           />
         )}
       </div>
+
+      {/* Floating: location button — outside overflow:hidden so it's never clipped */}
+      {loadState !== "loading" && (
+        <button onClick={flyToLocation} disabled={locating} style={{
+          position: "absolute", bottom: 22, right: 18, zIndex: 900,
+          display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 24,
+          background: "var(--surface)", border: "1px solid var(--line)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.28)",
+          color: locating ? "#3b82f6" : "var(--ink)",
+          fontSize: 13, fontWeight: 700, cursor: locating ? "default" : "pointer",
+          backdropFilter: "blur(8px)", transition: "all 140ms",
+        }}>
+          <Icon name="navigation" size={15} style={{ color: locating ? "#3b82f6" : "var(--pea-purple-500)", animation: locating ? "pea-spin 1s linear infinite" : "none" }} />
+          {locating ? "กำลังค้นหา…" : "ตำแหน่งฉัน"}
+        </button>
+      )}
 
       {/* Correction modal */}
       {corrTarget && (
@@ -4542,13 +4548,19 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
   const toggleExport = async () => {
     setExportLoading(true);
     const newVal = !allowExport;
-    const { error, count } = await _supabase.from("settings")
+    const { data: updated, error } = await _supabase.from("settings")
       .update({ value: String(newVal), updated_at: new Date().toISOString(), updated_by: currentUser.username })
       .eq("key", "allow_export")
-      .select("key", { count: "exact", head: true });
+      .select("key");
     setExportLoading(false);
     if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
-    if (count === 0) { toast?.("ไม่พบ row 'allow_export' ใน settings — กรุณาเพิ่มด้วย SQL ก่อน", "error"); return; }
+    if (!updated || updated.length === 0) {
+      toast?.(
+        "ยังไม่มีแถว allow_export ในตาราง settings\nรัน SQL ใน Supabase:\nINSERT INTO settings (key,value) VALUES ('allow_export','true');",
+        "error"
+      );
+      return;
+    }
     setAllowExport(newVal);
     addAudit({
       user:   currentUser.username,

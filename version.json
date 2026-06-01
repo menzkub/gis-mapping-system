@@ -1,7 +1,7 @@
 {
-  "commit": "fix-modal-position-mobile",
-  "shortCommit": "e92c901",
-  "message": "fix: modal position:fixed broken on mobile by ancestor transform",
-  "date": "2026-06-01T19:00:00+00:00",
+  "commit": "fix-map-controls-sidebar-location-export",
+  "shortCommit": "pending",
+  "message": "fix: controls bar desktop size, location btn visible, sidebar scroll, export row detect",
+  "date": "2026-06-01T20:00:00+00:00",
   "branch": "main"
 }
