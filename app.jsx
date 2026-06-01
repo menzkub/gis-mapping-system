@@ -2177,6 +2177,40 @@ function UserGuide({ role }) {
             </UGSection>
           </>
         )}
+
+        {/* ─── README / Project Docs ─── */}
+        <UGSection icon="book" title={ug("เอกสารโครงการ (README)","Project Documentation (README)")} expandSignal={expandSig}>
+          <div style={{ marginTop: 12 }}>
+            <UGNote>{ug("เอกสารครบถ้วนรวมถึง Architecture, การติดตั้ง, ฐานข้อมูล และ Tech Stack อยู่ใน README.md บน GitHub","Full documentation including Architecture, Setup, Database, and Tech Stack is in README.md on GitHub")}</UGNote>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+              {[
+                { icon: "📋", title: ug("ภาพรวมระบบ","System Overview"),   desc: ug("Architecture, Tech Stack, โครงสร้างไฟล์","Architecture, Tech Stack, File Structure") },
+                { icon: "🗄️", title: ug("ฐานข้อมูล","Database"),            desc: ug("Tables, RLS, RPC Functions","Tables, RLS, RPC Functions") },
+                { icon: "🚀", title: ug("การติดตั้ง","Setup Guide"),         desc: ug("Supabase setup, config.js, Admin คนแรก","Supabase setup, config.js, First Admin") },
+                { icon: "🔒", title: ug("ความปลอดภัย","Security"),          desc: ug("Anon Key + RLS, VAPID, Service Role Key","Anon Key + RLS, VAPID, Service Role Key") },
+              ].map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "var(--soft)", border: "1px solid var(--soft-border)" }}>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{item.title}</div>
+                    <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 2 }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              <a href="https://github.com/menzkub/gis-mapping-system/blob/main/README.md" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "rgba(139,63,196,0.12)", border: "1px solid rgba(139,63,196,0.3)", color: "var(--pea-purple-500)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                <Icon name="book" size={14} /> {ug("อ่าน README.md","Read README.md")}
+              </a>
+              <a href="https://github.com/menzkub/gis-mapping-system" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid var(--line)", color: "var(--ink-mute)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                <Icon name="code" size={14} /> GitHub Repository
+              </a>
+            </div>
+          </div>
+        </UGSection>
+
       </div>
     </div>
   );
