@@ -166,8 +166,8 @@ function AdminDashboard({ data }) {
         @media (max-width: 640px) {
           .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
           .db-mid-grid  { grid-template-columns: 1fr; }
-          .db-donut-wrap { flex-direction: column; align-items: center; gap: 16px; }
-          .db-donut-svg  { width: 200px; height: 200px; }
+          .db-donut-wrap { flex-direction: row; align-items: center; gap: 16px; }
+          .db-donut-svg  { width: 130px; height: 130px; flex-shrink: 0; }
         }
       `}</style>
 
@@ -3358,8 +3358,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
       try {
         const [{ data: mRows }, { data: tRows }] = await Promise.all([
           _supabase.from("meters")
-            .select("objectid,tag,peano,latitude,longitude,route,feederid")
-            .or(`peano.ilike.%${q}%,tag.ilike.%${q}%`)
+            .select("objectid,tag,peano,accountnum,latitude,longitude,route,feederid")
+            .or(`peano.ilike.%${q}%,tag.ilike.%${q}%,accountnum.ilike.%${q}%`)
             .limit(6),
           _supabase.from("transformers")
             .select("objectid,tag,peano_tr,latitude,longitude,location")
@@ -3369,8 +3369,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         const results = [];
         (mRows || []).forEach(r => results.push({
           type: "M",
-          p: { OBJECTID: r.objectid, TAG: r.tag, PEANO: r.peano, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, ROUTE: r.route, FEEDERID: r.feederid },
-          label: r.peano || r.tag, sub: r.tag !== r.peano ? r.tag : (r.route || ""),
+          p: { OBJECTID: r.objectid, TAG: r.tag, PEANO: r.peano || r.accountnum, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, ROUTE: r.route, FEEDERID: r.feederid },
+          label: r.peano || r.accountnum || r.tag, sub: r.tag || (r.route || ""),
         }));
         (tRows || []).forEach(r => results.push({
           type: "T",

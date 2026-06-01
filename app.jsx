@@ -3017,6 +3017,17 @@ function App() {
       const users     = (profilesRes.data || []).map(r => toProfile({ ...r, email: "" }));
       const feeders   = (feedersRes.data  || []).map(r => r.feeder).filter(Boolean);
       const dashStats = statsRes.data || {};
+      // Fallback: if RPC doesn't return pea_kva (old function), compute from direct query
+      if (dashStats.pea_kva === undefined || dashStats.pea_kva === null) {
+        try {
+          const { data: trKva } = await _supabase
+            .from("transformers").select("kva,owner_tr").not("kva", "is", null);
+          if (trKva) {
+            dashStats.pea_kva  = trKva.filter(r => r.owner_tr === "PEA").reduce((s,r) => s + (+r.kva||0), 0);
+            dashStats.cust_kva = trKva.filter(r => r.owner_tr === "Customer").reduce((s,r) => s + (+r.kva||0), 0);
+          }
+        } catch(_) {}
+      }
 
       let auditLog = (auditRes.data || []).map(toAuditEntry);
       if (logLogin) {
@@ -3251,11 +3262,22 @@ function App() {
         _supabase.from("audit_log").select("*").order("at", { ascending: false }).limit(500),
         _supabase.rpc("get_dashboard_stats"),
       ]);
+      const freshStats = statsRes.data?.[0] || statsRes.data || {};
+      if (freshStats.pea_kva === undefined || freshStats.pea_kva === null) {
+        try {
+          const { data: trKva } = await _supabase
+            .from("transformers").select("kva,owner_tr").not("kva", "is", null);
+          if (trKva) {
+            freshStats.pea_kva  = trKva.filter(r => r.owner_tr === "PEA").reduce((s,r) => s + (+r.kva||0), 0);
+            freshStats.cust_kva = trKva.filter(r => r.owner_tr === "Customer").reduce((s,r) => s + (+r.kva||0), 0);
+          }
+        } catch(_) {}
+      }
       setData(d => ({
         ...d,
         users:    (profilesRes.data || []).map(toProfile),
         auditLog: (auditRes.data   || []).map(toAuditEntry),
-        dashStats: statsRes.data?.[0] || d.dashStats,
+        dashStats: Object.keys(freshStats).length ? freshStats : d.dashStats,
       }));
       setRefreshMsg("done");
       setTimeout(() => setRefreshMsg(null), 2500);
