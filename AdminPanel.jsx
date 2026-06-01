@@ -2912,6 +2912,30 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
   const [newLng, setNewLng] = useStateAd(target.p.LONGITUDE);
   const [note, setNote] = useStateAd("");
   const [submitting, setSubmitting] = useStateAd(false);
+  const [locating, setLocating] = useStateAd(false);
+  const [gpsError, setGpsError] = useStateAd("");
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setGpsError("อุปกรณ์นี้ไม่รองรับ GPS"); return; }
+    setLocating(true);
+    setGpsError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = +pos.coords.latitude.toFixed(6);
+        const lng = +pos.coords.longitude.toFixed(6);
+        setNewLat(lat);
+        setNewLng(lng);
+        if (newMarkerRef.current) newMarkerRef.current.setLatLng([lat, lng]);
+        if (miniMapInst.current) miniMapInst.current.setView([lat, lng], 18);
+        setLocating(false);
+      },
+      (err) => {
+        setGpsError(err.code === 1 ? "กรุณาอนุญาตการเข้าถึงตำแหน่ง" : "ไม่สามารถรับพิกัดได้");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   useEffectAd(() => {
     if (!miniMapRef.current || miniMapInst.current) return;
@@ -2993,6 +3017,19 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
                 </div>
               </div>
               <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 4 }}>* {t("corrDragHint")}</div>
+              {/* GPS button */}
+              <button onClick={useMyLocation} disabled={locating} style={{
+                marginTop: 8, width: "100%", padding: "7px 0", borderRadius: 10,
+                border: "1px solid #2563eb44", background: locating ? "rgba(37,99,235,0.06)" : "rgba(37,99,235,0.09)",
+                color: "#2563eb", fontSize: 12, fontWeight: 700, cursor: locating ? "wait" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}>
+                <span style={{ fontSize: 14, animation: locating ? "pea-spin 1s linear infinite" : "none", display: "inline-block" }}>
+                  {locating ? "⏳" : "📡"}
+                </span>
+                {locating ? "กำลังรับพิกัด GPS…" : "ใช้ตำแหน่งปัจจุบัน (GPS)"}
+              </button>
+              {gpsError && <div style={{ fontSize: 10, color: "#ef4444", marginTop: 4 }}>{gpsError}</div>}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{t("corrNote")}</div>
