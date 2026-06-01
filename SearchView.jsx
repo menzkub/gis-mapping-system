@@ -241,13 +241,13 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 <Icon name="download" size={15} /> {t("exportLabel")}
               </button>
             ) : (
-              <div className="search-export-btn" title="Admin ปิดการ Export ข้อมูล" style={{
+              <button className="search-export-btn" onClick={() => toast?.(t("exportDisabled"), "error")} style={{
                 height: 54, borderRadius: 16, flexShrink: 0, display: "flex", alignItems: "center",
                 gap: 6, padding: "0 16px", background: "var(--soft)", border: "1px solid var(--soft-border)",
-                color: "var(--ink-mute)", fontSize: 13, fontWeight: 600, cursor: "not-allowed", userSelect: "none",
+                color: "var(--ink-mute)", fontSize: 13, fontWeight: 600, cursor: "pointer", userSelect: "none",
               }}>
                 <Icon name="lock" size={15} /> {t("exportLabel")}
-              </div>
+              </button>
             )}
           </div>
         </div>
