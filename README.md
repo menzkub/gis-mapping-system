@@ -1,297 +1,267 @@
-# ระบบสารสนเทศภูมิศาสตร์ — PEA Meter & Transformer
+<div align="center">
 
-ระบบค้นหาและจัดการข้อมูล **มิเตอร์ไฟฟ้า** และ **หม้อแปลงไฟฟ้า** สำหรับการไฟฟ้าส่วนภูมิภาค  
-พร้อมแผนที่ Real-time, ระบบผู้ใช้งานหลายระดับ, Audit Log และ Admin Panel ครบวงจร
+<img src="logo.svg" width="80" alt="PEA GIS Logo" />
 
-**Live:** https://menzkub.github.io/gis-mapping-system/
+# PEA Meter & Transformer — GIS Mapping System
 
----
+ระบบสารสนเทศภูมิศาสตร์สำหรับการไฟฟ้าส่วนภูมิภาค  
+จัดการข้อมูล **มิเตอร์ไฟฟ้า** และ **หม้อแปลงไฟฟ้า** พร้อมแผนที่ Real-time
 
-## สารบัญ
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-menzkub.github.io-8b3fc4?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
+[![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=for-the-badge&logo=github)](https://github.com/menzkub/gis-mapping-system)
+[![Supabase](https://img.shields.io/badge/Backend-Supabase-3ecf8e?style=for-the-badge&logo=supabase)](https://supabase.com)
 
-- [ภาพรวมระบบ](#ภาพรวมระบบ)
-- [ฟีเจอร์หลัก](#ฟีเจอร์หลัก)
-- [Tech Stack](#tech-stack)
-- [โครงสร้างไฟล์](#โครงสร้างไฟล์)
-- [การติดตั้ง](#การติดตั้ง)
-- [ฐานข้อมูล Supabase](#ฐานข้อมูล-supabase)
-- [การ Deploy](#การ-deploy)
+</div>
 
 ---
 
 ## ภาพรวมระบบ
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  ผู้ใช้ทั่วไป (user)            Admin                │
-│  ──────────────────────         ──────────────────── │
-│  ค้นหา Meter / Transformer      จัดการผู้ใช้งาน     │
-│  ดูแผนที่ + นำทาง GPS           เพิ่ม / แก้ไข / ลบ │
-│  Export ผลการค้นหา (CSV)        Import CSV           │
-│  โปรไฟล์ + เปลี่ยนรหัสผ่าน     Audit Log            │
-│  ประวัติการใช้งาน               ตั้งค่า Maintenance  │
-└──────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│               GIS Meter & Transformer System                │
+├────────────────────────┬────────────────────────────────────┤
+│   👤 ผู้ใช้ทั่วไป       │   🛡️ Admin                         │
+│  ─────────────────     │  ──────────────────────────────    │
+│  ค้นหา Meter / TR      │  Dashboard + Donut + KVA Stats     │
+│  ดูแผนที่ + นำทาง GPS  │  แผนที่ภาพรวม (55,000+ จุด)       │
+│  Export CSV            │  จัดการผู้ใช้ / Meter / TR         │
+│  แจ้งแก้ไขพิกัด        │  Import CSV, Audit Log             │
+│  รับ Push Notification │  อนุมัติคำขอแก้ไขพิกัด             │
+│  โปรไฟล์ + 2FA         │  Maintenance Mode, Dev Guide       │
+└────────────────────────┴────────────────────────────────────┘
 ```
 
 ---
 
-## ฟีเจอร์หลัก
+## ✨ ฟีเจอร์หลัก
 
-### 🔐 Authentication
+<details>
+<summary><b>🔐 Authentication & Security</b></summary>
 
 | ฟีเจอร์ | รายละเอียด |
 |--------|-----------|
-| สมัครสมาชิก | Email + Password พร้อม password strength meter |
+| สมัครสมาชิก | Email + Password พร้อม Password Strength Meter |
 | เข้าสู่ระบบ | Email + Password พร้อม Remember me |
-| ลืมรหัสผ่าน | ส่ง reset link ทาง Email (Supabase Auth) |
-| 2FA / MFA | TOTP (Google Authenticator, Authy) |
+| ลืมรหัสผ่าน | Reset link ทาง Email (Supabase Auth) |
+| **2FA / MFA** | TOTP — Google Authenticator, Authy + รหัสสำรอง 12 หลัก |
+| หน้า 2FA | Dark theme เสมอ, ตัวเลข OTP ขนาดใหญ่ |
 | Auto-logout | ออกอัตโนมัติหลังไม่ใช้งาน 30 นาที |
 | สถานะบัญชี | `pending` → `active` → `banned` |
 
-**Role:**
-- `user` — ค้นหา ดูแผนที่ จัดการโปรไฟล์ตัวเอง
-- `admin` — ทุกอย่าง + จัดการข้อมูล + ตั้งค่าระบบ
+**Role:** `user` — ค้นหา + แผนที่ | `admin` — จัดการข้อมูล + ตั้งค่าระบบ
 
----
+</details>
 
-### 🔍 ค้นหาข้อมูล
+<details>
+<summary><b>🔍 ค้นหาข้อมูล</b></summary>
 
-**PEA มิเตอร์** — ค้นหาจาก TAG, PEANO, ACCOUNTNUM, Feeder ID  
-ตัวกรอง: Feeder, เจ้าของ (PEA / Customer), CODE
+- **PEA มิเตอร์** — ค้นหาจาก TAG, PEANO, AccountNum, Feeder ID  
+  ตัวกรอง: Feeder, เจ้าของ (PEA / Customer), CODE
+- **PEA หม้อแปลง** — ค้นหาจาก TAG, PEANO, สถานที่, Feeder  
+  ตัวกรอง: Feeder, เจ้าของ, ระบบเฟส, แรงดัน (22/33 kV), kVA range
+- Server-side search, debounce 450ms, แสดงสูงสุด 500 รายการ
+- **Export CSV** พร้อม Dialog ยืนยันก่อนดาวน์โหลด
 
-**PEA หม้อแปลง** — ค้นหาจาก TAG, PEANO, สถานที่, Feeder  
-ตัวกรอง: Feeder, เจ้าของ, ระบบเฟส, แรงดัน (22/33 kV), kVA ต่ำสุด-สูงสุด
+</details>
 
-- แสดงสูงสุด 500 รายการต่อครั้ง (server-side, debounce 450ms)
-- บันทึก Audit Log ทุกครั้งที่ค้นหา
-- **Export CSV** — แสดง Dialog พร้อมจำนวนรายการและชื่อไฟล์ก่อนดาวน์โหลด
+<details>
+<summary><b>🗺️ แผนที่ (Leaflet.js)</b></summary>
 
----
-
-### 🗺️ แผนที่ (Leaflet.js)
-
+**แผนที่ค้นหา (SearchView)**
 | ฟีเจอร์ | รายละเอียด |
 |--------|-----------|
-| Tile Layers | Street, Satellite (toggle บน topbar) |
-| Cluster | จัดกลุ่ม markers อัตโนมัติ (เปิด/ปิดได้) |
-| Heatmap | แสดงความหนาแน่น (เปิด/ปิดได้) |
-| Split View | ตาราง + แผนที่ side-by-side |
-| คัดลอกพิกัด | Copy lat/lng ด้วยคลิกเดียว |
+| Tile Layers | Street / Satellite |
+| Cluster | จัดกลุ่ม markers อัตโนมัติ |
+| Heatmap | แสดงความหนาแน่น |
+| Split View | ตาราง + แผนที่ side-by-side เต็มความสูง |
+| แจ้งแก้ไขพิกัด | ส่งคำขอแก้ไข GPS พร้อมหมายเหตุ |
 
-**นำทาง GPS:**
-- รับตำแหน่งปัจจุบันจาก device
-- คำนวณระยะทาง + เวลาโดยประมาณ (รถยนต์)
+**แผนที่ภาพรวม Admin**
+| ฟีเจอร์ | รายละเอียด |
+|--------|-----------|
+| Meter + TR | แสดงพร้อมกัน toggle แยกได้ |
+| Cluster | **คลิก zoom เข้ากลุ่ม** แล้วคลิก marker รายตัวได้ |
+| Viewport loading | zoom ≥ 14 โหลดเฉพาะพื้นที่ที่มองเห็น |
+| GPS Pin | ปุ่ม style Google Maps + fly-to + popup |
+| ค้นหา | PEANO / TAG / AccountNum (คีย์บอร์ดตัวเลข) |
+| คำขอแก้ไข | ดู/อนุมัติ/ปฏิเสธ side panel |
+
+**นำทาง GPS**
+- คำนวณระยะทาง + เวลา (รถยนต์ **40 กม./ชม.**)
 - เปิด Google Maps / Apple Maps พร้อม directions
 
----
+</details>
 
-### 👤 โปรไฟล์ผู้ใช้งาน
+<details>
+<summary><b>📊 Dashboard (Admin)</b></summary>
 
-| แท็บ | เนื้อหา |
-|-----|--------|
-| ข้อมูล | ชื่อ, ชื่อผู้ใช้, Email, บทบาท, วันที่สมัคร |
-| รหัสผ่าน | เปลี่ยนรหัสผ่าน + strength meter, เปิด/ปิด 2FA |
-| การใช้งาน | ประวัติ login/logout, เปลี่ยนรหัส, 2FA |
-| การค้นหา | ประวัติค้นหา Meter/TR พร้อม timestamp และ device info |
+- **Stat Cards** — มิเตอร์, หม้อแปลง, KVA รวม (แยก PEA / Customer)
+  - `FitText` — ตัวเลขปรับขนาดอัตโนมัติ ไม่ว่าจะมีกี่หลัก
+- **Donut chart** — สัดส่วน PEA / Customer Meter + TR
+  - มือถือ: donut ซ้าย + legend ขวา (balanced layout)
+  - iPad/Desktop: side-by-side พร้อม progress bar
+- **Feeder chart** — Top Feeders (มิเตอร์ต่อ Feeder)
+- **DB Usage card** — ขนาดข้อมูลแต่ละตาราง
 
----
+</details>
 
-### ⚙️ Admin Panel
+<details>
+<summary><b>🔔 Web Push Notification</b></summary>
 
-#### Dashboard
-- **Stat Cards** — จำนวนมิเตอร์, หม้อแปลง, กำลังรวม (kVA), ผู้ใช้งาน
-- **Bar chart** — Top 8 Feeders (จำนวนมิเตอร์ต่อ Feeder)
-- **Donut chart** — สัดส่วน PEA / Customer (Meter + TR)
-- **กิจกรรมล่าสุด** — Audit log 5 รายการล่าสุด
+- เปิดรับ notification ได้ใน Settings
+- Admin broadcast ได้จาก Admin Panel
+- รองรับ background push ผ่าน Service Worker (PWA)
+- ใช้ VAPID key + Supabase Edge Function (Deno)
 
-#### จัดการผู้ใช้งาน
-- อนุมัติ / ระงับ / ปลดระงับบัญชี
-- เปลี่ยน Role (user ↔ admin)
-- บังคับเปิด/ปิด 2FA รายบุคคล
+</details>
 
-#### จัดการ Meter / Transformer
-- ค้นหา + รายการ (100 รายการแรก)
-- เพิ่ม / แก้ไข / ลบ พร้อม Confirm dialog
-- **Export CSV** — แสดง Dialog พร้อมจำนวนรายการก่อนดาวน์โหลด
+<details>
+<summary><b>⚙️ Admin Tools</b></summary>
 
-#### นำเข้าข้อมูล (Import CSV)
-- รองรับ CSV UTF-8, Upsert ตาม OBJECTID
-- Batch 500 rows ต่อรอบ, Preview 10 แถวแรกก่อน Confirm
+| เครื่องมือ | รายละเอียด |
+|-----------|-----------|
+| จัดการผู้ใช้ | อนุมัติ / ระงับ / เปลี่ยน Role / บังคับ 2FA |
+| Import CSV | Batch 500 rows, Preview 10 แถวก่อน Confirm |
+| Audit Log | ทุก action + กรอง + Export CSV |
+| Maintenance Mode | เปิด/ปิด + ข้อความ + วันที่กลับมา |
+| Changelog ⚡ | Timeline ทุก version + Deploy Status dot |
+| Dev Guide | เอกสาร Architecture + Code examples + Export PDF |
 
-```
-Meter:  OBJECTID, TAG, CODE, ROUTE, ACCOUNTNUM, PEANO, FEEDERID, OWNER, INSTALLATI, LATITUDE, LONGITUDE
-TR:     OBJECTID, TAG, PHASE, VOLTAGE, PEANO_TR, INSTALL_PHASE, KVA, OWNER_TR, LOCATION, FEEDER1, LATITUDE, LONGITUDE, PEA_METER
-```
-
-#### Audit Log
-- บันทึกทุก action: login, logout, ค้นหา, แก้ไข, ลบ, นำเข้า, เปลี่ยนรหัส, 2FA
-- กรองตาม user, action, ช่วงวันที่
-- **Export CSV** — แสดง Dialog พร้อมจำนวน log ก่อนดาวน์โหลด
-
-#### ตั้งค่าระบบ
-- **Maintenance Mode** — เปิด/ปิดระบบด้วย toggle (Admin เข้าได้ปกติ)
-- **ข้อความแจ้งผู้ใช้** — แก้ไขข้อความบนหน้าปิดปรับปรุง
-- **วันเวลาที่กลับมา** — datetime picker บันทึกลง Supabase ทันที
+</details>
 
 ---
 
-### 🌗 UI / UX
+## 🛠️ Tech Stack
 
-- **Dark / Light Mode** — สลับโหมดได้จากปุ่มบน topbar (จำค่าไว้ใน localStorage)
-- **2 ภาษา** — ไทย / English (สลับได้จาก topbar)
-- **Responsive** — รองรับมือถือทุกจุด (topbar, admin tabs, dashboard, profile)
-- **Export Dialog** — ทุกปุ่ม Export แสดง Dialog พร้อมจำนวนรายการและชื่อไฟล์ก่อนดาวน์โหลด
-- **Toast notifications** — แจ้งผลทุก action
-- **Confirm dialog** — ป้องกันการลบข้อมูลโดยไม่ตั้งใจ
+| Layer | Technology | หมายเหตุ |
+|-------|-----------|---------|
+| **Frontend** | React 18 + Babel Standalone | ไม่มี build step |
+| **Database** | Supabase (PostgreSQL + RLS) | Free tier |
+| **Auth** | Supabase Auth | Email/Password + TOTP MFA |
+| **Maps** | Leaflet.js 1.9.4 | CDN |
+| **Push** | Web Push API + VAPID | Supabase Edge Function (Deno) |
+| **Fonts** | IBM Plex Sans Thai, IBM Plex Mono | Google Fonts |
+| **Hosting** | GitHub Pages | Static, ไม่มี server |
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + Babel Standalone (ไม่มี build step) |
-| Database | Supabase (PostgreSQL + RLS) |
-| Auth | Supabase Auth (Email/Password + TOTP MFA) |
-| Maps | Leaflet.js 1.9.4 |
-| Fonts | IBM Plex Sans Thai, IBM Plex Mono |
-| Hosting | GitHub Pages |
-
-> ไม่มี bundler ไม่มี node_modules — แก้ไขไฟล์แล้ว `git push` ได้เลย
+> ⚡ ไม่มี bundler · ไม่มี `node_modules` · แก้ไขไฟล์แล้ว `git push` ได้เลย
 
 ---
 
-## โครงสร้างไฟล์
+## 📁 โครงสร้างไฟล์
 
 ```
 gis-mapping-system/
-├── index.html          ← entry point, โหลด CDN และ script ทั้งหมด
-├── config.js           ← Supabase URL + anon key + row mappers
-├── styles.css          ← CSS global (theme variables, dark/light mode, components)
-├── lang.jsx            ← i18n: ข้อความภาษาไทย / อังกฤษ
-├── components.jsx      ← shared UI: Icon, StatCard, Modal, Toast, ConfirmDialog
-├── MapView.jsx         ← Leaflet map, markers, heatmap, cluster, GPS
-├── AuthScreen.jsx      ← Login, Signup, Forgot password
-├── SearchView.jsx      ← ค้นหา Meter/TR, filters, export dialog
-├── AdminPanel.jsx      ← dashboard, users, meters, TR, import, audit, settings
-├── app.jsx             ← root App, routing, auth state, ProfileView, theme
-├── data.js             ← static data helpers
-├── logo.svg
-├── robots.txt
-│
+├── index.html              ← entry point, โหลด CDN ตามลำดับ
+├── config.js               ← Supabase URL + anon key + mappers + VAPID_PUBLIC_KEY
+├── styles.css              ← CSS variables, dark/light theme, components
+├── lang.jsx                ← i18n ไทย / อังกฤษ
+├── components.jsx          ← Icon, StatCard, FitText, Modal, Toast, Confirm
+├── MapView.jsx             ← Leaflet map, cluster, heatmap, GPS
+├── AuthScreen.jsx          ← Login, Signup, Forgot password
+├── SearchView.jsx          ← ค้นหา + NavigationPanel + แผนที่
+├── AdminPanel.jsx          ← Dashboard, Users, Map, Import, Audit, Settings, DevGuide
+├── app.jsx                 ← App root, routing, auth, ProfileView, ChangelogView
+├── service-worker.js       ← Offline cache (cache-first) + Web Push handler
+├── manifest.json           ← PWA manifest
+├── version.json            ← Commit hash สำหรับ Deploy Status dot
 └── supabase/
-    ├── schema.sql      ← tables + RLS policies + triggers
-    ├── seed.sql        ← ข้อมูลตัวอย่าง Meter/TR
-    ├── fix_rls.sql
-    ├── fix_rls_v2.sql
-    ├── fix_rls_v3.sql
-    ├── server_search.sql
-    └── SETUP.md        ← คู่มือติดตั้ง Supabase
+    ├── schema.sql          ← Tables + RLS + Triggers
+    ├── server_search.sql   ← RPC: get_feeders, get_dashboard_stats
+    └── functions/
+        └── push-notify/
+            └── index.ts    ← Deno Edge Function: Web Push broadcast
 ```
 
 ---
 
-## การติดตั้ง
+## 🚀 การติดตั้ง
 
 ### 1. สร้าง Supabase Project
 
-1. ไปที่ https://supabase.com → **New project**
-2. เลือก Region: **Southeast Asia (Singapore)**
-3. รอ ~2 นาที
+1. [supabase.com](https://supabase.com) → **New project**
+2. Region: **Southeast Asia (Singapore)**
 
-### 2. รัน Schema
+### 2. รัน Schema & RPC
 
-**SQL Editor** → วาง `supabase/schema.sql` → **Run**
+```sql
+-- SQL Editor → schema.sql → Run
+-- SQL Editor → server_search.sql → Run
+```
 
-สร้างตาราง: `profiles`, `meters`, `transformers`, `audit_log`, `settings`
-
-### 3. เพิ่มข้อมูล Settings เริ่มต้น
+### 3. Settings เริ่มต้น
 
 ```sql
 INSERT INTO settings (key, value, updated_at, updated_by) VALUES
   ('maintenance_mode',    'false', NOW(), 'system'),
-  ('maintenance_message', 'ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ', NOW(), 'system'),
+  ('maintenance_message', 'ปิดปรับปรุงชั่วคราว', NOW(), 'system'),
   ('maintenance_until',   '', NOW(), 'system')
 ON CONFLICT (key) DO NOTHING;
 ```
 
-### 4. ตั้งค่า config.js
+### 4. config.js
 
 ```js
-const SUPABASE_URL  = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_ANON = "YOUR_ANON_KEY";
+const SUPABASE_URL      = "https://YOUR_PROJECT_ID.supabase.co";
+const SUPABASE_ANON     = "YOUR_ANON_KEY";
+const VAPID_PUBLIC_KEY  = "YOUR_VAPID_PUBLIC_KEY";
 ```
 
-**Dashboard → Settings → API** → copy **Project URL** และ **anon/public key**
+### 5. สร้าง Admin คนแรก
 
-### 5. ปิด Email Confirmation
-
-**Authentication → Email** → ปิด **Enable email confirmations**
-
-### 6. สร้าง Admin คนแรก
-
-1. เปิดแอป → **สมัครสมาชิก**
-2. Supabase → **Table Editor → profiles** → แก้ row ของตัวเอง:
-   ```
-   role   = admin
-   status = active
-   ```
-3. Reload แอป → เข้าสู่ระบบ
-
-ผู้ใช้ที่สมัครใหม่จะมี `status = pending` — Admin อนุมัติได้ที่ **Admin → ผู้ใช้งาน**
+1. สมัครสมาชิกในแอป
+2. Supabase → **Table Editor → profiles** → แก้ `role = admin`, `status = active`
+3. Reload แอป
 
 ---
 
-## ฐานข้อมูล Supabase
+## 🗄️ ฐานข้อมูล
 
 ### Tables
 
 | Table | คำอธิบาย |
 |-------|---------|
-| `profiles` | ข้อมูลผู้ใช้งาน (username, name, role, status, last_login) |
-| `meters` | PEA มิเตอร์ (TAG, CODE, ROUTE, PEANO, FEEDERID, OWNER, lat/lng) |
-| `transformers` | PEA หม้อแปลง (TAG, PHASE, VOLTAGE, KVA, OWNER_TR, LOCATION, FEEDER1, lat/lng) |
-| `audit_log` | บันทึกทุก action (user_id, action, target, detail, ip, at) |
+| `profiles` | ผู้ใช้งาน (role, status, last_login, require_2fa) |
+| `meters` | มิเตอร์ (TAG, PEANO, ACCOUNTNUM, FEEDERID, OWNER, lat/lng) |
+| `transformers` | หม้อแปลง (KVA, OWNER_TR, PHASE, VOLTAGE, FEEDER1, lat/lng) |
+| `audit_log` | บันทึกทุก action |
 | `settings` | ค่าตั้งค่าระบบ key-value |
-
-### Row Level Security (RLS)
-
-| Table | user | admin |
-|-------|------|-------|
-| `profiles` | อ่านได้เฉพาะตัวเอง | อ่าน/แก้ไขได้ทุก row |
-| `meters` / `transformers` | อ่านได้ (active) | อ่าน/เขียน/ลบ |
-| `audit_log` | insert ได้ | อ่านได้ทั้งหมด |
-| `settings` | อ่านได้ | อ่าน/แก้ไข |
+| `coordinate_corrections` | คำขอแก้ไขพิกัด GPS (pending/approved/rejected) |
+| `mfa_backup_codes` | รหัสสำรอง 2FA (hashed) |
+| `push_subscriptions` | Web Push endpoints |
 
 ### RPC Functions
 
-| Function | คำอธิบาย |
+| Function | Returns |
 |---------|---------|
-| `get_feeders()` | ดึงรายชื่อ Feeder ที่ไม่ซ้ำ |
-| `get_dashboard_stats()` | สถิติ: meter_count, tr_count, total_kva, top_feeders |
+| `get_feeders()` | รายชื่อ Feeder ที่ไม่ซ้ำ |
+| `get_dashboard_stats()` | meter_count, tr_count, total_kva, **pea_kva**, **cust_kva**, pea_tr, cust_tr, top_feeders |
 
 ---
 
-## การ Deploy
-
-### GitHub Pages
+## 📦 Deploy
 
 ```bash
 git add .
-git commit -m "update"
+git commit -m "feat: ..."
 git push origin main
+# รอ ~30 วินาที → GitHub Pages อัปเดตอัตโนมัติ
 ```
 
-**Settings → Pages → Source:** `main` branch, root folder (`/`)
+**Service Worker** — bump version ทุกครั้งที่ deploy:
 
-### ทดสอบ Local
-
-```bash
-python3 -m http.server 8080
-# เปิด http://localhost:8080
+```js
+// service-worker.js
+const CACHE = "gis-meter-v14";  // เพิ่มเลขทุกครั้ง
 ```
 
 ---
 
-> **หมายเหตุความปลอดภัย:** ระบบใช้ `anon key` + RLS ในการควบคุมสิทธิ์  
-> ไม่มีการ expose `service_role key` ฝั่ง client
+<div align="center">
+
+**🔒 Security Note**
+
+ระบบใช้ `anon key` + PostgreSQL **Row Level Security (RLS)**  
+`service_role key` ไม่ถูก expose ฝั่ง client เด็ดขาด
+
+</div>
