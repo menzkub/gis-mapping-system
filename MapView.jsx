@@ -64,7 +64,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6b2c91,#8b3fc4);display:grid;place-items:center;color:white;font-weight:800">M</div>
             <div>
               <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-mute);text-transform:uppercase">PEA Meter</div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--ink)">${p.TAG}</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--ink)">${p.PEANO || p.TAG}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px;color:var(--ink-2);margin-bottom:12px">
@@ -88,7 +88,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f47b20,#d96512);display:grid;place-items:center;color:white;font-weight:800">T</div>
             <div>
               <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-mute);text-transform:uppercase">PEA หม้อแปลง</div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--ink)">${p.TAG}</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--ink)">${p.PEANO_TR || p.TAG}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px;color:var(--ink-2);margin-bottom:8px">
@@ -190,8 +190,8 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             <div data-cluster-item="${i}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background 140ms" onmouseover="this.style.background='var(--soft)'" onmouseout="this.style.background='transparent'">
               <div style="width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,${accent},${isMeter ? "#8b3fc4" : "#d96512"});display:grid;place-items:center;color:white;font-weight:800;font-size:11px;flex-shrink:0">${isMeter ? "M" : "T"}</div>
               <div style="min-width:0">
-                <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.TAG}</div>
-                <div style="font-size:11px;color:var(--ink-mute)">${isMeter ? (p.PEANO || "—") : (p.PEANO_TR || "—")}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG)}</div>
+                <div style="font-size:11px;color:var(--ink-mute)">${p.TAG}</div>
               </div>
             </div>`).join("");
 

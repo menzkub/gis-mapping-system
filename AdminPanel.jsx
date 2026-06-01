@@ -3209,7 +3209,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         (m.PEANO && m.PEANO.toLowerCase().includes(q)) ||
         (m.ACCOUNTNUM && m.ACCOUNTNUM.toLowerCase().includes(q))
       ) {
-        results.push({ type: "M", p: m, label: m.TAG || m.PEANO, sub: m.ACCOUNTNUM || m.PEANO });
+        results.push({ type: "M", p: m, label: m.PEANO || m.TAG, sub: m.TAG });
         if (results.length >= 8) break;
       }
     }
@@ -3220,7 +3220,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         (tr.PEANO_TR && tr.PEANO_TR.toLowerCase().includes(q)) ||
         (tr.LOCATION && tr.LOCATION.toLowerCase().includes(q))
       ) {
-        results.push({ type: "T", p: tr, label: tr.TAG || tr.PEANO_TR, sub: tr.LOCATION || tr.PEANO_TR });
+        results.push({ type: "T", p: tr, label: tr.PEANO_TR || tr.TAG, sub: tr.LOCATION || tr.TAG });
       }
     }
     return results;
@@ -3721,7 +3721,10 @@ function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection, corrLa
     ? `<div style="padding:10px 14px;min-width:180px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,${accent},${accent2});color:white;font-weight:900;display:grid;place-items:center;font-size:12px">M</div>
-          <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.TAG}</div>
+          <div>
+            <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.PEANO || p.TAG}</div>
+            ${p.PEANO ? `<div style="font-size:10px;color:#888;font-family:monospace">${p.TAG}</div>` : ""}
+          </div>
         </div>
         <div style="font-size:11px;color:var(--ink-mute)">Feeder: <b>${p.FEEDERID||"—"}</b> · Route: <b>${p.ROUTE||"—"}</b></div>
         <div style="font-size:11px;margin-top:4px;font-family:monospace;color:var(--ink-mute)">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
@@ -3730,7 +3733,10 @@ function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection, corrLa
     : `<div style="padding:10px 14px;min-width:180px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,${accent},${accent2});color:white;font-weight:900;display:grid;place-items:center;font-size:12px">▲</div>
-          <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.TAG}</div>
+          <div>
+            <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.PEANO_TR || p.TAG}</div>
+            ${p.PEANO_TR ? `<div style="font-size:10px;color:#888;font-family:monospace">${p.TAG}</div>` : ""}
+          </div>
         </div>
         <div style="font-size:11px;color:var(--ink-mute)">${p.KVA} kVA · ${p.PHASE}Φ · ${p.VOLTAGE} kV · Feeder: <b>${p.FEEDER1||"—"}</b></div>
         <div style="font-size:11px;margin-top:4px;font-family:monospace;color:var(--ink-mute)">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
