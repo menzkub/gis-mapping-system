@@ -3065,10 +3065,7 @@ function App() {
           </div>
         )}
 
-        {/* Sidebar backdrop — tablet only, closes sidebar on outside click */}
-        {sidebarExpanded && (
-          <div className="sidebar-backdrop" onClick={() => setSidebarExpanded(false)} />
-        )}
+        {/* Sidebar backdrop removed — sidebar uses grid push layout, not overlay */}
 
         {/* Sidebar */}
         <aside className="app-sidebar" style={{

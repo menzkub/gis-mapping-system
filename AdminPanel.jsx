@@ -2479,12 +2479,37 @@ function AdminTrs({ addAudit, currentUser }) {
 }
 
 /* ---------- Import ---------- */
+const METER_SAMPLE_CSV = `OBJECTID,TAG,CODE,ROUTE,ACCOUNTNUM,PEANO,FEEDERID,OWNER,INSTALLATI,LATITUDE,LONGITUDE
+8000001,MTR-001,MTR-CGA02-001,CGA02,AC-2569-001,PEAN-001,FAU11,PEA,2569-01-01,16.7841,100.2234
+8000002,MTR-002,MTR-CGA02-002,CGA02,AC-2569-002,PEAN-002,FAU11,PEA,2569-01-15,16.7843,100.2236
+8000003,MTR-003,MTR-CGA10-001,CGA10,AC-2569-003,PEAN-003,CGA10,PEA,2569-02-01,16.7900,100.2350
+8000004,MTR-004,MTR-FAA06-001,FAA06,AC-2569-004,PEAN-004,FAA06,CUST,2569-02-10,16.8012,100.2401
+8000005,MTR-005,MTR-CGA05-001,CGA05,AC-2569-005,PEAN-005,CGA05,PEA,2569-03-01,16.7755,100.2180`;
+
+const TR_SAMPLE_CSV = `OBJECTID,TAG,PHASE,VOLTAGE,PEANO_TR,INSTALL_PHASE,KVA,OWNER_TR,LOCATION,FEEDER1,LATITUDE,LONGITUDE,PEA_METER
+9000001,TR-001,3,22,PEATR-001,3,100,PEA,ชุมชนบ้านท่า,CGA02,16.7840,100.2230,MTR-CGA02-001
+9000002,TR-002,1,22,PEATR-002,1,50,PEA,ตลาดเช้าศรีมงคล,FAU11,16.7860,100.2255,MTR-CGA02-002
+9000003,TR-003,3,22,PEATR-003,3,160,PEA,โรงงานอุตสาหกรรม,CGA10,16.7905,100.2355,MTR-CGA10-001
+9000004,TR-004,1,22,PEATR-004,1,30,CUST,บ้านพักอาศัย,FAA06,16.8015,100.2405,MTR-FAA06-001
+9000005,TR-005,3,22,PEATR-005,3,250,PEA,สถานีย่อย,CGA05,16.7750,100.2175,MTR-CGA05-001`;
+
 function AdminImport({ data, setData, addAudit, currentUser }) {
-  const [target, setTarget]   = useStateAd("meter");
-  const [preview, setPreview] = useStateAd(null);
-  const [fileName, setFileName] = useStateAd("");
+  const [target, setTarget]       = useStateAd("meter");
+  const [preview, setPreview]     = useStateAd(null);
+  const [fileName, setFileName]   = useStateAd("");
   const [importing, setImporting] = useStateAd(false);
+  const [importResult, setImportResult] = useStateAd(null);
   const toast = useToast();
+
+  const downloadSample = () => {
+    const csv = target === "meter" ? METER_SAMPLE_CSV : TR_SAMPLE_CSV;
+    const name = target === "meter" ? "sample_pea_meter.csv" : "sample_pea_tr.csv";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const parseCsv = (text) => {
     const lines = text.split(/\r?\n/).filter(Boolean);
@@ -2511,6 +2536,8 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
     if (!preview) return;
     setImporting(true);
     const table = target === "meter" ? "meters" : "transformers";
+    const targetLabel = target === "meter" ? "PEA Meter" : "PEA TR";
+    let succeeded = 0, failed = 0;
     try {
       const dbRows = preview.rows.map((r, i) => target === "meter" ? {
         objectid:   +r.OBJECTID || (8000000 + i),
@@ -2529,21 +2556,23 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
         longitude:     +r.LONGITUDE || 0, pea_meter:     r.PEA_METER || "",
       });
 
-      // Upsert in batches of 500
+      // Upsert in batches of 500 — track per-batch success/fail
       const BATCH = 500;
       for (let i = 0; i < dbRows.length; i += BATCH) {
+        const batch = dbRows.slice(i, i + BATCH);
         const { error } = await _supabase
           .from(table)
-          .upsert(dbRows.slice(i, i + BATCH), { onConflict: "objectid" });
-        if (error) throw error;
+          .upsert(batch, { onConflict: "objectid" });
+        if (error) failed += batch.length;
+        else succeeded += batch.length;
       }
 
-      // Refresh dashboard stats (no need to load all records)
+      // Refresh dashboard stats
       const { data: newStats } = await _supabase.rpc("get_dashboard_stats");
       if (newStats) setData(d => ({ ...d, dashStats: newStats }));
 
-      addAudit({ user: currentUser.username, action: "import_csv", target: target === "meter" ? "PEA Meter" : "PEA TR", detail: `นำเข้า ${preview.rows.length} รายการ จาก ${fileName}` });
-      toast?.(`นำเข้า ${preview.rows.length} รายการ สำเร็จ`, "success");
+      addAudit({ user: currentUser.username, action: "import_csv", target: targetLabel, detail: `นำเข้า ${succeeded} สำเร็จ${failed > 0 ? `, ${failed} ล้มเหลว` : ""} จาก ${fileName}` });
+      setImportResult({ total: preview.rows.length, success: succeeded, fail: failed, fileName, targetLabel });
       setPreview(null);
       setFileName("");
     } catch (err) {
@@ -2559,9 +2588,59 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
 
   return (
     <div className="f-col f-gap-4 fade-up">
+
+      {/* ── Import Result Modal ── */}
+      {importResult && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9900, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div className="card card-elev fade-up" style={{ maxWidth: 420, width: "100%", padding: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: importResult.fail === 0 ? "linear-gradient(135deg,#16a34a,#22c55e)" : "linear-gradient(135deg,#f59e0b,#ea580c)", color: "white", display: "grid", placeItems: "center", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }}>
+                <Icon name={importResult.fail === 0 ? "check" : "warning"} size={24} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>สรุปการนำเข้าข้อมูล</div>
+                <div className="t-mute text-sm">{importResult.targetLabel} · {importResult.fileName}</div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+              <div style={{ textAlign: "center", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: 14, padding: "16px 8px" }}>
+                <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>{importResult.total}</div>
+                <div className="t-mute text-xs" style={{ marginTop: 4 }}>ทั้งหมด</div>
+              </div>
+              <div style={{ textAlign: "center", background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.30)", borderRadius: 14, padding: "16px 8px" }}>
+                <div style={{ fontSize: 30, fontWeight: 900, color: "#16a34a", lineHeight: 1 }}>{importResult.success}</div>
+                <div style={{ fontSize: 11, color: "#16a34a", marginTop: 4, fontWeight: 600 }}>✓ สำเร็จ</div>
+              </div>
+              <div style={{ textAlign: "center", background: importResult.fail > 0 ? "rgba(239,68,68,0.08)" : "var(--surface-2)", border: importResult.fail > 0 ? "1px solid rgba(239,68,68,0.30)" : "1px solid var(--line)", borderRadius: 14, padding: "16px 8px" }}>
+                <div style={{ fontSize: 30, fontWeight: 900, color: importResult.fail > 0 ? "#ef4444" : "var(--ink-mute)", lineHeight: 1 }}>{importResult.fail}</div>
+                <div style={{ fontSize: 11, color: importResult.fail > 0 ? "#ef4444" : "var(--ink-mute)", marginTop: 4, fontWeight: 600 }}>{importResult.fail > 0 ? "✕ ล้มเหลว" : "ล้มเหลว"}</div>
+              </div>
+            </div>
+
+            {importResult.fail > 0 && (
+              <div className="badge badge-amber" style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, fontSize: 12 }}>
+                <Icon name="warning" size={13} /> บางรายการนำเข้าไม่สำเร็จ — ตรวจสอบข้อมูล OBJECTID และรูปแบบ CSV
+              </div>
+            )}
+
+            <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => setImportResult(null)}>
+              <Icon name="check" size={14} /> ตกลง
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="card card-elev">
-        <div className="text-lg fw-7" style={{ marginBottom: 6 }}>นำเข้าข้อมูลจาก CSV</div>
-        <div className="t-mute text-sm" style={{ marginBottom: 16 }}>อัปโหลด CSV (UTF-8) — ข้อมูลจะ upsert เข้า Supabase ทันที (ตาม OBJECTID)</div>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 6 }}>
+          <div>
+            <div className="text-lg fw-7">นำเข้าข้อมูลจาก CSV</div>
+            <div className="t-mute text-sm">อัปโหลด CSV (UTF-8) — ข้อมูลจะ upsert เข้า Supabase ทันที (ตาม OBJECTID)</div>
+          </div>
+          <button className="btn btn-outline" style={{ fontSize: 12, gap: 5, padding: "6px 12px", flexShrink: 0 }} onClick={downloadSample}>
+            <Icon name="download" size={13} /> ดาวน์โหลดตัวอย่าง CSV
+          </button>
+        </div>
 
         <div className="tabs" style={{ marginBottom: 16 }}>
           <button className={"tab " + (target === "meter" ? "active" : "")} onClick={() => setTarget("meter")}><Icon name="meter" size={14} /> PEA Meter</button>
