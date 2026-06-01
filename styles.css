@@ -601,15 +601,15 @@ a { color: inherit; text-decoration: none; }
 }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  to   { opacity: 1; transform: none; }
 }
 .fade-up { animation: fadeUp 360ms var(--ease-out) both; }
 .fade-in { animation: fadeIn 240ms var(--ease-out) both; }
@@ -639,108 +639,43 @@ a { color: inherit; text-decoration: none; }
 .divider { height: 1px; background: var(--line); margin: 14px 0; }
 
 /* ============================================================
-   Premium Hover Micro-interactions
+   Premium Micro-interactions
+   Transitions always on (safe — no transform retained at rest)
+   Transform hover effects wrapped in (hover:hover) so they
+   never fire on touch screens and can't break position:fixed
    ============================================================ */
 
-/* Card lift */
-.card {
-  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out), border-color 220ms;
-}
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--soft-border);
-}
-.card-elev {
-  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
-}
-.card-elev:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
+/* Transitions always applied regardless of device */
+.card        { transition: box-shadow 220ms var(--ease-out), border-color 220ms; }
+.card-elev   { transition: box-shadow 220ms var(--ease-out); }
+.btn         { transition: transform 150ms var(--ease-spring), box-shadow 180ms, background 160ms, color 160ms !important; }
+.tab         { transition: color 160ms, background 180ms, transform 180ms var(--ease-spring), box-shadow 180ms !important; }
+.badge       { transition: transform 150ms var(--ease-spring); }
+.btn-icon    { transition: background 150ms, color 150ms, transform 150ms var(--ease-spring) !important; }
+.table tbody tr { transition: background 140ms; }
+.sidebar-nav-btn { transition: background 160ms, color 160ms, transform 180ms var(--ease-spring) !important; }
+.cluster-marker  { transition: transform 160ms var(--ease-spring), box-shadow 160ms; cursor: pointer; }
+.hover-lift  { transition: transform 200ms var(--ease-out), box-shadow 200ms !important; }
 
-/* Sidebar nav — slide-right on hover */
-.sidebar-nav-btn {
-  transition: background 160ms, color 160ms, transform 180ms var(--ease-spring), box-shadow 180ms !important;
-}
-.sidebar-nav-btn:not(.sidebar-nav-btn--active):hover {
-  transform: translateX(4px) !important;
-}
+/* Active tab — shadow lift only, NO transform (transform on nav btn breaks position:fixed inside) */
+.tab.active { box-shadow: 0 2px 8px rgba(107,44,145,0.28); }
 
-/* Enhanced button lifts */
-.btn {
-  transition: transform 150ms var(--ease-spring), box-shadow 180ms, background 160ms, color 160ms !important;
-}
-.btn:hover { transform: translateY(-2px); }
-.btn:active { transform: translateY(1px) scale(0.97) !important; }
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 56px rgba(107, 44, 145, 0.50);
-}
-.btn-orange:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(244, 123, 32, 0.48);
-}
-.btn-danger:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(239, 68, 68, 0.38);
-}
-.btn-outline:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
+/* Active/press states (safe for all devices) */
+.btn:active  { transform: translateY(1px) scale(0.97) !important; }
+.btn-icon:active { transform: scale(0.90); }
 
-/* Tab lift */
-.tab {
-  transition: color 160ms, background 180ms, transform 180ms var(--ease-spring), box-shadow 180ms !important;
-}
-.tab:hover:not(.active) {
-  transform: translateY(-1px);
-  background: var(--soft);
-  color: var(--ink);
-}
-.tab.active {
-  transform: translateY(-1px);
-}
-
-/* Badge scale */
-.badge {
-  transition: transform 150ms var(--ease-spring);
-}
-.badge:hover { transform: scale(1.07); }
-
-/* Table rows — left accent glow on hover */
-.table tbody tr {
-  transition: background 140ms;
-}
+/* Table rows — left accent on hover */
 .table tbody tr:hover td:first-child {
   box-shadow: inset 3px 0 0 var(--pea-purple-500);
 }
 
-/* Input/select — shimmer ring on focus */
+/* Input/select — focus ring shimmer */
 @keyframes focusRing {
   0%   { box-shadow: 0 0 0 0 rgba(107,44,145,0.45); }
   100% { box-shadow: 0 0 0 4px rgba(107,44,145,0.13); }
 }
 .input:focus, .select:focus, .textarea:focus {
   animation: focusRing 0.22s var(--ease-out) forwards;
-}
-
-/* btn-icon circular hover scale */
-.btn-icon {
-  transition: background 150ms, color 150ms, transform 150ms var(--ease-spring) !important;
-}
-.btn-icon:hover { transform: scale(1.12); }
-.btn-icon:active { transform: scale(0.92); }
-
-/* Leaflet cluster marker hover */
-.cluster-marker {
-  transition: transform 160ms var(--ease-spring), box-shadow 160ms;
-  cursor: pointer;
-}
-.cluster-marker:hover {
-  transform: scale(1.18);
-  box-shadow: 0 10px 32px rgba(107,44,145,0.55);
 }
 
 /* Shimmer skeleton for loading states */
@@ -755,27 +690,44 @@ a { color: inherit; text-decoration: none; }
   border-radius: var(--r-sm);
 }
 
-/* Floating map buttons — pop on hover */
-.leaflet-container .floating-btn,
-[data-float="true"] {
-  transition: transform 160ms var(--ease-spring), box-shadow 160ms !important;
-}
-.leaflet-container .floating-btn:hover,
-[data-float="true"]:hover {
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.32) !important;
+/* ── Hover transforms: pointer devices only ────────────────── */
+@media (hover: hover) and (pointer: fine) {
+  /* Card lift */
+  .card:hover      { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--soft-border); }
+  .card-elev:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+  /* Sidebar nav slide-right */
+  .sidebar-nav-btn:not(.sidebar-nav-btn--active):hover { transform: translateX(4px) !important; }
+
+  /* Button lifts */
+  .btn:hover         { transform: translateY(-2px); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 20px 56px rgba(107,44,145,0.50); }
+  .btn-orange:hover  { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(244,123,32,0.48); }
+  .btn-danger:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(239,68,68,0.38); }
+  .btn-outline:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+
+  /* Tab hover */
+  .tab:hover:not(.active) { transform: translateY(-1px); background: var(--soft); color: var(--ink); }
+
+  /* Badge scale */
+  .badge:hover { transform: scale(1.07); }
+
+  /* btn-icon scale */
+  .btn-icon:hover { transform: scale(1.12); }
+
+  /* Cluster marker scale */
+  .cluster-marker:hover { transform: scale(1.18); box-shadow: 0 10px 32px rgba(107,44,145,0.55); }
+
+  /* Floating map buttons */
+  .leaflet-container .floating-btn:hover,
+  [data-float="true"]:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.32) !important;
+  }
+
+  /* Generic lift utility */
+  .hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 }
 
-/* Generic lift utility */
-.hover-lift {
-  transition: transform 200ms var(--ease-out), box-shadow 200ms !important;
-}
-.hover-lift:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Scrollbar thumb hover — already handled, ensure smooth */
-::-webkit-scrollbar-thumb {
-  transition: background 200ms;
-}
+/* Scrollbar thumb hover */
+::-webkit-scrollbar-thumb { transition: background 200ms; }
