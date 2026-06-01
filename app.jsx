@@ -1050,6 +1050,9 @@ const CHANGELOG = [
       { cat: "new",  text: { th: "Deploy popup: ปุ่ม 'ตรวจสอบอีกครั้ง' (refetch) และ 'โหลดเวอร์ชันใหม่' (force reload bypass cache) + ข้อความตามภาษา", en: "Deploy popup: 'Re-check' (refetch) and 'Load New Version' (force reload bypass cache) + bilingual labels" } },
       { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออก (body{overflow:hidden}) — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped by body{overflow:hidden} — now renders full A4 width" } },
       { cat: "fix",  text: { th: "เมนู Settings: Dark/Light mode + Deploy popup เปลี่ยนภาษาตามระบบทั้งหมด", en: "Settings menu: Dark/Light mode + Deploy popup all follow system language" } },
+      { cat: "new",  text: { th: "Admin แผนที่ภาพรวม: ปุ่ม 'ตำแหน่งฉัน' — กด GPS ระบุตำแหน่งปัจจุบัน แผนที่บินไปพร้อมหมุดสีน้ำเงิน + ความแม่นยำ (±X ม.)", en: "Admin Overview Map: 'My Location' button — one-tap GPS locate, map flies to position with blue accuracy pin" } },
+      { cat: "ux",   text: { th: "แท็บอัปเดต: กดหัวการ์ดเวอร์ชันเพื่อยุบ/ขยายรายการ — เวอร์ชันล่าสุดเปิดอัตโนมัติ เวอร์ชันเก่าพับไว้", en: "Updates tab: click version card header to collapse/expand items — latest version starts expanded, older versions collapsed" } },
+      { cat: "fix",  text: { th: "ปุ่มนักพัฒนา (floating): แก้การลากไปขวาสุดติดขอบจอบนมือถือไม่ได้ — คำนวณ clamp จากขนาดจริงของปุ่มแทนค่าตายตัว", en: "Developer button (floating): fix unable to drag to right screen edge on mobile — clamp now uses actual button width" } },
     ],
   },
   {
@@ -2000,6 +2003,7 @@ function UserGuide({ role }) {
                 <UGTable rows={[
                   [ug("ฟีเจอร์","Feature"), ug("วิธีใช้","How to use")],
                   [ug("มุมมองแผนที่","Basemap"), ug("กด dropdown 'Street / Satellite' บนแผนที่ Admin","Press 'Street / Satellite' dropdown on Admin map")],
+                  [ug("ตำแหน่งฉัน","My Location"), ug("กดปุ่ม '📍 ตำแหน่งฉัน' ในแถบควบคุม — แผนที่บินไปตำแหน่ง GPS ปัจจุบัน พร้อมหมุดสีน้ำเงิน + ความแม่นยำ","Press '📍 My Location' in the controls bar — map flies to current GPS position with blue pin + accuracy radius")],
                   [ug("คำขอแก้ไขพิกัด","Correction Requests"), ug("กดปุ่ม '📋 คำขอแก้ไข (N)' — N = จำนวนที่รอ","Press '📋 Correction Requests (N)' — N = pending count")],
                   [ug("อนุมัติ","Approve"), ug("กดปุ่ม 'อนุมัติ' — พิกัดในตาราง Meter/TR จะอัปเดตทันที","Press 'Approve' — Meter/TR table coords update immediately")],
                   [ug("ปฏิเสธ","Reject"), ug("กดปุ่ม 'ปฏิเสธ' — คำขอถูกยกเลิก ไม่มีการเปลี่ยนแปลง","Press 'Reject' — request cancelled, no changes made")],

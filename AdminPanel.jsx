@@ -503,6 +503,7 @@ function AdminGuide() {
             ["Split View", s("กดปุ่ม Split — ตารางและแผนที่อยู่คู่กัน", "Click Split — table and map side by side")],
             [s("คัดลอกพิกัด", "Copy Coordinates"), s("คลิกที่ marker → กดปุ่ม Copy พิกัด lat/lng", "Click marker → Copy lat/lng coordinates")],
             [s("แจ้งแก้ไขพิกัด", "Report Coords"), s("คลิก marker → กด 'แจ้งแก้ไขพิกัด' → วางพิกัดใหม่ → ส่ง", "Click marker → 'Report Coords' → place new pin → submit")],
+            [s("ตำแหน่งฉัน (Admin แผนที่)", "My Location (Admin Map)"), s("กดปุ่ม 'ตำแหน่งฉัน' ในแถบควบคุม Admin → แผนที่บินไป GPS ปัจจุบัน + หมุดสีน้ำเงิน", "Press 'My Location' in Admin map controls → map flies to GPS position + blue accuracy pin")],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("นำทาง GPS", "GPS Navigation")}</div>
           <GuideStep n={1} text={s("คลิก marker บนแผนที่ หรือกดปุ่มนำทางในตาราง", "Click a marker on the map or the navigate button in the table")} />
@@ -1200,19 +1201,48 @@ localStorage.setItem("pea_theme", theme);`}</CodeBlock>
             ["ส่วน", "คำอธิบาย"],
             ["CHANGELOG", "Array ของ version object — แก้ไขเพื่ออัปเดต changelog"],
             ["CAT_META", "config สี/label ของ category chip (new · ux · fix · perf)"],
-            ["ChangelogView", "Component ไม่รับ props — render จาก CHANGELOG โดยตรง"],
+            ["ChangelogView", "Component ไม่รับ props — render จาก CHANGELOG โดยตรง · หัวการ์ดกดยุบ/ขยายได้"],
           ]} />
           <CodeBlock>{`// เพิ่ม version ใหม่ใน CHANGELOG array (app.jsx)
 CHANGELOG.unshift({
-  version: "v2.7", date: "1 มิ.ย. 2569", tag: "UX",
-  tagColor: "#8b3fc4",
+  version: "v3.0", date: "1 มิ.ย. 2569", tag: "UX",
+  tagColor: "#10b981",
   items: [
-    { cat: "new", text: "ฟีเจอร์ใหม่ที่เพิ่มเข้ามา" },
-    { cat: "ux",  text: "ปรับ UI ให้สวยงามขึ้น"    },
-    { cat: "fix", text: "แก้ bug ที่พบ"             },
+    { cat: "new", text: "ฟีเจอร์ใหม่" },
+    { cat: "ux",  text: "ปรับ UI"      },
+    { cat: "fix", text: "แก้ bug"      },
   ],
-});`}</CodeBlock>
-          <GuideNote>แท็บ 'อัปเดต ⚡' ใน sidebar — เห็นเฉพาะ Admin · route = "changelog"</GuideNote>
+});
+
+// Collapse/Expand state — ใน ChangelogView
+// เวอร์ชันล่าสุด (index 0) เปิดโดยอัตโนมัติ เวอร์ชันเก่าพับไว้
+const [collapsed, setCollapsed] = useState(
+  () => new Set(CHANGELOG.slice(1).map(v => v.version))
+);
+// กดหัวการ์ด → toggleVer(ver.version)`}</CodeBlock>
+          <GuideNote>แท็บ 'อัปเดต ⚡' ใน sidebar — เห็นเฉพาะ Admin · route = "changelog" · หัวการ์ดกด chevron ยุบ/ขยาย</GuideNote>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>flyToLocation — ปุ่ม GPS ตำแหน่งฉัน (Admin Map) <DevBadge color="blue">AdminPanel.jsx</DevBadge></div>
+          <GuideTable rows={[
+            ["ตัวแปร / Ref", "คำอธิบาย"],
+            ["locMarkerRef", "เก็บ L.marker ของตำแหน่งปัจจุบัน — ลบก่อนสร้างใหม่ทุกครั้ง"],
+            ["locating (state)", "true ขณะรอ GPS — ปุ่มเปลี่ยนข้อความเป็น 'กำลังค้นหา…' + icon หมุน"],
+          ]} />
+          <CodeBlock>{`// AdminMapTab — AdminPanel.jsx
+flyToLocation() {
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      mapRef.current.flyTo([coords.latitude, coords.longitude], 16);
+      const icon = L.divIcon({ html: '<div style="...blue circle..."/>' });
+      locMarkerRef.current = L.marker([lat, lng], { icon })
+        .bindPopup(\`<b>ตำแหน่งปัจจุบัน</b><br>±\${accuracy} ม.\`)
+        .addTo(mapRef.current).openPopup();
+    },
+    (err) => toast(errMsg, "error"),
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+// ปุ่มอยู่ในแถบควบคุม — ก่อนปุ่ม '📋 คำขอแก้ไข'`}</CodeBlock>
 
           <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>SafeQR — Canvas QR Renderer <DevBadge color="purple">app.jsx</DevBadge></div>
           <GuideTable rows={[
