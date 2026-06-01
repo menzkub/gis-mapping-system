@@ -745,7 +745,7 @@ function AdminDevGuide() {
       });
       clone.style.cssText += ";width:820px;max-width:820px;margin:0;";
       const wrap = document.createElement("div");
-      wrap.style.cssText = "position:fixed;left:0;top:0;width:820px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#0d0714;";
+      wrap.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;pointer-events:none;z-index:2147483647;overflow:visible;background:#0d0714;";
       wrap.appendChild(clone);
       document.body.appendChild(wrap);
       document.body.style.overflow = "visible";
@@ -2727,7 +2727,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [progress,  setProgress]  = useStateAd(0);
   const [meters,    setMeters]    = useStateAd([]);
   const [trs,       setTrs]       = useStateAd([]);
-  const [showM,     setShowM]     = useStateAd(true);
+  const [showM,     setShowM]     = useStateAd(false);
   const [showT,     setShowT]     = useStateAd(true);
   const [baseMap,   setBaseMap]   = useStateAd("street");
   const [showBaseMenu, setShowBaseMenu] = useStateAd(false);
@@ -4847,7 +4847,7 @@ function DocDownloadSection() {
     const clone = el.cloneNode(true);
     clone.style.cssText += ";width:560px;max-width:560px;margin:0;";
     const w = document.createElement("div");
-    w.style.cssText = `position:fixed;left:0;top:0;width:560px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:${bg};`;
+    w.style.cssText = `position:fixed;left:-9999px;top:0;width:560px;pointer-events:none;z-index:2147483647;overflow:visible;background:${bg};`;
     w.appendChild(clone);
     return w;
   }
@@ -4925,7 +4925,7 @@ function DocDownloadSection() {
   return (
     <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
       {/* Hidden infographic refs */}
-      <div style={{ position: "fixed", left: -9999, top: 0, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+      <div style={{ position: "fixed", left: -9999, top: 0, pointerEvents: "none" }}>
         <div ref={userRef}><UserQuickGuideCard /></div>
         <div ref={adminRef}><AdminQuickGuideCard /></div>
       </div>

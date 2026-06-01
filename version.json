@@ -1,7 +1,7 @@
 {
-  "commit": "ad77567",
-  "shortCommit": "ad77567",
-  "message": "feat(security): Security tab — score gauge + 6 checks + threat detection",
-  "date": "2026-06-01T15:00:00+00:00",
+  "commit": "fix-pdf-map-mobile",
+  "shortCommit": "fix-pdf",
+  "message": "fix: PDF black rendering + map defaults meters off + mobile SW bump",
+  "date": "2026-06-01T17:00:00+00:00",
   "branch": "main"
 }
