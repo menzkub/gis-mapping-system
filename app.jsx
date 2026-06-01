@@ -1159,8 +1159,16 @@ function useDeployStatus() {
   const [ghCommit, setGhCommit]   = useStateApp(null);
   const [loading, setLoading]     = useStateApp(true);
   const [ghLoading, setGhLoading] = useStateApp(true);
+  const [tick, setTick]           = useStateApp(0);
+
+  const refetch = React.useCallback(() => {
+    setLoading(true);
+    setGhLoading(true);
+    setTick(t => t + 1);
+  }, []);
 
   useEffectApp(() => {
+    setLoading(true);
     fetch("version.json?t=" + Date.now())
       .then(r => r.ok ? r.json() : null)
       .then(d => { setDeployed(d); setLoading(false); })
@@ -1172,7 +1180,7 @@ function useDeployStatus() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { setGhCommit(d); setGhLoading(false); })
       .catch(() => setGhLoading(false));
-  }, []);
+  }, [tick]);
 
   const deployedHash = deployed?.shortCommit || deployed?.commit?.slice(0, 7);
   const ghHash = ghCommit?.sha?.slice(0, 7);
@@ -1181,13 +1189,13 @@ function useDeployStatus() {
   const ghMsgHasDeployed = deployedHash && ghCommit?.commit?.message?.includes(deployedHash);
   const inSync = !isLoading && deployedHash && ghHash && (deployedHash === ghHash || ghMsgHasDeployed);
 
-  return { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync };
+  return { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync, refetch };
 }
 
 // ── DeployStatusDot — topbar indicator for admins ────────────────────────
 function DeployStatusDot() {
   const [open, setOpen] = useStateApp(false);
-  const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync } = useDeployStatus();
+  const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync, refetch } = useDeployStatus();
 
   const pending  = !isLoading && deployedHash && ghHash && !inSync;
   const dotColor = isLoading ? "#9ca3af" : inSync ? "#059669" : "#d97706";
@@ -1277,8 +1285,36 @@ function DeployStatusDot() {
               ) : <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>ไม่สามารถเชื่อมต่อ GitHub API</div>}
             </div>
 
-            <div style={{ padding: "8px 14px", fontSize: 10, color: "var(--ink-mute)" }}>
-              GitHub Pages ใช้เวลา 1–3 นาทีหลัง push
+            {/* Action buttons */}
+            <div style={{ padding: "10px 12px 12px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
+              <button onClick={refetch} disabled={isLoading} style={{
+                flex: 1, padding: "8px 0", borderRadius: 10,
+                border: "1px solid var(--line)", background: "var(--surface-2)",
+                fontSize: 12, fontWeight: 700, cursor: isLoading ? "wait" : "pointer",
+                color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                opacity: isLoading ? 0.6 : 1,
+              }}>
+                <Icon name="refresh" size={13} style={{ animation: isLoading ? "pea-spin 0.8s linear infinite" : "none" }} />
+                ตรวจสอบอีกครั้ง
+              </button>
+              <button onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set("v", Date.now());
+                window.location.replace(url.toString());
+              }} style={{
+                flex: 1, padding: "8px 0", borderRadius: 10,
+                border: "1px solid rgba(139,63,196,0.4)", background: "rgba(139,63,196,0.09)",
+                fontSize: 12, fontWeight: 700, cursor: "pointer",
+                color: "var(--pea-purple-600)", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+              }}>
+                <Icon name="download" size={13} />
+                โหลดเวอร์ชันใหม่
+              </button>
+            </div>
+            <div style={{ padding: "0 14px 10px", fontSize: 10, color: "var(--ink-mute)", lineHeight: 1.5 }}>
+              {pending
+                ? "GitHub Pages ใช้เวลา 1–3 นาทีหลัง push — กด ตรวจสอบอีกครั้ง เมื่อ deploy เสร็จ"
+                : "กด โหลดเวอร์ชันใหม่ เพื่อดึงไฟล์ล่าสุดจาก GitHub Pages (bypass cache)"}
             </div>
           </div>
         </>
