@@ -3018,6 +3018,7 @@ function App() {
     { id: "users",     icon: "users",     label: t("admUsers")     },
     { id: "meters",    icon: "meter",     label: t("admMeters")    },
     { id: "trs",       icon: "tr",        label: t("admTrs")       },
+    { id: "map",       icon: "map",       label: t("admMap")       },
     { id: "import",    icon: "upload",    label: t("admImport")    },
     { id: "audit",     icon: "history",   label: t("admAudit")     },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },

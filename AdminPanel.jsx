@@ -12,7 +12,8 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
-    trs: t("admTrs"), import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
+    trs: t("admTrs"), map: t("admMap"),
+    import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
     guide: t("admGuide"),
     dev: t("admDev"),
   };
@@ -22,6 +23,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"users",     icon:"users",     label:t("admUsers")      },
     { id:"meters",    icon:"meter",     label:t("admMobMeters")  },
     { id:"trs",       icon:"tr",        label:t("admMobTrs")     },
+    { id:"map",       icon:"map",       label:t("admMobMap")     },
     { id:"import",    icon:"upload",    label:t("admMobImport")  },
     { id:"audit",     icon:"history",   label:t("admMobAudit")   },
     { id:"settings",  icon:"settings",  label:t("admSettings")   },
@@ -33,6 +35,9 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
       <style>{`
         .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; }
+        .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; }
+        @keyframes adm-spin { to { transform: rotate(360deg); } }
+        .adm-spin { animation: adm-spin 1.2s linear infinite; }
         /* Mobile admin tab bar */
         .adm-mob-tabs { display: none; }
         @media (max-width: 640px) {
@@ -84,11 +89,12 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         ))}
       </div>
 
-      <div className="adm-body">
+      <div className={"adm-body" + (tab === "map" ? " adm-map-body" : "")}>
         {tab === "dashboard" && <AdminDashboard data={data} />}
         {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "map"       && <AdminMapTab data={data} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "audit"     && <AdminAudit />}
         {tab === "settings"  && <AdminSettings
@@ -2479,6 +2485,282 @@ function AdminTrs({ addAudit, currentUser }) {
 }
 
 /* ---------- Import ---------- */
+/* ---------- Admin Overview Map ---------- */
+function AdminMapTab({ data }) {
+  const containerRef = React.useRef(null);
+  const mapRef       = React.useRef(null);
+  const tileRef      = React.useRef(null);
+  const mLayerRef    = React.useRef(null);
+  const tLayerRef    = React.useRef(null);
+
+  const [loadState, setLoadState] = useStateAd("idle"); // idle | loading | done | error
+  const [progress,  setProgress]  = useStateAd(0);
+  const [meters,    setMeters]    = useStateAd([]);
+  const [trs,       setTrs]       = useStateAd([]);
+  const [showM,     setShowM]     = useStateAd(true);
+  const [showT,     setShowT]     = useStateAd(true);
+  const [baseMap,   setBaseMap]   = useStateAd("street");
+  const [zoomTick,  setZoomTick]  = useStateAd(0);
+  const [loadKey,   setLoadKey]   = useStateAd(0); // increment to retry
+
+  const totalM = data?.dashStats?.meter_count || 0;
+  const totalT = data?.dashStats?.tr_count    || 0;
+  const MAX_METERS = 20000;
+  const BATCH      = 2000;
+
+  // Lazy-load data once when tab is opened
+  useEffectAd(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoadState("loading");
+      try {
+        // ── TRs (small dataset, load all) ──
+        let trRows = [], from = 0;
+        while (!cancelled) {
+          const { data: rows, error } = await _supabase
+            .from("transformers")
+            .select("objectid,tag,latitude,longitude,feeder1,kva,phase,voltage")
+            .range(from, from + BATCH - 1);
+          if (error || !rows || rows.length === 0) break;
+          trRows = [...trRows, ...rows];
+          from += BATCH;
+          setProgress(Math.round((trRows.length / Math.max(totalT || BATCH, 1)) * 30));
+          if (rows.length < BATCH) break;
+        }
+
+        // ── Meters (cap at MAX_METERS to keep UI responsive) ──
+        let mRows = [];
+        from = 0;
+        while (!cancelled && mRows.length < MAX_METERS) {
+          const { data: rows, error } = await _supabase
+            .from("meters")
+            .select("objectid,tag,latitude,longitude,feederid,route")
+            .range(from, from + BATCH - 1);
+          if (error || !rows || rows.length === 0) break;
+          mRows = [...mRows, ...rows];
+          from += BATCH;
+          setProgress(30 + Math.round((mRows.length / MAX_METERS) * 70));
+          if (rows.length < BATCH) break;
+        }
+
+        if (!cancelled) {
+          setTrs(trRows
+            .filter(r => +r.latitude && +r.longitude)
+            .map(r => ({
+              OBJECTID: r.objectid, TAG: r.tag || String(r.objectid),
+              LATITUDE: +r.latitude, LONGITUDE: +r.longitude,
+              KVA: r.kva || 0, PHASE: r.phase || "", VOLTAGE: r.voltage || "",
+              FEEDER1: r.feeder1 || "",
+            })));
+          setMeters(mRows
+            .filter(r => +r.latitude && +r.longitude)
+            .map(r => ({
+              OBJECTID: r.objectid, TAG: r.tag || String(r.objectid),
+              LATITUDE: +r.latitude, LONGITUDE: +r.longitude,
+              FEEDERID: r.feederid || "", ROUTE: r.route || "",
+            })));
+          setLoadState("done");
+          setProgress(100);
+        }
+      } catch (_) {
+        if (!cancelled) setLoadState("error");
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [loadKey]);
+
+  // Initialize Leaflet map once
+  useEffectAd(() => {
+    if (mapRef.current || !containerRef.current) return;
+    const map = L.map(containerRef.current, {
+      center: [19.86, 99.18], zoom: 11,
+      zoomControl: false, preferCanvas: true,
+    });
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+    tileRef.current = L.tileLayer(TILE_LAYERS.street.url, {
+      attribution: TILE_LAYERS.street.attribution, maxZoom: 19,
+    }).addTo(map);
+    mLayerRef.current = L.layerGroup().addTo(map);
+    tLayerRef.current = L.layerGroup().addTo(map);
+    map.on("zoomend", () => setTimeout(() => setZoomTick(t => t + 1), 80));
+    mapRef.current = map;
+    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
+  }, []);
+
+  // Switch base tile layer
+  useEffectAd(() => {
+    if (!mapRef.current) return;
+    const cfg = TILE_LAYERS[baseMap] || TILE_LAYERS.street;
+    if (tileRef.current) mapRef.current.removeLayer(tileRef.current);
+    tileRef.current = L.tileLayer(cfg.url, { attribution: cfg.attribution, maxZoom: 19 }).addTo(mapRef.current);
+  }, [baseMap]);
+
+  // Render / re-cluster markers
+  useEffectAd(() => {
+    if (!mapRef.current || loadState !== "done") return;
+    const map = mapRef.current;
+    const z = map.getZoom();
+    const gs = z >= 15 ? 0.0006 : z >= 13 ? 0.002 : z >= 11 ? 0.008 : 0.035;
+
+    const drawLayer = (points, kind, layerRef) => {
+      layerRef.current.clearLayers();
+      if (!points.length) return;
+      const isMeter = kind === "meter";
+      const accent  = isMeter ? "#6b2c91" : "#ea580c";
+      const accent2 = isMeter ? "#8b3fc4" : "#f47b20";
+      const symbol  = isMeter ? "M" : "▲";
+
+      if (points.length > 20) {
+        // Grid cluster
+        const cells = new Map();
+        points.forEach(p => {
+          const key = `${Math.floor(p.LATITUDE / gs)}_${Math.floor(p.LONGITUDE / gs)}`;
+          if (!cells.has(key)) cells.set(key, []);
+          cells.get(key).push(p);
+        });
+        cells.forEach(group => {
+          if (group.length === 1) {
+            makeAdmMarker(group[0], symbol, isMeter, accent, accent2).addTo(layerRef.current);
+          } else {
+            const lat = group.reduce((s, p) => s + p.LATITUDE, 0) / group.length;
+            const lng = group.reduce((s, p) => s + p.LONGITUDE, 0) / group.length;
+            const n   = group.length;
+            const label = n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
+            const icon = L.divIcon({
+              className: "",
+              html: `<div style="width:44px;height:44px;border-radius:50%;background:radial-gradient(circle,${accent2},${accent});color:white;font-weight:800;font-size:${n>=1000?10:13}px;display:grid;place-items:center;border:3px solid white;box-shadow:0 4px 14px rgba(0,0,0,0.3)">${label}</div>`,
+              iconSize: [44, 44], iconAnchor: [22, 22],
+            });
+            L.marker([lat, lng], { icon }).addTo(layerRef.current);
+          }
+        });
+      } else {
+        points.forEach(p => makeAdmMarker(p, symbol, isMeter, accent, accent2).addTo(layerRef.current));
+      }
+    };
+
+    if (showM) drawLayer(meters, "meter", mLayerRef);
+    else mLayerRef.current.clearLayers();
+
+    if (showT) drawLayer(trs, "tr", tLayerRef);
+    else tLayerRef.current.clearLayers();
+  }, [meters, trs, showM, showT, loadState, zoomTick]);
+
+  // Fit bounds on first data load
+  useEffectAd(() => {
+    if (!mapRef.current || loadState !== "done") return;
+    const pts = [...trs, ...meters.slice(0, 500)];
+    if (!pts.length) return;
+    const bounds = L.latLngBounds(pts.map(p => [p.LATITUDE, p.LONGITUDE]));
+    if (bounds.isValid()) mapRef.current.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
+  }, [loadState]);
+
+  const btnStyle = (active, accent) => ({
+    display: "flex", alignItems: "center", gap: 6,
+    padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
+    border: "1px solid " + (active ? accent : "var(--line)"),
+    background: active ? `${accent}22` : "var(--surface-2)",
+    color: active ? accent : "var(--ink-mute)",
+    cursor: "pointer", transition: "all 140ms",
+  });
+
+  return (
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
+
+      {/* ── Controls bar ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "var(--surface)", borderBottom: "1px solid var(--line)", flexShrink: 0, flexWrap: "wrap" }}>
+        <button style={btnStyle(showM, "#6b2c91")} onClick={() => setShowM(s => !s)}>
+          <span style={{ background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", color: "white", borderRadius: 6, padding: "1px 6px", fontWeight: 900, fontSize: 11 }}>M</span>
+          มิเตอร์
+          <span style={{ opacity: 0.7 }}>{(totalM || meters.length).toLocaleString()}</span>
+        </button>
+        <button style={btnStyle(showT, "#ea580c")} onClick={() => setShowT(s => !s)}>
+          <span style={{ background: "linear-gradient(135deg,#ea580c,#f47b20)", color: "white", borderRadius: 6, padding: "1px 6px", fontWeight: 900, fontSize: 11 }}>▲</span>
+          หม้อแปลง
+          <span style={{ opacity: 0.7 }}>{(totalT || trs.length).toLocaleString()}</span>
+        </button>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Basemap switcher */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {Object.entries(TILE_LAYERS).map(([k, v]) => (
+            <button key={k} onClick={() => setBaseMap(k)} style={{
+              padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer",
+              background: baseMap === k ? "var(--pea-purple-600)" : "var(--surface-2)",
+              color: baseMap === k ? "white" : "var(--ink-mute)",
+              border: "1px solid var(--line)",
+            }}>{v.label}</button>
+          ))}
+        </div>
+
+        {/* Sample note */}
+        {loadState === "done" && totalM > 0 && meters.length < totalM && (
+          <div style={{ width: "100%", fontSize: 11, color: "var(--ink-mute)", paddingTop: 2 }}>
+            * แสดงมิเตอร์ตัวอย่าง {meters.length.toLocaleString()} จาก {totalM.toLocaleString()} รายการ — ซูมเข้าเพื่อดูรายละเอียด
+          </div>
+        )}
+      </div>
+
+      {/* ── Loading overlay ── */}
+      {loadState === "loading" && (
+        <div style={{ position: "absolute", inset: 0, top: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--bg)", zIndex: 10, gap: 14 }}>
+          <div className="adm-spin" style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center" }}>
+            <Icon name="map" size={22} style={{ color: "white" }} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>กำลังโหลดข้อมูลแผนที่…</div>
+          <div style={{ width: 200, height: 6, background: "var(--line)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ width: progress + "%", height: "100%", background: "linear-gradient(90deg,#6b2c91,#f47b20)", transition: "width 0.4s ease", borderRadius: 3 }} />
+          </div>
+          <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{progress}%</div>
+        </div>
+      )}
+
+      {loadState === "error" && (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+          <Icon name="warning" size={32} style={{ color: "var(--pea-orange-500)" }} />
+          <div style={{ fontWeight: 700 }}>โหลดข้อมูลไม่สำเร็จ</div>
+          <button className="btn btn-outline" onClick={() => { setMeters([]); setTrs([]); setProgress(0); setLoadKey(k => k + 1); }}>ลองอีกครั้ง</button>
+        </div>
+      )}
+
+      {/* ── Map container ── */}
+      <div ref={containerRef} style={{ flex: 1 }} />
+    </div>
+  );
+}
+
+function makeAdmMarker(p, symbol, isMeter, accent, accent2) {
+  const icon = L.divIcon({
+    className: "",
+    html: `<div class="pea-marker${isMeter ? "" : " tr"}"><span>${symbol}</span></div>`,
+    iconSize: [36, 36], iconAnchor: [18, 32], popupAnchor: [0, -30],
+  });
+  const marker = L.marker([p.LATITUDE, p.LONGITUDE], { icon, riseOnHover: true });
+  const popup = isMeter
+    ? `<div style="padding:10px 14px;min-width:180px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,${accent},${accent2});color:white;font-weight:900;display:grid;place-items:center;font-size:12px">M</div>
+          <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.TAG}</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-mute)">Feeder: <b>${p.FEEDERID||"—"}</b> · Route: <b>${p.ROUTE||"—"}</b></div>
+        <div style="font-size:11px;margin-top:4px;font-family:monospace;color:var(--ink-mute)">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
+      </div>`
+    : `<div style="padding:10px 14px;min-width:180px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,${accent},${accent2});color:white;font-weight:900;display:grid;place-items:center;font-size:12px">▲</div>
+          <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.TAG}</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-mute)">${p.KVA} kVA · ${p.PHASE}Φ · ${p.VOLTAGE} kV · Feeder: <b>${p.FEEDER1||"—"}</b></div>
+        <div style="font-size:11px;margin-top:4px;font-family:monospace;color:var(--ink-mute)">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
+      </div>`;
+  marker.bindPopup(popup, { maxWidth: 280 });
+  return marker;
+}
+
 const METER_SAMPLE_CSV = `OBJECTID,TAG,CODE,ROUTE,ACCOUNTNUM,PEANO,FEEDERID,OWNER,INSTALLATI,LATITUDE,LONGITUDE
 8000001,MTR-001,MTR-CGA02-001,CGA02,AC-2569-001,PEAN-001,FAU11,PEA,2569-01-01,16.7841,100.2234
 8000002,MTR-002,MTR-CGA02-002,CGA02,AC-2569-002,PEAN-002,FAU11,PEA,2569-01-15,16.7843,100.2236
