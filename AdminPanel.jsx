@@ -2544,11 +2544,11 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const toast = useToast();
 
   const loadCorrections = React.useCallback(async () => {
-    const { data: rows } = await _supabase
+    const { data: rows, error } = await _supabase
       .from("coordinate_corrections")
       .select("*")
       .order("submitted_at", { ascending: false });
-    if (rows) setCorrections(rows);
+    if (!error && rows) setCorrections(rows);
   }, []);
 
   useEffectAd(() => {
