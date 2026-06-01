@@ -1,7 +1,7 @@
 {
-  "commit": "160a9ba",
-  "shortCommit": "160a9ba",
-  "message": "feat: PDF fix + v3.0 changelog + guide updates",
-  "date": "2026-06-01T12:00:00+00:00",
+  "commit": "4146cd4",
+  "shortCommit": "4146cd4",
+  "message": "feat(deploy): refetch + load-new-version buttons in deploy popup",
+  "date": "2026-06-01T12:30:00+00:00",
   "branch": "main"
 }
