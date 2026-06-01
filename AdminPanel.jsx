@@ -4614,6 +4614,9 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
           </div>
         )}
 
+        {/* ── Document Downloads ── */}
+        <DocDownloadSection />
+
         {/* ── Push Notification ── */}
         <PushNotifySection
           pushPermission={pushPermission}
@@ -4622,6 +4625,284 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
           currentUser={currentUser}
           addAudit={addAudit}
         />
+      </div>
+    </div>
+  );
+}
+
+// ── Infographic: User Quick Guide ─────────────────────────────────────────
+function UserQuickGuideCard() {
+  const W = 560;
+  const steps = [
+    { emoji: "🔐", title: "สมัครสมาชิก & เข้าสู่ระบบ", lines: ["กรอกอีเมล + รหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)", "รอ Admin อนุมัติบัญชีก่อนใช้งาน — ระบบแจ้งอัตโนมัติ"] },
+    { emoji: "🔍", title: "ค้นหาข้อมูล Meter / Transformer", lines: ["พิมพ์ TAG, PEANO, สถานที่, หรือ Feeder ID", "กรองตามประเภท / เจ้าของ (PEA/Customer) / Feeder"] },
+    { emoji: "🗺️", title: "ดูบนแผนที่", lines: ["กด marker เพื่อดูรายละเอียด — คัดลอกพิกัดได้ทันที", "สลับ Street / Satellite บน Topbar"] },
+    { emoji: "📍", title: "นำทาง GPS ไปยังอุปกรณ์", lines: ["กด marker → กดปุ่มนำทาง → ระบบเปิด Google Maps / Apple Maps", "ระบบคำนวณระยะทางและเวลาโดยประมาณให้อัตโนมัติ"] },
+    { emoji: "📝", title: "แจ้งแก้ไขพิกัดที่ไม่ถูกต้อง", lines: ["กด marker → 'แจ้งแก้ไขพิกัด' → วางพิกัดใหม่ด้วย GPS หรือลากหมุด", "ส่งคำขอ → รอ Admin อนุมัติ (พิกัดอัปเดตทันทีที่ Admin กดอนุมัติ)"] },
+    { emoji: "📲", title: "ติดตั้งเป็นแอป (PWA)", lines: ["iOS: Safari → กดปุ่ม Share → 'เพิ่มลงหน้าจอหลัก'", "Android: Chrome → เมนู → 'Add to Home Screen'"] },
+  ];
+  return (
+    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#1b0926", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>🏢</div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", marginBottom: 3 }}>คู่มือเริ่มต้นใช้งาน</div>
+            <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>GIS Meter &amp; Transformer</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>ระบบสารสนเทศภูมิศาสตร์ PEA — สำหรับผู้ใช้งานทั่วไป</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+          {["ค้นหามิเตอร์/หม้อแปลง","นำทาง GPS","แจ้งแก้ไขพิกัด","ติดตั้งเป็นแอป"].map(t => (
+            <span key={t} style={{ padding: "3px 11px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.9)" }}>{t}</span>
+          ))}
+        </div>
+      </div>
+      {/* Steps */}
+      <div style={{ padding: "24px 28px" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 16 }}>ขั้นตอนการใช้งาน</div>
+        {steps.map((step, i) => (
+          <div key={i} style={{ display: "flex", gap: 14, marginBottom: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid #a78bfa" }}>{step.emoji}</div>
+              {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: "rgba(167,139,250,0.25)", marginTop: 4 }} />}
+            </div>
+            <div style={{ flex: 1, paddingTop: 6 }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#f3eefa", marginBottom: 5 }}>{i + 1}. {step.title}</div>
+              {step.lines.map((ln, j) => (
+                <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 3 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#f47b20", marginTop: 7, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: "rgba(243,238,250,0.8)", lineHeight: 1.6 }}>{ln}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Footer */}
+      <div style={{ margin: "0 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(139,63,196,0.15)", border: "1px solid rgba(139,63,196,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>เข้าใช้งานได้ที่</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>เวอร์ชัน</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#f47b20" }}>v3.0 · 1 มิ.ย. 2569</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Infographic: Admin Quick Guide ────────────────────────────────────────
+function AdminQuickGuideCard() {
+  const W = 560;
+  const steps = [
+    { emoji: "👥", title: "จัดการผู้ใช้งาน", badge: "Admin → จัดการผู้ใช้", lines: ["คลิกแถวผู้ใช้ = ดูรายละเอียด + สถานะรหัสผ่าน", "อนุมัติ / ระงับ / เปลี่ยน Role / เปิด-ปิด 2FA"] },
+    { emoji: "📦", title: "จัดการมิเตอร์ & หม้อแปลง", badge: "Admin → PEA Meter / TR", lines: ["เพิ่ม / แก้ไข / ลบ ข้อมูลรายเครื่อง", "Import CSV (upsert ตาม OBJECTID) · Export CSV"] },
+    { emoji: "🗺️", title: "แผนที่ภาพรวม + อนุมัติพิกัด", badge: "Admin → แผนที่", lines: ["ปุ่ม 'ตำแหน่งฉัน' = GPS ระบุจุดปัจจุบันบนแผนที่", "ปุ่ม '📋 คำขอแก้ไข (N)' = อนุมัติ / ปฏิเสธพิกัดใหม่"] },
+    { emoji: "🔔", title: "ส่ง Push Notification", badge: "Admin → ตั้งค่า → Push", lines: ["เปิดการแจ้งเตือนบนอุปกรณ์นี้ก่อน (กด Allow)", "เลือกเทมเพลต / พิมพ์เอง → ส่งถึงทุกเครื่องทันที"] },
+    { emoji: "🔧", title: "Maintenance Mode", badge: "Admin → ตั้งค่า", lines: ["เปิด = ผู้ใช้ทั่วไปเห็นหน้าปิดปรับปรุง — Admin ยังเข้าได้", "ตั้งข้อความและเวลากลับมาผ่านปฏิทินภาษาไทย"] },
+    { emoji: "📋", title: "Audit Log & ความปลอดภัย", badge: "Admin → บันทึก / ความปลอดภัย", lines: ["บันทึกทุก action: login, แก้ไขข้อมูล, เปลี่ยนรหัส, 2FA", "คะแนนความปลอดภัย (0-100) + ตรวจจับกิจกรรมต้องสงสัย"] },
+  ];
+  return (
+    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#1b0926", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#1b0926 0%,#4f1e6e 50%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden", borderBottom: "2px solid #6b2c91" }}>
+        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(244,123,32,0.1)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(244,123,32,0.18)", border: "2px solid rgba(244,123,32,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>⚙️</div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 3 }}>Admin Quick Reference</div>
+            <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>GIS Meter &amp; Transformer</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>คู่มืออ้างอิงสำหรับผู้ดูแลระบบ</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+          {["จัดการผู้ใช้","Import/Export","Push Notification","Maintenance Mode","Audit Log"].map(t => (
+            <span key={t} style={{ padding: "3px 11px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "rgba(255,255,255,0.9)" }}>{t}</span>
+          ))}
+        </div>
+      </div>
+      {/* Steps */}
+      <div style={{ padding: "24px 28px" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f47b20", marginBottom: 16 }}>ฟีเจอร์หลักของ Admin</div>
+        {steps.map((step, i) => (
+          <div key={i} style={{ display: "flex", gap: 14, marginBottom: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#321148,#f47b20)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid #f47b20" }}>{step.emoji}</div>
+              {i < steps.length - 1 && <div style={{ width: 2, flex: 1, background: "rgba(244,123,32,0.2)", marginTop: 4 }} />}
+            </div>
+            <div style={{ flex: 1, paddingTop: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: "#f3eefa" }}>{i + 1}. {step.title}</div>
+                <span style={{ padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.3)", color: "#ffba7a", flexShrink: 0 }}>{step.badge}</span>
+              </div>
+              {step.lines.map((ln, j) => (
+                <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 3 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa", marginTop: 7, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: "rgba(243,238,250,0.8)", lineHeight: 1.6 }}>{ln}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Footer */}
+      <div style={{ margin: "0 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>URL ระบบ</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#ffba7a", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "rgba(243,238,250,0.5)", marginBottom: 2 }}>เวอร์ชัน</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#f47b20" }}>v3.0 · 1 มิ.ย. 2569</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DocDownloadSection ────────────────────────────────────────────────────
+function DocDownloadSection() {
+  const userRef  = React.useRef(null);
+  const adminRef = React.useRef(null);
+  const [busy, setBusy] = useStateAd(null);
+  const toast = useToast();
+
+  function makeWrap(el, bg) {
+    const clone = el.cloneNode(true);
+    clone.style.cssText += ";width:560px;max-width:560px;margin:0;";
+    const w = document.createElement("div");
+    w.style.cssText = `position:fixed;left:0;top:0;width:560px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:${bg};`;
+    w.appendChild(clone);
+    return w;
+  }
+
+  async function dlPdf(ref, filename, key, bg) {
+    const el = ref.current;
+    if (!el || typeof html2pdf === "undefined") { toast?.("html2pdf ยังไม่พร้อม", "error"); return; }
+    setBusy(key);
+    const wrap = makeWrap(el, bg);
+    document.body.appendChild(wrap);
+    document.body.style.overflow = "visible";
+    const cleanup = () => { document.body.removeChild(wrap); document.body.style.overflow = ""; setBusy(null); };
+    html2pdf().set({
+      margin: [12, 10, 12, 10],
+      filename,
+      image: { type: "jpeg", quality: 0.97 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: bg, windowWidth: 560 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    }).from(wrap.firstChild).save().then(cleanup).catch(cleanup);
+  }
+
+  async function dlPng(ref, filename, key, bg) {
+    const el = ref.current;
+    if (!el) return;
+    setBusy(key);
+    const wrap = makeWrap(el, bg);
+    document.body.appendChild(wrap);
+    document.body.style.overflow = "visible";
+    const cleanup = () => { document.body.removeChild(wrap); document.body.style.overflow = ""; setBusy(null); };
+    const canvasFn = typeof window.html2canvas !== "undefined" ? window.html2canvas : null;
+    if (!canvasFn) {
+      // Fallback: export PDF instead
+      toast?.("โหลด PNG ไม่ได้ในตอนนี้ — กรุณาใช้ PDF แทน", "info");
+      cleanup();
+      return;
+    }
+    canvasFn(wrap.firstChild, { scale: 2, useCORS: true, backgroundColor: bg, width: 560 })
+      .then(canvas => {
+        const a = document.createElement("a");
+        a.download = filename;
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        cleanup();
+      })
+      .catch(cleanup);
+  }
+
+  const BTN = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", transition: "all 140ms" };
+
+  const guides = [
+    {
+      key: "user",
+      icon: "👤",
+      title: "คู่มือผู้ใช้งานทั่วไป",
+      desc: "เริ่มต้นใช้งาน, ค้นหา, แผนที่, GPS นำทาง, แจ้งแก้ไขพิกัด",
+      ref: userRef,
+      bg: "#1b0926",
+      pdfFile: "คู่มือผู้ใช้งาน-GIS-Meter.pdf",
+      pngFile: "คู่มือผู้ใช้งาน-GIS-Meter.png",
+      accent: "#8b3fc4",
+    },
+    {
+      key: "admin",
+      icon: "⚙️",
+      title: "คู่มืออ้างอิง Admin",
+      desc: "จัดการผู้ใช้, มิเตอร์/TR, แผนที่, Push Notification, Maintenance",
+      ref: adminRef,
+      bg: "#1b0926",
+      pdfFile: "คู่มือ-Admin-GIS-Meter.pdf",
+      pngFile: "คู่มือ-Admin-GIS-Meter.png",
+      accent: "#f47b20",
+    },
+  ];
+
+  return (
+    <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Hidden infographic refs */}
+      <div style={{ position: "fixed", left: -9999, top: 0, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+        <div ref={userRef}><UserQuickGuideCard /></div>
+        <div ref={adminRef}><AdminQuickGuideCard /></div>
+      </div>
+
+      {/* Header */}
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <Icon name="download" size={18} style={{ color: "var(--pea-purple-500)" }} />
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>เอกสารสำหรับแจกผู้ใช้ใหม่</div>
+          <div className="t-mute text-sm">ดาวน์โหลด PDF หรือ PNG เพื่อส่งต่อผ่าน Line / Email</div>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {guides.map(g => (
+          <div key={g.key} style={{ padding: "14px 16px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${g.accent}18`, border: `1px solid ${g.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{g.icon}</div>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{g.title}</div>
+              <div className="t-mute text-sm" style={{ marginTop: 2 }}>{g.desc}</div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <button
+                style={{ ...BTN, background: `${g.accent}18`, color: g.accent, border: `1px solid ${g.accent}30`, opacity: busy === `${g.key}-pdf` ? 0.6 : 1 }}
+                onClick={() => dlPdf(g.ref, g.pdfFile, `${g.key}-pdf`, g.bg)}
+                disabled={!!busy}
+              >
+                <Icon name="download" size={13} style={{ animation: busy === `${g.key}-pdf` ? "pea-spin 1s linear infinite" : "none" }} />
+                PDF
+              </button>
+              <button
+                style={{ ...BTN, background: "rgba(59,130,246,0.1)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.25)", opacity: busy === `${g.key}-png` ? 0.6 : 1 }}
+                onClick={() => dlPng(g.ref, g.pngFile, `${g.key}-png`, g.bg)}
+                disabled={!!busy}
+              >
+                <Icon name="sun" size={13} style={{ animation: busy === `${g.key}-png` ? "pea-spin 1s linear infinite" : "none" }} />
+                PNG
+              </button>
+            </div>
+          </div>
+        ))}
+        <div style={{ fontSize: 11, color: "var(--ink-mute)", display: "flex", alignItems: "center", gap: 6 }}>
+          <Icon name="info" size={12} style={{ flexShrink: 0 }} />
+          PDF เหมาะพิมพ์แจก · PNG เหมาะส่งใน Line / Facebook
+        </div>
       </div>
     </div>
   );
