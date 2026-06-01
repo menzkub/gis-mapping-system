@@ -2924,6 +2924,12 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
       setNewLat(+ll.lat.toFixed(6));
       setNewLng(+ll.lng.toFixed(6));
     });
+    // Tap anywhere on map to move the green marker instantly
+    map.on('click', (e) => {
+      nm.setLatLng(e.latlng);
+      setNewLat(+e.latlng.lat.toFixed(6));
+      setNewLng(+e.latlng.lng.toFixed(6));
+    });
     newMarkerRef.current = nm;
     miniMapInst.current = map;
     return () => { if (miniMapInst.current) { miniMapInst.current.remove(); miniMapInst.current = null; } };
