@@ -1,7 +1,7 @@
 {
-  "commit": "a7c3e8f",
-  "shortCommit": "a7c3e8f",
-  "message": "feat(map): coordinate correction request — submit + admin approve/reject",
-  "date": "2026-06-01T11:00:00+00:00",
+  "commit": "da5c1d5",
+  "shortCommit": "da5c1d5",
+  "message": "fix(correction-modal): GPS button visible — moved above inputs, overflow-y scroll",
+  "date": "2026-06-01T11:30:00+00:00",
   "branch": "main"
 }
