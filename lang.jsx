@@ -163,7 +163,7 @@ const TRANSLATIONS = {
     corrPending: "รออนุมัติ", corrApprove: "อนุมัติ", corrReject: "ปฏิเสธ",
     corrSubmittedBy: "ส่งโดย", corrSubmitOk: "ส่งคำขอแก้ไขพิกัดแล้ว — รอแอดมินอนุมัติ",
     corrApprovedMsg: "อนุมัติแก้ไขพิกัดแล้ว",
-    dbMeters: "มิเตอร์ทั้งหมด", dbTrs: "หม้อแปลงทั้งหมด",
+    dbMeters: "มิเตอร์ทั้งหมด", dbTrs: "หม้อแปลง ทั้งหมด",
     dbKva: "กำลัง (kVA)", dbUsers: "ผู้ใช้งาน",
     dbDist: "การกระจาย", dbByFeeder: "มิเตอร์ตาม Feeder",
     dbTop: "Top", dbNoFeeder: "ไม่มีข้อมูล Feeder", dbItems: "รายการ",

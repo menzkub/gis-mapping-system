@@ -199,7 +199,12 @@ function StatCard({ label, value, delta, icon, accent = "purple", breakdown }) {
           </div>
         )}
       </div>
-      <div className="t-mute text-xs fw-6" style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+      <div className="t-mute fw-6" style={{
+        fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase",
+        minHeight: "2.6em", display: "-webkit-box",
+        WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+        lineHeight: 1.3,
+      }}>{label}</div>
       <FitText>{value}</FitText>
       {breakdown && (
         <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3, borderTop: "1px solid var(--line)", paddingTop: 8 }}>
