@@ -3234,8 +3234,11 @@ function App() {
 
   const doLogout = useCallbackApp(async () => {
     setShowLogoutConfirm(false);
-    await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" });
-    await _supabase.auth.signOut();
+    try { await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" }); } catch (_) {}
+    try { await _supabase.auth.signOut(); } catch (_) {}
+    // Force clear regardless of signOut result (handles expired-session 403)
+    setCurrentUser(null);
+    setAppState("unauthed");
   }, [currentUser, addAudit]);
 
   const handleRefresh = useCallbackApp(async () => {

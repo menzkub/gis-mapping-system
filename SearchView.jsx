@@ -292,10 +292,10 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       </div>
 
       {/* Content */}
-      <div className="sv-body" style={{ flex: 1, overflow: "hidden" }}>
+      <div className="sv-body" style={{ flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column" }}>
         {!hasSearched ? (
           /* Empty start state */
-          <div className="card" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ textAlign: "center", padding: 40 }}>
               <div style={{ width: 72, height: 72, borderRadius: 20, margin: "0 auto 20px", background: "var(--soft)", display: "grid", placeItems: "center" }}>
                 <Icon name="search" size={32} style={{ color: "var(--ink-mute)" }} />
@@ -313,7 +313,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           </div>
         ) : searching ? (
           /* Loading state */
-          <div className="card" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ width: 48, height: 48, borderRadius: 14, margin: "0 auto 16px", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", animation: "pea-spin 1.2s linear infinite" }}>
                 <Icon name="search" size={22} style={{ color: "white" }} />
@@ -322,11 +322,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             </div>
           </div>
         ) : results.length === 0 ? (
-          <div className="card" style={{ height: "100%" }}>
+          <div className="card" style={{ flex: 1, minHeight: 0 }}>
             <EmptyState title={t("notFound")} hint={t("notFoundHint")} />
           </div>
         ) : (
-          <div style={{ height: "100%", display: "grid", gridTemplateColumns: view === "split" ? "clamp(300px, 38%, 520px) 1fr" : "1fr", gap: 16 }}>
+          <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: view === "split" ? "clamp(300px, 38%, 520px) 1fr" : "1fr", gap: 16 }}>
             {view === "split" && (
               <ResultList
                 kind={tab}
@@ -340,7 +340,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               />
             )}
             {(view === "split" || view === "map") && (
-              <div style={{ height: "100%", minHeight: 480, position: "relative" }}>
+              <div style={{ minHeight: 480, position: "relative" }}>
                 <MapView
                   points={results}
                   kind={tab}
