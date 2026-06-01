@@ -173,8 +173,8 @@ function AdminDashboard({ data }) {
 
       {/* Stat cards — 3 cols (removed Users) */}
       <div className="db-stat-grid">
-        <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter" accent="purple" />
-        <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr"    accent="orange" />
+        <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter-m" accent="purple" />
+        <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr-tri" accent="orange" />
         <StatCard label={t("dbKva")}    value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
           breakdown={[
             { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4" },
