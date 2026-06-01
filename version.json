@@ -1,7 +1,7 @@
 {
-  "commit": "da5c1d5",
-  "shortCommit": "da5c1d5",
-  "message": "fix(correction-modal): GPS button visible — moved above inputs, overflow-y scroll",
-  "date": "2026-06-01T11:30:00+00:00",
+  "commit": "160a9ba",
+  "shortCommit": "160a9ba",
+  "message": "feat: PDF fix + v3.0 changelog + guide updates",
+  "date": "2026-06-01T12:00:00+00:00",
   "branch": "main"
 }
