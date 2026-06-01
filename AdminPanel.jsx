@@ -4880,9 +4880,8 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
   const [localUntil, setLocalUntil] = useStateAd(maintenanceUntil || "");
   const [localDev, setLocalDev] = useStateAd(devInfo || {});
   const [savingDev, setSavingDev] = useStateAd(false);
-  const [openMaint, setOpenMaint] = useStateAd(true);
-  const [openDev, setOpenDev] = useStateAd(false);
-  const [openExport, setOpenExport] = useStateAd(false);
+  const [openSection, setOpenSection] = useStateAd(null);
+  const toggleSection = name => setOpenSection(s => s === name ? null : name);
   const [exportLoading, setExportLoading] = useStateAd(false);
   const toast = useToast();
 
@@ -5004,7 +5003,7 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
 
       {/* ── Export Control Card ── */}
       <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
-        <button onClick={() => setOpenExport(o => !o)}
+        <button onClick={() => toggleSection("export")}
           style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: allowExport ? "rgba(59,130,246,0.1)" : "rgba(239,68,68,0.1)", display: "grid", placeItems: "center", flexShrink: 0 }}>
             <Icon name="download" size={18} style={{ color: allowExport ? "#3b82f6" : "#ef4444" }} />
@@ -5018,9 +5017,9 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
             </div>
             <div className="t-mute text-sm">อนุญาต/ห้ามผู้ใช้ทั่วไป Export ข้อมูลเป็น CSV</div>
           </div>
-          <Icon name={openExport ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+          <Icon name={openSection === "export" ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
         </button>
-        {openExport && (
+        {openSection === "export" && (
           <div className="fade-up" style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, paddingTop: 16 }}>
               <div className="t-mute text-sm" style={{ lineHeight: 1.7 }}>
@@ -5055,7 +5054,7 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
       <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
         {/* Header (always visible) */}
         <button
-          onClick={() => setOpenMaint(o => !o)}
+          onClick={() => toggleSection("maint")}
           style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
         >
           <div style={{ width: 36, height: 36, borderRadius: 10, background: maintenanceMode ? "rgba(244,123,32,0.12)" : "rgba(139,63,196,0.10)", display: "grid", placeItems: "center", flexShrink: 0 }}>
@@ -5070,11 +5069,11 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
             </div>
             <div className="t-mute text-sm">ปิด/เปิดการเข้าใช้งานของผู้ใช้ทั่วไป</div>
           </div>
-          <Icon name={openMaint ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+          <Icon name={openSection === "maint" ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
         </button>
 
         {/* Collapsible body */}
-        {openMaint && (
+        {openSection === "maint" && (
           <div className="fade-up" style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
             {/* Toggle row */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, paddingTop: 16 }}>
@@ -5139,7 +5138,7 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
       {/* Developer Info — Collapsible Card */}
       <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
         <button
-          onClick={() => setOpenDev(o => !o)}
+          onClick={() => toggleSection("dev")}
           style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
         >
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(107,44,145,0.1)", display: "grid", placeItems: "center", flexShrink: 0 }}>
@@ -5154,10 +5153,10 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
             </div>
             <div className="t-mute text-sm">แสดงปุ่ม "พัฒนาโดย" มุมขวาล่างของหน้าจอ</div>
           </div>
-          <Icon name={openDev ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+          <Icon name={openSection === "dev" ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
         </button>
 
-        {openDev && (
+        {openSection === "dev" && (
           <div className="fade-up" style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
             {/* Show button toggle */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, paddingTop: 16, marginBottom: 16 }}>
@@ -5216,7 +5215,7 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
       </div>
 
       {/* ── Document Downloads ── */}
-      <DocDownloadSection />
+      <DocDownloadSection isOpen={openSection === "docs"} onToggle={() => toggleSection("docs")} />
 
       {/* ── Push Notification ── */}
       <PushNotifySection
@@ -5225,6 +5224,8 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
         unsubscribePush={unsubscribePush}
         currentUser={currentUser}
         addAudit={addAudit}
+        isOpen={openSection === "push"}
+        onToggle={() => toggleSection("push")}
       />
     </div>
   );
@@ -5261,8 +5262,8 @@ function UserQuickGuideCard() {
   const steps = [
     { emoji: "🔐", title: "สมัครสมาชิก & เข้าสู่ระบบ", lines: ["กรอกอีเมล + รหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)", "รอ Admin อนุมัติบัญชีก่อนใช้งาน — ระบบแจ้งอัตโนมัติ"] },
     { emoji: "🔍", title: "ค้นหาข้อมูล Meter / Transformer", lines: ["พิมพ์ TAG, PEANO, สถานที่, หรือ Feeder ID", "กรองตามประเภท / เจ้าของ (PEA/Customer) / Feeder"] },
-    { emoji: "🗺️", title: "ดูบนแผนที่", lines: ["กด marker เพื่อดูรายละเอียด — คัดลอกพิกัดได้ทันที", "สลับ Street / Satellite บน Topbar"] },
-    { emoji: "📍", title: "นำทาง GPS ไปยังอุปกรณ์", lines: ["กด marker → กดปุ่มนำทาง → ระบบเปิด Google Maps / Apple Maps", "ระบบคำนวณระยะทางและเวลาโดยประมาณให้อัตโนมัติ"] },
+    { emoji: "🗺️", title: "ดูบนแผนที่", lines: ["กด marker เพื่อดูรายละเอียด — คัดลอกพิกัดได้ทันที", "กดที่กลุ่ม marker (cluster) เพื่อ zoom เข้าดูรายตัว", "สลับ Street / Satellite บน Topbar"] },
+    { emoji: "📍", title: "นำทาง GPS ไปยังอุปกรณ์", lines: ["กด marker → กดปุ่มนำทาง → ระบบเปิด Google Maps / Apple Maps", "ระบบแสดงระยะทางและเวลาโดยประมาณ (คำนวณที่ 40 กม./ชม.)"] },
     { emoji: "📝", title: "แจ้งแก้ไขพิกัดที่ไม่ถูกต้อง", lines: ["กด marker → 'แจ้งแก้ไขพิกัด' → วางพิกัดใหม่ด้วย GPS หรือลากหมุด", "ส่งคำขอ → รอ Admin อนุมัติ (พิกัดอัปเดตทันทีที่ Admin กดอนุมัติ)"] },
     { emoji: "📲", title: "ติดตั้งเป็นแอป (PWA)", lines: ["iOS: Safari → กดปุ่ม Share → 'เพิ่มลงหน้าจอหลัก'", "Android: Chrome → เมนู → 'Add to Home Screen'"] },
   ];
@@ -5395,8 +5396,8 @@ function UserQuickGuideCard() {
           <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#a78bfa", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.0 · Active</span>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 1 มิ.ย. 2569</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.1 · Active</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 2 มิ.ย. 2569</span>
           </div>
         </div>
       </div>
@@ -5536,8 +5537,8 @@ function AdminQuickGuideCard() {
           <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#ffba7a", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference</span>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 1 มิ.ย. 2569</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference · v3.1</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 2 มิ.ย. 2569</span>
           </div>
         </div>
       </div>
@@ -5546,7 +5547,7 @@ function AdminQuickGuideCard() {
 }
 
 // ── DocDownloadSection ────────────────────────────────────────────────────
-function DocDownloadSection() {
+function DocDownloadSection({ isOpen, onToggle }) {
   const userRef  = React.useRef(null);
   const adminRef = React.useRef(null);
   const [busy, setBusy] = useStateAd(null);
@@ -5631,8 +5632,6 @@ function DocDownloadSection() {
     },
   ];
 
-  const [open, setOpen] = useStateAd(true);
-
   return (
     <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
       {/* Hidden infographic refs */}
@@ -5642,9 +5641,9 @@ function DocDownloadSection() {
       </div>
 
       {/* Header — clickable to collapse */}
-      <button onClick={() => setOpen(o => !o)} style={{
+      <button onClick={onToggle} style={{
         width: "100%", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12,
-        background: "transparent", border: "none", borderBottom: open ? "1px solid var(--line)" : "none",
+        background: "transparent", border: "none", borderBottom: isOpen ? "1px solid var(--line)" : "none",
         cursor: "pointer", textAlign: "left",
       }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
@@ -5654,11 +5653,11 @@ function DocDownloadSection() {
           <div style={{ fontWeight: 700, fontSize: 15 }}>เอกสารสำหรับแจกผู้ใช้ใหม่</div>
           <div className="t-mute text-sm">ดาวน์โหลด PDF หรือ PNG เพื่อส่งต่อผ่าน Line / Email</div>
         </div>
-        <Icon name={open ? "chevDown" : "chevRight"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+        <Icon name={isOpen ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
       </button>
 
       {/* Cards */}
-      {open && <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {isOpen && <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
         {guides.map(g => (
           <div key={g.key} style={{ padding: "14px 16px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: `${g.accent}18`, border: `1px solid ${g.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{g.icon}</div>
@@ -5695,12 +5694,10 @@ function DocDownloadSection() {
   );
 }
 
-function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, currentUser, addAudit }) {
+function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, currentUser, addAudit, isOpen, onToggle }) {
   const toast   = useToast();
   const { lang } = useLang();
   const th = (t, e) => lang === "en" ? e : t;
-
-  const [open, setOpen]       = useStateAd(false);
   const [title, setTitle]     = useStateAd("");
   const [body, setBody]       = useStateAd("");
   const [sending, setSending] = useStateAd(false);
@@ -5752,9 +5749,9 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
   };
 
   return (
-    <div className="card card-elev" style={{ marginTop: 24, padding: 0, overflow: "hidden" }}>
+    <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
       {/* Collapsible header */}
-      <button onClick={() => setOpen(o => !o)} style={{
+      <button onClick={onToggle} style={{
         width: "100%", display: "flex", alignItems: "center", gap: 12,
         padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left",
       }}>
@@ -5762,13 +5759,13 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
           <Icon name="bell" size={18} style={{ color: "white" }} />
         </div>
         <div style={{ flex: 1 }}>
-          <div className="fw-7 text-md">{th("ส่งการแจ้งเตือน Push","Push Notifications")}</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{th("ส่งการแจ้งเตือน Push","Push Notifications")}</div>
           <div className="t-mute text-sm">{th("แจ้งเตือนผู้ใช้ทุกคนบนมือถือทันที","Send instant alerts to all mobile users")}</div>
         </div>
-        <Icon name={open ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
+        <Icon name={isOpen ? "chevUp" : "chevDown"} size={16} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
       </button>
 
-      {open && <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
+      {isOpen && <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--line)" }}>
         <div style={{ height: 16 }} />
 
       {!isSupported ? (
