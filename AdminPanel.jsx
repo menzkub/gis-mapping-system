@@ -5063,6 +5063,29 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
   );
 }
 
+// ── QR Code SVG generator (uses qrcode-generator lib from CDN) ──────────────
+function makeQRSvg(text, size = 120, fg = "#000000", bg = "#ffffff") {
+  try {
+    if (typeof qrcode === "undefined") return null;
+    const qr = qrcode(0, "L");
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount();
+    const cell = size / n;
+    let rects = `<rect width="${size}" height="${size}" fill="${bg}"/>`;
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (qr.isDark(r, c)) {
+          rects += `<rect x="${(c * cell).toFixed(2)}" y="${(r * cell).toFixed(2)}" width="${(cell + 0.5).toFixed(2)}" height="${(cell + 0.5).toFixed(2)}" fill="${fg}"/>`;
+        }
+      }
+    }
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">${rects}</svg>`;
+  } catch (_) { return null; }
+}
+
+const GIS_URL = "https://menzkub.github.io/gis-mapping-system";
+
 // ── Infographic: User Quick Guide ─────────────────────────────────────────
 const LOGO_SVG_USER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="56" height="56"><defs><linearGradient id="ugBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b4dca"/><stop offset="100%" stop-color="#1b0926"/></linearGradient><linearGradient id="ugBolt" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#ffcf8a"/><stop offset="100%" stop-color="#f47b20"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#ugBg)"/><rect width="64" height="32" rx="15" fill="rgba(255,255,255,0.05)"/><path d="M 36 7 L 16 36 H 28 L 20 57 L 48 28 H 36 L 44 7 Z" fill="url(#ugBolt)"/></svg>`;
 
@@ -5195,15 +5218,19 @@ function UserQuickGuideCard() {
         ))}
       </div>
 
-      {/* Footer */}
-      <div style={{ margin: "12px 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(139,63,196,0.12)", border: "1px solid rgba(139,63,196,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 2 }}>เข้าใช้งานได้ที่</div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: "#a78bfa", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-          <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.0 · Active</span>
-          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.4)" }}>PEA GIS · 1 มิ.ย. 2569</div>
+      {/* Footer with QR */}
+      <div style={{ margin: "12px 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(139,63,196,0.12)", border: "1px solid rgba(139,63,196,0.3)", display: "flex", alignItems: "center", gap: 14 }}>
+        {/* QR Code */}
+        <div style={{ flexShrink: 0, background: "white", borderRadius: 10, padding: 6, lineHeight: 0 }}
+          dangerouslySetInnerHTML={{ __html: makeQRSvg(GIS_URL, 88, "#1b0926", "#ffffff") || `<div style="width:88px;height:88px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#7c6094">QR</div>` }}
+        />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#a78bfa", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.0 · Active</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 1 มิ.ย. 2569</span>
+          </div>
         </div>
       </div>
     </div>
@@ -5332,15 +5359,19 @@ function AdminQuickGuideCard() {
         ))}
       </div>
 
-      {/* Footer */}
-      <div style={{ margin: "12px 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 2 }}>URL ระบบ</div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: "#ffba7a", fontFamily: "monospace" }}>menzkub.github.io/gis-mapping-system</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-          <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference</span>
-          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.4)" }}>PEA GIS · 1 มิ.ย. 2569</div>
+      {/* Footer with QR */}
+      <div style={{ margin: "12px 28px 28px", padding: "14px 18px", borderRadius: 14, background: "rgba(244,123,32,0.08)", border: "1px solid rgba(244,123,32,0.25)", display: "flex", alignItems: "center", gap: 14 }}>
+        {/* QR Code */}
+        <div style={{ flexShrink: 0, background: "white", borderRadius: 10, padding: 6, lineHeight: 0 }}
+          dangerouslySetInnerHTML={{ __html: makeQRSvg(GIS_URL, 88, "#1b0926", "#ffffff") || `<div style="width:88px;height:88px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#7c6094">QR</div>` }}
+        />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#ffba7a", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 1 มิ.ย. 2569</span>
+          </div>
         </div>
       </div>
     </div>
