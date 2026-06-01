@@ -2709,12 +2709,12 @@ function AdminMapTab({ data, currentUser, addAudit }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "var(--surface)", borderBottom: "1px solid var(--line)", flexShrink: 0, flexWrap: "wrap" }}>
         <button style={btnStyle(showM, "#6b2c91")} onClick={() => setShowM(s => !s)}>
           <span style={{ background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", color: "white", borderRadius: 6, padding: "1px 6px", fontWeight: 900, fontSize: 11 }}>M</span>
-          มิเตอร์
+          {t("admMobMeters")}
           <span style={{ opacity: 0.7 }}>{(totalM || meters.length).toLocaleString()}</span>
         </button>
         <button style={btnStyle(showT, "#ea580c")} onClick={() => setShowT(s => !s)}>
           <span style={{ background: "linear-gradient(135deg,#ea580c,#f47b20)", color: "white", borderRadius: 6, padding: "1px 6px", fontWeight: 900, fontSize: 11 }}>▲</span>
-          หม้อแปลง
+          {t("admMobTrs")}
           <span style={{ opacity: 0.7 }}>{(totalT || trs.length).toLocaleString()}</span>
         </button>
 
@@ -2759,7 +2759,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         {/* Sample note */}
         {loadState === "done" && totalM > 0 && meters.length < totalM && (
           <div style={{ width: "100%", fontSize: 11, color: "var(--ink-mute)", paddingTop: 2 }}>
-            * แสดงมิเตอร์ตัวอย่าง {meters.length.toLocaleString()} จาก {totalM.toLocaleString()} รายการ — ซูมเข้าเพื่อดูรายละเอียด
+            {t("mapSampleNote").replace("{n}", meters.length.toLocaleString()).replace("{total}", totalM.toLocaleString())}
           </div>
         )}
       </div>
@@ -2770,7 +2770,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           <div className="adm-spin" style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center" }}>
             <Icon name="map" size={22} style={{ color: "white" }} />
           </div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>กำลังโหลดข้อมูลแผนที่…</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{t("mapLoadingData")}</div>
           <div style={{ width: 200, height: 6, background: "var(--line)", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ width: progress + "%", height: "100%", background: "linear-gradient(90deg,#6b2c91,#f47b20)", transition: "width 0.4s ease", borderRadius: 3 }} />
           </div>
@@ -2781,8 +2781,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
       {loadState === "error" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
           <Icon name="warning" size={32} style={{ color: "var(--pea-orange-500)" }} />
-          <div style={{ fontWeight: 700 }}>โหลดข้อมูลไม่สำเร็จ</div>
-          <button className="btn btn-outline" onClick={() => { setMeters([]); setTrs([]); setProgress(0); setLoadKey(k => k + 1); }}>ลองอีกครั้ง</button>
+          <div style={{ fontWeight: 700 }}>{t("mapLoadFail")}</div>
+          <button className="btn btn-outline" onClick={() => { setMeters([]); setTrs([]); setProgress(0); setLoadKey(k => k + 1); }}>{t("retryBtn")}</button>
         </div>
       )}
 
