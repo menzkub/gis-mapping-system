@@ -1606,15 +1606,39 @@ function UserGuide({ role }) {
   function downloadGuide() {
     const el = guideRef.current;
     if (!el || pdfLoading || typeof html2pdf === "undefined") return;
+    // Expand all sections first, then wait for React to re-render
+    expandAll();
     setPdfLoading(true);
-    html2pdf().set({
-      margin: [8, 6, 8, 6],
-      filename: "คู่มือการใช้งาน-GIS-Meter.pdf",
-      image: { type: "jpeg", quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6" },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"] },
-    }).from(el).save().then(() => setPdfLoading(false)).catch(() => setPdfLoading(false));
+    setTimeout(() => {
+      // Clone so we can strip interactive elements without affecting the UI
+      const clone = el.cloneNode(true);
+      // Remove all buttons (expand/collapse/download — not needed in PDF)
+      clone.querySelectorAll("button").forEach(b => b.remove());
+      // Force all collapsed accordion bodies to be fully visible
+      clone.querySelectorAll("[style]").forEach(node => {
+        const s = node.style;
+        if (s.overflow === "hidden" && (s.maxHeight === "0px" || s.height === "0px")) {
+          s.overflow = "visible";
+          s.maxHeight = "none";
+          s.height = "auto";
+        }
+      });
+      // Mount off-screen so html2canvas can measure it
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;background:#f5f4f6;";
+      wrap.appendChild(clone);
+      document.body.appendChild(wrap);
+      html2pdf().set({
+        margin: [10, 8, 10, 8],
+        filename: "คู่มือการใช้งาน-GIS-Meter.pdf",
+        image: { type: "jpeg", quality: 0.97 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6", windowWidth: 820 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"], avoid: [".card", "li", "tr"] },
+      }).from(clone).save()
+        .then(() => { document.body.removeChild(wrap); setPdfLoading(false); })
+        .catch(() => { document.body.removeChild(wrap); setPdfLoading(false); });
+    }, 450); // Wait for accordion animation to complete
   }
 
   return (
