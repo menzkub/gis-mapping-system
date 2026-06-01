@@ -3034,6 +3034,22 @@ function App() {
     if (Notification.permission === "granted") subscribePush();
   }, [currentUser?.id]);
 
+  // Re-read Notification.permission when user returns to the tab/app
+  // (covers the case where user enables notifications in iOS Settings then comes back)
+  useEffectApp(() => {
+    if (typeof Notification === "undefined") return;
+    const onVisible = () => {
+      const perm = Notification.permission;
+      setPushPermission(perm);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
+
   // ── Auto-logout หลังไม่ใช้งาน 30 นาที (warning 2 นาทีก่อน) ──────────────
   useEffectApp(() => {
     if (!currentUser) return;

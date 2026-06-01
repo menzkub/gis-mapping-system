@@ -4490,6 +4490,7 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
   const isSupported = pushPermission !== "unsupported" && "PushManager" in window;
   const isGranted   = pushPermission === "granted";
   const isDenied    = pushPermission === "denied";
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   const PRESETS = [
     { icon: "🔧", label: th("ปิดระบบชั่วคราว","Maintenance"), title: th("ปิดระบบชั่วคราว","System Maintenance"), body: th("ระบบจะปิดให้บริการชั่วคราวเพื่อปรับปรุง กรุณาลองใหม่ในภายหลัง","The system will be temporarily unavailable for maintenance. Please try again later.") },
@@ -4547,8 +4548,26 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
           {th("Browser นี้ไม่รองรับ Push Notification","Push notifications not supported in this browser")}
         </div>
       ) : isDenied ? (
-        <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "var(--red)" }}>
-          <b>{th("ถูกบล็อก:","Blocked:")}</b> {th("ไปที่ Browser Settings → ค้นหาเว็บนี้ → อนุญาต Notification","Go to Browser Settings → find this site → allow Notifications")}
+        <div style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.22)", borderRadius: 12, padding: "14px 16px", fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: "var(--red)", marginBottom: 6 }}>
+            {th("การแจ้งเตือนถูกปิดกั้น","Notifications are blocked")}
+          </div>
+          <div style={{ color: "var(--text)", lineHeight: 1.6, marginBottom: 12 }}>
+            {isIOS ? (
+              th(
+                "ไปที่ Settings → เลื่อนหา GIS Meter → เปิด Allow Notifications แล้วกด \"ลองอีกครั้ง\" ด้านล่าง",
+                "Go to Settings → scroll to find GIS Meter → enable Allow Notifications, then tap "Try Again" below"
+              )
+            ) : (
+              th(
+                "ไปที่การตั้งค่าเบราว์เซอร์ → ค้นหาเว็บนี้ → อนุญาต Notification แล้วรีโหลดหน้า",
+                "Go to browser settings → find this site → allow Notifications, then reload the page"
+              )
+            )}
+          </div>
+          <button className="btn btn-primary" style={{ height: 38, fontSize: 13 }} disabled={subbing} onClick={handleSubscribe}>
+            <Icon name="bell" size={14} /> {subbing ? th("กำลังตรวจสอบ…","Checking…") : th("ลองอีกครั้ง","Try Again")}
+          </button>
         </div>
       ) : !isGranted ? (
         <div>
