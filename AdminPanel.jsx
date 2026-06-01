@@ -3939,10 +3939,12 @@ const TH_MONTHS = ["มกราคม","กุมภาพันธ์","มี
 const TH_DAYS   = ["อา","จ","อ","พ","พฤ","ศ","ส"];
 
 function DateTimePicker({ value, onChange }) {
+  /* Renders dropdown via ReactDOM.createPortal → escapes overflow/transform parents */
   /* value = "YYYY-MM-DDTHH:MM" or "" */
   const [open, setOpen] = useStateAd(false);
-  const [dropPos, setDropPos] = useStateAd({ top: 0, left: 0, width: 280 });
-  const ref = React.useRef(null);
+  const [dropPos, setDropPos] = useStateAd({ top: 0, left: 0, width: 280, openUp: false });
+  const ref    = React.useRef(null);
+  const dropRef = React.useRef(null);
 
   /* Parse value */
   const parsed = React.useMemo(() => {
@@ -3958,12 +3960,20 @@ function DateTimePicker({ value, onChange }) {
   const [selHour,   setSelHour]   = useStateAd(parsed ? parsed.getHours()   : 8);
   const [selMin,    setSelMin]    = useStateAd(parsed ? parsed.getMinutes() : 0);
 
-  /* Close on outside click */
+  /* Close on outside click — check both trigger ref and portal dropdown ref */
   useEffectAd(() => {
     if (!open) return;
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      const inTrigger = ref.current?.contains(e.target);
+      const inDrop    = dropRef.current?.contains(e.target);
+      if (!inTrigger && !inDrop) setOpen(false);
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [open]);
 
   /* Sync external value changes */
@@ -4020,7 +4030,14 @@ function DateTimePicker({ value, onChange }) {
         onClick={() => {
           if (!open && ref.current) {
             const r = ref.current.getBoundingClientRect();
-            setDropPos({ top: r.bottom + 8, left: r.left, width: r.width });
+            const dropH = 420; // estimated dropdown height
+            const openUp = r.bottom + dropH > window.innerHeight - 16;
+            setDropPos({
+              top:    openUp ? r.top - dropH - 4 : r.bottom + 4,
+              left:   Math.max(8, Math.min(r.left, window.innerWidth - Math.max(r.width, 300) - 8)),
+              width:  Math.max(r.width, 300),
+              openUp,
+            });
           }
           setOpen(o => !o);
         }}
@@ -4048,13 +4065,13 @@ function DateTimePicker({ value, onChange }) {
         <Icon name={open ? "chevUp" : "chevDown"} size={14} style={{ color: "var(--ink-mute)", flexShrink: 0 }} />
       </button>
 
-      {/* Dropdown panel — position:fixed เพื่อหนี overflow:hidden ของ parent */}
-      {open && (
-        <div className="fade-up" style={{
+      {/* Dropdown — rendered via createPortal at document.body to escape overflow/transform parents */}
+      {open && ReactDOM.createPortal(
+        <div ref={dropRef} className="fade-up" style={{
           position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width,
-          background: "var(--surface)", borderRadius: 16, zIndex: 9200,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--line)",
-          overflow: "hidden", minWidth: 280,
+          background: "var(--surface)", borderRadius: 16, zIndex: 9999,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
+          overflow: "hidden", minWidth: 300,
         }}>
           {/* Month nav */}
           <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 8px", gap: 6 }}>
@@ -4147,7 +4164,8 @@ function DateTimePicker({ value, onChange }) {
               <Icon name="check" size={14} style={{ marginRight: 6 }} /> ยืนยัน
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
