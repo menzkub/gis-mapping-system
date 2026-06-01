@@ -2880,6 +2880,9 @@ function App() {
     return saved === "dark" ? "satellite" : saved;
   });
   const [sidebarExpanded, setSidebarExpanded] = useStateApp(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useStateApp(() => {
+    try { return localStorage.getItem("pea_sidebar_collapsed") === "true"; } catch(_) { return false; }
+  });
   const [maintenanceMode, setMaintenanceMode] = useStateApp(false);
   const [maintenanceMessage, setMaintenanceMessage] = useStateApp("");
   const [maintenanceUntil, setMaintenanceUntil] = useStateApp("");
@@ -3344,7 +3347,7 @@ function App() {
 
   return (
     <ToastProvider><ConfirmProvider>
-      <div className={"app-root" + (sidebarExpanded ? " sidebar-expanded" : "")}>
+      <div className={"app-root" + (sidebarExpanded ? " sidebar-expanded" : "") + (sidebarCollapsed ? " sidebar-dt-collapsed" : "")}>
 
         {/* ── Idle-logout warning banner ── */}
         {idleWarnSecs !== null && (
@@ -3504,6 +3507,15 @@ function App() {
           <button className="sidebar-hamburger" onClick={() => setSidebarExpanded(e => !e)}
             title={sidebarExpanded ? "ยุบ Sidebar" : "ขยาย Sidebar"}>
             <Icon name={sidebarExpanded ? "close" : "menu"} size={18} />
+          </button>
+
+          {/* Desktop sidebar collapse toggle */}
+          <button className="sidebar-dt-toggle" onClick={() => setSidebarCollapsed(c => {
+            const next = !c;
+            try { localStorage.setItem("pea_sidebar_collapsed", String(next)); } catch(_) {}
+            return next;
+          })} title={sidebarCollapsed ? "ขยาย Sidebar" : "ยุบ Sidebar"}>
+            <Icon name={sidebarCollapsed ? "chevRight" : "chevLeft"} size={16} />
           </button>
 
           {/* Desktop greeting */}
