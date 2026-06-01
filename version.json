@@ -1,7 +1,7 @@
 {
-  "commit": "feat-map-search",
-  "shortCommit": "pending",
-  "message": "feat: Map search panel — search by TAG/PEANO/ACCOUNTNUM/Location, fly to result at zoom 19",
-  "date": "2026-06-01T23:30:00+00:00",
+  "commit": "7aea0007b6c21548cca029e57154cd7e97cdf7f3",
+  "shortCommit": "7aea000",
+  "message": "fix: translate changelog nav label to English",
+  "date": "2026-06-01T18:32:05+00:00",
   "branch": "main"
 }
