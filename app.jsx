@@ -2908,15 +2908,6 @@ function App() {
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
   );
 
-  // Fade out the HTML splash screen once React has mounted
-  useEffectApp(() => {
-    const splash = document.getElementById("splash");
-    if (!splash) return;
-    splash.classList.add("out");
-    const t = setTimeout(() => splash.remove(), 500);
-    return () => clearTimeout(t);
-  }, []);
-
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("pea_theme", theme);
