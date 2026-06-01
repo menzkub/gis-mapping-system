@@ -1599,20 +1599,22 @@ function UserGuide({ role }) {
   const isAdmin = role === "admin";
   const guideRef = React.useRef(null);
   const [expandSig, setExpandSig] = useStateApp({ count: 0, open: false });
+  const [pdfLoading, setPdfLoading] = useStateApp(false);
   const expandAll  = () => setExpandSig(s => ({ count: s.count + 1, open: true }));
   const collapseAll = () => setExpandSig(s => ({ count: s.count + 1, open: false }));
 
   function downloadGuide() {
     const el = guideRef.current;
-    if (!el) return;
-    const css = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f4f6;margin:0;padding:0;color:#1a1a2e;}*{box-sizing:border-box;}`;
-    const html = `<!DOCTYPE html>\n<html lang="th">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>คู่มือการใช้งาน GIS Meter &amp; Transformer</title>\n<style>${css}</style>\n</head>\n<body>${el.innerHTML}</body>\n</html>`;
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "UserGuide-GIS.html";
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
+    if (!el || pdfLoading || typeof html2pdf === "undefined") return;
+    setPdfLoading(true);
+    html2pdf().set({
+      margin: [8, 6, 8, 6],
+      filename: "คู่มือการใช้งาน-GIS-Meter.pdf",
+      image: { type: "jpeg", quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#f5f4f6" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"] },
+    }).from(el).save().then(() => setPdfLoading(false)).catch(() => setPdfLoading(false));
   }
 
   return (
@@ -1672,8 +1674,9 @@ function UserGuide({ role }) {
               </button>
             </div>
             {isAdmin && (
-              <button onClick={downloadGuide} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
-                <Icon name="download" size={14} /> {ug("ดาวน์โหลดคู่มือ","Download Guide")}
+              <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)", opacity: pdfLoading ? 0.7 : 1 }}>
+                <Icon name="download" size={14} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} />
+                {pdfLoading ? ug("กำลังสร้าง PDF…", "Generating PDF…") : ug("ดาวน์โหลดคู่มือ PDF", "Download Guide PDF")}
               </button>
             )}
           </div>

@@ -715,18 +715,20 @@ function DevBadge({ color, children }) {
 
 function AdminDevGuide() {
   const guideRef = React.useRef(null);
+  const [pdfLoading, setPdfLoading] = useStateAd(false);
 
   function downloadGuide() {
     const el = guideRef.current;
-    if (!el) return;
-    const css = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0714;margin:0;padding:0;color:#e2d9f3;}*{box-sizing:border-box;}pre,code{font-family:'Fira Code','Cascadia Code',monospace;}`;
-    const html = `<!DOCTYPE html>\n<html lang="th">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>Developer Guide — GIS Meter &amp; Transformer</title>\n<style>${css}</style>\n</head>\n<body>${el.innerHTML}</body>\n</html>`;
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "DevGuide-GIS.html";
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
+    if (!el || pdfLoading || typeof html2pdf === "undefined") return;
+    setPdfLoading(true);
+    html2pdf().set({
+      margin: [8, 6, 8, 6],
+      filename: "DevGuide-GIS-Meter.pdf",
+      image: { type: "jpeg", quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#0d0714" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"] },
+    }).from(el).save().then(() => setPdfLoading(false)).catch(() => setPdfLoading(false));
   }
 
   const [expandSig, setExpandSig] = useStateAd({ count: 0, open: false });
@@ -794,8 +796,8 @@ function AdminDevGuide() {
               <Icon name="chevRight" size={13} /> ยุบทั้งหมด
             </button>
           </div>
-          <button onClick={downloadGuide} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)" }}>
-            <Icon name="download" size={14} /> ดาวน์โหลดเอกสาร
+          <button onClick={downloadGuide} disabled={pdfLoading} style={{ background: "rgba(139,63,196,0.25)", border: "1px solid rgba(139,63,196,0.5)", color: "white", borderRadius: 10, padding: "8px 16px", cursor: pdfLoading ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, backdropFilter: "blur(4px)", opacity: pdfLoading ? 0.7 : 1 }}>
+            <Icon name="download" size={14} style={{ animation: pdfLoading ? "pea-spin 1s linear infinite" : "none" }} /> {pdfLoading ? "กำลังสร้าง PDF…" : "ดาวน์โหลดเอกสาร PDF"}
           </button>
         </div>
       </div>
@@ -2559,7 +2561,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     const { error } = await _supabase.from("coordinate_corrections").insert({
       record_type: corrTarget.isMeter ? "meter" : "transformer",
       record_id: corrTarget.p.OBJECTID,
-      record_tag: corrTarget.p.TAG,
+      record_tag: corrTarget.p.PEANO || corrTarget.p.TAG,
       old_lat: corrTarget.p.LATITUDE,
       old_lng: corrTarget.p.LONGITUDE,
       new_lat: newLat,
@@ -2624,7 +2626,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         while (!cancelled) {
           const { data: rows, error } = await _supabase
             .from("transformers")
-            .select("objectid,tag,latitude,longitude,feeder1,kva,phase,voltage")
+            .select("objectid,tag,peano_tr,latitude,longitude,feeder1,kva,phase,voltage")
             .range(from, from + BATCH - 1);
           if (error || !rows || rows.length === 0) break;
           trRows = [...trRows, ...rows];
@@ -2639,7 +2641,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         while (!cancelled && mRows.length < MAX_METERS) {
           const { data: rows, error } = await _supabase
             .from("meters")
-            .select("objectid,tag,latitude,longitude,feederid,route")
+            .select("objectid,tag,peano,latitude,longitude,feederid,route")
             .range(from, from + BATCH - 1);
           if (error || !rows || rows.length === 0) break;
           mRows = [...mRows, ...rows];
@@ -2653,6 +2655,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
             .filter(r => +r.latitude && +r.longitude)
             .map(r => ({
               OBJECTID: r.objectid, TAG: r.tag || String(r.objectid),
+              PEANO: r.peano_tr || "",
               LATITUDE: +r.latitude, LONGITUDE: +r.longitude,
               KVA: r.kva || 0, PHASE: r.phase || "", VOLTAGE: r.voltage || "",
               FEEDER1: r.feeder1 || "",
@@ -2661,6 +2664,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
             .filter(r => +r.latitude && +r.longitude)
             .map(r => ({
               OBJECTID: r.objectid, TAG: r.tag || String(r.objectid),
+              PEANO: r.peano || "",
               LATITUDE: +r.latitude, LONGITUDE: +r.longitude,
               FEEDERID: r.feederid || "", ROUTE: r.route || "",
             })));
@@ -2959,7 +2963,7 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 15 }}>{t("corrReportBtn")}</div>
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{target.isMeter ? "Meter" : "Transformer"} · <span style={{ fontFamily: "monospace" }}>{target.p.TAG}</span></div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{target.isMeter ? "Meter" : "Transformer"} · <span style={{ fontFamily: "monospace" }}>{target.p.PEANO || target.p.TAG}</span></div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
