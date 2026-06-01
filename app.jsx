@@ -3380,7 +3380,7 @@ function App() {
     { id: "profile",   icon: "user",     label: t("navProfile")   },
     { id: "guide",     icon: "book",     label: t("navGuide")     },
     ...(isAdmin ? [
-      { id: "changelog", icon: "bolt",     label: "อัปเดต"          },
+      { id: "changelog", icon: "bolt",     label: t("navChangelog") },
       { id: "admin",     icon: "settings", label: t("navAdmin")     },
     ] : []),
   ];

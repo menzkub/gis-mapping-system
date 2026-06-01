@@ -20,7 +20,7 @@ const TRANSLATIONS = {
     caution: "ระวัง", allUsers: "ทุก user",
 
     // ── Navigation ─────────────────────────────────────────
-    navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin", navGuide: "คู่มือการใช้งาน",
+    navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin", navGuide: "คู่มือการใช้งาน", navChangelog: "อัปเดต",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "วันนี้ •", greeting: "สวัสดี",
@@ -211,7 +211,7 @@ const TRANSLATIONS = {
     caution: "Caution", allUsers: "All users",
 
     // ── Navigation ─────────────────────────────────────────
-    navSearch: "Search", navProfile: "My Account", navAdmin: "Admin", navGuide: "User Manual",
+    navSearch: "Search", navProfile: "My Account", navAdmin: "Admin", navGuide: "User Manual", navChangelog: "Updates",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "Today •", greeting: "Hello",
