@@ -1588,7 +1588,8 @@ addAudit({
             ["Babel Standalone", "7.29.0", "unpkg.com", "Compile JSX → JS ใน browser"],
             ["Leaflet", "1.9.4", "unpkg.com", "Interactive map"],
             ["Supabase JS", "2.x", "cdn.jsdelivr.net", "Database client + Auth"],
-            ["IBM Plex Sans Thai", "—", "Google Fonts", "Font หลัก (ไทย/EN)"],
+            ["Plus Jakarta Sans", "—", "Google Fonts", "Font หลัก (EN/ตัวเลข) — มินิมอล"],
+            ["Noto Sans Thai", "—", "Google Fonts", "Font ภาษาไทย — อ่านง่าย"],
             ["IBM Plex Mono", "—", "Google Fonts", "Font mono สำหรับ code/ID"],
           ]} />
           <GuideNote>ไม่มี package.json, node_modules, หรือ build pipeline — เพิ่ม dependency ใหม่ได้โดยเพิ่ม script tag ใน index.html</GuideNote>
@@ -5268,7 +5269,7 @@ function UserQuickGuideCard() {
     { emoji: "📲", title: "ติดตั้งเป็นแอป (PWA)", lines: ["iOS: Safari → กดปุ่ม Share → 'เพิ่มลงหน้าจอหลัก'", "Android: Chrome → เมนู → 'Add to Home Screen'"] },
   ];
   return (
-    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#0d0714", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
+    <div style={{ width: W, fontFamily: "'Plus Jakarta Sans','Noto Sans Thai',sans-serif", background: "#0d0714", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
@@ -5419,7 +5420,7 @@ function AdminQuickGuideCard() {
     { emoji: "📋", title: "Audit Log & ความปลอดภัย", badge: "Admin → บันทึก / ความปลอดภัย", lines: ["บันทึกทุก action: login, แก้ไขข้อมูล, เปลี่ยนรหัส, 2FA", "คะแนนความปลอดภัย (0-100) + ตรวจจับกิจกรรมต้องสงสัย"] },
   ];
   return (
-    <div style={{ width: W, fontFamily: "'IBM Plex Sans Thai',sans-serif", background: "#0d0714", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
+    <div style={{ width: W, fontFamily: "'Plus Jakarta Sans','Noto Sans Thai',sans-serif", background: "#0d0714", color: "#f3eefa", padding: 0, boxSizing: "border-box" }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,#1b0926 0%,#4f1e6e 50%,#f47b20 130%)", padding: "28px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(244,123,32,0.1)", pointerEvents: "none" }} />

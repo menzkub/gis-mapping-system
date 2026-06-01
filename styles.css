@@ -43,8 +43,8 @@
   --blue-bg: #dbeafe;
 
   /* Type */
-  --font-display: "IBM Plex Sans Thai", "Sarabun", -apple-system, sans-serif;
-  --font-body: "IBM Plex Sans Thai", "Sarabun", -apple-system, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Noto Sans Thai", -apple-system, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Noto Sans Thai", -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   /* Radii */
