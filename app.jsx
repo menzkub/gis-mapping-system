@@ -3283,7 +3283,7 @@ function App() {
             }}>
               {lang === "th" ? "EN" : "TH"}
             </button>
-            <button className="btn-icon topbar-util-btn" onClick={() => setTheme(t => t === "light" ? "dark" : "light")} title={theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}>
+            <button className="btn-icon topbar-util-btn" onClick={() => setTheme(t => t === "light" ? "dark" : "light")} title={theme === "light" ? t("themeDark") : t("themeLight")}>
               <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
             </button>
             <button className="btn-icon topbar-util-btn" title={t("refreshData")} onClick={handleRefresh} disabled={refreshing}
@@ -3367,7 +3367,7 @@ function App() {
                     <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
                       <Icon name={theme === "light" ? "moon" : "sun"} size={15} style={{ color: "var(--pea-purple-600)" }} />
                     </span>
-                    <span>{theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}</span>
+                    <span>{theme === "light" ? t("themeDark") : t("themeLight")}</span>
                   </button>
 
                   {/* Refresh */}

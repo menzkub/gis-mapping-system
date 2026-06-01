@@ -28,6 +28,7 @@ const TRANSLATIONS = {
     refreshDone: "✓ อัปเดตแล้ว", refreshError: "✕ เกิดข้อผิดพลาด",
     notifications: "การแจ้งเตือน", logout: "ออกจากระบบ",
     switchLang: "Switch to English",
+    themeDark: "โหมดมืด", themeLight: "โหมดสว่าง",
     mapStreet: "Street", mapSatellite: "Satellite",
 
     // ── Notification panel ─────────────────────────────────
@@ -193,6 +194,7 @@ const TRANSLATIONS = {
     refreshDone: "✓ Updated", refreshError: "✕ Error",
     notifications: "Notifications", logout: "Log out",
     switchLang: "เปลี่ยนเป็นภาษาไทย",
+    themeDark: "Dark mode", themeLight: "Light mode",
     mapStreet: "Street", mapSatellite: "Satellite",
 
     // ── Notification panel ─────────────────────────────────
