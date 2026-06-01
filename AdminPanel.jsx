@@ -323,7 +323,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
 }
 
 /* ---------- Guide ---------- */
-const GUIDE_VERSION = { version: "v2.9", date: "31 พ.ค. 2569" };
+const GUIDE_VERSION = { version: "v3.0", date: "1 มิ.ย. 2569" };
 
 function GuideSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateAd(false);
@@ -811,10 +811,10 @@ function AdminDevGuide() {
         {/* Stat cards */}
         <div className="dg-sgrid">
           {[
-            { label: "หัวข้อ",       value: 10, icon: "book",     sub: "sections" },
-            { label: "ไฟล์ระบบ",    value: 10, icon: "package",  sub: "source files" },
-            { label: "ตาราง DB",    value: 6,  icon: "database", sub: "tables" },
-            { label: "ตัวอย่างโค้ด", value: 15, icon: "code",     sub: "code blocks" },
+            { label: "หัวข้อ",       value: 15, icon: "book",     sub: "sections" },
+            { label: "ไฟล์ระบบ",    value: 13, icon: "package",  sub: "source files" },
+            { label: "ตาราง DB",    value: 7,  icon: "database", sub: "tables" },
+            { label: "ตัวอย่างโค้ด", value: 18, icon: "code",     sub: "code blocks" },
           ].map(({ label, value, icon, sub }) => (
             <div key={label} style={{ background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
@@ -846,6 +846,8 @@ function AdminDevGuide() {
           <GuideTip>ระบบนี้ไม่มี build step — แก้ไขไฟล์ .jsx แล้ว git push ได้เลย ไม่ต้อง npm install หรือ webpack</GuideTip>
           <CodeBlock>{`Browser
   ├── index.html          ← entry point, โหลด CDN ทุกตัวตามลำดับ
+  ├── manifest.json       ← PWA manifest (icon, theme, standalone mode)
+  ├── service-worker.js   ← offline cache + Web Push notification handler
   ├── CDN (head)
   │    ├── Leaflet CSS/JS
   │    ├── React 18 (production UMD)
@@ -853,14 +855,18 @@ function AdminDevGuide() {
   │    ├── Babel Standalone  ← compile JSX ใน browser runtime
   │    └── Supabase JS v2
   └── Scripts (body)
-       ├── config.js       ← global: _supabase, mappers, loadAll
+       ├── config.js       ← global: _supabase, mappers, loadAll, VAPID_PUBLIC_KEY
        ├── lang.jsx        ← global: LangProvider, useLang
        ├── components.jsx  ← global: Icon, Modal, Toast, Confirm…
        ├── MapView.jsx     ← component: <MapView>
        ├── AuthScreen.jsx  ← component: <AuthScreen>
        ├── SearchView.jsx  ← component: <SearchView>
        ├── AdminPanel.jsx  ← component: <AdminPanel>
-       └── app.jsx         ← ReactDOM.render(<App>)`}</CodeBlock>
+       └── app.jsx         ← ReactDOM.render(<App>)
+
+Supabase Edge Functions:
+  └── supabase/functions/push-notify/index.ts
+       ← Deno Edge Function: ส่ง Web Push ถึง subscribers ทุกคน`}</CodeBlock>
           <GuideNote>Babel Standalone compile JSX ทุกครั้งที่โหลดหน้า — เหมาะกับ dev/internal app ขนาดเล็ก ถ้าต้องการเร็วขึ้นอีกควรย้ายไปใช้ Vite หรือ Next.js</GuideNote>
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>การไหลของข้อมูล</div>
           <CodeBlock>{`App (app.jsx)
@@ -880,16 +886,19 @@ function AdminDevGuide() {
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
             ["ไฟล์", "บทบาท", "ขนาด"],
-            ["config.js", "Supabase client + row mappers (to/from DB)", "~150 บรรทัด"],
+            ["config.js", "Supabase client + row mappers + VAPID_PUBLIC_KEY สำหรับ Web Push", "~155 บรรทัด"],
             ["lang.jsx", "ระบบ i18n ไทย/อังกฤษ — LangProvider + useLang()", "~340 บรรทัด"],
             ["components.jsx", "Shared UI: Icon, Modal, Toast, Confirm, StatCard, downloadCSV", "~326 บรรทัด"],
             ["MapView.jsx", "Leaflet map wrapper — cluster, heatmap, GPS, measure", "~364 บรรทัด"],
             ["AuthScreen.jsx", "Login, Signup, Forgot password + canvas animation background", "~775 บรรทัด"],
             ["SearchView.jsx", "ค้นหา Meter/TR (server-side), filters, export, map integration", "~653 บรรทัด"],
-            ["AdminPanel.jsx", "Dashboard, Users, Meters, TRs, Import, Audit, Settings, Guide, Dev", "~1730 บรรทัด"],
-            ["app.jsx", "App root, routing, auth state, ProfileView, MFASetupScreen, SafeQR", "~1650 บรรทัด"],
+            ["AdminPanel.jsx", "Dashboard, Users, Meters, TRs, Import, Audit, Settings, Guide, Dev, Push", "~4200+ บรรทัด"],
+            ["app.jsx", "App root, routing, auth state, PWA subscribe/unsubscribe, push permission", "~3700+ บรรทัด"],
             ["data.js", "Static fallback data (meters/TR/users จาก Fang, Chiang Mai)", "~43 บรรทัด"],
             ["styles.css", "CSS variables (light/dark theme), component styles, utilities", "~529 บรรทัด"],
+            ["manifest.json", "PWA manifest — icon, theme color, standalone display mode", "~15 บรรทัด"],
+            ["service-worker.js", "Offline cache (cache-first) + Web Push event handlers", "~90 บรรทัด"],
+            ["supabase/functions/push-notify/index.ts", "Deno Edge Function — ส่ง push ถึง subscribers ทุกคน, cleanup expired", "~72 บรรทัด"],
           ]} />
         </div>
       </GuideSection>
@@ -913,6 +922,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
             ["settings", "key (text)", "ค่าตั้งค่า key-value: maintenance_mode, maintenance_message, dev_name, …"],
             ["password_history", "id (bigserial)", "ประวัติเปลี่ยนรหัส: user_id, username, changed_at, action, note"],
             ["mfa_backup_codes", "id (bigserial)", "Backup codes สำหรับ 2FA: user_id, code_hash (SHA-256), used, created_at — 10 รหัสต่อ user"],
+            ["push_subscriptions", "id (uuid)", "Web Push subscription jsonb ต่อ user_id (UNIQUE) — ใช้โดย push-notify Edge Function"],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>RPC Functions</div>
           <CodeBlock>{`-- Dashboard stats (meters, transformers, kva, feeders top 8)
@@ -929,6 +939,7 @@ SELECT * FROM get_feeders();`}</CodeBlock>
             ["audit_log", "admin", "authenticated", "—", "—"],
             ["settings", "active user", "—", "admin", "—"],
             ["password_history", "เจ้าของ / admin", "เจ้าของ", "—", "—"],
+            ["push_subscriptions", "เจ้าของ", "เจ้าของ", "เจ้าของ", "เจ้าของ"],
           ]} />
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Triggers</div>
           <CodeBlock>{`-- Auto-create profile เมื่อสมัครสมาชิก
@@ -1529,6 +1540,68 @@ ORDER BY mean_exec_time DESC LIMIT 10;`}</CodeBlock>
           <GuideStep n={6} text="เปิด Maintenance Mode ระหว่างแก้ไข เพื่อไม่ให้ user ใช้งานพร้อมกัน" />
           <GuideTip>เปิด Maintenance Mode ได้ที่ Admin → ตั้งค่า → Maintenance Mode — user ทั่วไปจะเห็นหน้า "ระบบปิดปรับปรุง" ขณะที่ admin ยังเข้าได้ปกติ</GuideTip>
 
+        </div>
+      </GuideSection>
+
+      {/* ─── SECTION: PWA & Web Push ─── */}
+      <GuideSection icon="bell" title="PWA & Web Push Notification" expandSignal={expandSig}>
+        <div style={{ marginTop: 12 }}>
+          <GuideNote>ระบบรองรับ PWA (Progressive Web App) — ผู้ใช้สามารถติดตั้งเป็นแอปบน iOS และ Android และรับ Web Push Notification จาก Admin</GuideNote>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>ไฟล์ที่เกี่ยวข้อง</div>
+          <GuideTable rows={[
+            ["ไฟล์", "บทบาท"],
+            ["manifest.json", "PWA metadata — name, icon, theme_color, standalone display"],
+            ["service-worker.js", "Cache-first strategy + push/notificationclick event handlers"],
+            ["config.js", "VAPID_PUBLIC_KEY — ใช้ตอน subscribe pushManager"],
+            ["supabase/functions/push-notify/index.ts", "Deno Edge Function — รับ JWT admin, ส่งถึง subscribers ทั้งหมด"],
+            ["supabase/push_subscriptions.sql", "DDL + RLS policy สำหรับตาราง push_subscriptions"],
+          ]} />
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Push Notification Flow</div>
+          <CodeBlock>{`1. User เปิดแอปจาก home screen (PWA)
+2. subscribePush() ใน app.jsx:
+   - Notification.requestPermission() → 'granted'
+   - reg.pushManager.subscribe({ VAPID_PUBLIC_KEY })
+   - upsert subscription jsonb → push_subscriptions table
+
+3. Admin กด 'ส่งการแจ้งเตือน':
+   - POST /functions/v1/push-notify
+   - Header: Authorization: Bearer <admin JWT>
+   - Body: { title, body, url }
+
+4. Edge Function (push-notify/index.ts):
+   - ตรวจสอบ JWT → role === 'admin'
+   - SELECT * FROM push_subscriptions
+   - webpush.sendNotification(subscription, payload)
+   - DELETE subscriptions ที่ 410 Gone (expired)
+   - Return { sent, failed, total }
+
+5. Service Worker รับ push event:
+   - showNotification(title, { body, icon, vibrate })
+   - notificationclick → focus หรือ openWindow`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>VAPID Keys</div>
+          <GuideNote>VAPID keys ถูก generate ด้วย web-push package — Public key อยู่ใน config.js (VAPID_PUBLIC_KEY), Private key อยู่ใน Supabase Secrets (VAPID_PRIVATE_KEY) เท่านั้น</GuideNote>
+          <CodeBlock>{`// สร้าง VAPID keys ใหม่ (ถ้าต้องการ reset):
+// npm install -g web-push
+// web-push generate-vapid-keys
+
+// Supabase Secrets ที่ต้องตั้ง:
+VAPID_PUBLIC_KEY   = "BFs4q5..."
+VAPID_PRIVATE_KEY  = "<private>"
+SUPABASE_SERVICE_ROLE_KEY = "<service role key>"`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>iOS Notification ข้อจำกัด</div>
+          <GuideTable rows={[
+            ["ข้อกำหนด", "รายละเอียด"],
+            ["iOS เวอร์ชัน", "iOS 16.4+ เท่านั้น"],
+            ["วิธีติดตั้ง", "เพิ่มลงหน้าจอหลักผ่าน Safari Share sheet"],
+            ["เปิดแอป", "ต้องเปิดจาก Home Screen icon เท่านั้น — ไม่รองรับใน Safari tab"],
+            ["Permission", "ระบบขอสิทธิ์ผ่าน Notification.requestPermission() หลังผู้ใช้ enable ใน iOS Settings"],
+            ["Permission denied", "ระบบ re-check อัตโนมัติผ่าน visibilitychange + focus event เมื่อกลับจาก Settings"],
+          ]} />
+          <GuideTip>ถ้าต้องการทดสอบ push notification ให้ใช้ Supabase Dashboard → Edge Functions → Invoke Function แบบ manual</GuideTip>
         </div>
       </GuideSection>
     </div>
@@ -4552,11 +4625,11 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
           <div style={{ fontWeight: 700, color: "var(--red)", marginBottom: 6 }}>
             {th("การแจ้งเตือนถูกปิดกั้น","Notifications are blocked")}
           </div>
-          <div style={{ color: "var(--text)", lineHeight: 1.6, marginBottom: 12 }}>
+          <div style={{ color: "var(--text)", lineHeight: 1.6, marginBottom: isIOS ? 12 : 0 }}>
             {isIOS ? (
               th(
                 "ไปที่ Settings → เลื่อนหา GIS Meter → เปิด Allow Notifications แล้วกด \"ลองอีกครั้ง\" ด้านล่าง",
-                "Go to Settings → scroll to find GIS Meter → enable Allow Notifications, then tap "Try Again" below"
+                "Go to Settings → find GIS Meter → enable Allow Notifications, then tap \"Try Again\" below"
               )
             ) : (
               th(
@@ -4565,9 +4638,11 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
               )
             )}
           </div>
-          <button className="btn btn-primary" style={{ height: 38, fontSize: 13 }} disabled={subbing} onClick={handleSubscribe}>
-            <Icon name="bell" size={14} /> {subbing ? th("กำลังตรวจสอบ…","Checking…") : th("ลองอีกครั้ง","Try Again")}
-          </button>
+          {isIOS && (
+            <button className="btn btn-primary" style={{ height: 38, fontSize: 13, marginTop: 12 }} disabled={subbing} onClick={handleSubscribe}>
+              <Icon name="bell" size={14} /> {subbing ? th("กำลังตรวจสอบ…","Checking…") : th("ลองอีกครั้ง","Try Again")}
+            </button>
+          )}
         </div>
       ) : !isGranted ? (
         <div>

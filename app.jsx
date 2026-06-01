@@ -1040,7 +1040,12 @@ const CHANGELOG = [
       { cat: "new",  text: { th: "ปุ่ม GPS 'ใช้ตำแหน่งปัจจุบัน' ในหน้าแจ้งแก้ไขพิกัด — สะดวกสำหรับใช้งานที่หน้างาน", en: "GPS 'Use Current Location' button in correction modal — convenient for field use" } },
       { cat: "new",  text: { th: "แดชบอร์ดผู้ใช้: การ์ดสถิติ (ทั้งหมด/Active/Pending/Banned/Admin/2FA/รหัสหมดอายุ) กดได้ — filter ตารางและ scroll ลงทันที", en: "User dashboard: stat cards (Total/Active/Pending/Banned/Admin/2FA/PwExpired) are clickable — filter table and scroll instantly" } },
       { cat: "new",  text: { th: "ความปลอดภัย: แท็บใหม่ใน Admin — คะแนนความปลอดภัย (0-100) + รายการตรวจสอบ 6 รายการ + ตรวจจับกิจกรรมต้องสงสัยจาก Audit Log", en: "Security: new Admin tab — security score (0-100) + 6 security checks + threat detection from Audit Log" } },
+      { cat: "new",  text: { th: "PWA: ติดตั้งแอปบน iOS และ Android ได้ผ่าน 'เพิ่มลงหน้าจอหลัก' — icon, offline cache, standalone mode", en: "PWA: install app on iOS & Android via 'Add to Home Screen' — icon, offline cache, standalone mode" } },
+      { cat: "new",  text: { th: "Web Push Notification: Admin ส่งการแจ้งเตือนถึงมือถือทุกเครื่องทันที — preset 4 แบบ (ปิดระบบ/อัปเดต/กลับมาแล้ว/แจ้งด่วน)", en: "Web Push Notifications: Admin sends instant alerts to all mobile devices — 4 presets (Maintenance/Update/Back Online/Alert)" } },
+      { cat: "fix",  text: { th: "DateTimePicker บนมือถือ: เปลี่ยนเป็น bottom sheet เลื่อนขึ้นจากล่าง — ปฏิทิน + เวลา + ปุ่มยืนยันครบในจอเดียว", en: "DateTimePicker on mobile: bottom sheet slides up from screen bottom — calendar, time picker, confirm all visible" } },
       { cat: "ux",   text: { th: "Basemap เปลี่ยนจาก tab แบนเป็น dropdown picker (Street / Satellite) ทั้ง Topbar และ Admin Map", en: "Basemap changed from flat tabs to dropdown picker (Street / Satellite) on Topbar and Admin Map" } },
+      { cat: "ux",   text: { th: "Hero stat card รูปแบบเดียวกันทุก view (คู่มือ/อัปเดต/Dev) — ตัวเลขเรียงระดับเดียว + ปุ่มขยาย/ยุบรวมเป็นปุ่มเดียว", en: "Hero stat cards unified across all views — numbers baseline-aligned + expand/collapse merged into single toggle" } },
+      { cat: "fix",  text: { th: "iOS Push Permission: เพิ่มปุ่ม 'ลองอีกครั้ง' + re-check อัตโนมัติเมื่อกลับจาก Settings — ไม่ต้อง reload แอป", en: "iOS Push Permission: added 'Try Again' button + auto re-check on app focus — no app reload needed" } },
       { cat: "fix",  text: { th: "นำ Dark basemap ออก — ใช้ Street / Satellite เท่านั้น", en: "Remove Dark basemap — Street / Satellite only" } },
       { cat: "new",  text: { th: "Deploy popup: ปุ่ม 'ตรวจสอบอีกครั้ง' (refetch) และ 'โหลดเวอร์ชันใหม่' (force reload bypass cache) + ข้อความตามภาษา", en: "Deploy popup: 'Re-check' (refetch) and 'Load New Version' (force reload bypass cache) + bilingual labels" } },
       { cat: "fix",  text: { th: "ดาวน์โหลด PDF: แก้เนื้อหาถูกตัดออก (body{overflow:hidden}) — ตอนนี้แสดงเต็มหน้า A4", en: "PDF download: fix content clipped by body{overflow:hidden} — now renders full A4 width" } },
@@ -1751,10 +1756,10 @@ function UserGuide({ role }) {
           {/* Stat cards */}
           <div className="ug-sgrid">
             {[
-              { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 13 : 5,  icon: "book",    sub: "sections" },
-              { label: ug("ขั้นตอน","Steps"),     value: isAdmin ? 49 : 20, icon: "check",   sub: "steps" },
-              { label: ug("ฟีเจอร์","Features"),  value: isAdmin ? 13 : 9,  icon: "bolt",    sub: "features" },
-              { label: ug("เคล็ดลับ","Tips"),     value: isAdmin ? 17 : 8,  icon: "warning", sub: "tips & notes" },
+              { label: ug("หัวข้อ","Sections"),   value: isAdmin ? 16 : 6,  icon: "book",    sub: "sections" },
+              { label: ug("ขั้นตอน","Steps"),     value: isAdmin ? 57 : 24, icon: "check",   sub: "steps" },
+              { label: ug("ฟีเจอร์","Features"),  value: isAdmin ? 15 : 10, icon: "bolt",    sub: "features" },
+              { label: ug("เคล็ดลับ","Tips"),     value: isAdmin ? 20 : 10, icon: "warning", sub: "tips & notes" },
             ].map(({ label, value, icon, sub }) => (
               <div key={label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "11px 13px", border: "1px solid rgba(255,255,255,0.15)", display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minHeight: 34 }}>
@@ -1883,6 +1888,24 @@ function UserGuide({ role }) {
           </div>
         </UGSection>
 
+        <UGSection icon="bell" title={ug("PWA & การแจ้งเตือน","PWA & Notifications")} expandSignal={expandSig}>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>{ug("ติดตั้งแอป (PWA)","Install App (PWA)")}</div>
+            <UGStep n={1} text={ug("เปิดเว็บใน Safari (iOS) หรือ Chrome (Android)","Open the website in Safari (iOS) or Chrome (Android)")} />
+            <UGStep n={2} text={ug("iOS: กดปุ่ม Share (กล่องลูกศรขึ้น) → 'เพิ่มลงหน้าจอหลัก' → ตั้งชื่อ → กด 'เพิ่ม'","iOS: tap Share button (box with arrow) → 'Add to Home Screen' → set name → tap 'Add'")} />
+            <UGStep n={3} text={ug("Android: กดเมนู ⋮ → 'เพิ่มใน หน้าจอหลัก' หรือ 'ติดตั้งแอป'","Android: tap ⋮ menu → 'Add to Home Screen' or 'Install App'")} />
+            <UGStep n={4} text={ug("เปิดแอปจาก icon บน home screen — ทำงานแบบ standalone ไม่มี browser bar","Open app from home screen icon — works standalone without browser bar")} />
+            <UGTip>{ug("หลังอัปเดตโค้ด ระบบจะโหลด version ใหม่ในรอบถัดไปที่เปิดแอป หรือกด 'โหลดเวอร์ชันใหม่' ใน Deploy popup","After code updates, the app loads the new version on next open, or press 'Load New Version' in the Deploy popup")}</UGTip>
+
+            <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("เปิดรับการแจ้งเตือน","Enable Push Notifications")}</div>
+            <UGStep n={1} text={ug("ไปที่ Admin → ตั้งค่า → การ์ด 'ส่งการแจ้งเตือน Push'","Go to Admin → Settings → 'Push Notifications' card")} />
+            <UGStep n={2} text={ug("กดปุ่ม 'เปิดการแจ้งเตือน' — ระบบขอสิทธิ์ผ่าน browser","Press 'Enable Notifications' — browser asks for permission")} />
+            <UGStep n={3} text={ug("กด 'อนุญาต' บนกล่อง dialog ที่ขึ้นมา","Tap 'Allow' on the permission dialog")} />
+            <UGNote>{ug("iOS: หากขึ้นว่า 'ถูกบล็อก' ให้ไปที่ Settings → เลื่อนหา GIS Meter → เปิด Allow Notifications แล้วกลับมากด 'ลองอีกครั้ง'","iOS: if 'Blocked' appears, go to Settings → find GIS Meter → enable Allow Notifications, then tap 'Try Again'")}</UGNote>
+            <UGNote>{ug("ต้องเปิดแอปจาก home screen icon เท่านั้น (ไม่รองรับใน browser tab ปกติ บน iOS)","Must open from home screen icon — not supported in regular browser tab on iOS")}</UGNote>
+          </div>
+        </UGSection>
+
         {/* ─── Admin-only sections ─── */}
         {isAdmin && (
           <>
@@ -2001,7 +2024,8 @@ function UserGuide({ role }) {
                 <UGStep n={1} text={ug("เปิด Toggle 'Maintenance Mode' — ผู้ใช้ทั่วไปจะเห็นหน้าปิดปรับปรุง","Enable 'Maintenance Mode' — regular users will see maintenance page")} />
                 <UGStep n={2} text={ug("แก้ไขข้อความแจ้งผู้ใช้ แล้วกด 'บันทึกข้อความ'","Edit message for users, then press 'Save Message'")} />
                 <UGStep n={3} text={ug("เลือกวันที่/เวลาที่คาดว่าจะกลับมาผ่านปฏิทินไทย — กดปุ่มนาฬิกาเพื่อเปิด","Set expected return date/time via Thai calendar — press clock button to open")} />
-                <UGStep n={4} text={ug("นำทางเดือนด้วยปุ่ม ← → เลือกวัน จากนั้นปรับชั่วโมง/นาที แล้วกด 'ยืนยัน'","Navigate months with ← → , select day, adjust hour/minute, then press 'Confirm'")} />
+                <UGStep n={4} text={ug("บนมือถือ: ปฏิทินเลื่อนขึ้นจากล่าง (bottom sheet) — เลือกวัน ปรับชั่วโมง/นาที กด 'ยืนยัน'","Mobile: calendar slides up from bottom — select day, adjust hour/minute, press 'Confirm'")} />
+                <UGStep n={5} text={ug("บน desktop: ปฏิทิน dropdown เปิดใต้ช่อง — นำทางเดือนด้วยปุ่ม ← → กด 'ยืนยัน'","Desktop: dropdown opens below the field — navigate months with ← → , press 'Confirm'")} />
                 <UGNote>{ug("Admin ยังคงเข้าใช้ระบบได้ปกติ — จะเห็น banner แจ้งเตือนแดงบน Topbar","Admin can still access the system — will see a red warning banner on Topbar")}</UGNote>
                 <UGTip>{ug("อย่าลืมปิด Maintenance Mode หลังงานเสร็จ — กดปุ่ม 'เปิดระบบ' ใน banner ได้เลย","Remember to disable Maintenance Mode when done — press 'Open System' button in the banner")}</UGTip>
                 <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{ug("ข้อมูลนักพัฒนาระบบ","Developer Info")}</div>
@@ -2009,6 +2033,24 @@ function UserGuide({ role }) {
                 <UGStep n={2} text={ug("เปิด Toggle 'แสดงปุ่มนักพัฒนา' — ปุ่มลอยจะปรากฏที่มุมหน้าจอ","Enable 'Show Developer Button' — a floating button appears at screen corner")} />
                 <UGStep n={3} text={ug("ลากปุ่มไปวางตำแหน่งที่ต้องการ — ระบบจำตำแหน่งไว้อัตโนมัติ","Drag the button to desired position — position is saved automatically")} />
                 <UGNote>{ug("ทั้ง Maintenance Mode และข้อมูลนักพัฒนา สามารถย่อ/ขยายได้โดยกดหัวการ์ด","Both Maintenance Mode and Developer Info cards can be collapsed by clicking the header")}</UGNote>
+              </div>
+            </UGSection>
+
+            <UGSection icon="bell" title={ug("ส่ง Push Notification","Send Push Notifications")} badge="admin" expandSignal={expandSig}>
+              <div style={{ marginTop: 12 }}>
+                <UGStep n={1} text={ug("ไปที่ Admin → ตั้งค่า → เลื่อนลงถึงการ์ด 'ส่งการแจ้งเตือน Push'","Go to Admin → Settings → scroll to 'Push Notifications' card")} />
+                <UGStep n={2} text={ug("ตรวจสอบสถานะ 'เปิดการแจ้งเตือนแล้ว' (จุดเขียว) ก่อนส่ง","Check that 'Notifications enabled' (green dot) is showing before sending")} />
+                <UGStep n={3} text={ug("เลือกเทมเพลตด่วน หรือพิมพ์หัวข้อ+ข้อความเอง","Select a quick template or type a custom title + message")} />
+                <UGStep n={4} text={ug("กด 'ส่งการแจ้งเตือน' — ระบบส่งถึงทุกเครื่องที่อนุญาตทันที","Press 'Send Notification' — alerts all subscribed devices instantly")} />
+                <UGTable rows={[
+                  [ug("เทมเพลต","Template"), ug("ใช้เมื่อ","Use when")],
+                  [ug("🔧 ปิดระบบชั่วคราว","🔧 Maintenance"), ug("แจ้งก่อนปิดระบบเพื่อบำรุงรักษา","Notify before taking system offline")],
+                  [ug("⚡ อัปเดตระบบ","⚡ Update"), ug("แจ้งเมื่อ deploy version ใหม่","Notify after deploying a new version")],
+                  [ug("✅ ระบบกลับมาแล้ว","✅ Back Online"), ug("แจ้งหลังซ่อมบำรุงเสร็จ","Notify after maintenance is complete")],
+                  [ug("⚠️ แจ้งเตือนด่วน","⚠️ Alert"), ug("ประกาศสำคัญเร่งด่วน","Urgent announcements")],
+                ]} />
+                <UGNote>{ug("ผู้ใช้ที่ไม่ได้อนุญาต push permission จะไม่ได้รับแจ้งเตือน — แนะนำให้แจ้งผู้ใช้เปิดสิทธิ์ก่อน","Users without push permission won't receive alerts — advise users to enable permission first")}</UGNote>
+                <UGTip>{ug("ระบบลบ subscription ที่หมดอายุ (410 Gone) อัตโนมัติหลังส่งทุกครั้ง","Expired subscriptions (410 Gone) are automatically removed after each send")}</UGTip>
               </div>
             </UGSection>
 
