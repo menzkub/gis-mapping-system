@@ -4,6 +4,7 @@ const {
   useState:  useStateS,
   useEffect: useEffectS,
   useRef:    useRefS,
+  useCallback: useCallbackS,
 } = React;
 
 /* ============================================================
@@ -25,6 +26,8 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [showCluster, setShowCluster] = useStateS(true);
   const [svBaseMap, setSvBaseMap]   = useStateS(baseMap || "street");
   const [showBaseMenu, setShowBaseMenu] = useStateS(false);
+  const [baseMenuPos, setBaseMenuPos] = useStateS({ top: 0, left: 0, width: 0 });
+  const baseMapBtnRef = useRefS(null);
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
   const [showExportDialog, setShowExportDialog] = useStateS(false);
@@ -142,9 +145,10 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         .sv-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
         .sv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .sv-tabs::-webkit-scrollbar { display: none; }
-        .sv-controls { display: flex; align-items: center; gap: 8px; }
+        .sv-controls { display: flex; flex-direction: column; gap: 8px; }
+        .sv-search-row { display: flex; align-items: center; gap: 8px; }
         .sv-search-wrap { flex: 1; min-width: 0; position: relative; }
-        .sv-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .sv-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         @media (min-width: 1440px) {
           .sv-header { padding: 20px 36px 0; }
           .sv-body { padding: 20px 36px 24px; }
@@ -159,7 +163,12 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-body { padding: 12px 18px 16px; }
         }
         .sv-body.sv-map-only { padding: 0 !important; }
-        .sv-basemap-btn { height: 54px; border-radius: 16px; white-space: nowrap; flex-shrink: 0; gap: 6px; }
+        .sv-search-row { display: flex; align-items: center; gap: 8px; }
+        .sv-basemap-icon-btn { flex-shrink: 0; height: 54px; min-width: 52px; padding: 0 12px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+        @media (max-width: 1023px) and (min-width: 641px) {
+          .sv-header { padding: 14px 18px 0; }
+          .sv-body { padding: 12px 18px 16px; }
+        }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
@@ -167,12 +176,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-search-title { font-size: 20px !important; }
           .sv-tabs { width: 100% !important; flex-shrink: 1 !important; }
           .sv-tabs .tab { flex: 1; justify-content: center; font-size: 13px !important; padding: 0 12px !important; height: 44px !important; white-space: nowrap; }
-          .sv-controls { flex-wrap: wrap; gap: 8px; }
-          .sv-search-wrap { flex-basis: 100%; flex: 1; }
-          .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; width: 100%; }
+          .sv-search-row { gap: 8px; }
+          .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; }
           .sv-actions::-webkit-scrollbar { display: none; }
           .search-filter-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
-          .sv-basemap-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; }
+          .sv-basemap-icon-btn { height: 48px !important; min-width: 46px !important; padding: 0 10px !important; border-radius: 14px !important; }
           .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
           .input-lg { height: 48px !important; }
         }
@@ -213,98 +221,108 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           </div>
         </div>
 
-        {/* Search + actions */}
+        {/* Search + basemap row */}
         <div className="sv-controls">
-          <div className="sv-search-wrap">
-            <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: searching ? "var(--pea-orange-500)" : "var(--pea-purple-500)", zIndex: 1 }}>
-              <Icon name="search" size={19} />
-            </div>
-            <input
-              className="input input-lg"
-              style={{ paddingLeft: 48, paddingRight: query ? 46 : 16, width: "100%", boxSizing: "border-box" }}
-              placeholder={tab === "meter" ? t("phMeter") : t("phTr")}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onFocus={() => setShowHistory(true)}
-              onBlur={() => setTimeout(() => setShowHistory(false), 180)}
-              inputMode="numeric"
-              autoFocus
-            />
-            {query && (
-              <button className="btn-icon" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 34, height: 34 }} onClick={() => setQuery("")}>
-                <Icon name="close" size={15} />
-              </button>
-            )}
-            {/* Search history dropdown */}
-            {showHistory && !query && history.length > 0 && (
-              <div style={{
-                position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:500,
-                background:"var(--surface)", border:"1px solid var(--line)", borderRadius:14,
-                boxShadow:"0 8px 28px rgba(0,0,0,0.14)", padding:6, display:"flex", flexDirection:"column", gap:2,
-              }}>
-                <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", color:"var(--ink-mute)", padding:"4px 10px 2px", textTransform:"uppercase" }}>ค้นหาล่าสุด</div>
-                {history.map((h, i) => (
-                  <button key={i} onMouseDown={() => setQuery(h)} style={{
-                    display:"flex", alignItems:"center", gap:10, padding:"8px 12px", borderRadius:10,
-                    background:"transparent", border:"none", cursor:"pointer", color:"var(--text)",
-                    fontSize:14, fontWeight:500, textAlign:"left", width:"100%",
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.background="var(--hover)"}
-                    onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                    <Icon name="history" size={14} style={{ color:"var(--ink-mute)", flexShrink:0 }} />
-                    <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{h}</span>
-                    <button onMouseDown={e => { e.stopPropagation(); setHistory(p => { const n=p.filter((_,j)=>j!==i); try{localStorage.setItem("pea_search_hist",JSON.stringify(n))}catch{} return n; }); }} style={{ padding:"2px 6px", borderRadius:6, border:"none", background:"transparent", color:"var(--ink-mute)", cursor:"pointer", fontSize:12 }}>✕</button>
-                  </button>
-                ))}
+          <div className="sv-search-row">
+            <div className="sv-search-wrap">
+              <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: searching ? "var(--pea-orange-500)" : "var(--pea-purple-500)", zIndex: 1 }}>
+                <Icon name="search" size={19} />
               </div>
+              <input
+                className="input input-lg"
+                style={{ paddingLeft: 48, paddingRight: query ? 46 : 16, width: "100%", boxSizing: "border-box" }}
+                placeholder={tab === "meter" ? t("phMeter") : t("phTr")}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onFocus={() => setShowHistory(true)}
+                onBlur={() => setTimeout(() => setShowHistory(false), 180)}
+                inputMode="numeric"
+                autoFocus
+              />
+              {query && (
+                <button className="btn-icon" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 34, height: 34 }} onClick={() => setQuery("")}>
+                  <Icon name="close" size={15} />
+                </button>
+              )}
+              {/* Search history dropdown */}
+              {showHistory && !query && history.length > 0 && (
+                <div style={{
+                  position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:500,
+                  background:"var(--surface)", border:"1px solid var(--line)", borderRadius:14,
+                  boxShadow:"0 8px 28px rgba(0,0,0,0.14)", padding:6, display:"flex", flexDirection:"column", gap:2,
+                }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", color:"var(--ink-mute)", padding:"4px 10px 2px", textTransform:"uppercase" }}>ค้นหาล่าสุด</div>
+                  {history.map((h, i) => (
+                    <button key={i} onMouseDown={() => setQuery(h)} style={{
+                      display:"flex", alignItems:"center", gap:10, padding:"8px 12px", borderRadius:10,
+                      background:"transparent", border:"none", cursor:"pointer", color:"var(--text)",
+                      fontSize:14, fontWeight:500, textAlign:"left", width:"100%",
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.background="var(--hover)"}
+                      onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                      <Icon name="history" size={14} style={{ color:"var(--ink-mute)", flexShrink:0 }} />
+                      <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{h}</span>
+                      <button onMouseDown={e => { e.stopPropagation(); setHistory(p => { const n=p.filter((_,j)=>j!==i); try{localStorage.setItem("pea_search_hist",JSON.stringify(n))}catch{} return n; }); }} style={{ padding:"2px 6px", borderRadius:6, border:"none", background:"transparent", color:"var(--ink-mute)", cursor:"pointer", fontSize:12 }}>✕</button>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Street / Satellite basemap icon toggle */}
+            <button
+              ref={baseMapBtnRef}
+              className="sv-basemap-icon-btn btn btn-outline"
+              onClick={() => {
+                if (!showBaseMenu && baseMapBtnRef.current) {
+                  const r = baseMapBtnRef.current.getBoundingClientRect();
+                  setBaseMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right, width: 150 });
+                }
+                setShowBaseMenu(m => !m);
+              }}
+            >
+              <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={18} />
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.45, transition:"transform 0.15s", transform: showBaseMenu ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            {showBaseMenu && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
+                <div style={{ position: "fixed", top: baseMenuPos.top, right: baseMenuPos.right, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 150 }}>
+                  {[
+                    { id: "street",    icon: "map",   label: t("baseMapStreet")    },
+                    { id: "satellite", icon: "globe", label: t("baseMapSatellite") },
+                  ].map(opt => (
+                    <div key={opt.id} onClick={() => { setSvBaseMap(opt.id); setShowBaseMenu(false); }}
+                      style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer",
+                        background: svBaseMap === opt.id ? "rgba(139,63,196,0.07)" : "transparent",
+                        color: svBaseMap === opt.id ? "var(--pea-purple-600)" : "var(--ink)",
+                        fontWeight: svBaseMap === opt.id ? 600 : 400, fontSize:14 }}>
+                      <Icon name={opt.icon} size={14} />
+                      <span style={{ flex:1 }}>{opt.label}</span>
+                      {svBaseMap === opt.id && <Icon name="check" size={13} />}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
+          {/* Filter + export row */}
           <div className="sv-actions">
-            <button className={"search-filter-btn btn btn-outline " + (showFilters ? "active" : "")} onClick={() => setShowFilters(s => !s)} style={{ height: 54, borderRadius: 16, position: "relative", flexShrink: 0 }}>
+            <button className={"search-filter-btn btn btn-outline " + (showFilters ? "active" : "")} onClick={() => setShowFilters(s => !s)} style={{ height: 44, borderRadius: 14, position: "relative", flexShrink: 0 }}>
               <Icon name="filter" size={15} /> {t("filterLabel")}
               {activeFilterCount > 0 && (
                 <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, width: 20, height: 20, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{activeFilterCount}</span>
               )}
             </button>
 
-            {/* Street / Satellite basemap toggle */}
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <button className="sv-basemap-btn btn btn-outline" onClick={() => setShowBaseMenu(m => !m)}>
-                <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={15} />
-                {svBaseMap === "satellite" ? t("baseMapSatellite") : t("baseMapStreet")}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.5, marginLeft:2, transition:"transform 0.15s", transform: showBaseMenu ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              {showBaseMenu && (
-                <>
-                  <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
-                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 150 }}>
-                    {[
-                      { id: "street",    icon: "map",   label: t("baseMapStreet")    },
-                      { id: "satellite", icon: "globe", label: t("baseMapSatellite") },
-                    ].map(opt => (
-                      <div key={opt.id} onClick={() => { setSvBaseMap(opt.id); setShowBaseMenu(false); }}
-                        style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer",
-                          background: svBaseMap === opt.id ? "rgba(139,63,196,0.07)" : "transparent",
-                          color: svBaseMap === opt.id ? "var(--pea-purple-600)" : "var(--ink)",
-                          fontWeight: svBaseMap === opt.id ? 600 : 400, fontSize:14 }}>
-                        <Icon name={opt.icon} size={14} />
-                        <span style={{ flex:1 }}>{opt.label}</span>
-                        {svBaseMap === opt.id && <Icon name="check" size={13} />}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
             {(allowExport || currentUser?.role === "admin") ? (
-              <button className="search-export-btn btn btn-outline" style={{ height: 54, borderRadius: 16, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
+              <button className="search-export-btn btn btn-outline" style={{ height: 44, borderRadius: 14, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
                 <Icon name="download" size={15} /> {t("exportLabel")}
               </button>
             ) : (
               <button className="search-export-btn" onClick={() => toast?.(t("exportDisabled"), "error")} style={{
-                height: 54, borderRadius: 16, flexShrink: 0, display: "flex", alignItems: "center",
+                height: 44, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center",
                 gap: 6, padding: "0 16px", background: "var(--soft)", border: "1px solid var(--soft-border)",
                 color: "var(--ink-mute)", fontSize: 13, fontWeight: 600, cursor: "pointer", userSelect: "none",
               }}>
