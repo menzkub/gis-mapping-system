@@ -1,7 +1,7 @@
 {
-  "commit": "61581b847441794336f8d7e838e7046cd236336e",
-  "shortCommit": "61581b8",
-  "message": "feat: pre-fill dev info defaults with actual tech stack",
-  "date": "2026-06-02T02:48:07Z",
+  "commit": "77eb656a3dfd476592412ad4dd40564cbd8c89fa",
+  "shortCommit": "77eb656",
+  "message": "Mobile dashboard: meter+transformer top row (2-col), KVA full-width below; add evolution infographic",
+  "date": "2026-06-02T03:11:10Z",
   "branch": "main"
 }
