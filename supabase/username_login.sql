@@ -10,9 +10,10 @@ LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT email
-  FROM public.profiles
-  WHERE username = lower(trim(p_username))
+  SELECT u.email
+  FROM auth.users u
+  INNER JOIN public.profiles p ON p.id = u.id
+  WHERE p.username = lower(trim(p_username))
   LIMIT 1;
 $$;
 
