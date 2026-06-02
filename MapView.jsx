@@ -330,7 +330,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
     };
   }, [measureMode]);
 
-  const [locating, setLocating] = useRefM(false);
+  const [locating, setLocating] = useStateM(false);
   const goToMyLocation = () => {
     if (!navigator.geolocation || !mapRef.current) return;
     setLocating(true);
