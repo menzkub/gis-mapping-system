@@ -1,7 +1,7 @@
 {
-  "commit": "b50946bbdc1e1e02e63160dd3f8d493f7019009f",
-  "shortCommit": "b50946b",
-  "message": "feat: add Powered By admin tab with premium tech stack showcase",
-  "date": "2026-06-02T02:06:37Z",
+  "commit": "b5e75b9e7bac9a3b775b284110843a21ada952b2",
+  "shortCommit": "b5e75b9",
+  "message": "fix: correct KVA/meter/TR owner classification and add % breakdown",
+  "date": "2026-06-02T02:18:23Z",
   "branch": "main"
 }
