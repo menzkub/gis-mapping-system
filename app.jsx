@@ -969,10 +969,13 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
   return (
     <div style={{ height: "100vh", display: "grid", placeItems: "center",
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
-      <div className="fade-up" style={{ width: "100%", maxWidth: 400, margin: "0 16px",
+      <style>{`
+        @keyframes mfa-caret { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}</style>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 420, margin: "0 16px",
         background: dk.card, borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
         border: `1px solid ${dk.border}` }}>
-        <div style={{ padding: "24px clamp(18px, 6vw, 32px)" }}>
+        <div style={{ padding: "24px clamp(20px, 6vw, 36px)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0,
               background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
@@ -990,18 +993,40 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
                 เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักของบัญชีนี้
               </div>
               <form onSubmit={verify} className="f-col f-gap-3">
-                <input
-                  style={{ fontSize: "clamp(36px, 12vw, 46px)", letterSpacing: "clamp(0.5em, 2vw, 0.72em)",
-                    textAlign: "center", fontWeight: 800,
-                    height: "clamp(82px, 22vw, 96px)", borderRadius: 16,
-                    border: `2px solid ${code.length ? "#8b3fc4" : dk.border}`,
-                    background: dk.surface2, color: dk.ink, outline: "none", width: "100%",
-                    boxSizing: "border-box", transition: "border-color 180ms",
-                    boxShadow: code.length ? "0 0 0 3px rgba(139,63,196,0.25)" : "none" }}
-                  maxLength={6} inputMode="numeric" autoComplete="one-time-code"
-                  placeholder="000000" value={code}
-                  onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
-                  autoFocus />
+                {/* 6-box OTP display with hidden real input */}
+                <div style={{ position: "relative", marginBottom: 4 }}>
+                  <div style={{ display: "flex", gap: "clamp(6px,2vw,10px)", justifyContent: "center" }}>
+                    {[0,1,2,3,4,5].map(i => {
+                      const filled = i < code.length;
+                      const active = i === code.length;
+                      return (
+                        <div key={i} style={{
+                          flex: 1, maxWidth: "clamp(48px,14vw,60px)",
+                          height: "clamp(64px,18vw,80px)",
+                          borderRadius: 14,
+                          background: filled ? "rgba(139,63,196,0.18)" : dk.surface2,
+                          border: `2px solid ${filled ? "#8b3fc4" : active ? "rgba(139,63,196,0.7)" : dk.border}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "clamp(26px,8vw,38px)", fontWeight: 800, color: dk.ink,
+                          transition: "all 140ms",
+                          boxShadow: active ? "0 0 0 4px rgba(139,63,196,0.22)" : filled ? "0 0 0 2px rgba(139,63,196,0.12)" : "none",
+                          position: "relative",
+                        }}>
+                          {filled ? code[i] : active ? (
+                            <span style={{ width: 2, height: "40%", borderRadius: 2, background: "#c084fc", animation: "mfa-caret 1.1s step-end infinite", display: "block" }} />
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <input
+                    style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "text", fontSize: 1 }}
+                    maxLength={6} inputMode="numeric" autoComplete="one-time-code"
+                    value={code}
+                    onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
+                    autoFocus
+                  />
+                </div>
                 {err && <div className="badge badge-red" style={{ padding: "8px 12px" }}><Icon name="close" size={14} />{err}</div>}
                 <button type="submit" className="btn btn-primary" style={{ height: 52, fontSize: 15 }}
                   disabled={busy || code.length !== 6}>
