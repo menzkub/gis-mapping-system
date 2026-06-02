@@ -969,10 +969,10 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
   return (
     <div style={{ height: "100vh", display: "grid", placeItems: "center",
       background: "radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #321148 60%, #1b0926 100%)" }}>
-      <div className="fade-up" style={{ width: "100%", maxWidth: 400, margin: "0 20px",
+      <div className="fade-up" style={{ width: "100%", maxWidth: 400, margin: "0 16px",
         background: dk.card, borderRadius: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
         border: `1px solid ${dk.border}` }}>
-        <div style={{ padding: "28px 32px" }}>
+        <div style={{ padding: "24px clamp(18px, 6vw, 32px)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0,
               background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center",
@@ -991,8 +991,10 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
               </div>
               <form onSubmit={verify} className="f-col f-gap-3">
                 <input
-                  style={{ fontSize: 32, letterSpacing: "0.65em", textAlign: "center", fontWeight: 700,
-                    height: 72, borderRadius: 14, border: `2px solid ${code.length ? "#8b3fc4" : dk.border}`,
+                  style={{ fontSize: "clamp(28px, 9vw, 36px)", letterSpacing: "clamp(0.45em, 1.5vw, 0.65em)",
+                    textAlign: "center", fontWeight: 700,
+                    height: "clamp(64px, 18vw, 80px)", borderRadius: 14,
+                    border: `2px solid ${code.length ? "#8b3fc4" : dk.border}`,
                     background: dk.surface2, color: dk.ink, outline: "none", width: "100%",
                     boxSizing: "border-box", transition: "border-color 180ms",
                     boxShadow: code.length ? "0 0 0 3px rgba(139,63,196,0.25)" : "none" }}
