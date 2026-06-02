@@ -1,7 +1,7 @@
 {
-  "commit": "4ae0ce275bf549447bfa1c4b7ad9a94c57906410",
-  "shortCommit": "4ae0ce2",
-  "message": "Add payment notifications + team suspension system",
-  "date": "2026-06-02T07:38:12Z",
+  "commit": "58790bb06200771bcfb884d9c4ce66b1cdb5829e",
+  "shortCommit": "58790bb",
+  "message": "Fix get_email_by_username: query auth.users not profiles",
+  "date": "2026-06-02T07:39:34Z",
   "branch": "main"
 }
