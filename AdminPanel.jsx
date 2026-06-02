@@ -29,6 +29,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"security",  icon:"lock",      label:t("admMobSecurity") },
     { id:"settings",  icon:"settings",  label:t("admSettings")    },
     { id:"guide",     icon:"book",      label:t("admMobGuide")    },
+    { id:"powered",   icon:"bolt",      label:t("admMobPowered")  },
     { id:"dev",       icon:"code",      label:t("admMobDev")      },
   ];
 
@@ -108,6 +109,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           allowExport={allowExport} setAllowExport={setAllowExport}
           pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />}
         {tab === "guide"     && <AdminGuide />}
+        {tab === "powered"   && <PoweredByTab />}
         {tab === "dev"       && currentUser.role === "admin" && <AdminDevGuide />}
       </div>
     </div>
@@ -5855,6 +5857,288 @@ function PushNotifySection({ pushPermission, subscribePush, unsubscribePush, cur
         </div>
       )}
       </div>}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PoweredByTab — Tech Stack showcase
+   ───────────────────────────────────────────────────────────────────────────── */
+const TECH_STACK = [
+  {
+    name: "Supabase",
+    desc: { th: "ฐานข้อมูล PostgreSQL + Authentication + RLS", en: "Database, Auth & Realtime" },
+    color: "#3ECF8E",
+    bg: "linear-gradient(135deg,#0a2e1f,#1a4a35)",
+    url: "https://supabase.com",
+    svg: (
+      <svg viewBox="0 0 109 113" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M63.708 110.284C60.848 113.885 55.05 111.912 54.981 107.314L53.974 40.063H99.193C107.384 40.063 111.952 49.523 106.859 55.937L63.708 110.284Z" fill="#3ECF8E"/>
+        <path d="M45.317 2.071C48.177-1.53 53.975.443 54.043 5.042L54.485 72.293H9.831C1.64 72.293-2.928 62.832 2.165 56.418L45.317 2.071Z" fill="#3ECF8E" fillOpacity="0.6"/>
+      </svg>
+    ),
+  },
+  {
+    name: "PostgreSQL",
+    desc: { th: "ระบบจัดการฐานข้อมูลเชิงสัมพันธ์", en: "Relational database engine" },
+    color: "#4169E1",
+    bg: "linear-gradient(135deg,#0f1f4a,#1a3278)",
+    url: "https://www.postgresql.org",
+    svg: (
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M23.54 3.46c-1.3-.38-2.7-.44-3.97-.06a8.87 8.87 0 00-3.57-1.4C13.9 1.73 11.63 2 9.7 3.1 7.2 4.54 5.82 7.1 5.5 9.8c-.22 1.83.08 3.7.84 5.38-.28.98-.44 2-.46 3.02-.05 2.5.7 5.1 2.53 6.87.9.87 2.06 1.47 3.27 1.73.72.16 1.47.19 2.2.1.5.58 1.13 1.03 1.84 1.3.95.37 2 .4 2.98.13.33.43.75.8 1.23 1.05.72.38 1.55.5 2.36.4 2.14-.26 3.96-1.78 4.95-3.66 1.06-2.04 1.27-4.44.72-6.67.46-.38.86-.83 1.18-1.33.88-1.38 1.1-3.1.65-4.65-.27-.95-.78-1.82-1.47-2.5.2-1.6-.07-3.25-.84-4.67-.6-1.1-1.52-2.05-2.7-2.64z" fill="#336791"/>
+        <path d="M22 8c0 3.31-2.69 6-6 6s-6-2.69-6-6 2.69-6 6-6 6 2.69 6 6z" fill="#fff" fillOpacity="0.15"/>
+        <circle cx="13" cy="7" r="1.2" fill="#fff"/>
+        <circle cx="19" cy="7" r="1.2" fill="#fff"/>
+      </svg>
+    ),
+  },
+  {
+    name: "GitHub",
+    desc: { th: "Version Control + CI/CD + Hosting", en: "Version control, CI/CD & hosting" },
+    color: "#fff",
+    bg: "linear-gradient(135deg,#0d1117,#21262d)",
+    url: "https://github.com",
+    svg: (
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path fill="white" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+      </svg>
+    ),
+  },
+  {
+    name: "Claude AI",
+    desc: { th: "ผู้ช่วย AI ในการพัฒนาระบบ", en: "AI assistant powering development" },
+    color: "#D4763B",
+    bg: "linear-gradient(135deg,#2c1500,#4a2800)",
+    url: "https://claude.ai",
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M4.709 15.955l4.72-4.72-.001 3.061 1.462 1.46-2.457 2.457-3.724-2.258zM9.876 8.56L5.15 13.287 4.71 9.564l4.726-4.726 4.83 2.965-1.464 1.463-2.926-.706z" fill="#D4763B"/>
+        <path d="M9.44 18.213l4.726-4.726.706 2.924-1.463 1.464-2.966-4.831-.001.001-1.002-4.001 4.72 4.72-3.06.001L9.44 18.213zm7.413-4.49l-4.727 4.727 3.722 2.258.001-.001 2.258 3.723 2.457-2.457-3.711-8.25zM19.295 5.79l-4.726 4.726-.706-2.924 1.462-1.463 2.966 4.831.001-.001 1.003 4.001-4.72-4.72h3.061L19.295 5.79z" fill="#D4763B"/>
+        <path d="M14.127 5.546l-4.72 4.72.001-3.061L7.946 5.745l2.457-2.457 3.724 2.258z" fill="#D4763B"/>
+      </svg>
+    ),
+  },
+  {
+    name: "React",
+    desc: { th: "JavaScript UI Library", en: "JavaScript UI library (UMD/Babel)" },
+    color: "#61DAFB",
+    bg: "linear-gradient(135deg,#071826,#0d2a40)",
+    url: "https://react.dev",
+    svg: (
+      <svg viewBox="-11.5 -10.232 23 20.463" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <circle cx="0" cy="0" r="2.05" fill="#61dafb"/>
+        <g stroke="#61dafb" strokeWidth="1" fill="none">
+          <ellipse rx="11" ry="4.2"/>
+          <ellipse rx="11" ry="4.2" transform="rotate(60)"/>
+          <ellipse rx="11" ry="4.2" transform="rotate(120)"/>
+        </g>
+      </svg>
+    ),
+  },
+  {
+    name: "Leaflet.js",
+    desc: { th: "Interactive Map Library", en: "Open-source JavaScript map library" },
+    color: "#199900",
+    bg: "linear-gradient(135deg,#0a2000,#143300)",
+    url: "https://leafletjs.com",
+    svg: (
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M16 2C11 2 7 6 7 11c0 7 9 19 9 19s9-12 9-19c0-5-4-9-9-9z" fill="#199900"/>
+        <path d="M16 7c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" fill="#fff" fillOpacity="0.4"/>
+        <path d="M9 29c0 0 2-1 7-1s7 1 7 1" stroke="#199900" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
+      </svg>
+    ),
+  },
+  {
+    name: "JavaScript",
+    desc: { th: "ภาษาหลักในการพัฒนาเว็บ", en: "Core scripting language" },
+    color: "#F7DF1E",
+    bg: "linear-gradient(135deg,#1a1800,#2e2800)",
+    url: "https://developer.mozilla.org/docs/Web/JavaScript",
+    svg: (
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <rect width="32" height="32" rx="4" fill="#F7DF1E"/>
+        <path d="M20.1 24.3c.5.9 1.2 1.5 2.4 1.5 1 0 1.6-.5 1.6-1.2 0-.8-.7-1.1-1.8-1.6l-.6-.3c-1.8-.8-3-1.8-3-3.9 0-1.9 1.5-3.4 3.8-3.4 1.6 0 2.8.6 3.6 2l-2 1.3c-.4-.8-1-1.1-1.6-1.1s-1 .4-1 1c0 .7.4 1 1.5 1.4l.6.3c2.2.9 3.3 1.9 3.3 4.1 0 2.3-1.8 3.6-4.3 3.6-2.4 0-3.9-1.1-4.7-2.6l2.2-1.1zM11.1 24.6c.4.7.7 1.2 1.5 1.2.7 0 1.2-.3 1.2-1.4V16h2.6v8.5c0 2.3-1.4 3.4-3.4 3.4-1.8 0-2.9-.9-3.5-2.1l1.6-1.2z" fill="#000"/>
+      </svg>
+    ),
+  },
+  {
+    name: "HTML5",
+    desc: { th: "โครงสร้างหน้าเว็บ", en: "Web markup structure" },
+    color: "#E34F26",
+    bg: "linear-gradient(135deg,#2a0800,#451000)",
+    url: "https://developer.mozilla.org/docs/Web/HTML",
+    svg: (
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M4 2l2.4 27L16 32l9.6-3L28 2H4z" fill="#E34F26"/>
+        <path d="M16 29.4l7.8-2.2 2-22.5H16V29.4z" fill="#EF652A"/>
+        <path d="M10 10h6V7H7l.5 5.5H16v-2.5H10zm-.7 7.5H16v-2.5H9.6l.4 2.5zm1 5.5l-.2-2.5H16v2.5l-5.7.7zm0 0" fill="#EBEBEB"/>
+        <path d="M16 10h5.3l-.5 5.5H16v2.5h4.5l-.5 5.5L16 25.1V22l2.8-.8.2-2.5H16V10z" fill="#fff"/>
+      </svg>
+    ),
+  },
+  {
+    name: "CSS3",
+    desc: { th: "สไตล์และการออกแบบ UI", en: "Styling & UI design" },
+    color: "#1572B6",
+    bg: "linear-gradient(135deg,#001830,#002d5a)",
+    url: "https://developer.mozilla.org/docs/Web/CSS",
+    svg: (
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M4 2l2.4 27L16 32l9.6-3L28 2H4z" fill="#1572B6"/>
+        <path d="M16 29.4l7.8-2.2 2-22.5H16V29.4z" fill="#33A9DC"/>
+        <path d="M16 16.5h-5l-.3-3.5H16V10H7.4l.9 10H16V16.5zm0 8.6l-4.8-1.3-.3-3.5H8.1l.6 7 7.3 2V25.1z" fill="#EBEBEB"/>
+        <path d="M16 16.5v3H20l-.5 5.1-3.5 1V29l7.3-2 .1-.7 1-11.8H16zm0-6.5v3h9.5l.3-3H16z" fill="#fff"/>
+      </svg>
+    ),
+  },
+  {
+    name: "Google Fonts",
+    desc: { th: "ระบบ Font: Plus Jakarta Sans + Noto Sans Thai", en: "Web fonts: Plus Jakarta Sans + Noto Sans Thai" },
+    color: "#4285F4",
+    bg: "linear-gradient(135deg,#0a1f5c,#142999)",
+    url: "https://fonts.google.com",
+    svg: (
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none"/>
+        <path d="M6.5 9h3v7h-3zm4 0h3v2.5h1.5V9h3v2.5h-1.5v2H19V16h-6v-4.5H13V16h-2.5V9z" fill="#4285F4"/>
+        <text x="4" y="19" fontSize="8" fontWeight="800" fill="#EA4335" fontFamily="serif">Aa</text>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#fff" fillOpacity="0.15"/>
+      </svg>
+    ),
+  },
+  {
+    name: "PWA",
+    desc: { th: "Progressive Web App + Service Worker", en: "Progressive Web App & offline support" },
+    color: "#5A0FC8",
+    bg: "linear-gradient(135deg,#1a0040,#2d0070)",
+    url: "https://web.dev/progressive-web-apps",
+    svg: (
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M3 22L10 8h3l-5 11h5l-2 3H3z" fill="#5A0FC8"/>
+        <path d="M14 22l5-14h3l2 8 4-8h3L24 22h-3l4-10-5 10h-2l-2-10-4 10h-3z" fill="#fff"/>
+        <path d="M28 8l-2 14h-3l2-14h3z" fill="#5A0FC8"/>
+      </svg>
+    ),
+  },
+  {
+    name: "GitHub Actions",
+    desc: { th: "CI/CD อัปเดต version อัตโนมัติ", en: "Automated CI/CD & version updates" },
+    color: "#2088FF",
+    bg: "linear-gradient(135deg,#001a40,#002d6b)",
+    url: "https://github.com/features/actions",
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <path d="M10.984 13.836a.5.5 0 01-.353-.146l-1.002-1.002a.501.501 0 11.708-.708l.647.647 1.647-1.647a.5.5 0 11.708.708l-2 2a.5.5 0 01-.355.146z" fill="#2088FF"/>
+        <path fillRule="evenodd" clipRule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zM3 12a9 9 0 1118 0A9 9 0 013 12z" fill="#2088FF"/>
+        <path d="M12 7a1 1 0 100-2 1 1 0 000 2zm-1 3v5a1 1 0 102 0v-5a1 1 0 10-2 0z" fill="#2088FF"/>
+      </svg>
+    ),
+  },
+];
+
+function PoweredByTab() {
+  const { lang } = useLang();
+  const th = (t, e) => lang === "en" ? e : t;
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <style>{`
+        .pwby-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        @media (max-width: 900px) { .pwby-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .pwby-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+        .pwby-card {
+          border-radius: 18px; padding: 22px 18px 18px;
+          border: 1px solid rgba(255,255,255,0.08);
+          display: flex; flex-direction: column; align-items: center; gap: 12px;
+          text-decoration: none; position: relative; overflow: hidden;
+          transition: transform 180ms cubic-bezier(.22,1,.36,1), box-shadow 180ms;
+          cursor: pointer;
+        }
+        .pwby-card:hover {
+          transform: translateY(-4px) scale(1.02);
+          box-shadow: 0 20px 48px rgba(0,0,0,0.5);
+        }
+        .pwby-card::before {
+          content: ""; position: absolute; inset: 0;
+          background: inherit; opacity: 0; transition: opacity 200ms;
+        }
+        .pwby-logo-wrap {
+          width: 64px; height: 64px; border-radius: 16px;
+          background: rgba(255,255,255,0.1);
+          display: flex; align-items: center; justify-content: center;
+          padding: 10px; flex-shrink: 0;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .pwby-name { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; text-align: center; }
+        .pwby-desc { font-size: 11px; color: rgba(255,255,255,0.6); text-align: center; line-height: 1.5; }
+        .pwby-arrow { position: absolute; top: 12px; right: 12px; opacity: 0.3; font-size: 12px; color: #fff; }
+        .pwby-card:hover .pwby-arrow { opacity: 0.8; }
+        .pwby-shine {
+          position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+          transform: skewX(-20deg); pointer-events: none;
+          transition: left 400ms;
+        }
+        .pwby-card:hover .pwby-shine { left: 150%; }
+      `}</style>
+
+      {/* Hero */}
+      <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#1a0a2e 0%,#2d1052 50%,#0a2040 100%)", color: "white", padding: "28px 28px 24px", marginBottom: 24, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -60, top: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(244,123,32,0.06)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: -40, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(139,63,196,0.06)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, position: "relative" }}>
+          <div style={{ width: 54, height: 54, borderRadius: 16, background: "linear-gradient(135deg,rgba(244,123,32,0.25),rgba(139,63,196,0.25))", display: "grid", placeItems: "center", flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }}>
+            <Icon name="bolt" size={26} style={{ color: "#f47b20" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
+              {th("เทคโนโลยีที่ใช้งาน", "Technology Stack")}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginBottom: 6 }}>
+              {th("ขับเคลื่อนโดย", "Powered By")}
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
+              {th("ระบบนี้สร้างขึ้นจากการผสมผสานเทคโนโลยีทันสมัย เปิดต่อสาธารณะ และ AI เพื่อประสิทธิภาพสูงสุด", "Built with a curated stack of modern open-source technologies and AI for maximum performance.")}
+            </div>
+            <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>
+                {TECH_STACK.length} {th("เทคโนโลยี", "technologies")}
+              </span>
+              <span style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(62,207,142,0.12)", border: "1px solid rgba(62,207,142,0.25)", fontSize: 11, fontWeight: 700, color: "#3ECF8E" }}>
+                {th("ฟรีทั้งหมด", "100% Free & Open Source")}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tech Grid */}
+      <div className="pwby-grid">
+        {TECH_STACK.map((tech) => (
+          <a key={tech.name} className="pwby-card" href={tech.url} target="_blank" rel="noopener noreferrer"
+            style={{ background: tech.bg }}>
+            <div className="pwby-shine" />
+            <span className="pwby-arrow">↗</span>
+            <div className="pwby-logo-wrap" style={{ boxShadow: `0 4px 24px ${tech.color}33` }}>
+              {tech.svg}
+            </div>
+            <div className="pwby-name" style={{ color: tech.color }}>{tech.name}</div>
+            <div className="pwby-desc">{lang === "en" ? tech.desc.en : tech.desc.th}</div>
+          </a>
+        ))}
+      </div>
+
+      {/* Footer note */}
+      <div style={{ marginTop: 20, padding: "14px 18px", borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+        <span style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.7 }}>
+          {th(
+            "ระบบนี้ทำงานบน GitHub Pages โดยไม่มีค่าใช้จ่าย เหมาะสมสำหรับการพัฒนาภายในองค์กร",
+            "This system runs on GitHub Pages at zero cost — ideal for internal organizational tools."
+          )}
+        </span>
+      </div>
     </div>
   );
 }

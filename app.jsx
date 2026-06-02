@@ -3431,6 +3431,7 @@ function App() {
     { id: "security",  icon: "lock",      label: t("admSecurity")  },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
+    { id: "powered",   icon: "bolt",      label: t("admPowered")   },
     ...(isAdmin ? [{ id: "dev", icon: "code", label: t("admDev") }] : []),
   ];
   const pendingCount = data.users.filter(u => u.status === "pending").length;
