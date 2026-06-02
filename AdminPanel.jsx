@@ -2230,13 +2230,26 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     // 2FA อัตโนมัติตาม role
     const auto2fa = edit.role === "admin" ? true : false;
     const tlId = edit.role === "user" ? (edit.team_leader_id || null) : null;
-    const patch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa, team_leader_id: tlId };
+
+    // Core patch (always safe — no optional columns)
+    const corePatch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa };
 
     const { error } = await _supabase.from("profiles")
-      .update(fromProfilePatch(patch))
+      .update(fromProfilePatch(corePatch))
       .eq("id", edit.id);
     setSaving(false);
     if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+
+    // Try to save team_leader_id separately — column may not exist yet if migration hasn't run
+    let savedTlId = data.users.find(u => u.id === edit.id)?.team_leader_id ?? null;
+    if (tlId !== savedTlId) {
+      const { error: tlErr } = await _supabase.from("profiles")
+        .update({ team_leader_id: tlId })
+        .eq("id", edit.id);
+      if (!tlErr) savedTlId = tlId;
+    }
+
+    const patch = { ...corePatch, team_leader_id: savedTlId };
     setData(d => ({ ...d, users: d.users.map(u => u.id === edit.id ? { ...u, ...patch } : u) }));
 
     const roleChanged = edit.role !== data.users.find(u => u.id === edit.id)?.role;
