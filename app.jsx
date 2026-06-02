@@ -2819,9 +2819,7 @@ function DevInfoModal({ devInfo, onClose }) {
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)" }}>
             <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{devInfo.footer || t("devFooter")}</div>
-            {devInfo.version && (
-              <span className="badge" style={{ fontSize: 10, background: "rgba(107,44,145,0.12)", color: "#6b2c91", borderRadius: 999, padding: "3px 9px", fontWeight: 700 }}>v{devInfo.version}</span>
-            )}
+            <span className="badge" style={{ fontSize: 10, background: "rgba(107,44,145,0.12)", color: "#6b2c91", borderRadius: 999, padding: "3px 9px", fontWeight: 700 }}>{CHANGELOG[0].version}</span>
           </div>
         </div>
       </div>

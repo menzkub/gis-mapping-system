@@ -5180,7 +5180,6 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
                   ["ตำแหน่ง", "position", "นักพัฒนาระบบ"],
                   ["แผนก/ฝ่าย", "department", "ฝ่ายสารสนเทศ"],
                   ["สถานที่/สาขา", "location", "กฟจ. เชียงใหม่"],
-                  ["เวอร์ชัน", "version", "1.0.0"],
                 ].map(([label, key, ph]) => (
                   <div key={key}>
                     <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
@@ -5192,9 +5191,6 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
                 ))}
               </div>
               {[
-                ["ฐานข้อมูล", "database", "Supabase (PostgreSQL), PostGIS"],
-                ["Tech Stack", "stack", "React 18, Leaflet.js, Babel Standalone"],
-                ["ระบบ/การเชื่อมต่อ", "systems", "GIS, RLS, Row-Level Security"],
                 ["ข้อความท้าย (Footer)", "footer", "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)"],
               ].map(([label, key, ph]) => (
                 <div key={key}>
