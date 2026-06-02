@@ -2778,46 +2778,55 @@ function DevInfoModal({ devInfo, onClose }) {
 
         {/* Body */}
         <div style={{ padding: "20px 24px" }}>
-          {hasDetails && (
-            <div>
-              <button
-                onClick={() => setExpanded(e => !e)}
-                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--soft)", cursor: "pointer", fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 12, justifyContent: "space-between" }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 8 }}><Icon name="info" size={14} /> รายละเอียดเพิ่มเติม</span>
-                <Icon name={expanded ? "chevUp" : "chevDown"} size={14} />
-              </button>
+          <div>
+            <button
+              onClick={() => setExpanded(e => !e)}
+              style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--soft)", cursor: "pointer", fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 12, justifyContent: "space-between" }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}><Icon name="info" size={14} /> รายละเอียดเพิ่มเติม</span>
+              <Icon name={expanded ? "chevUp" : "chevDown"} size={14} />
+            </button>
 
-              {expanded && (
-                <div className="fade-up f-col f-gap-2" style={{ marginBottom: 12 }}>
-                  {devInfo.database && (
-                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
-                        <Icon name="database" size={13} /> ฐานข้อมูล
+            {expanded && (
+              <div className="fade-up f-col f-gap-2" style={{ marginBottom: 12 }}>
+                {hasDetails ? (
+                  <>
+                    {devInfo.database && (
+                      <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
+                          <Icon name="database" size={13} /> ฐานข้อมูล
+                        </div>
+                        <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.database}</div>
                       </div>
-                      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.database}</div>
-                    </div>
-                  )}
-                  {devInfo.stack && (
-                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
-                        <Icon name="cpu" size={13} /> Tech Stack
+                    )}
+                    {devInfo.stack && (
+                      <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
+                          <Icon name="cpu" size={13} /> Tech Stack
+                        </div>
+                        <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.stack}</div>
                       </div>
-                      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.stack}</div>
-                    </div>
-                  )}
-                  {devInfo.systems && (
-                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
-                        <Icon name="link" size={13} /> ระบบ/การเชื่อมต่อ
+                    )}
+                    {devInfo.systems && (
+                      <div style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 12, marginBottom: 6, color: "var(--pea-orange-500)" }}>
+                          <Icon name="link" size={13} /> ระบบ/การเชื่อมต่อ
+                        </div>
+                        <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.systems}</div>
                       </div>
-                      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{devInfo.systems}</div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ padding: "14px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)", textAlign: "center" }}>
+                    <div style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.7 }}>
+                      ยังไม่ได้กรอกข้อมูลเพิ่มเติม<br />
+                      <span style={{ fontSize: 11 }}>Admin → ตั้งค่า → ข้อมูลนักพัฒนา → กรอก ฐานข้อมูล / Tech Stack / ระบบ</span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)" }}>
             <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{devInfo.footer || t("devFooter")}</div>
