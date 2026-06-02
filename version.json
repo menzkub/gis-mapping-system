@@ -1,7 +1,7 @@
 {
-  "commit": "c8e9e41d499ccc214bade2911a0e1f879133b80f",
-  "shortCommit": "c8e9e41",
-  "message": "feat: simplify dev info form + auto-link version to changelog",
-  "date": "2026-06-02T00:58:18Z",
+  "commit": "8848fa08a84955f73df4c8cd1a12c70f82219528",
+  "shortCommit": "8848fa0",
+  "message": "fix: responsive OTP input size on mobile for 2FA screen",
+  "date": "2026-06-02T01:22:23Z",
   "branch": "main"
 }
