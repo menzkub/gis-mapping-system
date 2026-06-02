@@ -1,7 +1,7 @@
 {
-  "commit": "63a735e986bc119a2a6285251498c2fdc35e8726",
-  "shortCommit": "63a735e",
-  "message": "Fix saveEdit crash when team_leader_id column not yet migrated",
-  "date": "2026-06-02T07:27:20Z",
+  "commit": "4f8cda85c692dfaceb5e3bf86c4050951d6b66ad",
+  "shortCommit": "4f8cda8",
+  "message": "Restructure SearchView: basemap toggle inline with search input",
+  "date": "2026-06-02T07:29:12Z",
   "branch": "main"
 }
