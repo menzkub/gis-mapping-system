@@ -157,6 +157,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-header { padding: 14px 18px 0; }
           .sv-body { padding: 12px 18px 16px; }
         }
+        .sv-body.sv-map-only { padding: 0 !important; }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
@@ -172,6 +173,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .search-view-switcher .tab { height: 36px !important; padding: 0 10px !important; font-size: 12px !important; white-space: nowrap; }
           .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
           .input-lg { height: 48px !important; }
+          .sv-split-btn { display: none !important; }
         }
       `}</style>
 
@@ -224,6 +226,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               onChange={e => setQuery(e.target.value)}
               onFocus={() => setShowHistory(true)}
               onBlur={() => setTimeout(() => setShowHistory(false), 180)}
+              inputMode="numeric"
               autoFocus
             />
             {query && (
@@ -266,10 +269,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
 
             <div className="search-view-switcher tabs" style={{ padding: 4, flexShrink: 0 }}>
               {[
-                { id: "split", icon: "layers", label: t("splitView") },
-                { id: "map",   icon: "map",    label: t("mapView")   },
+                { id: "list",  icon: "list",   label: "รายการ",       cls: "" },
+                { id: "split", icon: "layers", label: t("splitView"), cls: "sv-split-btn" },
+                { id: "map",   icon: "map",    label: t("mapView"),   cls: "" },
               ].map(v => (
-                <button key={v.id} className={"tab " + (view === v.id ? "active" : "")} style={{ height: 46, padding: "0 14px" }} onClick={() => setView(v.id)}>
+                <button key={v.id} className={"tab " + (view === v.id ? "active" : "") + (v.cls ? " " + v.cls : "")} style={{ height: 46, padding: "0 14px" }} onClick={() => setView(v.id)}>
                   <Icon name={v.icon} size={14} /> {v.label}
                 </button>
               ))}
@@ -331,69 +335,96 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       </div>
 
       {/* Content */}
-      <div className="sv-body" style={{ flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column" }}>
-        {!hasSearched ? (
-          /* Empty start state */
-          <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ textAlign: "center", padding: 40 }}>
-              <div style={{ width: 72, height: 72, borderRadius: 20, margin: "0 auto 20px", background: "var(--soft)", display: "grid", placeItems: "center" }}>
-                <Icon name="search" size={32} style={{ color: "var(--ink-mute)" }} />
-              </div>
-              <div className="fw-7" style={{ fontSize: 18, marginBottom: 8 }}>
-                {t("typeToSearch")}
-              </div>
-              <div className="t-mute text-sm">
-                {tab === "meter"
-                  ? t("searchFromMeter").replace("{n}", totalCount.toLocaleString())
-                  : t("searchFromTr").replace("{n}", totalCount.toLocaleString())}
-              </div>
-              <div className="t-mute text-xs" style={{ marginTop: 8 }}>{t("useFilter")}</div>
-            </div>
-          </div>
-        ) : searching ? (
-          /* Loading state */
-          <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, margin: "0 auto 16px", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", animation: "pea-spin 1.2s linear infinite" }}>
-                <Icon name="search" size={22} style={{ color: "white" }} />
-              </div>
-              <div className="fw-6">{t("searching")}</div>
-            </div>
-          </div>
-        ) : results.length === 0 ? (
-          <div className="card" style={{ flex: 1, minHeight: 0 }}>
-            <EmptyState title={t("notFound")} hint={t("notFoundHint")} />
-          </div>
-        ) : (
-          <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: view === "split" ? "clamp(300px, 38%, 520px) 1fr" : "1fr", gap: 16 }}>
-            {view === "split" && (
-              <ResultList
-                kind={tab}
-                items={results}
-                selectedId={selectedId}
-                onSelect={(p) => setSelectedId(p.OBJECTID)}
-                onNavigate={(p) => setNavTarget(p)}
-                capped={results.length >= 500}
-                copyCoords={copyCoords}
-                copied={copied}
-              />
-            )}
-            {(view === "split" || view === "map") && (
-              <div style={{ minHeight: 480, position: "relative" }}>
-                <MapView
-                  points={results}
+      <div className={"sv-body" + (view === "map" ? " sv-map-only" : "")} style={{ flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: view === "split" ? "clamp(300px,38%,520px) 1fr" : "1fr", gap: view === "split" ? 16 : 0 }}>
+
+          {/* List panel — shown in "list" and "split" views */}
+          {(view === "list" || view === "split") && (
+            <div style={{ minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              {!hasSearched ? (
+                <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ textAlign: "center", padding: 40 }}>
+                    <div style={{ width: 72, height: 72, borderRadius: 20, margin: "0 auto 20px", background: "var(--soft)", display: "grid", placeItems: "center" }}>
+                      <Icon name="search" size={32} style={{ color: "var(--ink-mute)" }} />
+                    </div>
+                    <div className="fw-7" style={{ fontSize: 18, marginBottom: 8 }}>{t("typeToSearch")}</div>
+                    <div className="t-mute text-sm">
+                      {tab === "meter"
+                        ? t("searchFromMeter").replace("{n}", totalCount.toLocaleString())
+                        : t("searchFromTr").replace("{n}", totalCount.toLocaleString())}
+                    </div>
+                    <div className="t-mute text-xs" style={{ marginTop: 8 }}>{t("useFilter")}</div>
+                  </div>
+                </div>
+              ) : searching ? (
+                <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, margin: "0 auto 16px", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", animation: "pea-spin 1.2s linear infinite" }}>
+                      <Icon name="search" size={22} style={{ color: "white" }} />
+                    </div>
+                    <div className="fw-6">{t("searching")}</div>
+                  </div>
+                </div>
+              ) : results.length === 0 ? (
+                <div className="card" style={{ flex: 1, minHeight: 0 }}>
+                  <EmptyState title={t("notFound")} hint={t("notFoundHint")} />
+                </div>
+              ) : (
+                <ResultList
                   kind={tab}
+                  items={results}
                   selectedId={selectedId}
                   onSelect={(p) => setSelectedId(p.OBJECTID)}
                   onNavigate={(p) => setNavTarget(p)}
-                  baseMap={baseMap}
-                  showHeatmap={showHeatmap}
-                  showCluster={showCluster}
+                  capped={results.length >= 500}
+                  copyCoords={copyCoords}
+                  copied={copied}
                 />
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+
+          {/* Map panel — always visible in "map" and "split" views (even before search) */}
+          {(view === "map" || view === "split") && (
+            <div style={{ position: "relative", height: "100%", minHeight: 300, overflow: "hidden" }}>
+              <MapView
+                points={results}
+                kind={tab}
+                selectedId={selectedId}
+                onSelect={(p) => setSelectedId(p.OBJECTID)}
+                onNavigate={(p) => setNavTarget(p)}
+                baseMap={baseMap}
+                showHeatmap={showHeatmap}
+                showCluster={showCluster}
+              />
+              {/* Hint overlay before any search */}
+              {!hasSearched && (
+                <div style={{
+                  position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 500,
+                  background: "var(--surface)", borderRadius: 14, padding: "10px 20px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.16)", border: "1px solid var(--line)",
+                  fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap",
+                  display: "flex", alignItems: "center", gap: 8, pointerEvents: "none",
+                }}>
+                  <Icon name="search" size={14} style={{ color: "var(--pea-purple-500)" }} />
+                  พิมพ์คำค้นหาเพื่อดูตำแหน่งบนแผนที่
+                </div>
+              )}
+              {/* Result count badge */}
+              {results.length > 0 && (
+                <div style={{
+                  position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 500,
+                  background: "var(--surface)", borderRadius: 20, padding: "5px 14px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.12)", border: "1px solid rgba(139,63,196,0.2)",
+                  fontSize: 12, fontWeight: 700, color: "var(--pea-purple-600)", whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                }}>
+                  {results.length.toLocaleString()}{results.length >= 500 ? "+" : ""} จุดบนแผนที่
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {showExportDialog && (
