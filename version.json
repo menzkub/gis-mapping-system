@@ -1,7 +1,7 @@
 {
-  "commit": "eb84b2cd22b1a09d6dc6100433ea1debbf8c7d09",
-  "shortCommit": "eb84b2c",
-  "message": "UI/UX improvements: skeleton loading, tab grouping, donut tooltip, column sort, import progress, search history, my location, dismiss banner",
-  "date": "2026-06-02T03:48:08Z",
+  "commit": "ef77bac71d28d3293442f3250e77de04a816666d",
+  "shortCommit": "ef77bac",
+  "message": "Add v3.2 changelog entry and bump default version to v3.2",
+  "date": "2026-06-02T03:56:02Z",
   "branch": "main"
 }
