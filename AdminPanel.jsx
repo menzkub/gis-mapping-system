@@ -2229,7 +2229,8 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
 
     // 2FA อัตโนมัติตาม role
     const auto2fa = edit.role === "admin" ? true : false;
-    const patch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa };
+    const tlId = edit.role === "user" ? (edit.team_leader_id || null) : null;
+    const patch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa, team_leader_id: tlId };
 
     const { error } = await _supabase.from("profiles")
       .update(fromProfilePatch(patch))
@@ -2403,11 +2404,12 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       {/* Desktop: table */}
       <div className="au-dt">
         <table className="table">
-          <thead><tr>{["ผู้ใช้", "Role", "สถานะ", "2FA", "รหัสผ่าน", "เข้าใช้ล่าสุด", "การจัดการ"].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead><tr>{["ผู้ใช้", "Role / ทีม", "สถานะ", "2FA", "รหัสผ่าน", "เข้าใช้ล่าสุด", "การจัดการ"].map(h => <th key={h}>{h}</th>)}</tr></thead>
           <tbody>
             {list.map(u => {
               const dl = pwDaysLeft(u);
               const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;
+              const myLeader = u.team_leader_id ? data.users.find(x => x.id === u.team_leader_id) : null;
               return (
               <tr key={u.id} onClick={() => openPwHistory(u)} style={{ cursor: "pointer" }}>
                 <td>
@@ -2419,7 +2421,15 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     </div>
                   </div>
                 </td>
-                <td><span className={"badge " + (u.role === "admin" ? "badge-orange" : u.role === "team_leader" ? "badge-purple" : "badge-blue")}>{u.role}</span></td>
+                <td>
+                  <span className={"badge " + (u.role === "admin" ? "badge-orange" : u.role === "team_leader" ? "badge-purple" : "badge-blue")}>{u.role}</span>
+                  {myLeader && (
+                    <div className="t-mute text-xs" style={{ marginTop: 3, display:"flex", alignItems:"center", gap:4 }}>
+                      <Icon name="users" size={10} />
+                      {myLeader.name || `@${myLeader.username}`}
+                    </div>
+                  )}
+                </td>
                 <td>
                   <span className={"badge " + (u.status === "active" ? "badge-green" : u.status === "banned" ? "badge-red" : "badge-amber")}>
                     {u.status === "active" ? "ใช้งานได้" : u.status === "banned" ? "ระงับ" : "รออนุมัติ"}
@@ -2524,9 +2534,15 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   </div>
                   <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>@{u.username}</div>
                 </div>
-                <span className={"badge " + (u.role === "admin" ? "badge-orange" : "badge-blue")} style={{ flexShrink: 0, fontSize: 11 }}>
-                  {u.role}
-                </span>
+                <div style={{ flexShrink: 0, textAlign: "right" }}>
+                  <span className={"badge " + (u.role === "admin" ? "badge-orange" : u.role === "team_leader" ? "badge-purple" : "badge-blue")} style={{ fontSize: 11 }}>
+                    {u.role}
+                  </span>
+                  {u.team_leader_id && (() => {
+                    const tl = data.users.find(x => x.id === u.team_leader_id);
+                    return tl ? <div className="t-mute" style={{ fontSize: 10, marginTop: 2 }}><Icon name="users" size={9} /> {tl.name || `@${tl.username}`}</div> : null;
+                  })()}
+                </div>
               </div>
 
               {/* Row 2: Status + 2FA + pw status + last login */}
@@ -2614,26 +2630,43 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
             </button>
           </>
         }>
-        {edit && (
-          <div className="f-col f-gap-4">
-            <div className="field"><label className="field-label">ชื่อ-นามสกุล</label><input className="input" value={edit.name} onChange={e => setEdit({ ...edit, name: e.target.value })} /></div>
-            <div className="field"><label className="field-label">Username</label><input className="input" value={edit.username} onChange={e => setEdit({ ...edit, username: e.target.value })} /></div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div className="field"><label className="field-label">Role</label>
-                <select className="input" value={edit.role} onChange={e => setEdit({ ...edit, role: e.target.value })}>
-                  <option value="user">user</option>
-                  <option value="team_leader">team_leader</option>
-                  <option value="admin">admin</option>
-                </select>
+        {edit && (() => {
+          const teamLeaders = data.users.filter(u => u.role === "team_leader");
+          return (
+            <div className="f-col f-gap-4">
+              <div className="field"><label className="field-label">ชื่อ-นามสกุล</label><input className="input" value={edit.name} onChange={e => setEdit({ ...edit, name: e.target.value })} /></div>
+              <div className="field"><label className="field-label">Username</label><input className="input" value={edit.username} onChange={e => setEdit({ ...edit, username: e.target.value })} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="field"><label className="field-label">Role</label>
+                  <select className="input" value={edit.role} onChange={e => setEdit({ ...edit, role: e.target.value, team_leader_id: e.target.value !== "user" ? null : edit.team_leader_id })}>
+                    <option value="user">user</option>
+                    <option value="team_leader">team_leader</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+                <div className="field"><label className="field-label">สถานะ</label>
+                  <select className="input" value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value })}>
+                    <option value="active">active</option><option value="pending">pending</option><option value="banned">banned</option>
+                  </select>
+                </div>
               </div>
-              <div className="field"><label className="field-label">สถานะ</label>
-                <select className="input" value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value })}>
-                  <option value="active">active</option><option value="pending">pending</option><option value="banned">banned</option>
-                </select>
-              </div>
+              {edit.role === "user" && (
+                <div className="field">
+                  <label className="field-label">สังกัดหัวหน้าทีม</label>
+                  <select className="input" value={edit.team_leader_id || ""} onChange={e => setEdit({ ...edit, team_leader_id: e.target.value || null })}>
+                    <option value="">— ไม่มี (ทั่วไป) —</option>
+                    {teamLeaders.map(tl => (
+                      <option key={tl.id} value={tl.id}>{tl.name} (@{tl.username})</option>
+                    ))}
+                  </select>
+                  {teamLeaders.length === 0 && (
+                    <div className="t-mute text-xs" style={{ marginTop: 5 }}>ยังไม่มีหัวหน้าทีม — เปลี่ยน role ผู้ใช้คนใดก็ได้เป็น team_leader ก่อน</div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
       </Modal>
       </div>
 

@@ -107,6 +107,7 @@ function fromProfilePatch(patch) {
   if (patch.username          !== undefined) out.username           = patch.username;
   if (patch.require_2fa       !== undefined) out.require_2fa        = patch.require_2fa;
   if (patch.pw_force_change   !== undefined) out.pw_force_change    = patch.pw_force_change;
+  if (patch.team_leader_id    !== undefined) out.team_leader_id     = patch.team_leader_id;
   return out;
 }
 
