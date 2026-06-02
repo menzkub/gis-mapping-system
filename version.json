@@ -1,7 +1,7 @@
 {
-  "commit": "ef77bac71d28d3293442f3250e77de04a816666d",
-  "shortCommit": "ef77bac",
-  "message": "Add v3.2 changelog entry and bump default version to v3.2",
-  "date": "2026-06-02T03:56:02Z",
+  "commit": "14c16af44731e19330dcaf13da69e4c46250da9f",
+  "shortCommit": "14c16af",
+  "message": "Fix \u0e40\u0e1e\u0e34\u0e48\u0e21\u0e40\u0e15\u0e34\u0e21 dropdown clipped by overflow-x: auto on mobile tab bar",
+  "date": "2026-06-02T04:00:14Z",
   "branch": "main"
 }
