@@ -1,7 +1,7 @@
 {
-  "commit": "8848fa08a84955f73df4c8cd1a12c70f82219528",
-  "shortCommit": "8848fa0",
-  "message": "fix: responsive OTP input size on mobile for 2FA screen",
-  "date": "2026-06-02T01:22:23Z",
+  "commit": "84938e25624e336d4eebf06cb23aff2ceeb99755",
+  "shortCommit": "84938e2",
+  "message": "feat: restore all dev info fields in form and card",
+  "date": "2026-06-02T01:25:02Z",
   "branch": "main"
 }
