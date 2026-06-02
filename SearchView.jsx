@@ -27,7 +27,20 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
   const [showExportDialog, setShowExportDialog] = useStateS(false);
+  const [showHistory, setShowHistory] = useStateS(false);
+  const [history, setHistory] = useStateS(() => {
+    try { return JSON.parse(localStorage.getItem("pea_search_hist") || "[]"); } catch { return []; }
+  });
   const toast = useToast();
+
+  const saveHistory = (q) => {
+    if (!q.trim()) return;
+    setHistory(prev => {
+      const next = [q.trim(), ...prev.filter(h => h !== q.trim())].slice(0, 6);
+      try { localStorage.setItem("pea_search_hist", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   // Use refs so the effect can always read the latest callbacks
   // without adding them to the dependency array (which would cause re-runs)
@@ -72,6 +85,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           const mapped = (rows || []).map(tab === "meter" ? toMeter : toTransformer);
           setResults(mapped);
           if (query.trim()) {
+            saveHistory(query.trim());
             onLogSearchRef.current?.({
               at: formatThaiDate(),
               user: currentUserRef.current?.username || "guest",
@@ -208,12 +222,37 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               placeholder={tab === "meter" ? t("phMeter") : t("phTr")}
               value={query}
               onChange={e => setQuery(e.target.value)}
+              onFocus={() => setShowHistory(true)}
+              onBlur={() => setTimeout(() => setShowHistory(false), 180)}
               autoFocus
             />
             {query && (
               <button className="btn-icon" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 34, height: 34 }} onClick={() => setQuery("")}>
                 <Icon name="close" size={15} />
               </button>
+            )}
+            {/* Search history dropdown */}
+            {showHistory && !query && history.length > 0 && (
+              <div style={{
+                position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:500,
+                background:"var(--surface)", border:"1px solid var(--line)", borderRadius:14,
+                boxShadow:"0 8px 28px rgba(0,0,0,0.14)", padding:6, display:"flex", flexDirection:"column", gap:2,
+              }}>
+                <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", color:"var(--ink-mute)", padding:"4px 10px 2px", textTransform:"uppercase" }}>ค้นหาล่าสุด</div>
+                {history.map((h, i) => (
+                  <button key={i} onMouseDown={() => setQuery(h)} style={{
+                    display:"flex", alignItems:"center", gap:10, padding:"8px 12px", borderRadius:10,
+                    background:"transparent", border:"none", cursor:"pointer", color:"var(--text)",
+                    fontSize:14, fontWeight:500, textAlign:"left", width:"100%",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background="var(--hover)"}
+                    onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                    <Icon name="history" size={14} style={{ color:"var(--ink-mute)", flexShrink:0 }} />
+                    <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{h}</span>
+                    <button onMouseDown={e => { e.stopPropagation(); setHistory(p => { const n=p.filter((_,j)=>j!==i); try{localStorage.setItem("pea_search_hist",JSON.stringify(n))}catch{} return n; }); }} style={{ padding:"2px 6px", borderRadius:6, border:"none", background:"transparent", color:"var(--ink-mute)", cursor:"pointer", fontSize:12 }}>✕</button>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

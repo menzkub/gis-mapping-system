@@ -330,9 +330,35 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
     };
   }, [measureMode]);
 
+  const [locating, setLocating] = useRefM(false);
+  const goToMyLocation = () => {
+    if (!navigator.geolocation || !mapRef.current) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        mapRef.current?.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { duration: 1.2 });
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 8000 }
+    );
+  };
+
   return (
     <div className="map-wrap" style={{ height: "100%" }}>
       <div ref={containerRef} style={{ height: "100%", width: "100%" }} />
+      {/* My Location button */}
+      <button onClick={goToMyLocation} title="ตำแหน่งของฉัน" style={{
+        position:"absolute", bottom: 90, right: 12, zIndex: 500,
+        width: 40, height: 40, borderRadius: 12,
+        background: "var(--surface)", border: "1px solid var(--line)",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: "pointer", color: locating ? "var(--pea-purple-500)" : "var(--ink)",
+        fontSize: 18, transition: "color 0.2s",
+      }}>
+        {locating ? "⏳" : "📍"}
+      </button>
       {measureMode && (
         <div className="fade-in" style={{
           position: "absolute", top: 12, left: 12, zIndex: 500,

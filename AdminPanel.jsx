@@ -18,20 +18,24 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     dev: t("admDev"),
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
-  const MOB_NAV = [
+  const [showMoreTabs, setShowMoreTabs] = useStateAd(false);
+  const MOB_PRIMARY = [
     { id:"dashboard", icon:"dashboard", label:t("admDashboard")  },
     { id:"users",     icon:"users",     label:t("admUsers")      },
     { id:"meters",    icon:"meter",     label:t("admMobMeters")  },
     { id:"trs",       icon:"tr",        label:t("admMobTrs")     },
     { id:"map",       icon:"map",       label:t("admMobMap")     },
-    { id:"import",    icon:"upload",    label:t("admMobImport")  },
-    { id:"audit",     icon:"history",   label:t("admMobAudit")    },
-    { id:"security",  icon:"lock",      label:t("admMobSecurity") },
-    { id:"settings",  icon:"settings",  label:t("admSettings")    },
-    { id:"guide",     icon:"book",      label:t("admMobGuide")    },
-    { id:"powered",   icon:"bolt",      label:t("admMobPowered")  },
-    { id:"dev",       icon:"code",      label:t("admMobDev")      },
   ];
+  const MOB_MORE = [
+    { id:"import",    icon:"upload",    label:t("admMobImport")  },
+    { id:"audit",     icon:"history",   label:t("admMobAudit")   },
+    { id:"security",  icon:"lock",      label:t("admMobSecurity")},
+    { id:"settings",  icon:"settings",  label:t("admSettings")   },
+    { id:"guide",     icon:"book",      label:t("admMobGuide")   },
+    { id:"powered",   icon:"bolt",      label:t("admMobPowered") },
+    { id:"dev",       icon:"code",      label:t("admMobDev")     },
+  ];
+  const activeInMore = MOB_MORE.some(n => n.id === tab);
 
   return (
     <div className="f-col" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
@@ -40,14 +44,13 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
         @keyframes adm-spin { to { transform: rotate(360deg); } }
         .adm-spin { animation: adm-spin 1.2s linear infinite; }
-        /* Mobile admin tab bar */
         .adm-mob-tabs { display: none; }
         @media (max-width: 640px) {
           .adm-body { padding: 10px 12px 20px; }
           .adm-mob-tabs {
-            display: flex; overflow-x: auto; gap: 4px;
+            display: flex; gap: 4px; align-items: center;
             padding: 8px 12px; border-bottom: 1px solid var(--line);
-            scrollbar-width: none; flex-shrink: 0;
+            scrollbar-width: none; flex-shrink: 0; overflow-x: auto;
           }
           .adm-mob-tabs::-webkit-scrollbar { display: none; }
           .adm-mob-tab {
@@ -55,8 +58,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
             padding: 6px 12px; border-radius: 10px; flex-shrink: 0;
             font-size: 11px; font-weight: 700;
             color: var(--ink-mute); border: 1px solid transparent;
-            cursor: pointer; white-space: nowrap; position: relative;
-            transition: all 140ms;
+            cursor: pointer; white-space: nowrap; position: relative; transition: all 140ms;
           }
           .adm-mob-tab.on {
             background: linear-gradient(135deg,rgba(244,123,32,0.14),rgba(139,63,196,0.14));
@@ -69,6 +71,18 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
             font-size: 8px; font-weight: 800;
             display: flex; align-items: center; justify-content: center; padding: 0 3px;
           }
+          .adm-more-panel {
+            position: absolute; top: calc(100% + 4px); right: 0; z-index: 600;
+            background: var(--surface); border: 1px solid var(--line);
+            border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+            padding: 6px; display: flex; flex-direction: column; gap: 2px; min-width: 170px;
+          }
+          .adm-more-item {
+            display: flex; align-items: center; gap: 10; padding: 10px 14px; border-radius: 10px;
+            background: transparent; border: none; cursor: pointer; color: var(--text);
+            font-size: 13px; font-weight: 600; text-align: left; width: 100%;
+          }
+          .adm-more-item.on { background: rgba(139,63,196,0.1); color: var(--pea-purple-600); font-weight: 700; }
         }
       `}</style>
 
@@ -78,17 +92,37 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{NAV_LABELS[tab] || t("adminDefault")}</div>
       </div>
 
-      {/* Mobile-only horizontal tab bar */}
+      {/* Mobile-only tab bar — primary tabs + "⋯" more button */}
       <div className="adm-mob-tabs">
-        {MOB_NAV.map(n => (
-          <button key={n.id} className={"adm-mob-tab" + (tab === n.id ? " on" : "")} onClick={() => setTab(n.id)}>
+        {MOB_PRIMARY.map(n => (
+          <button key={n.id} className={"adm-mob-tab" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
             <Icon name={n.icon} size={16} />
             {n.label}
-            {n.id === "users" && pendingCount > 0 && (
-              <span className="adm-mob-badge">{pendingCount}</span>
-            )}
+            {n.id === "users" && pendingCount > 0 && <span className="adm-mob-badge">{pendingCount}</span>}
           </button>
         ))}
+        {/* More button */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <button className={"adm-mob-tab" + (activeInMore || showMoreTabs ? " on" : "")} onClick={() => setShowMoreTabs(s => !s)}>
+            <Icon name="grid" size={16} />
+            เพิ่มเติม
+            {activeInMore && <span style={{ position:"absolute", top:3, right:5, width:7, height:7, borderRadius:"50%", background:"var(--pea-orange-500)" }} />}
+          </button>
+          {showMoreTabs && (
+            <>
+              <div style={{ position:"fixed", inset:0, zIndex:599 }} onClick={() => setShowMoreTabs(false)} />
+              <div className="adm-more-panel">
+                {MOB_MORE.map(n => (
+                  <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
+                    <Icon name={n.icon} size={15} style={{ flexShrink:0 }} />
+                    {n.label}
+                    {n.id === "users" && pendingCount > 0 && <span className="adm-mob-badge" style={{ position:"static", marginLeft:"auto" }}>{pendingCount}</span>}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className={"adm-body" + (tab === "map" ? " adm-map-body" : "")}>
@@ -142,8 +176,8 @@ function AdminDashboard({ data }) {
   const otherTr     = Math.max(0, trCount - peaTr - custTr);
 
   const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
-
   const grandTotal = meterCount + trCount;
+  const isLoading = meterCount === 0 && trCount === 0 && totalKva === 0;
   const donutSegs = [
     { v: peaMeters,  color: "#8b3fc4", label: "PEA Meter",   glow: "rgba(139,63,196,0.6)" },
     { v: custMeters, color: "#c084fc", label: "Cust. Meter",  glow: "rgba(192,132,252,0.4)" },
@@ -179,19 +213,29 @@ function AdminDashboard({ data }) {
         }
       `}</style>
 
-      {/* Stat cards — 3 cols (removed Users) */}
+      {/* Stat cards — skeleton while loading */}
       <div className="db-stat-grid">
-        <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter-m" accent="purple" />
-        <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr-tri" accent="orange" />
-        <div className="db-kva-span">
-          <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
-            breakdown={[
-              { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
-              { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
-              ...(otherKva > 0 ? [{ label: "ไม่ระบุ", value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
-            ]}
-          />
-        </div>
+        {isLoading ? (
+          <>
+            <SkeletonCard height={120} />
+            <SkeletonCard height={120} />
+            <div className="db-kva-span"><SkeletonCard height={120} /></div>
+          </>
+        ) : (
+          <>
+            <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter-m" accent="purple" />
+            <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr-tri" accent="orange" />
+            <div className="db-kva-span">
+              <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
+                breakdown={[
+                  { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
+                  { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
+                  ...(otherKva > 0 ? [{ label: "ไม่ระบุ", value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
+                ]}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Data-quality warnings */}
@@ -464,6 +508,7 @@ function DonutLegendRow({ seg, total, delay }) {
 }
 
 function PremiumDonut({ segs, grandTotal }) {
+  const [hovered, setHovered] = useStateAd(null);
   const total = segs.reduce((s, x) => s + x.v, 0) || 1;
   const R = 52; const W = 16; const C = 2 * Math.PI * R;
   const GAP = 2.5;
@@ -489,28 +534,45 @@ function PremiumDonut({ segs, grandTotal }) {
             </radialGradient>
           ))}
         </defs>
-        {/* Track */}
         <circle cx="70" cy="70" r={R} fill="none" stroke="var(--line)" strokeWidth={W} />
-        {/* Segments */}
         {rendered.map((s, i) => (
           <circle key={i} cx="70" cy="70" r={R} fill="none"
             stroke={s.color}
-            strokeWidth={W}
+            strokeWidth={hovered === i ? W + 4 : W}
             strokeDasharray={`${s.len} ${C - s.len}`}
             strokeDashoffset={-s.offset}
             transform="rotate(-90 70 70)"
             strokeLinecap="round"
             style={{
-              filter: `drop-shadow(0 0 5px ${s.glow})`,
+              filter: hovered === i ? `drop-shadow(0 0 8px ${s.glow})` : `drop-shadow(0 0 5px ${s.glow})`,
               animation: `dbSegIn 500ms ${i * 100 + 100}ms var(--ease-out) both`,
+              cursor: "pointer", transition: "stroke-width 180ms",
             }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
           />
         ))}
-        {/* Center */}
-        <text x="70" y="65" textAnchor="middle" style={{ fontSize: 20, fontWeight: 900, fill: "var(--ink)", letterSpacing: "-0.02em", animation: "dbNumUp 500ms 400ms both" }}>
-          {grandTotal.toLocaleString()}
-        </text>
-        <text x="70" y="80" textAnchor="middle" style={{ fontSize: 8, fill: "var(--ink-mute)", fontWeight: 700, letterSpacing: "0.14em" }}>TOTAL</text>
+        {/* Center — shows hovered segment or total */}
+        {hovered !== null && rendered[hovered] ? (
+          <>
+            <text x="70" y="62" textAnchor="middle" style={{ fontSize: 16, fontWeight: 900, fill: rendered[hovered].color, letterSpacing: "-0.02em" }}>
+              {Math.round(rendered[hovered].v / total * 100)}%
+            </text>
+            <text x="70" y="76" textAnchor="middle" style={{ fontSize: 8, fill: "var(--ink)", fontWeight: 700 }}>
+              {rendered[hovered].v.toLocaleString()}
+            </text>
+            <text x="70" y="87" textAnchor="middle" style={{ fontSize: 7, fill: rendered[hovered].color, fontWeight: 700, letterSpacing: "0.08em" }}>
+              {rendered[hovered].label.toUpperCase()}
+            </text>
+          </>
+        ) : (
+          <>
+            <text x="70" y="65" textAnchor="middle" style={{ fontSize: 20, fontWeight: 900, fill: "var(--ink)", letterSpacing: "-0.02em", animation: "dbNumUp 500ms 400ms both" }}>
+              {grandTotal.toLocaleString()}
+            </text>
+            <text x="70" y="80" textAnchor="middle" style={{ fontSize: 8, fill: "var(--ink-mute)", fontWeight: 700, letterSpacing: "0.14em" }}>TOTAL</text>
+          </>
+        )}
       </svg>
     </div>
   );
@@ -2737,6 +2799,22 @@ function AdminMeters({ addAudit, currentUser }) {
   const [edit, setEdit]       = useStateAd(null);
   const [saving, setSaving]   = useStateAd(false);
   const [showExport, setShowExport] = useStateAd(false);
+  const [sortCol, setSortCol] = useStateAd("OBJECTID");
+  const [sortDir, setSortDir] = useStateAd("asc");
+  const sortedList = React.useMemo(() => {
+    if (!sortCol) return list;
+    return [...list].sort((a, b) => {
+      const va = a[sortCol] ?? ""; const vb = b[sortCol] ?? "";
+      const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [list, sortCol, sortDir]);
+  const toggleSort = (col) => { setSortCol(col); setSortDir(d => col === sortCol ? (d === "asc" ? "desc" : "asc") : "asc"); };
+  const SortTh = ({ col, label }) => (
+    <th onClick={() => toggleSort(col)} style={{ cursor:"pointer", userSelect:"none", whiteSpace:"nowrap" }}>
+      {label} <span style={{ opacity: sortCol === col ? 1 : 0.3, fontSize:10 }}>{sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "▲"}</span>
+    </th>
+  );
   const confirm = useConfirm();
   const toast   = useToast();
 
@@ -2822,9 +2900,18 @@ function AdminMeters({ addAudit, currentUser }) {
       </div>
       <div style={{ overflow: "auto", maxHeight: "60vh" }}>
         <table className="table">
-          <thead><tr>{["OBJECTID", "TAG", "CODE", "ROUTE", "PEANO", "Feeder", "OWNER", "พิกัด", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead><tr>
+            <SortTh col="OBJECTID" label="OBJECTID" />
+            <SortTh col="TAG" label="TAG" />
+            <SortTh col="CODE" label="CODE" />
+            <SortTh col="ROUTE" label="ROUTE" />
+            <SortTh col="PEANO" label="PEANO" />
+            <SortTh col="FEEDERID" label="Feeder" />
+            <SortTh col="OWNER" label="OWNER" />
+            <th>พิกัด</th><th></th>
+          </tr></thead>
           <tbody>
-            {list.map(m => (
+            {sortedList.map(m => (
               <tr key={m.OBJECTID}>
                 <td className="mono text-xs t-mute">{m.OBJECTID}</td>
                 <td className="mono fw-6">{m.TAG}</td>
@@ -2908,6 +2995,22 @@ function AdminTrs({ addAudit, currentUser }) {
   const [edit, setEdit]     = useStateAd(null);
   const [saving, setSaving] = useStateAd(false);
   const [showExport, setShowExport] = useStateAd(false);
+  const [sortCol, setSortCol] = useStateAd("TAG");
+  const [sortDir, setSortDir] = useStateAd("asc");
+  const sortedList = React.useMemo(() => {
+    if (!sortCol) return list;
+    return [...list].sort((a, b) => {
+      const va = a[sortCol] ?? ""; const vb = b[sortCol] ?? "";
+      const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [list, sortCol, sortDir]);
+  const toggleSort = (col) => { setSortCol(col); setSortDir(d => col === sortCol ? (d === "asc" ? "desc" : "asc") : "asc"); };
+  const SortTh = ({ col, label }) => (
+    <th onClick={() => toggleSort(col)} style={{ cursor:"pointer", userSelect:"none", whiteSpace:"nowrap" }}>
+      {label} <span style={{ opacity: sortCol === col ? 1 : 0.3, fontSize:10 }}>{sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "▲"}</span>
+    </th>
+  );
   const confirm = useConfirm();
   const toast   = useToast();
 
@@ -2985,9 +3088,19 @@ function AdminTrs({ addAudit, currentUser }) {
       </div>
       <div style={{ overflow: "auto", maxHeight: "60vh" }}>
         <table className="table">
-          <thead><tr>{["TAG", "PEANO", "ระบบเฟส", "kV", "kVA", "เจ้าของ", "สถานที่", "Feeder", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+          <thead><tr>
+            <SortTh col="TAG" label="TAG" />
+            <SortTh col="PEANO_TR" label="PEANO" />
+            <SortTh col="PHASE" label="ระบบเฟส" />
+            <SortTh col="VOLTAGE" label="kV" />
+            <SortTh col="KVA" label="kVA" />
+            <SortTh col="OWNER_TR" label="เจ้าของ" />
+            <SortTh col="LOCATION" label="สถานที่" />
+            <SortTh col="FEEDER1" label="Feeder" />
+            <th></th>
+          </tr></thead>
           <tbody>
-            {list.map(t => (
+            {sortedList.map(t => (
               <tr key={t.OBJECTID}>
                 <td className="mono fw-6">{t.TAG}</td>
                 <td className="mono">{t.PEANO_TR}</td>
@@ -3980,6 +4093,7 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
   const [fileName, setFileName]   = useStateAd("");
   const [importing, setImporting] = useStateAd(false);
   const [importResult, setImportResult] = useStateAd(null);
+  const [importPct, setImportPct] = useStateAd(0);
   const toast = useToast();
 
   const downloadSample = () => {
@@ -4016,6 +4130,7 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
   const commit = async () => {
     if (!preview) return;
     setImporting(true);
+    setImportPct(0);
     const table = target === "meter" ? "meters" : "transformers";
     const targetLabel = target === "meter" ? "PEA Meter" : "PEA TR";
     let succeeded = 0, failed = 0;
@@ -4039,6 +4154,7 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
 
       // Upsert in batches of 500 — track per-batch success/fail
       const BATCH = 500;
+      const totalBatches = Math.ceil(dbRows.length / BATCH);
       for (let i = 0; i < dbRows.length; i += BATCH) {
         const batch = dbRows.slice(i, i + BATCH);
         const { error } = await _supabase
@@ -4046,6 +4162,7 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
           .upsert(batch, { onConflict: "objectid" });
         if (error) failed += batch.length;
         else succeeded += batch.length;
+        setImportPct(Math.round(((Math.floor(i / BATCH) + 1) / totalBatches) * 100));
       }
 
       // Refresh dashboard stats
@@ -4150,8 +4267,11 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
             </div>
             <div className="f-gap-2 flex">
               <button className="btn btn-outline" onClick={() => { setPreview(null); setFileName(""); }}>ยกเลิก</button>
-              <button className="btn btn-primary" onClick={commit} disabled={importing}>
-                {importing ? "กำลังนำเข้า…" : <><Icon name="check" size={14} /> ยืนยันนำเข้า {preview.rows.length} รายการ</>}
+              <button className="btn btn-primary" onClick={commit} disabled={importing} style={{ minWidth: 160, position: "relative", overflow: "hidden" }}>
+                {importing && <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg,rgba(255,255,255,0.15) "+importPct+"%,transparent "+importPct+"%)", transition:"all 0.3s" }} />}
+                <span style={{ position:"relative" }}>
+                  {importing ? `กำลังนำเข้า… ${importPct}%` : <><Icon name="check" size={14} /> ยืนยันนำเข้า {preview.rows.length} รายการ</>}
+                </span>
               </button>
             </div>
           </div>

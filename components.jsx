@@ -385,4 +385,24 @@ function ConfirmProvider({ children }) {
 }
 
 /* expose */
-Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, downloadCSV, formatThaiDate });
+Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, formatThaiDate });
+
+/* ── SkeletonCard ───────────────────────────────────────────── */
+function SkeletonCard({ height = 120, style = {} }) {
+  return (
+    <div className="card" style={{ height, overflow: "hidden", position: "relative", ...style }}>
+      <style>{`
+        @keyframes skShimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+        .sk-shimmer::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.12) 50%,transparent 100%); animation:skShimmer 1.4s ease infinite; }
+        .sk-line { border-radius:6px; background:var(--line); position:relative; overflow:hidden; }
+        .sk-line::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent); animation:skShimmer 1.4s ease infinite; }
+      `}</style>
+      <div className="sk-shimmer" style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"var(--soft)", overflow:"hidden" }} />
+      <div style={{ position:"relative", padding:"18px 20px", display:"flex", flexDirection:"column", gap:10 }}>
+        <div className="sk-line" style={{ height:14, width:"55%" }} />
+        <div className="sk-line" style={{ height:28, width:"72%", marginTop:4 }} />
+        <div className="sk-line" style={{ height:10, width:"40%", marginTop:6 }} />
+      </div>
+    </div>
+  );
+}

@@ -2967,6 +2967,7 @@ function App() {
   const [showUtilMenu, setShowUtilMenu] = useStateApp(false);
   const [showBaseMenu, setShowBaseMenu] = useStateApp(false);
   const [showMobileUserMenu, setShowMobileUserMenu] = useStateApp(false);
+  const [maintDismissed, setMaintDismissed] = useStateApp(() => sessionStorage.getItem("pea_maint_dismissed") === "true");
   const [adminTab, setAdminTab] = useStateApp("dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
   const [devInfo, setDevInfo] = useStateApp({
@@ -3981,11 +3982,9 @@ function App() {
         )}
 
         {/* Maintenance Mode Warning Banner — admin only */}
-        {maintenanceMode && currentUser.role === "admin" && (
+        {maintenanceMode && currentUser.role === "admin" && !maintDismissed && (
           <div style={{ position: "relative", flexShrink: 0, overflow: "hidden" }}>
-            {/* Hazard stripe background */}
             <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(-45deg, #f59e0b 0px, #f59e0b 11px, #111 11px, #111 22px)" }} />
-            {/* Dark overlay — content layer */}
             <div style={{
               position: "relative", display: "flex", alignItems: "center", gap: 10,
               padding: "8px 20px", flexWrap: "wrap",
@@ -3999,19 +3998,18 @@ function App() {
                 ผู้ใช้ทั่วไปไม่สามารถเข้าใช้งานได้ในขณะนี้
                 {maintenanceUntil && ` · คาดว่าเปิดให้บริการ: ${new Date(maintenanceUntil).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
               </span>
-              <button
-                onClick={() => { setRoute("admin"); setAdminTab("settings"); }}
-                style={{
-                  padding: "5px 14px", borderRadius: 999,
-                  border: "1.5px solid #f59e0b",
-                  background: "#f59e0b", color: "#000",
-                  cursor: "pointer", fontSize: 12, fontWeight: 900, flexShrink: 0,
-                  display: "flex", alignItems: "center", gap: 5,
-                  boxShadow: "0 2px 8px rgba(245,158,11,0.4)",
-                }}
-              >
+              <button onClick={() => { setRoute("admin"); setAdminTab("settings"); }} style={{
+                padding: "5px 14px", borderRadius: 999, border: "1.5px solid #f59e0b",
+                background: "#f59e0b", color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 900,
+                flexShrink: 0, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 2px 8px rgba(245,158,11,0.4)",
+              }}>
                 <Icon name="settings" size={12} /> เปิดระบบ
               </button>
+              <button onClick={() => { setMaintDismissed(true); sessionStorage.setItem("pea_maint_dismissed", "true"); }} style={{
+                width: 28, height: 28, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.3)",
+                background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.8)", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 14, fontWeight: 700,
+              }} title="ซ่อน banner (เฉพาะ session นี้)">✕</button>
             </div>
           </div>
         )}
