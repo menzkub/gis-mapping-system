@@ -1,7 +1,7 @@
 {
-  "commit": "e15f508ea34142d687e3d093fc97a257da9b3b68",
-  "shortCommit": "e15f508",
-  "message": "Highlight search result on admin map with gold pulsing marker",
-  "date": "2026-06-02T04:27:00Z",
+  "commit": "b06ea8f04582a4d65a9a353c82c89fde30a67e52",
+  "shortCommit": "b06ea8f",
+  "message": "Fix deploy status dot: gray not orange when GitHub API fails",
+  "date": "2026-06-02T04:48:09Z",
   "branch": "main"
 }
