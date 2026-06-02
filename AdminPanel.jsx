@@ -4192,9 +4192,9 @@ function AdminSecurity({ data }) {
     const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
     const { data: rows, error } = await _supabase
       .from("audit_log")
-      .select("id,action,user_id,detail,created_at")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
+      .select("id,action,username,detail,at")
+      .gte("at", since)
+      .order("at", { ascending: false })
       .limit(500);
     if (!error && rows) setAuditEvents(rows);
     setLoading(false);

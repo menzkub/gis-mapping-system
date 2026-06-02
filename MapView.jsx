@@ -43,6 +43,11 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
     mapRef.current = map;
     markersLayerRef.current = L.layerGroup().addTo(map);
     measureLayerRef.current = L.layerGroup().addTo(map);
+    return () => {
+      map.stop();
+      map.remove();
+      mapRef.current = null;
+    };
   }, []);
 
   // Base map switching
