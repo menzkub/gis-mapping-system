@@ -1,7 +1,7 @@
 {
-  "commit": "adeeec59590ed868b69801d765a8285deaf455fa",
-  "shortCommit": "adeeec5",
-  "message": "Fix master_migration: CREATE POLICY IF NOT EXISTS not supported in PG",
-  "date": "2026-06-02T07:53:50Z",
+  "commit": "c5dfbd33cec1fb9f956a877a4f49f598f2b8e3e5",
+  "shortCommit": "c5dfbd3",
+  "message": "SearchView: move filter+export to search row on desktop; fix basemap dropdown on mobile",
+  "date": "2026-06-02T08:12:51Z",
   "branch": "main"
 }
