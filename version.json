@@ -1,7 +1,7 @@
 {
-  "commit": "943fc7535ff71bda213a055236b3c45a3ca16199",
-  "shortCommit": "943fc75",
-  "message": "chore: bump service worker cache to v14 (font change)",
-  "date": "2026-06-01T18:50:14Z",
+  "commit": "c8e9e41d499ccc214bade2911a0e1f879133b80f",
+  "shortCommit": "c8e9e41",
+  "message": "feat: simplify dev info form + auto-link version to changelog",
+  "date": "2026-06-02T00:58:18Z",
   "branch": "main"
 }
