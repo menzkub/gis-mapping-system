@@ -1,7 +1,7 @@
 {
-  "commit": "6591fb80b4cf448e06e2cffd1b5e759128dc1a80",
-  "shortCommit": "6591fb8",
-  "message": "Add mobile view toggle bar to search + auto-link dev version",
-  "date": "2026-06-02T06:43:33Z",
+  "commit": "6eeb380c00279170afe64d0c95ca9435d730c0e4",
+  "shortCommit": "6eeb380",
+  "message": "Add row-click detail popup and minimal dropdown for admin meters/transformers",
+  "date": "2026-06-02T06:54:05Z",
   "branch": "main"
 }
