@@ -1,7 +1,7 @@
 {
-  "commit": "a4f36878d7c17460f404a6aa834611cd69f5f175",
-  "shortCommit": "a4f3687",
-  "message": "Add team leader assignment for users",
-  "date": "2026-06-02T07:20:17Z",
+  "commit": "63a735e986bc119a2a6285251498c2fdc35e8726",
+  "shortCommit": "63a735e",
+  "message": "Fix saveEdit crash when team_leader_id column not yet migrated",
+  "date": "2026-06-02T07:27:20Z",
   "branch": "main"
 }
