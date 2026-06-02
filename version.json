@@ -1,7 +1,7 @@
 {
-  "commit": "6eeb380c00279170afe64d0c95ca9435d730c0e4",
-  "shortCommit": "6eeb380",
-  "message": "Add row-click detail popup and minimal dropdown for admin meters/transformers",
-  "date": "2026-06-02T06:54:05Z",
+  "commit": "ee43f4561e7ece8c77a644593693985beee71c95",
+  "shortCommit": "ee43f45",
+  "message": "Add team_leader role with monthly payment system + fix search map view",
+  "date": "2026-06-02T07:16:37Z",
   "branch": "main"
 }
