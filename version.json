@@ -1,7 +1,7 @@
 {
-  "commit": "b06ea8f04582a4d65a9a353c82c89fde30a67e52",
-  "shortCommit": "b06ea8f",
-  "message": "Fix deploy status dot: gray not orange when GitHub API fails",
-  "date": "2026-06-02T04:48:09Z",
+  "commit": "6591fb80b4cf448e06e2cffd1b5e759128dc1a80",
+  "shortCommit": "6591fb8",
+  "message": "Add mobile view toggle bar to search + auto-link dev version",
+  "date": "2026-06-02T06:43:33Z",
   "branch": "main"
 }
