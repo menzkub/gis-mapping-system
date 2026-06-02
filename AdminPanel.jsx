@@ -6473,7 +6473,7 @@ function AdminPayments({ currentUser, addAudit }) {
   const confirm = useConfirm();
 
   const [slips, setSlips]         = useStateAd([]);
-  const [leaders, setLeaders]     = useStateAd([]);
+  const [leaders, setLeaders]     = useStateAd([]);  // {id, username, name, status}
   const [loading, setLoading]     = useStateAd(true);
   const [filterLeader, setFilterLeader] = useStateAd("");
   const [filterStatus, setFilterStatus] = useStateAd("");
@@ -6483,11 +6483,19 @@ function AdminPayments({ currentUser, addAudit }) {
   const [notes, setNotes]         = useStateAd("");
   const [refreshKey, setRefreshKey] = useStateAd(0);
 
+  // Notify panel state
+  const [notifTarget,  setNotifTarget]  = useStateAd("all");
+  const [notifType,    setNotifType]    = useStateAd("payment_due");
+  const [notifTitle,   setNotifTitle]   = useStateAd("");
+  const [notifMsg,     setNotifMsg]     = useStateAd("");
+  const [notifMonth,   setNotifMonth]   = useStateAd(new Date().toISOString().slice(0,7));
+  const [notifSending, setNotifSending] = useStateAd(false);
+
   useEffectAd(() => {
     setLoading(true);
     Promise.all([
       _supabase.from("payment_slips").select("*").order("submitted_at", { ascending: false }),
-      _supabase.from("profiles").select("id,username,name").eq("role", "team_leader"),
+      _supabase.from("profiles").select("id,username,name,status").eq("role", "team_leader"),
     ]).then(([slipsRes, leadersRes]) => {
       setSlips(slipsRes.data || []);
       setLeaders(leadersRes.data || []);
@@ -6536,6 +6544,109 @@ function AdminPayments({ currentUser, addAudit }) {
     setRefreshKey(k => k + 1);
   };
 
+  // ── Suspend/Restore entire team ──────────────────────────────────────────
+  const toggleSuspend = async (leader, newStatus) => {
+    const isSuspend = newStatus === "suspended";
+    const ok = await confirm({
+      title: isSuspend ? s("ระงับทีม","Suspend Team") : s("คืนสิทธิ์ทีม","Restore Team"),
+      message: isSuspend
+        ? <>{s("ระงับการใช้งานของ","Suspend access for")} <b>{leader.name}</b> {s("และสมาชิกทั้งหมดในทีม?","and all team members?")}</>
+        : <>{s("คืนสิทธิ์ให้","Restore access for")} <b>{leader.name}</b> {s("และสมาชิกทั้งหมดในทีม?","and all team members?")}</>,
+      confirmText: isSuspend ? s("ระงับ","Suspend") : s("คืนสิทธิ์","Restore"),
+      tone: isSuspend ? "danger" : "primary",
+    });
+    if (!ok) return;
+
+    // Update team leader
+    const { error: e1 } = await _supabase.from("profiles")
+      .update({ status: newStatus })
+      .eq("id", leader.id);
+    if (e1) { toast?.("เกิดข้อผิดพลาด: " + e1.message, "error"); return; }
+
+    // Update all users under this team leader
+    await _supabase.from("profiles")
+      .update({ status: newStatus })
+      .eq("team_leader_id", leader.id)
+      .eq("role", "user");
+
+    // Insert in-app notification to team leader
+    const notifData = isSuspend
+      ? { title: s("บัญชีถูกระงับการใช้งาน","Account Suspended"), message: s("บัญชีของคุณและสมาชิกในทีมถูกระงับเนื่องจากยังไม่ได้ชำระค่าบริการ กรุณาชำระเงินและติดต่อ Admin เพื่อเปิดใช้งานอีกครั้ง","Your account and team members have been suspended due to unpaid service fee. Please pay and contact Admin to restore access.") }
+      : { title: s("บัญชีได้รับการคืนสิทธิ์แล้ว","Access Restored"), message: s("บัญชีของคุณและสมาชิกในทีมได้รับการเปิดใช้งานอีกครั้ง ยินดีต้อนรับกลับสู่ระบบ","Your account and team have been restored. Welcome back!") };
+    await _supabase.from("notifications").insert({
+      recipient_id: leader.id,
+      type: isSuspend ? "payment_suspended" : "payment_restored",
+      title: notifData.title,
+      message: notifData.message,
+      sent_by: currentUser.id,
+    });
+
+    addAudit({ user: currentUser.username, action: isSuspend ? "team_suspend" : "team_restore", target: leader.username, detail: `${isSuspend ? "ระงับ" : "คืนสิทธิ์"}ทีม @${leader.username}` });
+    toast?.(isSuspend ? s("ระงับทีมแล้ว","Team suspended") : s("คืนสิทธิ์ทีมแล้ว","Team restored"), "success");
+    setLeaders(prev => prev.map(l => l.id === leader.id ? { ...l, status: newStatus } : l));
+  };
+
+  // ── Send payment notification ─────────────────────────────────────────────
+  const NOTIF_PRESETS = {
+    payment_due: {
+      title: () => s(`แจ้งเตือน: ใกล้ครบกำหนดชำระเงิน ${notifMonth}`, `Payment Due: ${notifMonth}`),
+      msg:   () => s(`เดือน ${notifMonth} ใกล้ครบกำหนดชำระค่าบริการใช้งานระบบ กรุณาชำระเงินและอัพโหลดสลิปก่อนสิ้นเดือน`, `Your payment for ${notifMonth} is due soon. Please pay and upload your slip before month end.`),
+    },
+    payment_overdue: {
+      title: () => s(`แจ้งเตือน: เกินกำหนดชำระเงิน ${notifMonth}`, `Overdue Payment: ${notifMonth}`),
+      msg:   () => s(`เดือน ${notifMonth} เกินกำหนดชำระค่าบริการ หากไม่ชำระภายใน 7 วัน บัญชีจะถูกระงับการใช้งาน`, `Payment for ${notifMonth} is overdue. Account will be suspended within 7 days if not paid.`),
+    },
+    custom: {
+      title: () => notifTitle,
+      msg:   () => notifMsg,
+    },
+  };
+
+  const applyPreset = (type) => {
+    setNotifType(type);
+    if (type !== "custom") {
+      const p = NOTIF_PRESETS[type];
+      setNotifTitle(p.title());
+      setNotifMsg(p.msg());
+    }
+  };
+
+  const sendNotification = async () => {
+    if (!notifTitle.trim() || !notifMsg.trim()) { toast?.(s("กรุณากรอกหัวข้อและข้อความ","Enter title and message"), "error"); return; }
+    const targetLeaders = notifTarget === "all" ? leaders : leaders.filter(l => l.id === notifTarget);
+    if (!targetLeaders.length) { toast?.(s("ไม่พบหัวหน้าทีม","No team leaders found"), "error"); return; }
+
+    setNotifSending(true);
+    const rows = targetLeaders.map(l => ({
+      recipient_id: l.id,
+      type: notifType === "custom" ? "custom" : notifType,
+      title: notifTitle,
+      message: notifMsg,
+      due_month: notifMonth || null,
+      sent_by: currentUser.id,
+    }));
+    const { error } = await _supabase.from("notifications").insert(rows);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); setNotifSending(false); return; }
+
+    // Also push via web push if available
+    try {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (session?.access_token) {
+        const recipientIds = targetLeaders.map(l => l.id);
+        await fetch(`${window.SUPABASE_URL}/functions/v1/push-notify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ title: notifTitle, body: notifMsg, url: "/gis-mapping-system/", recipient_ids: recipientIds }),
+        });
+      }
+    } catch(_) {}
+
+    setNotifSending(false);
+    addAudit({ user: currentUser.username, action: "send_notification", target: notifTarget === "all" ? "all_leaders" : notifTarget, detail: `แจ้งเตือน: ${notifTitle}` });
+    toast?.(s(`ส่งแจ้งเตือนถึง ${targetLeaders.length} หัวหน้าทีมแล้ว`, `Sent to ${targetLeaders.length} team leader(s)`), "success");
+    setNotifTitle(""); setNotifMsg("");
+  };
+
   const statusBadge = (st) => {
     if (st === "approved") return <span className="badge badge-green">{s("อนุมัติแล้ว","Approved")}</span>;
     if (st === "rejected") return <span className="badge badge-red">{s("ปฏิเสธ","Rejected")}</span>;
@@ -6546,29 +6657,163 @@ function AdminPayments({ currentUser, addAudit }) {
   const nowMonth = new Date().toISOString().slice(0, 7);
   const pendingCount  = slips.filter(s => s.status === "pending").length;
   const paidThisMonth = slips.filter(s => s.payment_month === nowMonth && s.status === "approved").length;
+  const suspendedCount = leaders.filter(l => l.status === "suspended").length;
 
   return (
-    <div className="card card-elev fade-up">
-      <div style={{ marginBottom:20 }}>
-        <div className="text-lg fw-7">{s("การชำระเงิน","Payments")} {loading ? "…" : `(${filtered.length})`}</div>
-        <div className="t-mute text-sm">{s("ตรวจสอบและอนุมัติสลิปการชำระเงินของหัวหน้าทีม","Review and approve team leader payment slips")}</div>
-      </div>
+    <div className="f-col f-gap-4 fade-up">
 
-      {/* Stats row */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 }}>
-        {[
-          { label:s("รอตรวจสอบ","Pending"),       value:pendingCount,             color:"#f59e0b" },
-          { label:s("ชำระแล้วเดือนนี้","Paid this month"), value:paidThisMonth,     color:"#10b981" },
-          { label:s("หัวหน้าทีมทั้งหมด","Team leaders"),   value:leaders.length,    color:"#6b2c91" },
-        ].map(({ label, value, color }) => (
-          <div key={label} style={{ background:"var(--surface2)", borderRadius:12, padding:"14px 16px", textAlign:"center" }}>
-            <div style={{ fontSize:26, fontWeight:800, color }}>{value}</div>
-            <div className="t-mute text-xs" style={{ marginTop:2 }}>{label}</div>
+      {/* ── Team Leaders Overview ── */}
+      <div className="card card-elev">
+        <div style={{ marginBottom:16 }}>
+          <div className="text-lg fw-7">{s("หัวหน้าทีม","Team Leaders")}</div>
+          <div className="t-mute text-sm">{s("ระงับหรือคืนสิทธิ์การใช้งานระบบของทั้งทีม","Suspend or restore system access for entire teams")}</div>
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
+          {[
+            { label:s("รอตรวจสอบ","Pending"),            value:pendingCount,       color:"#f59e0b" },
+            { label:s("ชำระแล้วเดือนนี้","Paid this month"), value:paidThisMonth, color:"#10b981" },
+            { label:s("หัวหน้าทีมทั้งหมด","Team leaders"),   value:leaders.length, color:"#6b2c91" },
+            { label:s("ทีมถูกระงับ","Suspended"),          value:suspendedCount,   color:"#ef4444" },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background:"var(--soft)", borderRadius:10, padding:"12px 14px", textAlign:"center", border:"1px solid var(--line)" }}>
+              <div style={{ fontSize:22, fontWeight:800, color }}>{loading ? "…" : value}</div>
+              <div className="t-mute text-xs" style={{ marginTop:2 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign:"center", padding:20, color:"var(--t-mute)" }}>{s("กำลังโหลด…","Loading…")}</div>
+        ) : !leaders.length ? (
+          <div style={{ textAlign:"center", padding:20, color:"var(--t-mute)" }}>{s("ยังไม่มีหัวหน้าทีม","No team leaders yet")}</div>
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {leaders.map(leader => {
+              const isSuspended = leader.status === "suspended";
+              const lastSlip = slips.filter(sl => sl.team_leader_id === leader.id).sort((a,b) => b.submitted_at > a.submitted_at ? 1 : -1)[0];
+              const paidMonth = lastSlip?.status === "approved" ? lastSlip.payment_month : null;
+              return (
+                <div key={leader.id} style={{
+                  display:"flex", alignItems:"center", gap:12, padding:"12px 16px",
+                  borderRadius:12, border:`1px solid ${isSuspended ? "rgba(239,68,68,0.35)" : "var(--line)"}`,
+                  background: isSuspended ? "rgba(239,68,68,0.04)" : "var(--soft)",
+                }}>
+                  <div style={{ width:38, height:38, borderRadius:10, flexShrink:0,
+                    background: isSuspended ? "rgba(239,68,68,0.15)" : "linear-gradient(135deg,#6b2c91,#8b3fc4)",
+                    display:"grid", placeItems:"center", color: isSuspended ? "#dc2626" : "white",
+                    fontWeight:800, fontSize:14 }}>
+                    {isSuspended ? "🔒" : (leader.name?.[0] || "?")}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:700, fontSize:14, display:"flex", alignItems:"center", gap:6 }}>
+                      {leader.name}
+                      {isSuspended && <span className="badge badge-red" style={{ fontSize:10 }}>{s("ถูกระงับ","Suspended")}</span>}
+                    </div>
+                    <div style={{ fontSize:12, color:"var(--ink-mute)" }}>
+                      @{leader.username}
+                      {paidMonth && <span style={{ marginLeft:8, color:"#059669", fontWeight:600 }}>✓ {s("ชำระแล้ว","Paid")} {paidMonth}</span>}
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                    <button
+                      className="btn btn-sm"
+                      style={{
+                        height:34, fontSize:12, borderRadius:10,
+                        background: isSuspended ? "var(--pea-purple-500)" : "rgba(239,68,68,0.08)",
+                        color: isSuspended ? "white" : "#dc2626",
+                        border: isSuspended ? "none" : "1px solid rgba(239,68,68,0.3)",
+                        fontWeight:700,
+                      }}
+                      onClick={() => toggleSuspend(leader, isSuspended ? "active" : "suspended")}
+                    >
+                      {isSuspended ? s("คืนสิทธิ์","Restore") : s("ระงับทีม","Suspend")}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Filters */}
+      {/* ── Payment Notification Composer ── */}
+      <div className="card card-elev">
+        <div style={{ marginBottom:16 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#6b2c91,#8b3fc4)", display:"grid", placeItems:"center", flexShrink:0 }}>
+              <Icon name="bell" size={18} style={{ color:"white" }} />
+            </div>
+            <div>
+              <div className="fw-7 text-base">{s("แจ้งเตือนการชำระเงิน","Payment Notifications")}</div>
+              <div className="t-mute text-sm">{s("ส่งการแจ้งเตือนถึงหัวหน้าทีมโดยตรง","Send payment reminders directly to team leaders")}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+          <div className="field" style={{ margin:0 }}>
+            <label className="field-label">{s("ผู้รับ","Recipient")}</label>
+            <select className="input" style={{ height:40 }} value={notifTarget} onChange={e => setNotifTarget(e.target.value)}>
+              <option value="all">{s("หัวหน้าทีมทั้งหมด","All team leaders")} ({leaders.length})</option>
+              {leaders.map(l => <option key={l.id} value={l.id}>{l.name} (@{l.username})</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ margin:0 }}>
+            <label className="field-label">{s("เดือนอ้างอิง","Reference month")}</label>
+            <input className="input" type="month" style={{ height:40 }} value={notifMonth} onChange={e => setNotifMonth(e.target.value)} />
+          </div>
+        </div>
+
+        {/* Quick presets */}
+        <div style={{ marginBottom:12 }}>
+          <div className="text-xs fw-6" style={{ marginBottom:8, color:"var(--ink-mute)", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s("เทมเพลตด่วน","Quick Templates")}</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {[
+              { type:"payment_due",     icon:"⏰", label:s("ใกล้ครบกำหนด","Due Soon") },
+              { type:"payment_overdue", icon:"🚨", label:s("เกินกำหนด","Overdue") },
+              { type:"custom",          icon:"✏️", label:s("กำหนดเอง","Custom") },
+            ].map(p => (
+              <button key={p.type} onClick={() => applyPreset(p.type)}
+                style={{ padding:"6px 14px", borderRadius:99, fontSize:12, fontWeight:700, cursor:"pointer",
+                  border: notifType === p.type ? "1.5px solid var(--pea-purple-500)" : "1px solid var(--line)",
+                  background: notifType === p.type ? "rgba(139,63,196,0.1)" : "var(--surface-2)",
+                  color: notifType === p.type ? "var(--pea-purple-600)" : "var(--ink)" }}>
+                {p.icon} {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field" style={{ marginBottom:10 }}>
+          <label className="field-label">{s("หัวข้อ","Title")}</label>
+          <input className="input" value={notifTitle} onChange={e => setNotifTitle(e.target.value)}
+            placeholder={s("เช่น แจ้งเตือนชำระเงิน…","e.g. Payment reminder…")} />
+        </div>
+        <div className="field" style={{ marginBottom:12 }}>
+          <label className="field-label">{s("ข้อความ","Message")}</label>
+          <textarea className="input" rows={3} value={notifMsg} onChange={e => setNotifMsg(e.target.value)}
+            placeholder={s("รายละเอียดการแจ้งเตือน…","Notification details…")}
+            style={{ resize:"vertical", fontFamily:"inherit", lineHeight:1.6 }} />
+        </div>
+
+        <button className="btn btn-primary" style={{ height:44 }}
+          disabled={notifSending || !notifTitle.trim() || !notifMsg.trim()}
+          onClick={sendNotification}>
+          <Icon name="bell" size={15} />
+          {notifSending ? s("กำลังส่ง…","Sending…") : s(`ส่งแจ้งเตือน${notifTarget === "all" ? ` (${leaders.length} คน)` : ""}`, `Send Notification${notifTarget === "all" ? ` (${leaders.length})` : ""}`)}
+        </button>
+      </div>
+
+      {/* ── Payment Slips Table ── */}
+      <div className="card card-elev">
+        <div style={{ marginBottom:16 }}>
+          <div className="text-lg fw-7">{s("สลิปการชำระเงิน","Payment Slips")} {loading ? "…" : `(${filtered.length})`}</div>
+          <div className="t-mute text-sm">{s("ตรวจสอบและอนุมัติสลิปการชำระเงินของหัวหน้าทีม","Review and approve team leader payment slips")}</div>
+        </div>
+
+        {/* Filters */}
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:16 }}>
         <select className="input" style={{ flex:"1 1 160px", height:38 }} value={filterLeader} onChange={e => setFilterLeader(e.target.value)}>
           <option value="">{s("ทุกหัวหน้าทีม","All team leaders")}</option>
@@ -6701,7 +6946,8 @@ function AdminPayments({ currentUser, addAudit }) {
           </div>
         )}
       </Modal>
-    </div>
+      </div>{/* end Payment Slips card */}
+    </div>{/* end f-col wrapper */}
   );
 }
 

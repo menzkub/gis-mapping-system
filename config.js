@@ -144,6 +144,20 @@ async function loadAll(table) {
   return all;
 }
 
+function toNotification(row) {
+  return {
+    id:          row.id,
+    recipientId: row.recipient_id,
+    type:        row.type        || "custom",
+    title:       row.title       || "",
+    message:     row.message     || "",
+    dueMonth:    row.due_month   || null,
+    isRead:      row.is_read     || false,
+    createdAt:   row.created_at  ? row.created_at.replace("T", " ").slice(0, 16) : "",
+    sentBy:      row.sent_by     || null,
+  };
+}
+
 Object.assign(window, {
   _supabase,
   SUPABASE_URL,
@@ -152,5 +166,6 @@ Object.assign(window, {
   toTransformer, fromTransformer,
   toProfile, fromProfilePatch,
   toAuditEntry,
+  toNotification,
   loadAll,
 });

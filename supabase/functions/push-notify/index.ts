@@ -34,11 +34,15 @@ serve(async (req) => {
     .from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") return new Response("Forbidden", { status: 403, headers: CORS });
 
-  const { title, body, url } = await req.json();
+  const { title, body, url, recipient_ids } = await req.json();
   if (!title || !body) return new Response("title and body required", { status: 400, headers: CORS });
 
-  // Fetch all subscriptions
-  const { data: rows } = await supabase.from("push_subscriptions").select("subscription");
+  // Fetch subscriptions — optionally filtered to specific user IDs
+  let query = supabase.from("push_subscriptions").select("user_id, subscription");
+  if (Array.isArray(recipient_ids) && recipient_ids.length > 0) {
+    query = query.in("user_id", recipient_ids);
+  }
+  const { data: rows } = await query;
 
   const results = await Promise.allSettled(
     (rows ?? []).map((r) =>

@@ -72,68 +72,127 @@ function parseDevice(ua = "") {
 }
 
 // ── NotifPanel ────────────────────────────────────────────────────────────
-function NotifPanel({ data, currentUser }) {
+const NOTIF_TYPE_COLOR = {
+  payment_due:       { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.25)", icon: "⏰", color: "#d97706" },
+  payment_overdue:   { bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.25)",  icon: "🚨", color: "#dc2626" },
+  payment_suspended: { bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.25)",  icon: "🔒", color: "#dc2626" },
+  payment_restored:  { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.25)", icon: "✅", color: "#059669" },
+  custom:            { bg: "rgba(139,63,196,0.06)", border: "rgba(139,63,196,0.2)",  icon: "💬", color: "#6b2c91" },
+};
+
+function NotifPanel({ data, currentUser, myNotifs = [], setMyNotifs }) {
   const { t } = useLang();
   const pendingUsers = currentUser?.role === "admin"
     ? data.users.filter(u => u.status === "pending") : [];
   const recentLog = data.auditLog
     .filter(r => r.user === currentUser?.username)
-    .slice(0, 7);
+    .slice(0, 5);
+  const unread = myNotifs.filter(n => !n.isRead);
+
+  const markRead = async (id) => {
+    setMyNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    await _supabase.from("notifications").update({ is_read: true }).eq("id", id);
+  };
+
+  const markAllRead = async () => {
+    const ids = unread.map(n => n.id);
+    setMyNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+    if (ids.length) await _supabase.from("notifications").update({ is_read: true }).in("id", ids);
+  };
 
   return (
     <div style={{
       position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 2000,
-      width: 300, background: "var(--surface)", borderRadius: 16,
+      width: 320, background: "var(--surface)", borderRadius: 16,
       boxShadow: "0 20px 56px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
-      overflow: "hidden",
+      overflow: "hidden", maxHeight: "80vh", display: "flex", flexDirection: "column",
     }}>
       <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
         <Icon name="bell" size={14} />
-        <span style={{ fontWeight: 700, fontSize: 14 }}>{t("notifications")}</span>
+        <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{t("notifications")}</span>
+        {unread.length > 0 && (
+          <button onClick={markAllRead} style={{ fontSize: 11, color: "var(--pea-purple-500)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+            {t("notifMarkAllRead")}
+          </button>
+        )}
       </div>
 
-      {pendingUsers.length > 0 && (
-        <div style={{ padding: "10px 14px 12px", borderBottom: "1px solid var(--line)", background: "rgba(244,123,32,0.06)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--pea-orange-500)", marginBottom: 8 }}>
-            <Icon name="warning" size={13} /> {pendingUsers.length} {t("pendingApproval")}
+      <div style={{ overflowY: "auto", flex: 1 }}>
+        {/* In-app notifications */}
+        {myNotifs.length > 0 && (
+          <div style={{ borderBottom: "1px solid var(--line)" }}>
+            {myNotifs.slice(0, 8).map(n => {
+              const style = NOTIF_TYPE_COLOR[n.type] || NOTIF_TYPE_COLOR.custom;
+              return (
+                <div key={n.id} onClick={() => markRead(n.id)}
+                  style={{
+                    display: "flex", gap: 10, padding: "10px 14px", cursor: "pointer",
+                    background: n.isRead ? "transparent" : style.bg,
+                    borderLeft: n.isRead ? "3px solid transparent" : `3px solid ${style.color}`,
+                    transition: "background 200ms",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
+                  onMouseLeave={e => e.currentTarget.style.background = n.isRead ? "transparent" : style.bg}
+                >
+                  <div style={{ fontSize: 20, flexShrink: 0, lineHeight: 1.3 }}>{style.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: n.isRead ? 500 : 700, fontSize: 13, color: "var(--ink)", lineHeight: 1.3 }}>{n.title}</div>
+                    <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 2, lineHeight: 1.4 }}>{n.message}</div>
+                    <div style={{ fontSize: 10, color: "var(--ink-mute)", marginTop: 4 }}>{n.createdAt}</div>
+                  </div>
+                  {!n.isRead && <div style={{ width: 8, height: 8, borderRadius: "50%", background: style.color, flexShrink: 0, marginTop: 5 }} />}
+                </div>
+              );
+            })}
           </div>
-          {pendingUsers.slice(0, 3).map(u => (
-            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", fontSize: 12 }}>
-              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-                {(u.name || u.username || "?")[0]}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>@{u.username}</div>
-              </div>
-            </div>
-          ))}
-          {pendingUsers.length > 3 && <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 4 }}>{t("andMore")} {pendingUsers.length - 3} {t("people")}</div>}
-        </div>
-      )}
+        )}
 
-      {recentLog.length > 0 ? (
-        <div style={{ padding: "8px 0", maxHeight: 220, overflowY: "auto" }}>
-          <div style={{ padding: "2px 14px 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)" }}>
-            {t("recentActivity")}
-          </div>
-          {recentLog.map(r => (
-            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 14px", fontSize: 12 }}>
-              <span className={"badge " + activityBadge(r.action)} style={{ fontSize: 10, flexShrink: 0 }}>
-                {activityLabel(r.action, t)}
-              </span>
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11, color: "var(--ink-mute)" }}>
-                {r.user} · {r.at}
-              </span>
+        {/* Admin: pending users */}
+        {pendingUsers.length > 0 && (
+          <div style={{ padding: "10px 14px 12px", borderBottom: "1px solid var(--line)", background: "rgba(244,123,32,0.06)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--pea-orange-500)", marginBottom: 8 }}>
+              <Icon name="warning" size={13} /> {pendingUsers.length} {t("pendingApproval")}
             </div>
-          ))}
-        </div>
-      ) : pendingUsers.length === 0 && (
-        <div style={{ padding: "24px 16px", textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>🔔</div>
-          <div style={{ fontSize: 13, color: "var(--ink-mute)" }}>{t("noNotifications")}</div>
-        </div>
-      )}
+            {pendingUsers.slice(0, 3).map(u => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", fontSize: 12 }}>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                  {(u.name || u.username || "?")[0]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>@{u.username}</div>
+                </div>
+              </div>
+            ))}
+            {pendingUsers.length > 3 && <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 4 }}>{t("andMore")} {pendingUsers.length - 3} {t("people")}</div>}
+          </div>
+        )}
+
+        {recentLog.length > 0 && myNotifs.length === 0 && (
+          <div style={{ padding: "8px 0" }}>
+            <div style={{ padding: "2px 14px 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)" }}>
+              {t("recentActivity")}
+            </div>
+            {recentLog.map(r => (
+              <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 14px", fontSize: 12 }}>
+                <span className={"badge " + activityBadge(r.action)} style={{ fontSize: 10, flexShrink: 0 }}>
+                  {activityLabel(r.action, t)}
+                </span>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11, color: "var(--ink-mute)" }}>
+                  {r.user} · {r.at}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {myNotifs.length === 0 && pendingUsers.length === 0 && (
+          <div style={{ padding: "24px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🔔</div>
+            <div style={{ fontSize: 13, color: "var(--ink-mute)" }}>{t("noNotifications")}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -3031,6 +3090,7 @@ function App() {
   const [pushPermission, setPushPermission] = useStateApp(() =>
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
   );
+  const [myNotifs, setMyNotifs] = useStateApp([]);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -3053,10 +3113,12 @@ function App() {
         return;
       }
       const myProfile = myProfileRes.data;
-      if (myProfile.status === "pending" || myProfile.status === "banned") {
+      if (myProfile.status === "pending" || myProfile.status === "banned" || myProfile.status === "suspended") {
         await _supabase.auth.signOut();
         window.__peaAuthErr = myProfile.status === "pending"
           ? "บัญชีของคุณรอการอนุมัติจากผู้ดูแลระบบ"
+          : myProfile.status === "suspended"
+          ? "บัญชีถูกระงับเนื่องจากยังไม่ได้ชำระค่าบริการ กรุณาติดต่อ Admin"
           : "บัญชีของคุณถูกระงับการใช้งาน";
         setAppState("unauthed");
         return;
@@ -3170,6 +3232,16 @@ function App() {
       setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
       setData({ meters: [], transformers: [], users, auditLog, feeders, dashStats });
       setAppState("ready");
+
+      // Load in-app notifications for this user (non-blocking)
+      _supabase.from("notifications")
+        .select("*")
+        .eq("recipient_id", supabaseUser.id)
+        .order("created_at", { ascending: false })
+        .limit(50)
+        .then(({ data: ndata }) => {
+          if (ndata) setMyNotifs(ndata.map(toNotification));
+        }).catch(() => {});
 
       await _supabase.from("profiles")
         .update({ last_login: new Date().toISOString() })
@@ -3861,28 +3933,36 @@ function App() {
           {currentUser.role === "admin" && <DeployStatusDot />}
 
           {/* Bell notification */}
-          <div style={{ position: "relative" }}>
-            <button className="btn-icon" title={t("notifications")} onClick={() => setShowNotif(s => !s)} style={{ position: "relative" }}>
-              <Icon name="bell" />
-              {currentUser.role === "admin" && data.users.filter(u => u.status === "pending").length > 0 && (
-                <span style={{
-                  position: "absolute", top: 2, right: 2,
-                  minWidth: 16, height: 16, padding: "0 3px", borderRadius: 999,
-                  background: "var(--pea-orange-500)", color: "white",
-                  display: "grid", placeItems: "center", fontSize: 9, fontWeight: 800,
-                  pointerEvents: "none",
-                }}>
-                  {data.users.filter(u => u.status === "pending").length}
-                </span>
-              )}
-            </button>
-            {showNotif && (
-              <>
-                <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setShowNotif(false)} />
-                <NotifPanel data={data} currentUser={currentUser} />
-              </>
-            )}
-          </div>
+          {(() => {
+            const pendingCount  = currentUser.role === "admin" ? data.users.filter(u => u.status === "pending").length : 0;
+            const unreadNotifs  = myNotifs.filter(n => !n.isRead).length;
+            const totalBadge    = pendingCount + unreadNotifs;
+            return (
+              <div style={{ position: "relative" }}>
+                <button className="btn-icon" title={t("notifications")} onClick={() => setShowNotif(s => !s)} style={{ position: "relative" }}>
+                  <Icon name="bell" />
+                  {totalBadge > 0 && (
+                    <span style={{
+                      position: "absolute", top: 2, right: 2,
+                      minWidth: 16, height: 16, padding: "0 3px", borderRadius: 999,
+                      background: unreadNotifs > 0 ? "var(--pea-purple-500)" : "var(--pea-orange-500)",
+                      color: "white", display: "grid", placeItems: "center",
+                      fontSize: 9, fontWeight: 800, pointerEvents: "none",
+                    }}>
+                      {totalBadge}
+                    </span>
+                  )}
+                </button>
+                {showNotif && (
+                  <>
+                    <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setShowNotif(false)} />
+                    <NotifPanel data={data} currentUser={currentUser}
+                      myNotifs={myNotifs} setMyNotifs={setMyNotifs} />
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Desktop logout (hidden on mobile) */}
           <button className="topbar-logout" title={t("logout")} onClick={() => setShowLogoutConfirm(true)} style={{

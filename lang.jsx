@@ -27,6 +27,31 @@ const TRANSLATIONS = {
     // ── Admin payments tab ──────────────────────────────────
     admPayments: "การชำระเงิน",
 
+    // ── Notifications ───────────────────────────────────────
+    notifPaymentReminder: "แจ้งเตือนการชำระเงิน",
+    notifTarget: "ผู้รับแจ้งเตือน",
+    notifAllLeaders: "หัวหน้าทีมทั้งหมด",
+    notifDue: "ใกล้ครบกำหนด",
+    notifOverdue: "เกินกำหนดชำระ",
+    notifSuspended: "ระงับการใช้งานแล้ว",
+    notifRestored: "คืนสิทธิ์การใช้งานแล้ว",
+    notifSendBtn: "ส่งแจ้งเตือน",
+    notifSending: "กำลังส่ง…",
+    notifSentOk: "ส่งแจ้งเตือนแล้ว",
+    notifMarkRead: "อ่านแล้ว",
+    notifMarkAllRead: "ทำเครื่องหมายอ่านทั้งหมด",
+    notifEmpty: "ไม่มีการแจ้งเตือน",
+
+    // ── Team suspension ─────────────────────────────────────
+    suspendTeam: "ระงับทีม",
+    restoreTeam: "คืนสิทธิ์",
+    suspendConfirmTitle: "ระงับการใช้งานทีม",
+    restoreConfirmTitle: "คืนสิทธิ์การใช้งาน",
+    teamSuspended: "ทีมถูกระงับ",
+    teamActive: "ทีมปกติ",
+    suspendedCount: "ทีมถูกระงับ",
+    authSuspended: "บัญชีถูกระงับเนื่องจากยังไม่ได้ชำระค่าบริการ กรุณาติดต่อ Admin",
+
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "วันนี้ •", greeting: "สวัสดี",
     refreshData: "รีเฟรชข้อมูล", refreshing: "กำลังรีเฟรช…",
@@ -226,6 +251,31 @@ const TRANSLATIONS = {
 
     // ── Admin payments tab ──────────────────────────────────
     admPayments: "Payments",
+
+    // ── Notifications ───────────────────────────────────────
+    notifPaymentReminder: "Payment Reminder",
+    notifTarget: "Recipient",
+    notifAllLeaders: "All team leaders",
+    notifDue: "Payment due soon",
+    notifOverdue: "Payment overdue",
+    notifSuspended: "Account suspended",
+    notifRestored: "Access restored",
+    notifSendBtn: "Send Notification",
+    notifSending: "Sending…",
+    notifSentOk: "Notification sent",
+    notifMarkRead: "Mark as read",
+    notifMarkAllRead: "Mark all as read",
+    notifEmpty: "No notifications",
+
+    // ── Team suspension ─────────────────────────────────────
+    suspendTeam: "Suspend Team",
+    restoreTeam: "Restore Access",
+    suspendConfirmTitle: "Suspend Team Access",
+    restoreConfirmTitle: "Restore Team Access",
+    teamSuspended: "Suspended",
+    teamActive: "Active",
+    suspendedCount: "Suspended teams",
+    authSuspended: "Your account has been suspended due to unpaid service fee. Please contact Admin.",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "Today •", greeting: "Hello",
