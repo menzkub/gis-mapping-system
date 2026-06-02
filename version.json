@@ -1,7 +1,7 @@
 {
-  "commit": "306f81cd7c4c92013462074052adc9a2892ba15c",
-  "shortCommit": "306f81c",
-  "message": "Fix crash: useRef \u2192 useState for locating flag in MapView",
-  "date": "2026-06-02T04:14:13Z",
+  "commit": "1526fd4b1ddc43d3ffb942bd2723f06328b1554f",
+  "shortCommit": "1526fd4",
+  "message": "Redesign 2FA OTP input: 6 individual boxes on desktop + mobile",
+  "date": "2026-06-02T04:23:02Z",
   "branch": "main"
 }
