@@ -1,7 +1,7 @@
 {
-  "commit": "ee43f4561e7ece8c77a644593693985beee71c95",
-  "shortCommit": "ee43f45",
-  "message": "Add team_leader role with monthly payment system + fix search map view",
-  "date": "2026-06-02T07:16:37Z",
+  "commit": "a4f36878d7c17460f404a6aa834611cd69f5f175",
+  "shortCommit": "a4f3687",
+  "message": "Add team leader assignment for users",
+  "date": "2026-06-02T07:20:17Z",
   "branch": "main"
 }
