@@ -1,7 +1,7 @@
 {
-  "commit": "77eb656a3dfd476592412ad4dd40564cbd8c89fa",
-  "shortCommit": "77eb656",
-  "message": "Mobile dashboard: meter+transformer top row (2-col), KVA full-width below; add evolution infographic",
-  "date": "2026-06-02T03:11:10Z",
+  "commit": "f925ac8714d279f75264ff6c365375222dff3db0",
+  "shortCommit": "f925ac8",
+  "message": "Increase 2FA OTP input size on mobile: font 36-46px, height 82-96px, bolder digits",
+  "date": "2026-06-02T03:12:14Z",
   "branch": "main"
 }
