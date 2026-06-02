@@ -1,7 +1,7 @@
 {
-  "commit": "b5e75b9e7bac9a3b775b284110843a21ada952b2",
-  "shortCommit": "b5e75b9",
-  "message": "fix: correct KVA/meter/TR owner classification and add % breakdown",
-  "date": "2026-06-02T02:18:23Z",
+  "commit": "72263cad87eb77955ce4f0d9a1d4affffa89f3f6",
+  "shortCommit": "72263ca",
+  "message": "fix: always show \u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14\u0e40\u0e1e\u0e34\u0e48\u0e21\u0e40\u0e15\u0e34\u0e21 button in DevInfoModal",
+  "date": "2026-06-02T02:19:59Z",
   "branch": "main"
 }
