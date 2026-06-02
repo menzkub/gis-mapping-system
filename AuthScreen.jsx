@@ -328,8 +328,23 @@ function AuthScreen({ initialError }) {
         return;
       }
       if (mode === "login") {
+        const raw = email.trim();
+        let loginEmail = raw.toLowerCase();
+
+        // If not an email, resolve username → email via secure RPC
+        if (!raw.includes("@")) {
+          const { data: resolved, error: rpcErr } = await _supabase.rpc(
+            "get_email_by_username", { p_username: raw.toLowerCase() }
+          );
+          if (rpcErr || !resolved) {
+            setErr(t("authUsernameNotFound"));
+            return;
+          }
+          loginEmail = resolved;
+        }
+
         const { error } = await _supabase.auth.signInWithPassword({
-          email:    email.trim().toLowerCase(),
+          email:    loginEmail,
           password: password,
         });
         if (error) {
@@ -610,17 +625,17 @@ function AuthScreen({ initialError }) {
                     {mode === "login" ? t("authWelcome") : t("authSignupTitle")}
                   </div>
                   <div className="t-mute" style={{ marginBottom: 28, fontSize: 15 }}>
-                    {mode === "login" ? t("authLoginDesc") : t("authSignupDesc")}
+                    {mode === "login" ? t("authLoginDesc2") : t("authSignupDesc")}
                   </div>
 
                   {mode === "login" ? (
                     <div className="f-col f-gap-4">
                       <div className="field">
-                        <label className="field-label">{t("authEmail")}</label>
+                        <label className="field-label">{t("authEmailOrUsername")}</label>
                         <div style={{ position: "relative" }}>
-                          <input className="input" style={{ paddingLeft: 42 }} type="email"
+                          <input className="input" style={{ paddingLeft: 42 }} type="text"
                             value={email} onChange={e => setEmail(e.target.value)}
-                            placeholder="your@email.com" autoComplete="email" required />
+                            placeholder="username หรือ your@email.com" autoComplete="username email" required />
                           <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-mute)", pointerEvents: "none" }}>
                             <Icon name="user" size={18} />
                           </div>
