@@ -1,7 +1,7 @@
 {
-  "commit": "0fdd6aee69a5f40a71c6aaf392bfef8af4830ab7",
-  "shortCommit": "0fdd6ae",
-  "message": "AdminPanel: fix 3 nested backtick template literals that broke Babel Standalone parser",
-  "date": "2026-06-02T08:15:48Z",
+  "commit": "55b38560dcd06a2d06600587b203d369319c0a4b",
+  "shortCommit": "55b3856",
+  "message": "AdminPanel: fix 2 more nested backtick issues in multi-line Leaflet popup templates",
+  "date": "2026-06-02T09:21:53Z",
   "branch": "main"
 }
