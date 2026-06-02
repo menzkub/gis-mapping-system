@@ -2966,6 +2966,7 @@ function App() {
   const [refreshMsg, setRefreshMsg] = useStateApp(null); // null | "loading" | "done" | "error"
   const [showUtilMenu, setShowUtilMenu] = useStateApp(false);
   const [showBaseMenu, setShowBaseMenu] = useStateApp(false);
+  const [showMobileUserMenu, setShowMobileUserMenu] = useStateApp(false);
   const [adminTab, setAdminTab] = useStateApp("dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
   const [devInfo, setDevInfo] = useStateApp({
@@ -3587,6 +3588,7 @@ function App() {
             .topbar-mobile-user:hover { background: rgba(139,63,196,0.2); }
             .topbar-util-btn  { display: flex; }
             .topbar-util-dots { display: none !important; }
+            .topbar-mob-user-wrap { display: none; position: relative; }
             .sidebar-hamburger { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; flex-shrink: 0; }
             .sidebar-hamburger:hover { background: rgba(139,63,196,0.12); border-color: var(--pea-purple-400); color: var(--pea-purple-600); }
             @media (min-width: 641px) and (max-width: 1024px) {
@@ -3597,9 +3599,10 @@ function App() {
               .topbar-mapswitcher    { display: none !important; }
               .topbar-logout         { display: none !important; }
               .topbar-mobile-brand   { display: flex !important; }
-              .topbar-mobile-user    { display: flex !important; }
+              .topbar-mobile-user    { display: none !important; }
               .topbar-util-btn       { display: none !important; }
-              .topbar-util-dots      { display: flex !important; }
+              .topbar-util-dots      { display: none !important; }
+              .topbar-mob-user-wrap  { display: block !important; }
             }
           `}</style>
 
@@ -3837,16 +3840,106 @@ function App() {
             <Icon name="logout" size={14} />
           </button>
 
-          {/* Mobile: user name + logout */}
-          <button className="topbar-mobile-user" onClick={() => setShowLogoutConfirm(true)}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
-              {currentUser.name?.[0] || currentUser.username[0]}
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--pea-purple-600)" }}>
-              {(currentUser.name || currentUser.username).split(" ")[0]}
-            </span>
-            <Icon name="logout" size={13} style={{ color: "var(--red)" }} />
-          </button>
+          {/* Mobile: user chip → dropdown with settings + logout */}
+          <div className="topbar-mob-user-wrap">
+            <button onClick={() => setShowMobileUserMenu(s => !s)} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "5px 10px 5px 6px", borderRadius: 20, cursor: "pointer",
+              border: `1px solid ${showMobileUserMenu ? "rgba(139,63,196,0.5)" : "rgba(139,63,196,0.3)"}`,
+              background: showMobileUserMenu ? "rgba(139,63,196,0.18)" : "rgba(139,63,196,0.1)",
+              transition: "background 0.15s, border-color 0.15s",
+            }}>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+                {currentUser.name?.[0] || currentUser.username[0]}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--pea-purple-600)", maxWidth: 72, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {(currentUser.name || currentUser.username).split(" ")[0]}
+              </span>
+              <Icon name="chevDown" size={11} style={{ color: "var(--ink-mute)", transition: "transform 0.2s", transform: showMobileUserMenu ? "rotate(180deg)" : "none", flexShrink: 0 }} />
+            </button>
+
+            {showMobileUserMenu && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 1999 }} onClick={() => setShowMobileUserMenu(false)} />
+                <div style={{
+                  position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 2000,
+                  background: "var(--surface)", border: "1px solid var(--line)",
+                  borderRadius: 16, boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+                  padding: "6px", minWidth: 210, display: "flex", flexDirection: "column", gap: 2,
+                }}>
+                  {/* User info */}
+                  <div style={{ padding: "10px 14px 8px", display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#f47b20,#6b2c91)", display: "grid", placeItems: "center", color: "white", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+                      {currentUser.name?.[0] || currentUser.username[0]}
+                    </div>
+                    <div style={{ overflow: "hidden" }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentUser.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>@{currentUser.username}</div>
+                    </div>
+                  </div>
+                  <div style={{ height: 1, background: "var(--line)", margin: "0 8px 2px" }} />
+
+                  {/* Language */}
+                  <button onClick={() => { setLang(l => l === "th" ? "en" : "th"); setShowMobileUserMenu(false); }} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: "pointer", color: "var(--text)",
+                    fontSize: 14, fontWeight: 600, textAlign: "left", width: "100%",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800, color: "var(--pea-purple-600)", flexShrink: 0 }}>
+                      {lang === "th" ? "EN" : "TH"}
+                    </span>
+                    <span>{lang === "th" ? "Switch to English" : "เปลี่ยนเป็นภาษาไทย"}</span>
+                  </button>
+
+                  {/* Theme */}
+                  <button onClick={() => { setTheme(t => t === "light" ? "dark" : "light"); setShowMobileUserMenu(false); }} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: "pointer", color: "var(--text)",
+                    fontSize: 14, fontWeight: 600, textAlign: "left", width: "100%",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <Icon name={theme === "light" ? "moon" : "sun"} size={15} style={{ color: "var(--pea-purple-600)" }} />
+                    </span>
+                    <span>{theme === "light" ? t("themeDark") : t("themeLight")}</span>
+                  </button>
+
+                  {/* Refresh */}
+                  <button onClick={() => { handleRefresh(); setShowMobileUserMenu(false); }} disabled={refreshing} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: refreshing ? "not-allowed" : "pointer", color: "var(--text)",
+                    fontSize: 14, fontWeight: 600, textAlign: "left", width: "100%", opacity: refreshing ? 0.5 : 1,
+                  }}
+                    onMouseEnter={e => { if (!refreshing) e.currentTarget.style.background = "var(--hover)"; }}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <Icon name="refresh" size={15} style={{ color: "var(--pea-purple-600)", animation: refreshing ? "pea-spin 0.8s linear infinite" : "none" }} />
+                    </span>
+                    <span>{refreshing ? t("refreshing") : t("refreshData")}</span>
+                  </button>
+
+                  <div style={{ height: 1, background: "var(--line)", margin: "2px 8px" }} />
+
+                  {/* Logout */}
+                  <button onClick={() => { setShowMobileUserMenu(false); setShowLogoutConfirm(true); }} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                    background: "transparent", border: "none", cursor: "pointer",
+                    fontSize: 14, fontWeight: 600, textAlign: "left", width: "100%", color: "var(--red)",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.07)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(239,68,68,0.1)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <Icon name="logout" size={15} style={{ color: "var(--red)" }} />
+                    </span>
+                    <span>{t("logout")}</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </header>
 
         {/* Main */}
