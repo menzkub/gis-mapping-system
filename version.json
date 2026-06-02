@@ -1,7 +1,7 @@
 {
-  "commit": "c5dfbd33cec1fb9f956a877a4f49f598f2b8e3e5",
-  "shortCommit": "c5dfbd3",
-  "message": "SearchView: move filter+export to search row on desktop; fix basemap dropdown on mobile",
-  "date": "2026-06-02T08:12:51Z",
+  "commit": "0fdd6aee69a5f40a71c6aaf392bfef8af4830ab7",
+  "shortCommit": "0fdd6ae",
+  "message": "AdminPanel: fix 3 nested backtick template literals that broke Babel Standalone parser",
+  "date": "2026-06-02T08:15:48Z",
   "branch": "main"
 }
