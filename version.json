@@ -1,7 +1,7 @@
 {
-  "commit": "58790bb06200771bcfb884d9c4ce66b1cdb5829e",
-  "shortCommit": "58790bb",
-  "message": "Fix get_email_by_username: query auth.users not profiles",
-  "date": "2026-06-02T07:39:34Z",
+  "commit": "7a682d23b9a22e540671c3753d86545e404849f4",
+  "shortCommit": "7a682d2",
+  "message": "Add master_migration.sql combining all migrations into one script",
+  "date": "2026-06-02T07:47:07Z",
   "branch": "main"
 }
