@@ -5904,7 +5904,6 @@ const TECH_STACK = [
     name: "Supabase",
     desc: { th: "ฐานข้อมูล PostgreSQL + Authentication + RLS", en: "Database, Auth & Realtime" },
     color: "#3ECF8E",
-    bg: "linear-gradient(135deg,#0a2e1f,#1a4a35)",
     url: "https://supabase.com",
     svg: (
       <svg viewBox="0 0 109 113" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -5917,7 +5916,6 @@ const TECH_STACK = [
     name: "PostgreSQL",
     desc: { th: "ระบบจัดการฐานข้อมูลเชิงสัมพันธ์", en: "Relational database engine" },
     color: "#4169E1",
-    bg: "linear-gradient(135deg,#0f1f4a,#1a3278)",
     url: "https://www.postgresql.org",
     svg: (
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -5931,12 +5929,11 @@ const TECH_STACK = [
   {
     name: "GitHub",
     desc: { th: "Version Control + CI/CD + Hosting", en: "Version control, CI/CD & hosting" },
-    color: "#fff",
-    bg: "linear-gradient(135deg,#0d1117,#21262d)",
+    color: "#24292f",
     url: "https://github.com",
     svg: (
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <path fill="white" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+        <path fill="#24292f" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
       </svg>
     ),
   },
@@ -5944,7 +5941,6 @@ const TECH_STACK = [
     name: "Claude AI",
     desc: { th: "ผู้ช่วย AI ในการพัฒนาระบบ", en: "AI assistant powering development" },
     color: "#D4763B",
-    bg: "linear-gradient(135deg,#2c1500,#4a2800)",
     url: "https://claude.ai",
     svg: (
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -5957,8 +5953,7 @@ const TECH_STACK = [
   {
     name: "React",
     desc: { th: "JavaScript UI Library", en: "JavaScript UI library (UMD/Babel)" },
-    color: "#61DAFB",
-    bg: "linear-gradient(135deg,#071826,#0d2a40)",
+    color: "#28b6d8",
     url: "https://react.dev",
     svg: (
       <svg viewBox="-11.5 -10.232 23 20.463" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -5975,7 +5970,6 @@ const TECH_STACK = [
     name: "Leaflet.js",
     desc: { th: "Interactive Map Library", en: "Open-source JavaScript map library" },
     color: "#199900",
-    bg: "linear-gradient(135deg,#0a2000,#143300)",
     url: "https://leafletjs.com",
     svg: (
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -5988,8 +5982,7 @@ const TECH_STACK = [
   {
     name: "JavaScript",
     desc: { th: "ภาษาหลักในการพัฒนาเว็บ", en: "Core scripting language" },
-    color: "#F7DF1E",
-    bg: "linear-gradient(135deg,#1a1800,#2e2800)",
+    color: "#b59800",
     url: "https://developer.mozilla.org/docs/Web/JavaScript",
     svg: (
       <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -6002,7 +5995,6 @@ const TECH_STACK = [
     name: "HTML5",
     desc: { th: "โครงสร้างหน้าเว็บ", en: "Web markup structure" },
     color: "#E34F26",
-    bg: "linear-gradient(135deg,#2a0800,#451000)",
     url: "https://developer.mozilla.org/docs/Web/HTML",
     svg: (
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -6017,7 +6009,6 @@ const TECH_STACK = [
     name: "CSS3",
     desc: { th: "สไตล์และการออกแบบ UI", en: "Styling & UI design" },
     color: "#1572B6",
-    bg: "linear-gradient(135deg,#001830,#002d5a)",
     url: "https://developer.mozilla.org/docs/Web/CSS",
     svg: (
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -6032,7 +6023,6 @@ const TECH_STACK = [
     name: "Google Fonts",
     desc: { th: "ระบบ Font: Plus Jakarta Sans + Noto Sans Thai", en: "Web fonts: Plus Jakarta Sans + Noto Sans Thai" },
     color: "#4285F4",
-    bg: "linear-gradient(135deg,#0a1f5c,#142999)",
     url: "https://fonts.google.com",
     svg: (
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -6047,7 +6037,6 @@ const TECH_STACK = [
     name: "PWA",
     desc: { th: "Progressive Web App + Service Worker", en: "Progressive Web App & offline support" },
     color: "#5A0FC8",
-    bg: "linear-gradient(135deg,#1a0040,#2d0070)",
     url: "https://web.dev/progressive-web-apps",
     svg: (
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -6061,7 +6050,6 @@ const TECH_STACK = [
     name: "GitHub Actions",
     desc: { th: "CI/CD อัปเดต version อัตโนมัติ", en: "Automated CI/CD & version updates" },
     color: "#2088FF",
-    bg: "linear-gradient(135deg,#001a40,#002d6b)",
     url: "https://github.com/features/actions",
     svg: (
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -6081,70 +6069,53 @@ function PoweredByTab() {
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <style>{`
         .pwby-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        @media (max-width: 900px) { .pwby-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 480px) { .pwby-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+        @media (max-width: 900px) { .pwby-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 640px)  { .pwby-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
         .pwby-card {
-          border-radius: 18px; padding: 22px 18px 18px;
-          border: 1px solid rgba(255,255,255,0.08);
-          display: flex; flex-direction: column; align-items: center; gap: 12px;
-          text-decoration: none; position: relative; overflow: hidden;
-          transition: transform 180ms cubic-bezier(.22,1,.36,1), box-shadow 180ms;
-          cursor: pointer;
+          border-radius: 16px; padding: 20px 14px 16px;
+          background: var(--surface); border: 1px solid var(--line);
+          display: flex; flex-direction: column; align-items: center; gap: 10px;
+          text-decoration: none; position: relative;
+          transition: transform 160ms cubic-bezier(.22,1,.36,1), box-shadow 160ms, border-color 160ms;
         }
         .pwby-card:hover {
-          transform: translateY(-4px) scale(1.02);
-          box-shadow: 0 20px 48px rgba(0,0,0,0.5);
-        }
-        .pwby-card::before {
-          content: ""; position: absolute; inset: 0;
-          background: inherit; opacity: 0; transition: opacity 200ms;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+          border-color: transparent;
         }
         .pwby-logo-wrap {
-          width: 64px; height: 64px; border-radius: 16px;
-          background: rgba(255,255,255,0.1);
+          width: 56px; height: 56px; border-radius: 14px;
           display: flex; align-items: center; justify-content: center;
           padding: 10px; flex-shrink: 0;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
-        .pwby-name { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; text-align: center; }
-        .pwby-desc { font-size: 11px; color: rgba(255,255,255,0.6); text-align: center; line-height: 1.5; }
-        .pwby-arrow { position: absolute; top: 12px; right: 12px; opacity: 0.3; font-size: 12px; color: #fff; }
-        .pwby-card:hover .pwby-arrow { opacity: 0.8; }
-        .pwby-shine {
-          position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-          transform: skewX(-20deg); pointer-events: none;
-          transition: left 400ms;
-        }
-        .pwby-card:hover .pwby-shine { left: 150%; }
+        .pwby-name { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; text-align: center; }
+        .pwby-desc { font-size: 11px; color: var(--ink-mute); text-align: center; line-height: 1.5; }
+        .pwby-arrow { position: absolute; top: 10px; right: 11px; opacity: 0; font-size: 11px; color: var(--ink-mute); transition: opacity 160ms; }
+        .pwby-card:hover .pwby-arrow { opacity: 1; }
       `}</style>
 
       {/* Hero */}
-      <div style={{ borderRadius: 20, background: "linear-gradient(135deg,#1a0a2e 0%,#2d1052 50%,#0a2040 100%)", color: "white", padding: "28px 28px 24px", marginBottom: 24, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", right: -60, top: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(244,123,32,0.06)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", left: -40, bottom: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(139,63,196,0.06)", pointerEvents: "none" }} />
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, position: "relative" }}>
-          <div style={{ width: 54, height: 54, borderRadius: 16, background: "linear-gradient(135deg,rgba(244,123,32,0.25),rgba(139,63,196,0.25))", display: "grid", placeItems: "center", flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }}>
-            <Icon name="bolt" size={26} style={{ color: "#f47b20" }} />
+      <div style={{ borderRadius: 16, background: "linear-gradient(135deg,#6b2c91 0%,#8b3fc4 55%,#f47b20 130%)", color: "white", padding: "22px 24px 20px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="bolt" size={22} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>
               {th("เทคโนโลยีที่ใช้งาน", "Technology Stack")}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginBottom: 6 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.2 }}>
               {th("ขับเคลื่อนโดย", "Powered By")}
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
-              {th("ระบบนี้สร้างขึ้นจากการผสมผสานเทคโนโลยีทันสมัย เปิดต่อสาธารณะ และ AI เพื่อประสิทธิภาพสูงสุด", "Built with a curated stack of modern open-source technologies and AI for maximum performance.")}
-            </div>
-            <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <span style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>
-                {TECH_STACK.length} {th("เทคโนโลยี", "technologies")}
-              </span>
-              <span style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(62,207,142,0.12)", border: "1px solid rgba(62,207,142,0.25)", fontSize: 11, fontWeight: 700, color: "#3ECF8E" }}>
-                {th("ฟรีทั้งหมด", "100% Free & Open Source")}
-              </span>
-            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+            <span style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(255,255,255,0.15)", fontSize: 11, fontWeight: 700 }}>
+              {TECH_STACK.length} {th("เทคโนโลยี", "tech")}
+            </span>
+            <span style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(62,207,142,0.2)", border: "1px solid rgba(62,207,142,0.3)", fontSize: 11, fontWeight: 700, color: "#a7f3d0" }}>
+              {th("ฟรีทั้งหมด", "100% Free")}
+            </span>
           </div>
         </div>
       </div>
@@ -6152,11 +6123,9 @@ function PoweredByTab() {
       {/* Tech Grid */}
       <div className="pwby-grid">
         {TECH_STACK.map((tech) => (
-          <a key={tech.name} className="pwby-card" href={tech.url} target="_blank" rel="noopener noreferrer"
-            style={{ background: tech.bg }}>
-            <div className="pwby-shine" />
+          <a key={tech.name} className="pwby-card" href={tech.url} target="_blank" rel="noopener noreferrer">
             <span className="pwby-arrow">↗</span>
-            <div className="pwby-logo-wrap" style={{ boxShadow: `0 4px 24px ${tech.color}33` }}>
+            <div className="pwby-logo-wrap" style={{ background: tech.color + "16", border: `1px solid ${tech.color}28` }}>
               {tech.svg}
             </div>
             <div className="pwby-name" style={{ color: tech.color }}>{tech.name}</div>
@@ -6166,7 +6135,7 @@ function PoweredByTab() {
       </div>
 
       {/* Footer note */}
-      <div style={{ marginTop: 20, padding: "14px 18px", borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+      <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)", textAlign: "center" }}>
         <span style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.7 }}>
           {th(
             "ระบบนี้ทำงานบน GitHub Pages โดยไม่มีค่าใช้จ่าย เหมาะสมสำหรับการพัฒนาภายในองค์กร",
