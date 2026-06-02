@@ -1,7 +1,7 @@
 {
-  "commit": "e517acedbe7cf1d1983e252ef733d78e49b1c96e",
-  "shortCommit": "e517ace",
-  "message": "Add map view to search page + numeric keyboard on mobile",
-  "date": "2026-06-02T04:06:10Z",
+  "commit": "306f81cd7c4c92013462074052adc9a2892ba15c",
+  "shortCommit": "306f81c",
+  "message": "Fix crash: useRef \u2192 useState for locating flag in MapView",
+  "date": "2026-06-02T04:14:13Z",
   "branch": "main"
 }
