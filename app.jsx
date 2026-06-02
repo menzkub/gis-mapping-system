@@ -1071,6 +1071,25 @@ function formatUntil(until) {
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.2", date: "2 มิ.ย. 2569", tag: "UX Overhaul",
+    tagColor: "#8b3fc4", items: [
+      { cat: "ux",   text: { th: "Dashboard มือถือ: มิเตอร์ + หม้อแปลง 2 ช่องเท่ากัน (บน) / KVA เต็มความกว้าง (ล่าง) — ดูสมดุลกว่าเดิม", en: "Mobile dashboard: Meter + Transformer 2-col equal (top) / KVA full-width (bottom) — balanced layout" } },
+      { cat: "ux",   text: { th: "Admin แท็บมือถือ: จัดกลุ่ม 5 แท็บหลัก + ปุ่ม 'เพิ่มเติม ⋯' เปิด dropdown สำหรับแท็บที่เหลือ — ไม่ต้อง scroll ยาว", en: "Admin mobile tabs: 5 primary tabs + '⋯ More' dropdown for secondary tabs — no long horizontal scroll" } },
+      { cat: "new",  text: { th: "Skeleton Loading: Dashboard card แสดง shimmer animation ระหว่างโหลดข้อมูล — ลด layout shift", en: "Skeleton Loading: Dashboard cards show shimmer animation while loading — reduces layout shift" } },
+      { cat: "ux",   text: { th: "Donut Chart Interactive: hover/แตะ segment → แสดง %, จำนวน, ชื่อหมวด ตรงกลางวงกลมทันที", en: "Donut Chart Interactive: hover/tap segment → shows %, count, category name in center instantly" } },
+      { cat: "new",  text: { th: "Column Sort: กดหัวคอลัมน์ตาราง Meter / Transformer เพื่อ sort ▲▼ (client-side)", en: "Column Sort: click any column header in Meter / Transformer tables to sort ▲▼ (client-side)" } },
+      { cat: "ux",   text: { th: "Import Progress: ปุ่มยืนยันนำเข้าแสดง % fill animation ตาม batch ที่สำเร็จ", en: "Import Progress: confirm button shows % fill animation per completed batch" } },
+      { cat: "new",  text: { th: "Search History: จำ keyword ล่าสุด 6 รายการใน localStorage — กด dropdown เลือกได้เลย + ปุ่ม ✕ ลบทีละรายการ", en: "Search History: remembers last 6 keywords in localStorage — tap dropdown to reuse + ✕ to remove individual items" } },
+      { cat: "new",  text: { th: "แผนที่: ปุ่ม 📍 'ตำแหน่งของฉัน' มุมขวาล่าง — กด 1 ครั้ง GPS fly to จุดที่อยู่ปัจจุบัน", en: "Map: 📍 'My Location' button bottom-right — one tap GPS fly-to current position" } },
+      { cat: "ux",   text: { th: "Topbar มือถือ: นำ 'ตั้งค่า ⋮' ออก → รวมทุก option (ภาษา/ธีม/รีเฟรช/logout) ไว้ใน user chip dropdown", en: "Mobile topbar: removed standalone '⋮ Settings' → all options (lang/theme/refresh/logout) merged into user chip dropdown" } },
+      { cat: "ux",   text: { th: "2FA OTP input: ตัวเลขใหญ่ขึ้น (36–46px) ช่องสูงขึ้น (82–96px) — อ่านง่ายบนมือถือ", en: "2FA OTP input: larger digits (36–46px), taller field (82–96px) — easier to read on mobile" } },
+      { cat: "new",  text: { th: "Maintenance Banner: ปุ่ม ✕ ซ่อน banner ชั่วคราวสำหรับ session นี้ — Admin ไม่ต้องเห็น banner ตลอดเวลา", en: "Maintenance Banner: ✕ dismiss button hides banner for current session — Admin not forced to see it constantly" } },
+      { cat: "fix",  text: { th: "Feeder Chart: แก้นับ transformer ต่อ feeder → นับมิเตอร์ต่อ feeder จริง (meters.feederid) — ตัวเลขจากหลักร้อยเป็นหลักพัน", en: "Feeder Chart: fix counted transformers per feeder → now counts meters per feeder (meters.feederid) — numbers jump from hundreds to thousands" } },
+      { cat: "fix",  text: { th: "Audit Log Security query 400: แก้ column name ผิด (created_at→at, user_id→username) ตรงกับ schema จริง", en: "Audit Log Security query 400: fix wrong column names (created_at→at, user_id→username) to match actual schema" } },
+      { cat: "fix",  text: { th: "Leaflet _leaflet_pos crash: เพิ่ม map.stop() + map.remove() ใน useEffect cleanup ป้องกัน animation ค้างหลัง unmount", en: "Leaflet _leaflet_pos crash: add map.stop() + map.remove() in useEffect cleanup to prevent stale animations after unmount" } },
+    ],
+  },
+  {
     version: "v3.1", date: "2 มิ.ย. 2569", tag: "UX/UI & Fix",
     tagColor: "#6366f1", items: [
       { cat: "ux",   text: { th: "Dashboard: ตัวเลข StatCard ปรับขนาดอัตโนมัติ (FitText) ด้วย ResizeObserver — ไม่ว่าจะกี่หลักก็ไม่ล้น", en: "Dashboard: StatCard numbers auto-resize (FitText) via ResizeObserver — no overflow regardless of digit count" } },
@@ -3026,7 +3045,7 @@ function App() {
         database:   settingsMap["dev_database"]   || "Supabase (PostgreSQL 15) · Authentication · Row-Level Security (RLS) · Realtime",
         stack:      settingsMap["dev_stack"]      || "React 18 (UMD) · Babel Standalone · Leaflet.js 1.9 · Service Worker (PWA) · GitHub Pages · Plus Jakarta Sans · Noto Sans Thai",
         systems:    settingsMap["dev_systems"]    || "GIS Mapping · 2FA/MFA · Push Notifications · GitHub Actions CI/CD · Google Fonts API · Supabase Auth",
-        version:    settingsMap["dev_version"]    || "v3.1",
+        version:    settingsMap["dev_version"]    || "v3.2",
         footer:     settingsMap["dev_footer"]     || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
         showBtn:    settingsMap["dev_show_btn"]   === "true",
       });
