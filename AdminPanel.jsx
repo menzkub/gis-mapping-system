@@ -3209,6 +3209,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [mapSearching, setMapSearching] = useStateAd(false);
   const mapSearchRef = React.useRef(null);
   const mapSearchTimerRef = React.useRef(null);
+  const [highlightTarget, setHighlightTarget] = useStateAd(null); // {p, type}
+  const highlightLayerRef = React.useRef(null);
   const toast = useToast();
 
   const loadCorrections = React.useCallback(async () => {
@@ -3359,6 +3361,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     }).addTo(map);
     mLayerRef.current = L.layerGroup().addTo(map);
     tLayerRef.current = L.layerGroup().addTo(map);
+    highlightLayerRef.current = L.layerGroup().addTo(map); // always on top
     map.on("zoomend", () => setTimeout(() => setZoomTick(t => t + 1), 80));
     mapRef.current = map;
     const ro = new ResizeObserver(() => map.invalidateSize());
@@ -3512,6 +3515,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   useEffectAd(() => {
     const q = mapSearchQ.trim();
     if (q.length < 2) { setMapSearchResults([]); setMapSearching(false); return; }
+    setHighlightTarget(null); // clear old highlight when typing new query
     setMapSearching(true);
     clearTimeout(mapSearchTimerRef.current);
     mapSearchTimerRef.current = setTimeout(async () => {
@@ -3549,9 +3553,46 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     const lng = r.p.LONGITUDE;
     if (!lat || !lng || !mapRef.current) return;
     mapRef.current.flyTo([lat, lng], 19, { duration: 1.0 });
+    setHighlightTarget(r);
     setMapSearchQ("");
     setMapSearchResults([]);
   };
+
+  // Draw/update highlight marker when target changes
+  useEffectAd(() => {
+    if (!highlightLayerRef.current) return;
+    highlightLayerRef.current.clearLayers();
+    if (!highlightTarget) return;
+    const { p, type } = highlightTarget;
+    const isMeter = type === "M";
+    const symbol = isMeter ? "M" : "▲";
+    const icon = L.divIcon({
+      className: "",
+      html: `<div style="position:relative;width:56px;height:56px;overflow:visible">
+        <div class="adm-hl-ring"></div>
+        <div class="adm-hl-ring" style="animation-delay:0.8s"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+          width:40px;height:40px;border-radius:50%;z-index:2;
+          background:linear-gradient(135deg,#facc15,#f59e0b);
+          color:#1a1030;font-weight:900;font-size:15px;
+          display:grid;place-items:center;
+          border:3px solid white;
+          box-shadow:0 4px 22px rgba(250,204,21,0.75),0 0 0 4px rgba(250,204,21,0.25)">
+          ${symbol}
+        </div>
+      </div>`,
+      iconSize: [56, 56], iconAnchor: [28, 28], popupAnchor: [0, -32],
+    });
+    const label = isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG);
+    const m = L.marker([p.LATITUDE, p.LONGITUDE], { icon, zIndexOffset: 1000 });
+    m.bindPopup(`<div style="padding:8px 12px;text-align:center;min-width:140px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#888;text-transform:uppercase;margin-bottom:4px">พบผลค้นหา</div>
+      <div style="font-family:monospace;font-weight:800;font-size:14px">${label}</div>
+      <div style="font-size:11px;color:#888;margin-top:2px">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
+    </div>`, { maxWidth: 220 });
+    m.addTo(highlightLayerRef.current);
+    m.openPopup();
+  }, [highlightTarget]);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative" }}>
@@ -3562,6 +3603,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
         .amc-pill-btn-m { border-right:1px solid var(--line); }
         .amc-badge { border-radius:5px; padding:1px 4px; font-weight:900; font-size:10px; color:white; }
         .amc-corr-btn { display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:700; flex-shrink:0; cursor:pointer; }
+        @keyframes adm-hl-pulse { 0%{transform:translate(-50%,-50%) scale(0.7);opacity:0.9} 100%{transform:translate(-50%,-50%) scale(2.6);opacity:0} }
+        .adm-hl-ring { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:40px; height:40px; border-radius:50%; border:2.5px solid rgba(250,204,21,0.85); animation:adm-hl-pulse 1.8s ease-out infinite; pointer-events:none; }
         .amc-search-label { display:none; }
         @media (min-width: 641px) {
           .amc-bar       { padding:11px 20px; gap:12px; }
