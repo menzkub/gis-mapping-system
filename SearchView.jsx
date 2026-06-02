@@ -149,6 +149,9 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         .sv-search-row { display: flex; align-items: center; gap: 8px; }
         .sv-search-wrap { flex: 1; min-width: 0; position: relative; }
         .sv-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        @media (min-width: 641px) {
+          .sv-actions { display: contents; }
+        }
         @media (min-width: 1440px) {
           .sv-header { padding: 20px 36px 0; }
           .sv-body { padding: 20px 36px 24px; }
@@ -163,12 +166,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-body { padding: 12px 18px 16px; }
         }
         .sv-body.sv-map-only { padding: 0 !important; }
-        .sv-search-row { display: flex; align-items: center; gap: 8px; }
-        .sv-basemap-icon-btn { flex-shrink: 0; height: 54px; min-width: 52px; padding: 0 12px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
-        @media (max-width: 1023px) and (min-width: 641px) {
-          .sv-header { padding: 14px 18px 0; }
-          .sv-body { padding: 12px 18px 16px; }
-        }
+        .sv-basemap-icon-btn { flex-shrink: 0; height: 54px; min-width: 108px; padding: 0 14px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
@@ -176,11 +174,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-search-title { font-size: 20px !important; }
           .sv-tabs { width: 100% !important; flex-shrink: 1 !important; }
           .sv-tabs .tab { flex: 1; justify-content: center; font-size: 13px !important; padding: 0 12px !important; height: 44px !important; white-space: nowrap; }
-          .sv-search-row { gap: 8px; }
-          .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; }
+          .sv-search-row { gap: 8px; flex-wrap: wrap; }
+          .sv-actions { display: flex !important; order: 10; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; flex-shrink: 0; }
           .sv-actions::-webkit-scrollbar { display: none; }
           .search-filter-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
-          .sv-basemap-icon-btn { height: 48px !important; min-width: 46px !important; padding: 0 10px !important; border-radius: 14px !important; }
+          .sv-basemap-icon-btn { height: 48px !important; min-width: 96px !important; padding: 0 10px !important; border-radius: 14px !important; font-size: 12px !important; }
           .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
           .input-lg { height: 48px !important; }
         }
@@ -269,65 +267,71 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               )}
             </div>
 
-            {/* Street / Satellite basemap icon toggle */}
+            {/* Filter + Export — display:contents on desktop → flow inline in search row */}
+            <div className="sv-actions">
+              <button className={"search-filter-btn btn btn-outline " + (showFilters ? "active" : "")} onClick={() => setShowFilters(s => !s)} style={{ height: 44, borderRadius: 14, position: "relative", flexShrink: 0 }}>
+                <Icon name="filter" size={15} /> {t("filterLabel")}
+                {activeFilterCount > 0 && (
+                  <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, width: 20, height: 20, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{activeFilterCount}</span>
+                )}
+              </button>
+
+              {(allowExport || currentUser?.role === "admin") ? (
+                <button className="search-export-btn btn btn-outline" style={{ height: 44, borderRadius: 14, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
+                  <Icon name="download" size={15} /> {t("exportLabel")}
+                </button>
+              ) : (
+                <button className="search-export-btn" onClick={() => toast?.(t("exportDisabled"), "error")} style={{
+                  height: 44, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center",
+                  gap: 6, padding: "0 16px", background: "var(--soft)", border: "1px solid var(--soft-border)",
+                  color: "var(--ink-mute)", fontSize: 13, fontWeight: 600, cursor: "pointer", userSelect: "none",
+                }}>
+                  <Icon name="lock" size={15} /> {t("exportLabel")}
+                </button>
+              )}
+            </div>
+
+            {/* Street / Satellite basemap toggle — shows translated label */}
             <button
               ref={baseMapBtnRef}
               className="sv-basemap-icon-btn btn btn-outline"
               onClick={() => {
                 if (!showBaseMenu && baseMapBtnRef.current) {
                   const r = baseMapBtnRef.current.getBoundingClientRect();
-                  setBaseMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right, width: 150 });
+                  const menuHeight = 92;
+                  const spaceBelow = window.innerHeight - r.bottom;
+                  const topPos = spaceBelow >= menuHeight + 10 ? r.bottom + 4 : r.top - menuHeight - 4;
+                  setBaseMenuPos({ top: topPos, right: window.innerWidth - r.right, width: 160 });
                 }
                 setShowBaseMenu(m => !m);
               }}
             >
-              <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={18} />
+              <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={16} />
+              <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+                {svBaseMap === "satellite" ? t("baseMapSatellite") : t("baseMapStreet")}
+              </span>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.45, transition:"transform 0.15s", transform: showBaseMenu ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             {showBaseMenu && (
               <>
                 <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
-                <div style={{ position: "fixed", top: baseMenuPos.top, right: baseMenuPos.right, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 150 }}>
+                <div style={{ position: "fixed", top: baseMenuPos.top, right: baseMenuPos.right, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 160 }}>
                   {[
                     { id: "street",    icon: "map",   label: t("baseMapStreet")    },
                     { id: "satellite", icon: "globe", label: t("baseMapSatellite") },
                   ].map(opt => (
                     <div key={opt.id} onClick={() => { setSvBaseMap(opt.id); setShowBaseMenu(false); }}
-                      style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer",
-                        background: svBaseMap === opt.id ? "rgba(139,63,196,0.07)" : "transparent",
+                      style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", cursor:"pointer",
+                        background: svBaseMap === opt.id ? "rgba(139,63,196,0.08)" : "transparent",
                         color: svBaseMap === opt.id ? "var(--pea-purple-600)" : "var(--ink)",
                         fontWeight: svBaseMap === opt.id ? 600 : 400, fontSize:14 }}>
-                      <Icon name={opt.icon} size={14} />
+                      <Icon name={opt.icon} size={15} />
                       <span style={{ flex:1 }}>{opt.label}</span>
                       {svBaseMap === opt.id && <Icon name="check" size={13} />}
                     </div>
                   ))}
                 </div>
               </>
-            )}
-          </div>
-
-          {/* Filter + export row */}
-          <div className="sv-actions">
-            <button className={"search-filter-btn btn btn-outline " + (showFilters ? "active" : "")} onClick={() => setShowFilters(s => !s)} style={{ height: 44, borderRadius: 14, position: "relative", flexShrink: 0 }}>
-              <Icon name="filter" size={15} /> {t("filterLabel")}
-              {activeFilterCount > 0 && (
-                <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, width: 20, height: 20, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{activeFilterCount}</span>
-              )}
-            </button>
-
-            {(allowExport || currentUser?.role === "admin") ? (
-              <button className="search-export-btn btn btn-outline" style={{ height: 44, borderRadius: 14, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
-                <Icon name="download" size={15} /> {t("exportLabel")}
-              </button>
-            ) : (
-              <button className="search-export-btn" onClick={() => toast?.(t("exportDisabled"), "error")} style={{
-                height: 44, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center",
-                gap: 6, padding: "0 16px", background: "var(--soft)", border: "1px solid var(--soft-border)",
-                color: "var(--ink-mute)", fontSize: 13, fontWeight: 600, cursor: "pointer", userSelect: "none",
-              }}>
-                <Icon name="lock" size={15} /> {t("exportLabel")}
-              </button>
             )}
           </div>
         </div>

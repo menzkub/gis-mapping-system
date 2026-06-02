@@ -6802,7 +6802,11 @@ function AdminPayments({ currentUser, addAudit }) {
           disabled={notifSending || !notifTitle.trim() || !notifMsg.trim()}
           onClick={sendNotification}>
           <Icon name="bell" size={15} />
-          {notifSending ? s("กำลังส่ง…","Sending…") : s(`ส่งแจ้งเตือน${notifTarget === "all" ? ` (${leaders.length} คน)` : ""}`, `Send Notification${notifTarget === "all" ? ` (${leaders.length})` : ""}`)}
+          {notifSending
+            ? s("กำลังส่ง…","Sending…")
+            : notifTarget === "all"
+              ? s("ส่งแจ้งเตือนทุกคน (" + leaders.length + ")", "Send to All (" + leaders.length + ")")
+              : s("ส่งแจ้งเตือน","Send Notification")}
         </button>
       </div>
 
