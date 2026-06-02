@@ -2257,7 +2257,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       ? `แก้ไขข้อมูล ${edit.username} · role → ${edit.role} · 2FA ${auto2fa ? "เปิด" : "ปิด"}อัตโนมัติ`
       : `แก้ไขข้อมูล ${edit.username}`;
     addAudit({ user: currentUser.username, action: "update_user", target: edit.username, detail });
-    toast?.(`บันทึก ${edit.name} แล้ว${roleChanged ? ` · 2FA ${auto2fa ? "เปิด" : "ปิด"}อัตโนมัติ` : ""}`, "success");
+    toast?.("บันทึก " + edit.name + " แล้ว" + (roleChanged ? " · 2FA " + (auto2fa ? "เปิด" : "ปิด") + "อัตโนมัติ" : ""), "success");
     setEdit(null);
   };
 
@@ -4354,7 +4354,7 @@ function AdminImport({ data, setData, addAudit, currentUser }) {
       const { data: newStats } = await _supabase.rpc("get_dashboard_stats");
       if (newStats) setData(d => ({ ...d, dashStats: newStats }));
 
-      addAudit({ user: currentUser.username, action: "import_csv", target: targetLabel, detail: `นำเข้า ${succeeded} สำเร็จ${failed > 0 ? `, ${failed} ล้มเหลว` : ""} จาก ${fileName}` });
+      addAudit({ user: currentUser.username, action: "import_csv", target: targetLabel, detail: `นำเข้า ${succeeded} สำเร็จ` + (failed > 0 ? `, ${failed} ล้มเหลว` : "") + ` จาก ${fileName}` });
       setImportResult({ total: preview.rows.length, success: succeeded, fail: failed, fileName, targetLabel });
       setPreview(null);
       setFileName("");
@@ -4589,7 +4589,7 @@ function AdminSecurity({ data }) {
       ok: noThreats, score: scoreActivity, max: 20,
       desc: noThreats
         ? s("ไม่พบกิจกรรมต้องสงสัย","No suspicious activity detected")
-        : `${pwFails24h > 0 ? `reset password fail ×${pwFails24h}` : ""} ${rapidLogins > 0 ? `rapid login ×${rapidLogins}` : ""}`.trim(),
+        : ((pwFails24h > 0 ? "reset password fail ×" + pwFails24h : "") + " " + (rapidLogins > 0 ? "rapid login ×" + rapidLogins : "")).trim(),
       fix: noThreats ? null : s("ตรวจสอบ Audit Log — อาจมีความพยายามเข้าถึงโดยไม่ได้รับอนุญาต","Review Audit Log — possible unauthorized access attempts"),
     },
     {
