@@ -6951,7 +6951,7 @@ function AdminPayments({ currentUser, addAudit }) {
         )}
       </Modal>
       </div>{/* end Payment Slips card */}
-    </div>{/* end f-col wrapper */}
+    </div>
   );
 }
 
