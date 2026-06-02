@@ -2803,6 +2803,7 @@ function AdminMeters({ addAudit, currentUser }) {
   const [list, setList]       = useStateAd([]);
   const [searching, setSearching] = useStateAd(false);
   const [edit, setEdit]       = useStateAd(null);
+  const [detail, setDetail]   = useStateAd(null);
   const [saving, setSaving]   = useStateAd(false);
   const [showExport, setShowExport] = useStateAd(false);
   const [sortCol, setSortCol] = useStateAd("OBJECTID");
@@ -2918,7 +2919,7 @@ function AdminMeters({ addAudit, currentUser }) {
           </tr></thead>
           <tbody>
             {sortedList.map(m => (
-              <tr key={m.OBJECTID}>
+              <tr key={m.OBJECTID} style={{ cursor:"pointer" }} onClick={() => setDetail(m)}>
                 <td className="mono text-xs t-mute">{m.OBJECTID}</td>
                 <td className="mono fw-6">{m.TAG}</td>
                 <td>{m.CODE}</td>
@@ -2929,8 +2930,8 @@ function AdminMeters({ addAudit, currentUser }) {
                 <td className="mono text-xs">{m.LATITUDE.toFixed(4)}, {m.LONGITUDE.toFixed(4)}</td>
                 <td>
                   <div className="row-action">
-                    <button className="btn-icon" onClick={() => setEdit(m)}><Icon name="edit" size={14} /></button>
-                    <button className="btn-icon" onClick={() => remove(m)}><Icon name="trash" size={14} /></button>
+                    <button className="btn-icon" onClick={e => { e.stopPropagation(); setEdit(m); }}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" onClick={e => { e.stopPropagation(); remove(m); }}><Icon name="trash" size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -2944,26 +2945,41 @@ function AdminMeters({ addAudit, currentUser }) {
         )}
       </div>
 
+      <Modal open={!!detail} onClose={() => setDetail(null)} title={s("รายละเอียดมิเตอร์","Meter Detail")} width={520}
+        footer={<><button className="btn btn-outline" onClick={() => setDetail(null)}>{s("ปิด","Close")}</button><button className="btn btn-primary" onClick={() => { setEdit(detail); setDetail(null); }}><Icon name="edit" size={14} /> {s("แก้ไข","Edit")}</button></>}>
+        {detail && (
+          <div>
+            {[
+              [s("TAG","TAG"),             detail.TAG],
+              [s("OBJECTID","OBJECTID"),   detail.OBJECTID],
+              [s("CODE","CODE"),           detail.CODE],
+              [s("ROUTE","ROUTE"),         detail.ROUTE],
+              [s("เลขที่บัญชี","Account"), detail.ACCOUNTNUM || "—"],
+              [s("PEANO","PEANO"),         detail.PEANO],
+              [s("Feeder ID","Feeder ID"), detail.FEEDERID || "—"],
+              [s("เจ้าของ","Owner"),       detail.OWNER],
+              [s("วันติดตั้ง","Install"),  detail.INSTALLATI || "—"],
+              [s("พิกัด","Coordinates"),   `${detail.LATITUDE?.toFixed(6)}, ${detail.LONGITUDE?.toFixed(6)}`],
+            ].map(([k, v], i, arr) => (
+              <div key={k} style={{ display:"flex", alignItems:"baseline", gap:16, padding:"10px 0", borderBottom: i < arr.length-1 ? "1px solid var(--line)" : "none" }}>
+                <span style={{ width:110, flexShrink:0, fontSize:11, fontWeight:600, color:"var(--t-mute)", textTransform:"uppercase", letterSpacing:"0.04em" }}>{k}</span>
+                <span style={{ fontSize:14, fontFamily:"'JetBrains Mono',monospace", color:"var(--ink)", wordBreak:"break-all" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
       <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? s("แก้ไขมิเตอร์","Edit Meter") : s("เพิ่มมิเตอร์","Add Meter")} width={640}
         footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>{s("ยกเลิก","Cancel")}</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}</button></>}>
         {edit && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="TAG"        v={edit.TAG}        onC={v => setEdit({ ...edit, TAG: v })} />
-            <div className="field"><label className="field-label">CODE</label>
-              <select className="input" value={edit.CODE} onChange={e => setEdit({ ...edit, CODE: e.target.value })}>
-                <option value="AFAG">AFAG</option>
-                <option value="ACPK">ACPK</option>
-              </select>
-            </div>
+            <MinSelect label="CODE" value={edit.CODE} options={["AFAG","ACPK"]} onChange={v => setEdit({ ...edit, CODE: v })} />
             <Field label="ROUTE"      v={edit.ROUTE}      onC={v => setEdit({ ...edit, ROUTE: v })} />
             <Field label="ACCOUNTNUM" v={edit.ACCOUNTNUM} onC={v => setEdit({ ...edit, ACCOUNTNUM: v })} />
             <Field label="PEANO"      v={edit.PEANO}      onC={v => setEdit({ ...edit, PEANO: v })} />
             <Field label="FEEDERID"   v={edit.FEEDERID}   onC={v => setEdit({ ...edit, FEEDERID: v })} />
-            <div className="field"><label className="field-label">OWNER</label>
-              <select className="input" value={edit.OWNER} onChange={e => setEdit({ ...edit, OWNER: e.target.value })}>
-                <option value="PEA">PEA</option><option value="Customer">Customer</option>
-              </select>
-            </div>
+            <MinSelect label="OWNER" value={edit.OWNER} options={["PEA","Customer"]} onChange={v => setEdit({ ...edit, OWNER: v })} />
             <Field label="INSTALLATI" v={edit.INSTALLATI} onC={v => setEdit({ ...edit, INSTALLATI: v })} />
             <Field label="LATITUDE"   v={edit.LATITUDE}   onC={v => setEdit({ ...edit, LATITUDE: +v })}  type="number" />
             <Field label="LONGITUDE"  v={edit.LONGITUDE}  onC={v => setEdit({ ...edit, LONGITUDE: +v })} type="number" />
@@ -2991,6 +3007,39 @@ function Field({ label, v, onC, type = "text" }) {
   );
 }
 
+function MinSelect({ label, value, options, onChange }) {
+  const [open, setOpen] = useStateAd(false);
+  const ref = React.useRef(null);
+  useEffectAd(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+  return (
+    <div className="field">
+      <label className="field-label">{label}</label>
+      <div ref={ref} style={{ position:"relative" }}>
+        <button type="button" className="input" style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", textAlign:"left" }} onClick={() => setOpen(o => !o)}>
+          <span>{value}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.45, flexShrink:0, transition:"transform 0.15s", transform: open ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {open && (
+          <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:300, background:"var(--surface1)", border:"1px solid var(--line)", borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.13)", overflow:"hidden" }}>
+            {options.map(opt => (
+              <div key={opt} onMouseDown={() => { onChange(opt); setOpen(false); }}
+                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", cursor:"pointer", background: opt === value ? "rgba(139,63,196,0.07)" : "transparent", color: opt === value ? "var(--pea-purple-600)" : "var(--ink)", fontWeight: opt === value ? 600 : 400, fontSize:14, transition:"background 0.1s" }}>
+                <span>{opt}</span>
+                {opt === value && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ---------- TRs CRUD — server-side search ---------- */
 function AdminTrs({ addAudit, currentUser }) {
   const { lang } = useLang();
@@ -2999,6 +3048,7 @@ function AdminTrs({ addAudit, currentUser }) {
   const [list, setList]     = useStateAd([]);
   const [searching, setSearching] = useStateAd(false);
   const [edit, setEdit]     = useStateAd(null);
+  const [detail, setDetail] = useStateAd(null);
   const [saving, setSaving] = useStateAd(false);
   const [showExport, setShowExport] = useStateAd(false);
   const [sortCol, setSortCol] = useStateAd("TAG");
@@ -3107,7 +3157,7 @@ function AdminTrs({ addAudit, currentUser }) {
           </tr></thead>
           <tbody>
             {sortedList.map(t => (
-              <tr key={t.OBJECTID}>
+              <tr key={t.OBJECTID} style={{ cursor:"pointer" }} onClick={() => setDetail(t)}>
                 <td className="mono fw-6">{t.TAG}</td>
                 <td className="mono">{t.PEANO_TR}</td>
                 <td>{t.PHASE.replace("หม้อแปลง ", "")}</td>
@@ -3118,8 +3168,8 @@ function AdminTrs({ addAudit, currentUser }) {
                 <td><span className="badge">{t.FEEDER1}</span></td>
                 <td>
                   <div className="row-action">
-                    <button className="btn-icon" onClick={() => setEdit(t)}><Icon name="edit" size={14} /></button>
-                    <button className="btn-icon" onClick={() => remove(t)}><Icon name="trash" size={14} /></button>
+                    <button className="btn-icon" onClick={e => { e.stopPropagation(); setEdit(t); }}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" onClick={e => { e.stopPropagation(); remove(t); }}><Icon name="trash" size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -3133,29 +3183,41 @@ function AdminTrs({ addAudit, currentUser }) {
         )}
       </div>
 
+      <Modal open={!!detail} onClose={() => setDetail(null)} title={s("รายละเอียดหม้อแปลง","Transformer Detail")} width={520}
+        footer={<><button className="btn btn-outline" onClick={() => setDetail(null)}>{s("ปิด","Close")}</button><button className="btn btn-primary" onClick={() => { setEdit(detail); setDetail(null); }}><Icon name="edit" size={14} /> {s("แก้ไข","Edit")}</button></>}>
+        {detail && (
+          <div>
+            {[
+              [s("TAG","TAG"),                 detail.TAG],
+              [s("PEANO หม้อแปลง","PEANO TR"), detail.PEANO_TR || "—"],
+              [s("ระบบเฟส","Phase"),           detail.PHASE],
+              [s("ระดับแรงดัน","Voltage"),     detail.VOLTAGE],
+              [s("เฟสติดตั้ง","Install Phase"), detail.INSTALL_PHASE || "—"],
+              [s("ค่าพิกัด","kVA"),            `${detail.KVA} kVA`],
+              [s("เจ้าของ","Owner"),           detail.OWNER_TR],
+              [s("สายป้อน","Feeder"),          detail.FEEDER1 || "—"],
+              [s("สถานที่","Location"),         detail.LOCATION || "—"],
+              [s("พิกัด","Coordinates"),        `${detail.LATITUDE?.toFixed(6)}, ${detail.LONGITUDE?.toFixed(6)}`],
+            ].map(([k, v], i, arr) => (
+              <div key={k} style={{ display:"flex", alignItems:"baseline", gap:16, padding:"10px 0", borderBottom: i < arr.length-1 ? "1px solid var(--line)" : "none" }}>
+                <span style={{ width:110, flexShrink:0, fontSize:11, fontWeight:600, color:"var(--t-mute)", textTransform:"uppercase", letterSpacing:"0.04em" }}>{k}</span>
+                <span style={{ fontSize:14, fontFamily:"'JetBrains Mono',monospace", color:"var(--ink)", wordBreak:"break-all" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
       <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? s("แก้ไขหม้อแปลง","Edit Transformer") : s("เพิ่มหม้อแปลง","Add Transformer")} width={680}
         footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>{s("ยกเลิก","Cancel")}</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}</button></>}>
         {edit && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="TAG"              v={edit.TAG}          onC={v => setEdit({ ...edit, TAG: v })} />
             <Field label="PEANO หม้อแปลง"  v={edit.PEANO_TR}     onC={v => setEdit({ ...edit, PEANO_TR: v })} />
-            <div className="field"><label className="field-label">ระบบเฟส</label>
-              <select className="input" value={edit.PHASE} onChange={e => setEdit({ ...edit, PHASE: e.target.value })}>
-                <option>หม้อแปลง 1 Phase</option><option>หม้อแปลง 3 Phase</option>
-              </select>
-            </div>
-            <div className="field"><label className="field-label">ระดับแรงดัน</label>
-              <select className="input" value={edit.VOLTAGE} onChange={e => setEdit({ ...edit, VOLTAGE: e.target.value })}>
-                <option>22 kV</option><option>33 kV</option>
-              </select>
-            </div>
+            <MinSelect label="ระบบเฟส" value={edit.PHASE} options={["หม้อแปลง 1 Phase","หม้อแปลง 3 Phase"]} onChange={v => setEdit({ ...edit, PHASE: v })} />
+            <MinSelect label="ระดับแรงดัน" value={edit.VOLTAGE} options={["22 kV","33 kV"]} onChange={v => setEdit({ ...edit, VOLTAGE: v })} />
             <Field label="เฟสที่ติดตั้ง"   v={edit.INSTALL_PHASE} onC={v => setEdit({ ...edit, INSTALL_PHASE: v })} />
             <Field label="ค่าพิกัด kVA"    v={edit.KVA}           onC={v => setEdit({ ...edit, KVA: +v })} type="number" />
-            <div className="field"><label className="field-label">เจ้าของ</label>
-              <select className="input" value={edit.OWNER_TR} onChange={e => setEdit({ ...edit, OWNER_TR: e.target.value })}>
-                <option>PEA</option><option>Customer</option>
-              </select>
-            </div>
+            <MinSelect label="เจ้าของ" value={edit.OWNER_TR} options={["PEA","Customer"]} onChange={v => setEdit({ ...edit, OWNER_TR: v })} />
             <Field label="รหัสสายป้อนที่ 1" v={edit.FEEDER1}      onC={v => setEdit({ ...edit, FEEDER1: v })} />
             <div className="field" style={{ gridColumn: "1 / -1" }}><label className="field-label">สถานที่</label><input className="input" value={edit.LOCATION} onChange={e => setEdit({ ...edit, LOCATION: e.target.value })} /></div>
             <Field label="LATITUDE"         v={edit.LATITUDE}     onC={v => setEdit({ ...edit, LATITUDE: +v })}  type="number" />
