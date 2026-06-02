@@ -44,13 +44,17 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
         @keyframes adm-spin { to { transform: rotate(360deg); } }
         .adm-spin { animation: adm-spin 1.2s linear infinite; }
-        .adm-mob-tabs { display: none; }
+        .adm-mob-tabs-wrap { display: none; }
         @media (max-width: 640px) {
           .adm-body { padding: 10px 12px 20px; }
+          .adm-mob-tabs-wrap {
+            display: flex; align-items: center;
+            border-bottom: 1px solid var(--line); flex-shrink: 0;
+          }
           .adm-mob-tabs {
             display: flex; gap: 4px; align-items: center;
-            padding: 8px 12px; border-bottom: 1px solid var(--line);
-            scrollbar-width: none; flex-shrink: 0; overflow-x: auto;
+            padding: 8px 0 8px 12px;
+            scrollbar-width: none; flex: 1; overflow-x: auto;
           }
           .adm-mob-tabs::-webkit-scrollbar { display: none; }
           .adm-mob-tab {
@@ -92,17 +96,19 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{NAV_LABELS[tab] || t("adminDefault")}</div>
       </div>
 
-      {/* Mobile-only tab bar — primary tabs + "⋯" more button */}
-      <div className="adm-mob-tabs">
-        {MOB_PRIMARY.map(n => (
-          <button key={n.id} className={"adm-mob-tab" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
-            <Icon name={n.icon} size={16} />
-            {n.label}
-            {n.id === "users" && pendingCount > 0 && <span className="adm-mob-badge">{pendingCount}</span>}
-          </button>
-        ))}
-        {/* More button */}
-        <div style={{ position: "relative", flexShrink: 0 }}>
+      {/* Mobile-only tab bar — scrollable primary tabs + More button outside overflow */}
+      <div className="adm-mob-tabs-wrap">
+        <div className="adm-mob-tabs">
+          {MOB_PRIMARY.map(n => (
+            <button key={n.id} className={"adm-mob-tab" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
+              <Icon name={n.icon} size={16} />
+              {n.label}
+              {n.id === "users" && pendingCount > 0 && <span className="adm-mob-badge">{pendingCount}</span>}
+            </button>
+          ))}
+        </div>
+        {/* More button is a sibling of the overflow container so its dropdown is never clipped */}
+        <div style={{ flexShrink: 0, position: "relative", padding: "8px 12px 8px 4px" }}>
           <button className={"adm-mob-tab" + (activeInMore || showMoreTabs ? " on" : "")} onClick={() => setShowMoreTabs(s => !s)}>
             <Icon name="grid" size={16} />
             เพิ่มเติม
