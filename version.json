@@ -1,7 +1,7 @@
 {
-  "commit": "99b35c2109cce6436a5bb902c8d63501e6465c9b",
-  "shortCommit": "99b35c2",
-  "message": "Allow username login alongside email",
-  "date": "2026-06-02T07:30:38Z",
+  "commit": "4ae0ce275bf549447bfa1c4b7ad9a94c57906410",
+  "shortCommit": "4ae0ce2",
+  "message": "Add payment notifications + team suspension system",
+  "date": "2026-06-02T07:38:12Z",
   "branch": "main"
 }
