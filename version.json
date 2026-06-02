@@ -1,7 +1,7 @@
 {
-  "commit": "f925ac8714d279f75264ff6c365375222dff3db0",
-  "shortCommit": "f925ac8",
-  "message": "Increase 2FA OTP input size on mobile: font 36-46px, height 82-96px, bolder digits",
-  "date": "2026-06-02T03:12:14Z",
+  "commit": "26bb1af49803e13e716b5f9bbcdbfa777c7eee74",
+  "shortCommit": "26bb1af",
+  "message": "Fix audit_log 400 error (wrong column names) and Leaflet _leaflet_pos crash on unmount",
+  "date": "2026-06-02T03:22:23Z",
   "branch": "main"
 }
