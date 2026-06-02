@@ -1,7 +1,7 @@
 {
-  "commit": "26bb1af49803e13e716b5f9bbcdbfa777c7eee74",
-  "shortCommit": "26bb1af",
-  "message": "Fix audit_log 400 error (wrong column names) and Leaflet _leaflet_pos crash on unmount",
-  "date": "2026-06-02T03:22:23Z",
+  "commit": "0f9ff6873e2e8918476af57bba9beac7bb77a04f",
+  "shortCommit": "0f9ff68",
+  "message": "Mobile topbar: remove 3-dot settings button, merge into user chip dropdown",
+  "date": "2026-06-02T03:26:18Z",
   "branch": "main"
 }
