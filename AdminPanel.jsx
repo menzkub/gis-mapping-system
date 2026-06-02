@@ -131,21 +131,26 @@ function AdminDashboard({ data }) {
   const trCount    = +(s.tr_count     || 0);
   const totalKva   = Math.round(+(s.total_kva || 0));
   const peaKva     = Math.round(+(s.pea_kva  || 0));
-  const custKva    = Math.round(+(s.cust_kva || 0) || Math.max(0, totalKva - peaKva));
-  const peaMeters  = +(s.pea_meters   || 0);
-  // Fix: custMeters = anything not counted as PEA (handles NULL/unclassified rows)
-  const custMeters = Math.max(+(s.cust_meters || 0), meterCount - peaMeters);
-  const peaTr      = +(s.pea_tr       || 0);
-  const custTr     = +(s.cust_tr      || 0);
+  const custKva    = Math.round(+(s.cust_kva || 0));
+  const otherKva   = Math.max(0, totalKva - peaKva - custKva);
+  const kvaPct = (v) => totalKva > 0 ? Math.round(v / totalKva * 100) : 0;
+  const peaMeters   = +(s.pea_meters  || 0);
+  const custMeters  = +(s.cust_meters || 0);
+  const otherMeters = Math.max(0, meterCount - peaMeters - custMeters);
+  const peaTr       = +(s.pea_tr      || 0);
+  const custTr      = +(s.cust_tr     || 0);
+  const otherTr     = Math.max(0, trCount - peaTr - custTr);
 
   const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
 
   const grandTotal = meterCount + trCount;
   const donutSegs = [
-    { v: peaMeters,  color: "#8b3fc4", label: "PEA Meter",  glow: "rgba(139,63,196,0.6)" },
-    { v: custMeters, color: "#c084fc", label: "Cust. Meter", glow: "rgba(192,132,252,0.4)" },
-    { v: peaTr,      color: "#f47b20", label: "PEA TR",      glow: "rgba(244,123,32,0.6)" },
-    { v: custTr,     color: "#fbbf24", label: "Cust. TR",    glow: "rgba(251,191,36,0.4)" },
+    { v: peaMeters,  color: "#8b3fc4", label: "PEA Meter",   glow: "rgba(139,63,196,0.6)" },
+    { v: custMeters, color: "#c084fc", label: "Cust. Meter",  glow: "rgba(192,132,252,0.4)" },
+    ...(otherMeters > 0 ? [{ v: otherMeters, color: "#94a3b8", label: "ไม่ระบุ (M)", glow: "rgba(148,163,184,0.4)" }] : []),
+    { v: peaTr,      color: "#f47b20", label: "PEA TR",       glow: "rgba(244,123,32,0.6)" },
+    { v: custTr,     color: "#fbbf24", label: "Cust. TR",     glow: "rgba(251,191,36,0.4)" },
+    ...(otherTr > 0 ? [{ v: otherTr, color: "#cbd5e1", label: "ไม่ระบุ (TR)", glow: "rgba(203,213,225,0.3)" }] : []),
   ];
 
   return (
@@ -179,11 +184,41 @@ function AdminDashboard({ data }) {
         <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr-tri" accent="orange" />
         <StatCard label={t("dbKva")}    value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
           breakdown={[
-            { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4" },
-            { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6" },
+            { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
+            { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
+            ...(otherKva > 0 ? [{ label: "ไม่ระบุ", value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
           ]}
         />
       </div>
+
+      {/* Data-quality warnings */}
+      {(otherMeters > 0 || otherTr > 0 || (otherKva > 0 && kvaPct(otherKva) >= 5)) && (() => {
+        const items = [];
+        if (otherMeters > 0) items.push({ label: `มิเตอร์ไม่ระบุ owner: ${otherMeters.toLocaleString()} รายการ (${meterCount > 0 ? Math.round(otherMeters/meterCount*100) : 0}%)`, sql: "SELECT owner, COUNT(*) FROM public.meters GROUP BY owner ORDER BY 2 DESC;" });
+        if (otherTr > 0)     items.push({ label: `หม้อแปลงไม่ระบุ owner_tr: ${otherTr.toLocaleString()} รายการ (${trCount > 0 ? Math.round(otherTr/trCount*100) : 0}%)`, sql: "SELECT owner_tr, COUNT(*), SUM(kva) FROM public.transformers GROUP BY owner_tr ORDER BY 2 DESC;" });
+        if (otherKva > 0 && kvaPct(otherKva) >= 5) items.push({ label: `KVA ไม่ระบุ: ${otherKva.toLocaleString()} kVA (${kvaPct(otherKva)}%)`, sql: null });
+        return (
+          <div style={{ borderRadius: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.28)", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, fontSize: 13, color: "#d97706" }}>
+              <Icon name="warning" size={15} style={{ color: "#f59e0b" }} />
+              พบข้อมูลที่ไม่ระบุเจ้าของ — อาจทำให้สัดส่วน PEA / Customer ไม่ถูกต้อง
+            </div>
+            {items.map((it, i) => (
+              <div key={i} style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.6, paddingLeft: 22 }}>
+                <span style={{ fontWeight: 600 }}>• {it.label}</span>
+                {it.sql && <><br/><span style={{ color: "var(--ink-mute)" }}>ตรวจสอบ: </span><code style={{ fontSize: 10, background: "rgba(0,0,0,0.06)", padding: "1px 6px", borderRadius: 4, wordBreak: "break-all" }}>{it.sql}</code></>}
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "var(--ink-mute)", paddingLeft: 22, borderTop: "1px solid rgba(245,158,11,0.2)", paddingTop: 8, marginTop: 2, lineHeight: 1.7 }}>
+              <strong>แก้ไข:</strong>{" "}
+              <code style={{ fontSize: 10, background: "rgba(0,0,0,0.06)", padding: "1px 6px", borderRadius: 4 }}>UPDATE meters SET owner='PEA' WHERE owner IS NULL OR owner NOT IN ('PEA','Customer');</code>
+              {" "}และ{" "}
+              <code style={{ fontSize: 10, background: "rgba(0,0,0,0.06)", padding: "1px 6px", borderRadius: 4 }}>UPDATE transformers SET owner_tr='PEA' WHERE owner_tr IS NULL OR owner_tr NOT IN ('PEA','Customer');</code>
+              {" "}รันใน Supabase SQL Editor แล้วกด Refresh
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Feeder + Donut */}
       <div className="db-mid-grid">

@@ -207,14 +207,28 @@ function StatCard({ label, value, delta, icon, accent = "purple", breakdown }) {
       }}>{label}</div>
       <FitText>{value}</FitText>
       {breakdown && (
-        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3, borderTop: "1px solid var(--line)", paddingTop: 8 }}>
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5, borderTop: "1px solid var(--line)", paddingTop: 8 }}>
           {breakdown.map((b, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--ink-mute)", display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: b.color, display: "inline-block", flexShrink: 0 }} />
-                {b.label}
-              </span>
-              <span style={{ fontSize: 11, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "var(--ink)" }}>{b.value}</span>
+            <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: "var(--ink-mute)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: b.color, display: "inline-block", flexShrink: 0 }} />
+                  {b.label}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  {b.pct != null && (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: b.color, background: b.color + "22", borderRadius: 4, padding: "1px 5px", letterSpacing: "0.02em" }}>
+                      {b.pct}%
+                    </span>
+                  )}
+                  <span style={{ fontSize: 11, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: "var(--ink)" }}>{b.value}</span>
+                </div>
+              </div>
+              {b.pct != null && (
+                <div style={{ height: 3, borderRadius: 2, background: "var(--line)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: b.pct + "%", background: b.color, borderRadius: 2, transition: "width 600ms cubic-bezier(.22,1,.36,1)" }} />
+                </div>
+              )}
             </div>
           ))}
         </div>
