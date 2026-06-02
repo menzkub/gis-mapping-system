@@ -1,7 +1,7 @@
 {
-  "commit": "84938e25624e336d4eebf06cb23aff2ceeb99755",
-  "shortCommit": "84938e2",
-  "message": "feat: restore all dev info fields in form and card",
-  "date": "2026-06-02T01:25:02Z",
+  "commit": "02280ba49bcea4031a819dfcb687fa2eae9015c0",
+  "shortCommit": "02280ba",
+  "message": "fix: profile tabs equal width on desktop",
+  "date": "2026-06-02T01:28:12Z",
   "branch": "main"
 }
