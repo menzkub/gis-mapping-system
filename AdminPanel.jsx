@@ -171,7 +171,8 @@ function AdminDashboard({ data }) {
           .db-donut-svg  { width: 180px; height: 180px; }
         }
         @media (max-width: 640px) {
-          .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+          .db-stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+          .db-kva-span  { grid-column: 1 / -1; }
           .db-mid-grid  { grid-template-columns: 1fr; }
           .db-donut-wrap { flex-direction: row; align-items: center; gap: 16px; }
           .db-donut-svg  { width: 130px; height: 130px; flex-shrink: 0; }
@@ -182,13 +183,15 @@ function AdminDashboard({ data }) {
       <div className="db-stat-grid">
         <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter-m" accent="purple" />
         <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr-tri" accent="orange" />
-        <StatCard label={t("dbKva")}    value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
-          breakdown={[
-            { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
-            { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
-            ...(otherKva > 0 ? [{ label: "ไม่ระบุ", value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
-          ]}
-        />
+        <div className="db-kva-span">
+          <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
+            breakdown={[
+              { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
+              { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
+              ...(otherKva > 0 ? [{ label: "ไม่ระบุ", value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
+            ]}
+          />
+        </div>
       </div>
 
       {/* Data-quality warnings */}

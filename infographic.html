@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GIS Meter System — วิวัฒนาการระบบ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --purple: #8b3fc4;
+    --purple-light: #c084fc;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --bg: #0a0a14;
+    --card: #12121e;
+    --card2: #1a1a2e;
+    --border: rgba(255,255,255,0.08);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --line: rgba(255,255,255,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    text-align: center;
+    padding: 72px 24px 56px;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139,63,196,0.25) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(139,63,196,0.15);
+    border: 1px solid rgba(139,63,196,0.35);
+    color: var(--purple-light);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 0%, var(--purple-light) 60%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 540px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat-num {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  /* ── SECTION ── */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 64px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--purple-light);
+    margin-bottom: 8px;
+  }
+  .section-heading {
+    font-size: clamp(20px, 3vw, 30px);
+    font-weight: 800;
+    margin-bottom: 40px;
+    color: var(--text);
+  }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    position: relative;
+    padding-left: 40px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--purple) 0%, var(--blue) 40%, var(--cyan) 70%, var(--green) 100%);
+    border-radius: 2px;
+  }
+
+  .tl-item {
+    position: relative;
+    margin-bottom: 48px;
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideIn 0.5s ease forwards;
+  }
+  .tl-item:nth-child(1) { animation-delay: 0.1s; }
+  .tl-item:nth-child(2) { animation-delay: 0.2s; }
+  .tl-item:nth-child(3) { animation-delay: 0.3s; }
+  .tl-item:nth-child(4) { animation-delay: 0.4s; }
+  .tl-item:nth-child(5) { animation-delay: 0.5s; }
+
+  @keyframes slideIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .tl-dot {
+    position: absolute;
+    left: -33px;
+    top: 20px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .tl-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .tl-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.15);
+  }
+  .tl-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .tl-version {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tl-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .tl-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .tl-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+  }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr 40px 1fr;
+    gap: 0;
+    align-items: start;
+  }
+  @media(max-width: 700px) {
+    .flow-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .flow-arrow { display: none; }
+  }
+
+  .flow-col { display: flex; flex-direction: column; gap: 12px; }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 32px;
+    color: var(--muted);
+    font-size: 20px;
+  }
+
+  .flow-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .flow-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.15);
+  }
+  .flow-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .flow-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .flow-title {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .flow-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .flow-col-header {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+  }
+
+  /* ── TECH STACK GRID ── */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+  .tech-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .tech-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.18);
+  }
+  .tech-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 12px;
+  }
+  .tech-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .tech-role {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── DATA HIGHLIGHT ── */
+  .data-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .data-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .data-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 0 0 14px 14px;
+  }
+  .data-num {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .data-label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  footer strong { color: var(--text); }
+
+  .divider {
+    height: 1px;
+    background: var(--line);
+    margin: 8px 0 56px;
+  }
+
+  /* SVG Icons inline */
+  svg.icon { display:inline-block; vertical-align:middle; }
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    GIS Meter &amp; Transformer Mapping System
+  </div>
+  <h1>วิวัฒนาการระบบ<br/>ตั้งแต่เริ่มต้นจนถึงปัจจุบัน</h1>
+  <p>ระบบ GIS สำหรับจัดการมิเตอร์และหม้อแปลงไฟฟ้า<br/>พัฒนาต่อเนื่องจาก Prototype เล็กๆ สู่ Platform เต็มรูปแบบ</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">55,892</div>
+      <div class="hero-stat-label">มิเตอร์</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">1,765</div>
+      <div class="hero-stat-label">หม้อแปลง</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">221,906</div>
+      <div class="hero-stat-label">KVA รวม</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">v3.1</div>
+      <div class="hero-stat-label">เวอร์ชันปัจจุบัน</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TIMELINE ── -->
+<section>
+  <div class="section-title">Timeline</div>
+  <div class="section-heading">วิวัฒนาการของระบบ</div>
+
+  <div class="timeline">
+
+    <!-- v1.0 -->
+    <div class="tl-item">
+      <div class="tl-dot" style="background:#6b7280;">1</div>
+      <div class="tl-card" style="border-color:rgba(107,114,128,0.3);">
+        <div class="tl-card" style="display:none"></div>
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6b7280,#94a3b8);border-radius:16px 16px 0 0;"></div>
+        <div class="tl-version" style="color:#94a3b8;">เริ่มต้น · ต้นแบบ</div>
+        <div class="tl-name">v1.0 — Static HTML Prototype</div>
+        <div class="tl-desc">
+          เริ่มต้นเป็น HTML ไฟล์เดียว ใช้ Leaflet.js แสดงแผนที่เปล่าบน GitHub Pages
+          ข้อมูลหม้อแปลงถูก hardcode เป็น GeoJSON ในไฟล์ JS ไม่มีระบบล็อกอิน
+          ไม่มีฐานข้อมูล ใช้เพื่อทดสอบการแสดงผลบนแผนที่เท่านั้น
+        </div>
+        <div class="tl-tags">
+          <span class="tag" style="background:rgba(107,114,128,0.1);border-color:rgba(107,114,128,0.3);color:#94a3b8;">HTML/CSS/JS</span>
+          <span class="tag" style="background:rgba(107,114,128,0.1);border-color:rgba(107,114,128,0.3);color:#94a3b8;">Leaflet.js</span>
+          <span class="tag" style="background:rgba(107,114,128,0.1);border-color:rgba(107,114,128,0.3);color:#94a3b8;">GitHub Pages</span>
+          <span class="tag" style="background:rgba(107,114,128,0.1);border-color:rgba(107,114,128,0.3);color:#94a3b8;">GeoJSON (hardcode)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- v1.5 -->
+    <div class="tl-item">
+      <div class="tl-dot" style="background:#3b82f6;">2</div>
+      <div class="tl-card" style="border-color:rgba(59,130,246,0.3);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#06b6d4);border-radius:16px 16px 0 0;"></div>
+        <div class="tl-version" style="color:#60a5fa;">v1.5 · เพิ่มฐานข้อมูล</div>
+        <div class="tl-name">v1.5 — Supabase Integration</div>
+        <div class="tl-desc">
+          เชื่อมต่อ Supabase เป็นครั้งแรก ย้ายข้อมูลหม้อแปลงและมิเตอร์ขึ้น PostgreSQL
+          เพิ่มระบบ Authentication เบื้องต้น สามารถ Query ข้อมูลจริงได้
+          เริ่มรองรับการกรองข้อมูลตาม feeder และ owner บนแผนที่
+        </div>
+        <div class="tl-tags">
+          <span class="tag" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:#60a5fa;">Supabase</span>
+          <span class="tag" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:#60a5fa;">PostgreSQL 15</span>
+          <span class="tag" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:#60a5fa;">Auth</span>
+          <span class="tag" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:#60a5fa;">Row-Level Security</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- v2.0 -->
+    <div class="tl-item">
+      <div class="tl-dot" style="background:#8b3fc4;">3</div>
+      <div class="tl-card" style="border-color:rgba(139,63,196,0.35);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b3fc4,#c084fc);border-radius:16px 16px 0 0;"></div>
+        <div class="tl-version" style="color:#c084fc;">v2.0 · React &amp; Component</div>
+        <div class="tl-name">v2.0 — React UMD Architecture</div>
+        <div class="tl-desc">
+          ปรับสถาปัตยกรรมมาใช้ React 18 UMD + Babel Standalone ทั้งหมด
+          ไม่ต้อง build step — browser compile JSX โดยตรง
+          แยก Component ออกเป็น MapView · SearchView · AdminPanel
+          เพิ่มระบบภาษา (Thai/English) ผ่าน lang.jsx
+          เพิ่ม PWA: Service Worker + manifest + ไอคอน
+        </div>
+        <div class="tl-tags">
+          <span class="tag" style="background:rgba(139,63,196,0.1);border-color:rgba(139,63,196,0.35);color:#c084fc;">React 18 UMD</span>
+          <span class="tag" style="background:rgba(139,63,196,0.1);border-color:rgba(139,63,196,0.35);color:#c084fc;">Babel Standalone</span>
+          <span class="tag" style="background:rgba(139,63,196,0.1);border-color:rgba(139,63,196,0.35);color:#c084fc;">PWA</span>
+          <span class="tag" style="background:rgba(139,63,196,0.1);border-color:rgba(139,63,196,0.35);color:#c084fc;">Service Worker</span>
+          <span class="tag" style="background:rgba(139,63,196,0.1);border-color:rgba(139,63,196,0.35);color:#c084fc;">Multi-language</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- v2.5 -->
+    <div class="tl-item">
+      <div class="tl-dot" style="background:#f59e0b;">4</div>
+      <div class="tl-card" style="border-color:rgba(245,158,11,0.3);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:16px 16px 0 0;"></div>
+        <div class="tl-version" style="color:#fbbf24;">v2.5 · Security &amp; Admin</div>
+        <div class="tl-name">v2.5 — 2FA + Admin Dashboard</div>
+        <div class="tl-desc">
+          เพิ่มระบบ 2FA/MFA ด้วย TOTP (Time-based One-Time Password)
+          สร้าง Admin Panel พร้อม Dashboard แสดงสถิติข้อมูลแบบ Real-time
+          เพิ่ม Push Notification ผ่าน Web Push API
+          GitHub Actions CI/CD สำหรับ deploy อัตโนมัติ
+          StatCard · Donut Chart · Top Feeder ranking
+        </div>
+        <div class="tl-tags">
+          <span class="tag" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fbbf24;">2FA/MFA · TOTP</span>
+          <span class="tag" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fbbf24;">Admin Dashboard</span>
+          <span class="tag" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fbbf24;">Push Notifications</span>
+          <span class="tag" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fbbf24;">CI/CD GitHub Actions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- v3.1 (current) -->
+    <div class="tl-item">
+      <div class="tl-dot" style="background:linear-gradient(135deg,#10b981,#06b6d4);">✦</div>
+      <div class="tl-card" style="border-color:rgba(16,185,129,0.4);background:linear-gradient(135deg,rgba(16,185,129,0.04),rgba(6,182,212,0.04));">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#06b6d4,#8b3fc4);border-radius:16px 16px 0 0;"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <div class="tl-version" style="color:#34d399;margin:0;">v3.1 · ปัจจุบัน</div>
+          <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:0.5px;">CURRENT</span>
+        </div>
+        <div class="tl-name">v3.1 — Full-Featured GIS Platform</div>
+        <div class="tl-desc">
+          ระบบ GIS เต็มรูปแบบ ครอบคลุมการจัดการมิเตอร์ &gt;55,000 รายการ
+          และหม้อแปลง &gt;1,700 เครื่อง พร้อม Dashboard วิเคราะห์ข้อมูลเชิงลึก
+          รองรับการทำงานแบบ Offline (PWA Cache-first), ระบบ Search ขั้นสูง,
+          Supabase RPC สำหรับ Aggregate Stats, ระบบ Settings แบบ Dynamic,
+          Multi-role User Management และ "Powered By" Tech showcase
+        </div>
+        <div class="tl-tags">
+          <span class="tag" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.4);color:#34d399;">55,892 มิเตอร์</span>
+          <span class="tag" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.4);color:#34d399;">1,765 หม้อแปลง</span>
+          <span class="tag" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.4);color:#34d399;">221,906 KVA</span>
+          <span class="tag" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.4);color:#34d399;">Offline PWA</span>
+          <span class="tag" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.4);color:#34d399;">RPC Aggregate</span>
+          <span class="tag" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.4);color:#34d399;">Multi-role</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FLOW DIAGRAM ── -->
+<section>
+  <div class="section-title">System Flow</div>
+  <div class="section-heading">การทำงานของระบบ</div>
+
+  <div class="flow-grid">
+
+    <!-- Layer 1: User -->
+    <div class="flow-col">
+      <div class="flow-col-header" style="background:rgba(139,63,196,0.12);color:#c084fc;border:1px solid rgba(139,63,196,0.25);">
+        👤 ผู้ใช้งาน
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(139,63,196,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#8b3fc4,#c084fc);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(139,63,196,0.15);">🌐</div>
+          <div>
+            <div class="flow-title">เปิดเว็บ / PWA</div>
+          </div>
+        </div>
+        <div class="flow-desc">เข้าใช้งานผ่าน Browser หรือติดตั้งเป็น PWA บนมือถือ — Service Worker โหลด Cache ทันที แม้ไม่มี Internet</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(139,63,196,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#8b3fc4,#c084fc);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(139,63,196,0.15);">🔐</div>
+          <div>
+            <div class="flow-title">Login + 2FA</div>
+          </div>
+        </div>
+        <div class="flow-desc">ยืนยันตัวตนด้วย Email/Password + รหัส TOTP (6 หลัก) ผ่าน Supabase Auth — JWT token ใช้สำหรับ Request ทุกรายการ</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(139,63,196,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#8b3fc4,#c084fc);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(139,63,196,0.15);">🗺️</div>
+          <div>
+            <div class="flow-title">Map View</div>
+          </div>
+        </div>
+        <div class="flow-desc">แผนที่แบบ Interactive แสดง Marker มิเตอร์และหม้อแปลง — กรองตาม feeder, owner, ประเภท — คลิกดูรายละเอียดได้ทันที</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(139,63,196,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#8b3fc4,#c084fc);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(139,63,196,0.15);">🔍</div>
+          <div>
+            <div class="flow-title">Search View</div>
+          </div>
+        </div>
+        <div class="flow-desc">ค้นหามิเตอร์/หม้อแปลงด้วยรหัส, ที่อยู่, feeder — แสดงผลแบบ List พร้อมปุ่ม Focus บนแผนที่</div>
+      </div>
+    </div>
+
+    <!-- Arrow 1 -->
+    <div class="flow-arrow">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+
+    <!-- Layer 2: Application -->
+    <div class="flow-col">
+      <div class="flow-col-header" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+        ⚛️ แอปพลิเคชัน
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(59,130,246,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#3b82f6,#06b6d4);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(59,130,246,0.15);">📦</div>
+          <div>
+            <div class="flow-title">React 18 UMD</div>
+          </div>
+        </div>
+        <div class="flow-desc">Browser compile JSX ด้วย Babel Standalone — ไม่มี build step, โหลดจาก CDN ตรง — app.jsx เป็น Entry Point หลัก</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(59,130,246,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#3b82f6,#06b6d4);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(59,130,246,0.15);">🧩</div>
+          <div>
+            <div class="flow-title">Component Layer</div>
+          </div>
+        </div>
+        <div class="flow-desc">components.jsx · MapView.jsx · SearchView.jsx · AdminPanel.jsx · AuthScreen.jsx — แต่ละ View แยก Logic อิสระ</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(59,130,246,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#3b82f6,#06b6d4);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(59,130,246,0.15);">🌍</div>
+          <div>
+            <div class="flow-title">Leaflet.js Map</div>
+          </div>
+        </div>
+        <div class="flow-desc">Tile layer จาก OpenStreetMap — Marker Clustering, Popup Info, Layer Control สำหรับกรองประเภทข้อมูล</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(59,130,246,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#3b82f6,#06b6d4);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(59,130,246,0.15);">⚡</div>
+          <div>
+            <div class="flow-title">Service Worker v15</div>
+          </div>
+        </div>
+        <div class="flow-desc">Cache-first strategy สำหรับ Static Assets — Network-only สำหรับ Supabase — Push Notification listener</div>
+      </div>
+    </div>
+
+    <!-- Arrow 2 -->
+    <div class="flow-arrow">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+
+    <!-- Layer 3: Backend -->
+    <div class="flow-col">
+      <div class="flow-col-header" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
+        🗄️ Backend / Data
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(16,185,129,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#10b981,#34d399);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(16,185,129,0.15);">🟢</div>
+          <div>
+            <div class="flow-title">Supabase</div>
+          </div>
+        </div>
+        <div class="flow-desc">PostgreSQL 15 + Auth + RLS + Realtime — เป็น BaaS หลักของระบบ — Auto REST API ผ่าน PostgREST</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(16,185,129,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#10b981,#34d399);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(16,185,129,0.15);">📊</div>
+          <div>
+            <div class="flow-title">RPC Functions</div>
+          </div>
+        </div>
+        <div class="flow-desc">get_dashboard_stats() — plpgsql SECURITY DEFINER ดึง Aggregate Stats: meter_count, tr_count, kva, feeders — คืนค่าเป็น JSON</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(16,185,129,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#10b981,#34d399);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(16,185,129,0.15);">🔒</div>
+          <div>
+            <div class="flow-title">Row-Level Security</div>
+          </div>
+        </div>
+        <div class="flow-desc">Policy ควบคุมว่า User แต่ละ Role เห็นข้อมูลอะไรได้บ้าง — Admin เห็นทั้งหมด, User ทั่วไปเห็นเฉพาะ View</div>
+      </div>
+
+      <div class="flow-card" style="border-color:rgba(16,185,129,0.25);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#10b981,#34d399);border-radius:12px 0 0 12px;"></div>
+        <div class="flow-card-top">
+          <div class="flow-icon" style="background:rgba(16,185,129,0.15);">🚀</div>
+          <div>
+            <div class="flow-title">GitHub Pages + CI/CD</div>
+          </div>
+        </div>
+        <div class="flow-desc">GitHub Actions deploy อัตโนมัติเมื่อ push ไป main branch — Hosting ฟรี, HTTPS อัตโนมัติ, Global CDN</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── TECH STACK ── -->
+<section>
+  <div class="section-title">Tech Stack</div>
+  <div class="section-heading">เทคโนโลยีที่ใช้ในระบบ</div>
+
+  <div class="tech-grid">
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(59,188,166,0.15);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#3ecfb2"><path d="M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C.09 12.888.707 14.12 1.754 14.12H12.005l.115 8.844c.015.986 1.26 1.41 1.874.637l9.262-11.652c.674-.837.056-2.07-.991-2.07H12.01l-.121-8.843z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#3ecfb2;">Supabase</div>
+      <div class="tech-role">PostgreSQL 15 · Auth · RLS · Realtime · Storage</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(97,218,251,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#28b6d8"><path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38a2.34 2.34 0 0 0-1.092-.278zm-.005 1.09v.006c.07 0 .157.07.285.078.293 1.66-.459 3.937-1.94 6.08a21.45 21.45 0 0 0-2.555-3.16A21.16 21.16 0 0 0 14.87 2.4c-.35-.19-.783-.308-1.243-.37.05-.005.096-.01.148-.01.418 0 .872.14 1.1.275v-.002zm-6.716.033c.045 0 .09.005.134.01-.46.063-.893.18-1.243.37a21.16 21.16 0 0 0 2.131 3.604 21.45 21.45 0 0 0-2.555 3.16c-1.48-2.143-2.233-4.42-1.94-6.08.128-.008.215-.08.285-.08.07 0 .141.016.21.016h-.022zm3.508 4.84l-.007.007a22.034 22.034 0 0 1 1.254 1.887 22.034 22.034 0 0 1-1.254 1.888c-.413-.62-.812-1.25-1.19-1.888.378-.638.777-1.268 1.19-1.888h.007zm3.51 0c.413.62.812 1.25 1.19 1.888-.378.638-.777 1.268-1.19 1.888a22.034 22.034 0 0 1-1.254-1.888 22.034 22.034 0 0 1 1.254-1.888zm-7.02 0c.413.62.812 1.25 1.19 1.888-.378.638-.777 1.268-1.19 1.888a22.034 22.034 0 0 1-1.254-1.888 22.034 22.034 0 0 1 1.254-1.888zM12 8.116a3.886 3.886 0 1 1 0 7.773 3.886 3.886 0 0 1 0-7.773zm0 1.21a2.676 2.676 0 1 0 0 5.352 2.676 2.676 0 0 0 0-5.352z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#28b6d8;">React 18</div>
+      <div class="tech-role">UMD · Hooks · Context · Browser-compiled JSX</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(245,158,11,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#b59800"><path d="M0 0h24v24H0V0zm22.034 18.276c-.175-1.095-.888-2.015-3.003-2.873-.736-.345-1.554-.585-1.797-1.14-.091-.33-.105-.51-.046-.705.15-.646.915-.84 1.515-.66.39.12.75.42.976.9 1.034-.676 1.034-.676 1.755-1.125-.27-.42-.404-.601-.586-.78-.63-.705-1.469-1.065-2.834-1.034l-.705.089c-.676.165-1.32.525-1.71 1.005-1.14 1.291-.811 3.541.569 4.471 1.365 1.02 3.361 1.244 3.616 2.205.24 1.17-.87 1.545-1.966 1.41-.811-.18-1.26-.586-1.755-1.336l-1.83 1.051c.21.48.45.689.81 1.109 1.74 1.756 6.09 1.666 6.871-1.004.029-.09.24-.705.074-1.65l.046.067zm-8.983-7.245h-2.248c0 1.938-.009 3.864-.009 5.805 0 1.232.063 2.363-.138 2.711-.33.689-1.18.601-1.566.48-.396-.196-.597-.466-.83-.855-.063-.105-.11-.196-.127-.196l-1.825 1.125c.305.63.75 1.172 1.324 1.517.855.51 2.004.675 3.207.405.783-.226 1.458-.691 1.811-1.411.51-.93.402-2.07.397-3.346.012-2.054 0-4.109 0-6.179l.004-.056z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#b59800;">JavaScript</div>
+      <div class="tech-role">ES2022 · Async/Await · Fetch API · Web APIs</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(30,136,229,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#1e88e5"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.298 24 12c0-6.627-5.373-12-12-12"/></svg>
+      </div>
+      <div class="tech-name" style="color:#1e88e5;">GitHub</div>
+      <div class="tech-role">Pages Hosting · Actions CI/CD · Version Control</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(30,177,70,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#1fb146"><path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.624 0 11.99-5.367 11.99-11.987C24.007 5.367 18.641.001 12.017.001z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#1fb146;">Leaflet.js</div>
+      <div class="tech-role">Interactive Maps · Markers · Clustering · Layers</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(139,63,196,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="#8b3fc4" stroke-width="2"/><path d="M8 12c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4" stroke="#8b3fc4" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="#8b3fc4"/></svg>
+      </div>
+      <div class="tech-name" style="color:#c084fc;">PWA</div>
+      <div class="tech-role">Service Worker · Cache-first · Offline support · Push</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(245,158,11,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#f59e0b"><path d="M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C.09 12.888.707 14.12 1.754 14.12H12.005l.115 8.844c.015.986 1.26 1.41 1.874.637l9.262-11.652c.674-.837.056-2.07-.991-2.07H12.01l-.121-8.843z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#f59e0b;">2FA / TOTP</div>
+      <div class="tech-role">Time-based OTP · Multi-role Auth · Session JWT</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(6,182,212,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#06b6d4"><path d="M12.001 4.8c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624C13.666 10.618 15.027 12 18.001 12c3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C16.337 6.182 14.976 4.8 12.001 4.8zm-6 7.2c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624 1.177 1.194 2.538 2.576 5.512 2.576 3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C10.337 13.382 8.976 12 6.001 12z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#06b6d4;">Tailwind CSS</div>
+      <div class="tech-role">Utility-first · Responsive · Dark mode · CSS Variables</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(255,100,50,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#ff6432"><path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12 12-5.373 12-12S18.628 0 12 0zm.087 3.702c1.22 0 2.196.978 2.196 2.197S13.307 8.097 12.087 8.097s-2.196-.978-2.196-2.197.977-2.198 2.196-2.198zm5.478 15.098H6.435c-.488 0-.868-.381-.868-.869s.38-.868.868-.868h4.24v-7.63H8.85c-.488 0-.867-.38-.867-.868s.38-.868.867-.868h3.91c.488 0 .867.38.867.868v8.498h3.938c.488 0 .867.38.867.868s-.38.869-.867.869z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#ff6432;">Material Icons</div>
+      <div class="tech-role">Icon set · SVG sprites · UI controls</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(96,165,250,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#60a5fa"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#60a5fa;">Google Fonts</div>
+      <div class="tech-role">Plus Jakarta Sans · Noto Sans Thai · Typography</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(236,72,153,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#ec4899"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#ec4899;">Claude AI</div>
+      <div class="tech-role">AI Development Assistant · Code generation · Architecture</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-logo" style="background:rgba(245,158,11,0.12);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#f59e0b"><path d="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23A.077.077 0 0 0 8.562 3c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026c.462-.62.874-1.275 1.226-1.963.021-.04.001-.088-.041-.104a13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125c-.598.344-1.22.635-1.873.877a.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.028z"/></svg>
+      </div>
+      <div class="tech-name" style="color:#f59e0b;">Discord-like UI</div>
+      <div class="tech-role">Push API · Web Notifications · Vibration API</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── DATA STATS ── -->
+<section>
+  <div class="section-title">ข้อมูลปัจจุบัน</div>
+  <div class="section-heading">สถิติระบบ v3.1</div>
+
+  <div class="data-row">
+
+    <div class="data-card">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b3fc4,#c084fc);border-radius:0 0 14px 14px;"></div>
+      <div style="font-size:28px;margin-bottom:8px;">⚡</div>
+      <div class="data-num" style="color:#c084fc;">55,892</div>
+      <div class="data-label">มิเตอร์ไฟฟ้าทั้งหมด</div>
+    </div>
+
+    <div class="data-card">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#06b6d4);border-radius:0 0 14px 14px;"></div>
+      <div style="font-size:28px;margin-bottom:8px;">🔌</div>
+      <div class="data-num" style="color:#60a5fa;">1,765</div>
+      <div class="data-label">หม้อแปลงไฟฟ้า</div>
+    </div>
+
+    <div class="data-card">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#34d399);border-radius:0 0 14px 14px;"></div>
+      <div style="font-size:28px;margin-bottom:8px;">📊</div>
+      <div class="data-num" style="color:#34d399;">221,906</div>
+      <div class="data-label">KVA กำลังไฟฟ้ารวม</div>
+    </div>
+
+    <div class="data-card">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:0 0 14px 14px;"></div>
+      <div style="font-size:28px;margin-bottom:8px;">🏢</div>
+      <div class="data-num" style="color:#fbbf24;">PEA</div>
+      <div class="data-label">เจ้าของมิเตอร์หลัก (&gt;99%)</div>
+    </div>
+
+    <div class="data-card">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ef4444,#f87171);border-radius:0 0 14px 14px;"></div>
+      <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
+      <div class="data-num" style="color:#f87171;">Feeder</div>
+      <div class="data-label">จัดกลุ่มตามสายส่งไฟฟ้า</div>
+    </div>
+
+    <div class="data-card">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b3fc4,#06b6d4);border-radius:0 0 14px 14px;"></div>
+      <div style="font-size:28px;margin-bottom:8px;">📱</div>
+      <div class="data-num" style="color:#a78bfa;">PWA</div>
+      <div class="data-label">ใช้ได้บน Mobile แบบ Offline</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <strong>GIS Meter &amp; Transformer Mapping System</strong> · v3.1<br/>
+  สร้างด้วย React 18 · Supabase · Leaflet.js · GitHub Pages<br/>
+  <span style="color:#6b7280;font-size:11px;">© 2026 · พัฒนาและออกแบบด้วยความช่วยเหลือจาก Claude AI</span>
+</footer>
+
+</body>
+</html>
