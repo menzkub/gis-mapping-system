@@ -1,7 +1,7 @@
 {
-  "commit": "7a682d23b9a22e540671c3753d86545e404849f4",
-  "shortCommit": "7a682d2",
-  "message": "Add master_migration.sql combining all migrations into one script",
-  "date": "2026-06-02T07:47:07Z",
+  "commit": "adeeec59590ed868b69801d765a8285deaf455fa",
+  "shortCommit": "adeeec5",
+  "message": "Fix master_migration: CREATE POLICY IF NOT EXISTS not supported in PG",
+  "date": "2026-06-02T07:53:50Z",
   "branch": "main"
 }
