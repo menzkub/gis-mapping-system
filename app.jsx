@@ -1270,11 +1270,13 @@ function useDeployStatus() {
   const [ghCommit, setGhCommit]   = useStateApp(null);
   const [loading, setLoading]     = useStateApp(true);
   const [ghLoading, setGhLoading] = useStateApp(true);
+  const [ghError, setGhError]     = useStateApp(false);
   const [tick, setTick]           = useStateApp(0);
 
   const refetch = React.useCallback(() => {
     setLoading(true);
     setGhLoading(true);
+    setGhError(false);
     setTick(t => t + 1);
   }, []);
 
@@ -1285,33 +1287,33 @@ function useDeployStatus() {
       .then(d => { setDeployed(d); setLoading(false); })
       .catch(() => setLoading(false));
 
+    setGhError(false);
     fetch("https://api.github.com/repos/menzkub/gis-mapping-system/commits/main", {
       headers: { Accept: "application/vnd.github.v3+json" },
     })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { setGhCommit(d); setGhLoading(false); })
-      .catch(() => setGhLoading(false));
+      .then(r => { if (!r.ok) { setGhError(true); setGhLoading(false); return null; } return r.json(); })
+      .then(d => { if (d) { setGhCommit(d); } setGhLoading(false); })
+      .catch(() => { setGhError(true); setGhLoading(false); });
   }, [tick]);
 
   const deployedHash = deployed?.shortCommit || deployed?.commit?.slice(0, 7);
   const ghHash = ghCommit?.sha?.slice(0, 7);
   const isLoading = loading || ghLoading;
-  // Also in-sync if GitHub's latest commit is the version.json chore update for this deployed hash
   const ghMsgHasDeployed = deployedHash && ghCommit?.commit?.message?.includes(deployedHash);
-  const inSync = !isLoading && deployedHash && ghHash && (deployedHash === ghHash || ghMsgHasDeployed);
+  const inSync = !isLoading && !ghError && deployedHash && ghHash && (deployedHash === ghHash || ghMsgHasDeployed);
 
-  return { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync, refetch };
+  return { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, ghError, isLoading, inSync, refetch };
 }
 
 // ── DeployStatusDot — topbar indicator for admins ────────────────────────
 function DeployStatusDot() {
   const [open, setOpen] = useStateApp(false);
-  const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, isLoading, inSync, refetch } = useDeployStatus();
+  const { deployed, ghCommit, deployedHash, ghHash, loading, ghLoading, ghError, isLoading, inSync, refetch } = useDeployStatus();
   const { t, lang } = useLang();
 
-  const pending  = !isLoading && deployedHash && ghHash && !inSync;
-  const dotColor = isLoading ? "#9ca3af" : inSync ? "#059669" : "#d97706";
-  const dotLabel = isLoading ? t("deployChecking") : inSync ? t("deployCurrent") : t("deployPending");
+  const pending  = !isLoading && !ghError && deployedHash && ghHash && !inSync;
+  const dotColor = isLoading ? "#9ca3af" : ghError ? "#6b7280" : inSync ? "#059669" : "#d97706";
+  const dotLabel = isLoading ? t("deployChecking") : ghError ? "ตรวจสอบไม่ได้" : inSync ? t("deployCurrent") : t("deployPending");
 
   const fmtDate = (iso) => {
     if (!iso) return "—";
@@ -1386,6 +1388,11 @@ function DeployStatusDot() {
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-mute)", marginBottom: 5 }}>☁️ {t("deployLatestGH")}</div>
               {ghLoading ? (
                 <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{t("deployChecking")}</div>
+              ) : ghError ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9ca3af" }}>
+                  <span style={{ fontSize: 14 }}>⚠️</span>
+                  <span>ไม่สามารถเชื่อมต่อ GitHub API<br /><span style={{ fontSize: 10 }}>อาจติด rate limit — กด ตรวจสอบอีกครั้ง</span></span>
+                </div>
               ) : ghCommit ? (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
