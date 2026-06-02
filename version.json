@@ -1,7 +1,7 @@
 {
-  "commit": "4f8cda85c692dfaceb5e3bf86c4050951d6b66ad",
-  "shortCommit": "4f8cda8",
-  "message": "Restructure SearchView: basemap toggle inline with search input",
-  "date": "2026-06-02T07:29:12Z",
+  "commit": "99b35c2109cce6436a5bb902c8d63501e6465c9b",
+  "shortCommit": "99b35c2",
+  "message": "Allow username login alongside email",
+  "date": "2026-06-02T07:30:38Z",
   "branch": "main"
 }
