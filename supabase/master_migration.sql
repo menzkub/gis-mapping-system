@@ -41,26 +41,32 @@ CREATE TABLE IF NOT EXISTS public.payment_slips (
 );
 ALTER TABLE public.payment_slips ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "payment_slips: own select"
+DROP POLICY IF EXISTS "payment_slips: own select"        ON public.payment_slips;
+DROP POLICY IF EXISTS "payment_slips: own insert"        ON public.payment_slips;
+DROP POLICY IF EXISTS "payment_slips: own update pending" ON public.payment_slips;
+DROP POLICY IF EXISTS "payment_slips: admin select"      ON public.payment_slips;
+DROP POLICY IF EXISTS "payment_slips: admin update"      ON public.payment_slips;
+
+CREATE POLICY "payment_slips: own select"
   ON public.payment_slips FOR SELECT
   USING (auth.uid() = team_leader_id);
 
-CREATE POLICY IF NOT EXISTS "payment_slips: own insert"
+CREATE POLICY "payment_slips: own insert"
   ON public.payment_slips FOR INSERT
   WITH CHECK (
     auth.uid() = team_leader_id AND
     EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'team_leader')
   );
 
-CREATE POLICY IF NOT EXISTS "payment_slips: own update pending"
+CREATE POLICY "payment_slips: own update pending"
   ON public.payment_slips FOR UPDATE
   USING (auth.uid() = team_leader_id AND status = 'pending');
 
-CREATE POLICY IF NOT EXISTS "payment_slips: admin select"
+CREATE POLICY "payment_slips: admin select"
   ON public.payment_slips FOR SELECT
   USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
 
-CREATE POLICY IF NOT EXISTS "payment_slips: admin update"
+CREATE POLICY "payment_slips: admin update"
   ON public.payment_slips FOR UPDATE
   USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
 
@@ -117,15 +123,19 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "users_read_own_notif" ON public.notifications
+DROP POLICY IF EXISTS "users_read_own_notif"   ON public.notifications;
+DROP POLICY IF EXISTS "users_update_own_notif" ON public.notifications;
+DROP POLICY IF EXISTS "admin_manage_notif"     ON public.notifications;
+
+CREATE POLICY "users_read_own_notif" ON public.notifications
   FOR SELECT TO authenticated USING (recipient_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "users_update_own_notif" ON public.notifications
+CREATE POLICY "users_update_own_notif" ON public.notifications
   FOR UPDATE TO authenticated
   USING (recipient_id = auth.uid())
   WITH CHECK (recipient_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "admin_manage_notif" ON public.notifications
+CREATE POLICY "admin_manage_notif" ON public.notifications
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
