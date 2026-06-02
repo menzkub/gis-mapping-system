@@ -3077,7 +3077,7 @@ function App() {
         database:   settingsMap["dev_database"]   || "Supabase (PostgreSQL 15) · Authentication · Row-Level Security (RLS) · Realtime",
         stack:      settingsMap["dev_stack"]      || "React 18 (UMD) · Babel Standalone · Leaflet.js 1.9 · Service Worker (PWA) · GitHub Pages · Plus Jakarta Sans · Noto Sans Thai",
         systems:    settingsMap["dev_systems"]    || "GIS Mapping · 2FA/MFA · Push Notifications · GitHub Actions CI/CD · Google Fonts API · Supabase Auth",
-        version:    settingsMap["dev_version"]    || "v3.2",
+        version:    CHANGELOG[0].version, // always auto-derive from latest changelog entry
         footer:     settingsMap["dev_footer"]     || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
         showBtn:    settingsMap["dev_show_btn"]   === "true",
       });

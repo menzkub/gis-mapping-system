@@ -158,6 +158,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-body { padding: 12px 18px 16px; }
         }
         .sv-body.sv-map-only { padding: 0 !important; }
+        .sv-mob-vtoggle { display: none; }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
@@ -170,10 +171,13 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; width: 100%; }
           .sv-actions::-webkit-scrollbar { display: none; }
           .search-filter-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
-          .search-view-switcher .tab { height: 36px !important; padding: 0 10px !important; font-size: 12px !important; white-space: nowrap; }
+          .search-view-switcher { display: none !important; }
           .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
           .input-lg { height: 48px !important; }
           .sv-split-btn { display: none !important; }
+          .sv-mob-vtoggle { display: flex; flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--line); }
+          .sv-vtab { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink-mute); display: flex; align-items: center; justify-content: center; gap: 6px; border-bottom: 2.5px solid transparent; transition: all 140ms; }
+          .sv-vtab.on { color: var(--pea-purple-600); border-bottom-color: var(--pea-purple-500); background: rgba(139,63,196,0.07); }
         }
       `}</style>
 
@@ -332,6 +336,16 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             </div>
           </div>
         )}
+      </div>
+
+      {/* Mobile-only view toggle (desktop uses search-view-switcher inside sv-actions) */}
+      <div className="sv-mob-vtoggle">
+        <button className={"sv-vtab" + (view !== "map" ? " on" : "")} onClick={() => setView("list")}>
+          <Icon name="list" size={14} /> รายการ
+        </button>
+        <button className={"sv-vtab" + (view === "map" ? " on" : "")} onClick={() => setView("map")}>
+          <Icon name="map" size={14} /> แผนที่
+        </button>
       </div>
 
       {/* Content */}

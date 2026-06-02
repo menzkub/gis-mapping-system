@@ -5184,7 +5184,6 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
       ["dev_database",   localDev.database   || ""],
       ["dev_stack",      localDev.stack      || ""],
       ["dev_systems",    localDev.systems    || ""],
-      ["dev_version",    localDev.version    || "1.0.0"],
       ["dev_footer",     localDev.footer     || ""],
       ["dev_show_btn",   String(!!localDev.showBtn)],
     ];
@@ -5389,7 +5388,6 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
                   ["ตำแหน่ง", "position", "นักพัฒนาระบบ"],
                   ["แผนก/ฝ่าย", "department", "ฝ่ายสารสนเทศ"],
                   ["สถานที่/สาขา", "location", "กฟจ. เชียงใหม่"],
-                  ["เวอร์ชัน", "version", "v3.1"],
                 ].map(([label, key, ph]) => (
                   <div key={key}>
                     <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
@@ -5399,6 +5397,18 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
                         fontFamily: "inherit", boxSizing: "border-box" }} />
                   </div>
                 ))}
+                {/* Version — read-only, auto-derived from CHANGELOG */}
+                <div>
+                  <label className="text-sm" style={{ fontWeight: 600, display: "block", marginBottom: 5 }}>เวอร์ชัน</label>
+                  <div style={{ padding: "9px 11px", borderRadius: 10, fontSize: 13, border: "1px solid rgba(139,63,196,0.3)",
+                    background: "rgba(139,63,196,0.06)", color: "var(--pea-purple-600)",
+                    display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                    <Icon name="package" size={13} />
+                    {localDev.version || "—"}
+                    <span style={{ fontSize: 9, fontWeight: 600, color: "var(--ink-mute)", marginLeft: "auto", whiteSpace: "nowrap" }}>อัตโนมัติ</span>
+                  </div>
+                  <div className="text-xs t-mute" style={{ marginTop: 4 }}>ดึงจากแท็บอัปเดตอัตโนมัติ</div>
+                </div>
               </div>
               {[
                 ["ฐานข้อมูล", "database", "Supabase (PostgreSQL 15) · Authentication · Row-Level Security (RLS) · Realtime"],
