@@ -5229,9 +5229,9 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
                 ))}
               </div>
               {[
-                ["ฐานข้อมูล", "database", "Supabase (PostgreSQL), PostGIS"],
-                ["Tech Stack", "stack", "React 18, Leaflet.js, Babel Standalone"],
-                ["ระบบ/การเชื่อมต่อ", "systems", "GIS, RLS, Row-Level Security"],
+                ["ฐานข้อมูล", "database", "Supabase (PostgreSQL 15) · Authentication · Row-Level Security (RLS) · Realtime"],
+                ["Tech Stack", "stack", "React 18 (UMD) · Babel Standalone · Leaflet.js 1.9 · Service Worker (PWA) · GitHub Pages · Plus Jakarta Sans · Noto Sans Thai"],
+                ["ระบบ/การเชื่อมต่อ", "systems", "GIS Mapping · 2FA/MFA · Push Notifications · GitHub Actions CI/CD · Google Fonts API · Supabase Auth"],
                 ["ข้อความท้าย (Footer)", "footer", "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)"],
               ].map(([label, key, ph]) => (
                 <div key={key}>
