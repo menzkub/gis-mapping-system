@@ -991,9 +991,9 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
               </div>
               <form onSubmit={verify} className="f-col f-gap-3">
                 <input
-                  style={{ fontSize: "clamp(28px, 9vw, 36px)", letterSpacing: "clamp(0.45em, 1.5vw, 0.65em)",
-                    textAlign: "center", fontWeight: 700,
-                    height: "clamp(64px, 18vw, 80px)", borderRadius: 14,
+                  style={{ fontSize: "clamp(36px, 12vw, 46px)", letterSpacing: "clamp(0.5em, 2vw, 0.72em)",
+                    textAlign: "center", fontWeight: 800,
+                    height: "clamp(82px, 22vw, 96px)", borderRadius: 16,
                     border: `2px solid ${code.length ? "#8b3fc4" : dk.border}`,
                     background: dk.surface2, color: dk.ink, outline: "none", width: "100%",
                     boxSizing: "border-box", transition: "border-color 180ms",
