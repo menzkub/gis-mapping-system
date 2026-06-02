@@ -28,6 +28,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
   ];
   const MOB_MORE = [
     { id:"import",    icon:"upload",    label:t("admMobImport")  },
+    { id:"payments",  icon:"wallet",    label:t("admPayments")   },
     { id:"audit",     icon:"history",   label:t("admMobAudit")   },
     { id:"security",  icon:"lock",      label:t("admMobSecurity")},
     { id:"settings",  icon:"settings",  label:t("admSettings")   },
@@ -138,6 +139,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "map"       && <AdminMapTab data={data} currentUser={currentUser} addAudit={addAudit} />}
         {tab === "import"    && <AdminImport data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "payments"  && <AdminPayments currentUser={currentUser} addAudit={addAudit} />}
         {tab === "audit"     && <AdminAudit />}
         {tab === "security"  && <AdminSecurity data={data} />}
         {tab === "settings"  && <AdminSettings
@@ -2417,7 +2419,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     </div>
                   </div>
                 </td>
-                <td><span className={"badge " + (u.role === "admin" ? "badge-orange" : "badge-blue")}>{u.role}</span></td>
+                <td><span className={"badge " + (u.role === "admin" ? "badge-orange" : u.role === "team_leader" ? "badge-purple" : "badge-blue")}>{u.role}</span></td>
                 <td>
                   <span className={"badge " + (u.status === "active" ? "badge-green" : u.status === "banned" ? "badge-red" : "badge-amber")}>
                     {u.status === "active" ? "ใช้งานได้" : u.status === "banned" ? "ระงับ" : "รออนุมัติ"}
@@ -2619,7 +2621,9 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="field"><label className="field-label">Role</label>
                 <select className="input" value={edit.role} onChange={e => setEdit({ ...edit, role: e.target.value })}>
-                  <option value="user">user</option><option value="admin">admin</option>
+                  <option value="user">user</option>
+                  <option value="team_leader">team_leader</option>
+                  <option value="admin">admin</option>
                 </select>
               </div>
               <div className="field"><label className="field-label">สถานะ</label>
@@ -3009,33 +3013,57 @@ function Field({ label, v, onC, type = "text" }) {
 
 function MinSelect({ label, value, options, onChange }) {
   const [open, setOpen] = useStateAd(false);
-  const ref = React.useRef(null);
+  const [pos, setPos]   = useStateAd({ top: 0, left: 0, width: 0 });
+  const btnRef = React.useRef(null);
+
   useEffectAd(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (btnRef.current && !btnRef.current.contains(e.target) &&
+          !document.getElementById("minsel-drop")?.contains(e.target)) {
+        setOpen(false);
+      }
+    };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
+
+  const toggle = () => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    setOpen(o => !o);
+  };
+
   return (
     <div className="field">
       <label className="field-label">{label}</label>
-      <div ref={ref} style={{ position:"relative" }}>
-        <button type="button" className="input" style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", textAlign:"left" }} onClick={() => setOpen(o => !o)}>
-          <span>{value}</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.45, flexShrink:0, transition:"transform 0.15s", transform: open ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        {open && (
-          <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:300, background:"var(--surface1)", border:"1px solid var(--line)", borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.13)", overflow:"hidden" }}>
-            {options.map(opt => (
-              <div key={opt} onMouseDown={() => { onChange(opt); setOpen(false); }}
-                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", cursor:"pointer", background: opt === value ? "rgba(139,63,196,0.07)" : "transparent", color: opt === value ? "var(--pea-purple-600)" : "var(--ink)", fontWeight: opt === value ? 600 : 400, fontSize:14, transition:"background 0.1s" }}>
-                <span>{opt}</span>
-                {opt === value && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <button ref={btnRef} type="button" className="input"
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", textAlign:"left" }}
+        onClick={toggle}>
+        <span>{value}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+          style={{ opacity:0.45, flexShrink:0, transition:"transform 0.15s", transform: open ? "rotate(180deg)" : "none" }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {open && (
+        <div id="minsel-drop" style={{ position:"fixed", top: pos.top, left: pos.left, width: pos.width, zIndex:99999,
+          background:"var(--surface1,var(--surface))", border:"1px solid var(--line)", borderRadius:10,
+          boxShadow:"0 8px 24px rgba(0,0,0,0.18)", overflow:"hidden" }}>
+          {options.map(opt => (
+            <div key={opt} onMouseDown={() => { onChange(opt); setOpen(false); }}
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px",
+                cursor:"pointer", background: opt === value ? "rgba(139,63,196,0.07)" : "transparent",
+                color: opt === value ? "var(--pea-purple-600)" : "var(--ink)",
+                fontWeight: opt === value ? 600 : 400, fontSize:14 }}>
+              <span>{opt}</span>
+              {opt === value && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -6387,6 +6415,246 @@ function PoweredByTab() {
           )}
         </span>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Admin Payments — review all team leader slips ---------- */
+function AdminPayments({ currentUser, addAudit }) {
+  const { lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  const [slips, setSlips]         = useStateAd([]);
+  const [leaders, setLeaders]     = useStateAd([]);
+  const [loading, setLoading]     = useStateAd(true);
+  const [filterLeader, setFilterLeader] = useStateAd("");
+  const [filterStatus, setFilterStatus] = useStateAd("");
+  const [filterMonth,  setFilterMonth]  = useStateAd("");
+  const [viewSlip,  setViewSlip]  = useStateAd(null);
+  const [reviewing, setReviewing] = useStateAd(false);
+  const [notes, setNotes]         = useStateAd("");
+  const [refreshKey, setRefreshKey] = useStateAd(0);
+
+  useEffectAd(() => {
+    setLoading(true);
+    Promise.all([
+      _supabase.from("payment_slips").select("*").order("submitted_at", { ascending: false }),
+      _supabase.from("profiles").select("id,username,name").eq("role", "team_leader"),
+    ]).then(([slipsRes, leadersRes]) => {
+      setSlips(slipsRes.data || []);
+      setLeaders(leadersRes.data || []);
+      setLoading(false);
+    });
+  }, [refreshKey]);
+
+  const leaderName = (id) => leaders.find(l => l.id === id)?.name || id?.slice(0, 8);
+  const leaderUsername = (id) => leaders.find(l => l.id === id)?.username || "—";
+
+  const fmtMonth = (ym) => {
+    if (!ym) return "—";
+    const [y, m] = ym.split("-");
+    const thM = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+    return `${thM[+m - 1]} ${+y + 543}`;
+  };
+
+  const filtered = slips.filter(sl =>
+    (!filterLeader || sl.team_leader_id === filterLeader) &&
+    (!filterStatus || sl.status === filterStatus) &&
+    (!filterMonth  || sl.payment_month === filterMonth)
+  );
+
+  const doReview = async (slip, newStatus) => {
+    const ok = await confirm({
+      title: newStatus === "approved" ? s("อนุมัติการชำระเงิน","Approve Payment") : s("ปฏิเสธการชำระเงิน","Reject Payment"),
+      message: newStatus === "approved"
+        ? <>{s("อนุมัติสลิปเดือน","Approve slip for")} <b>{fmtMonth(slip.payment_month)}</b> {s("ของ","from")} <b>{leaderName(slip.team_leader_id)}</b>?</>
+        : <>{s("ปฏิเสธสลิปเดือน","Reject slip for")} <b>{fmtMonth(slip.payment_month)}</b>?</>,
+      confirmText: newStatus === "approved" ? s("อนุมัติ","Approve") : s("ปฏิเสธ","Reject"),
+      tone: newStatus === "approved" ? "primary" : "danger",
+    });
+    if (!ok) return;
+    setReviewing(true);
+    const { error } = await _supabase.from("payment_slips").update({
+      status: newStatus,
+      notes: notes || null,
+      reviewed_by: currentUser.id,
+      reviewed_at: new Date().toISOString(),
+    }).eq("id", slip.id);
+    setReviewing(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    addAudit({ user: currentUser.username, action: `payment_${newStatus}`, target: slip.team_leader_id, detail: `${newStatus} สลิป ${fmtMonth(slip.payment_month)} ของ @${leaderUsername(slip.team_leader_id)}` });
+    toast?.(newStatus === "approved" ? s("อนุมัติแล้ว","Approved") : s("ปฏิเสธแล้ว","Rejected"), "success");
+    setViewSlip(null); setNotes("");
+    setRefreshKey(k => k + 1);
+  };
+
+  const statusBadge = (st) => {
+    if (st === "approved") return <span className="badge badge-green">{s("อนุมัติแล้ว","Approved")}</span>;
+    if (st === "rejected") return <span className="badge badge-red">{s("ปฏิเสธ","Rejected")}</span>;
+    return <span className="badge badge-amber">{s("รอตรวจสอบ","Pending")}</span>;
+  };
+
+  // Stats
+  const nowMonth = new Date().toISOString().slice(0, 7);
+  const pendingCount  = slips.filter(s => s.status === "pending").length;
+  const paidThisMonth = slips.filter(s => s.payment_month === nowMonth && s.status === "approved").length;
+
+  return (
+    <div className="card card-elev fade-up">
+      <div style={{ marginBottom:20 }}>
+        <div className="text-lg fw-7">{s("การชำระเงิน","Payments")} {loading ? "…" : `(${filtered.length})`}</div>
+        <div className="t-mute text-sm">{s("ตรวจสอบและอนุมัติสลิปการชำระเงินของหัวหน้าทีม","Review and approve team leader payment slips")}</div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 }}>
+        {[
+          { label:s("รอตรวจสอบ","Pending"),       value:pendingCount,             color:"#f59e0b" },
+          { label:s("ชำระแล้วเดือนนี้","Paid this month"), value:paidThisMonth,     color:"#10b981" },
+          { label:s("หัวหน้าทีมทั้งหมด","Team leaders"),   value:leaders.length,    color:"#6b2c91" },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{ background:"var(--surface2)", borderRadius:12, padding:"14px 16px", textAlign:"center" }}>
+            <div style={{ fontSize:26, fontWeight:800, color }}>{value}</div>
+            <div className="t-mute text-xs" style={{ marginTop:2 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:16 }}>
+        <select className="input" style={{ flex:"1 1 160px", height:38 }} value={filterLeader} onChange={e => setFilterLeader(e.target.value)}>
+          <option value="">{s("ทุกหัวหน้าทีม","All team leaders")}</option>
+          {leaders.map(l => <option key={l.id} value={l.id}>{l.name} (@{l.username})</option>)}
+        </select>
+        <select className="input" style={{ flex:"0 0 140px", height:38 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="">{s("ทุกสถานะ","All statuses")}</option>
+          <option value="pending">{s("รอตรวจสอบ","Pending")}</option>
+          <option value="approved">{s("อนุมัติแล้ว","Approved")}</option>
+          <option value="rejected">{s("ปฏิเสธ","Rejected")}</option>
+        </select>
+        <input className="input" type="month" style={{ flex:"0 0 160px", height:38 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div style={{ textAlign:"center", padding:40, color:"var(--t-mute)" }}>{s("กำลังโหลด…","Loading…")}</div>
+      ) : !filtered.length ? (
+        <div style={{ textAlign:"center", padding:40, color:"var(--t-mute)" }}>{s("ไม่พบรายการ","No records found")}</div>
+      ) : (
+        <div style={{ overflow:"auto", maxHeight:"60vh" }}>
+          <table className="table">
+            <thead><tr>
+              <th>{s("หัวหน้าทีม","Team Leader")}</th>
+              <th>{s("เดือน","Month")}</th>
+              <th>{s("จำนวนเงิน","Amount")}</th>
+              <th>{s("เลขอ้างอิง","Reference")}</th>
+              <th>{s("สถานะ","Status")}</th>
+              <th>{s("ส่งเมื่อ","Submitted")}</th>
+              <th></th>
+            </tr></thead>
+            <tbody>
+              {filtered.map(sl => (
+                <tr key={sl.id} style={{ cursor:"pointer" }} onClick={() => { setViewSlip(sl); setNotes(sl.notes || ""); }}>
+                  <td>
+                    <div className="fw-6">{leaderName(sl.team_leader_id)}</div>
+                    <div className="t-mute text-xs mono">@{leaderUsername(sl.team_leader_id)}</div>
+                  </td>
+                  <td className="fw-6">{fmtMonth(sl.payment_month)}</td>
+                  <td className="mono fw-6">{sl.amount_baht ? `฿${Number(sl.amount_baht).toLocaleString()}` : "—"}</td>
+                  <td className="mono text-xs t-mute">{sl.ref_number || "—"}</td>
+                  <td>{statusBadge(sl.status)}</td>
+                  <td className="text-xs t-mute">{sl.submitted_at?.slice(0,16).replace("T"," ")}</td>
+                  <td>
+                    {sl.status === "pending" && (
+                      <div className="row-action" onClick={e => e.stopPropagation()}>
+                        <button className="btn btn-primary btn-sm" style={{ fontSize:11, height:30 }} onClick={() => { setViewSlip(sl); setNotes(""); }}>
+                          <Icon name="check" size={12} /> {s("ตรวจสอบ","Review")}
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Slip review modal */}
+      <Modal
+        open={!!viewSlip}
+        onClose={() => { setViewSlip(null); setNotes(""); }}
+        title={viewSlip ? `${s("สลิป","Slip")} · ${leaderName(viewSlip.team_leader_id)} · ${fmtMonth(viewSlip.payment_month)}` : ""}
+        width={640}
+        footer={
+          viewSlip?.status === "pending" ? (
+            <>
+              <button className="btn btn-outline" onClick={() => { setViewSlip(null); setNotes(""); }}>{s("ยกเลิก","Cancel")}</button>
+              <button className="btn btn-outline" style={{ color:"var(--red)", borderColor:"rgba(239,68,68,0.4)" }}
+                onClick={() => doReview(viewSlip, "rejected")} disabled={reviewing}>
+                <Icon name="trash" size={13} /> {s("ปฏิเสธ","Reject")}
+              </button>
+              <button className="btn btn-primary" onClick={() => doReview(viewSlip, "approved")} disabled={reviewing}>
+                <Icon name="check" size={13} /> {s("อนุมัติ","Approve")}
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-outline" onClick={() => setViewSlip(null)}>{s("ปิด","Close")}</button>
+          )
+        }
+      >
+        {viewSlip && (
+          <div>
+            {viewSlip.slip_url && (
+              <img src={viewSlip.slip_url} alt="slip" style={{ width:"100%", borderRadius:12, marginBottom:16, maxHeight:380, objectFit:"contain", background:"var(--surface2)" }} />
+            )}
+            <div style={{ background:"var(--surface2)", borderRadius:12, padding:"12px 16px", marginBottom:12 }}>
+              {[
+                [s("หัวหน้าทีม","Team Leader"), `${leaderName(viewSlip.team_leader_id)} (@${leaderUsername(viewSlip.team_leader_id)})`],
+                [s("เดือน","Month"),             fmtMonth(viewSlip.payment_month)],
+                [s("จำนวนเงิน","Amount"),        viewSlip.amount_baht ? `฿${Number(viewSlip.amount_baht).toLocaleString()}` : "—"],
+                [s("เลขอ้างอิง","Reference"),    viewSlip.ref_number || "—"],
+                [s("สถานะ","Status"),            {pending:s("รอตรวจสอบ","Pending"),approved:s("อนุมัติแล้ว","Approved"),rejected:s("ปฏิเสธ","Rejected")}[viewSlip.status]],
+                [s("ส่งเมื่อ","Submitted"),      viewSlip.submitted_at?.slice(0,16).replace("T"," ")],
+              ].map(([k, v]) => (
+                <div key={k} style={{ display:"flex", alignItems:"baseline", gap:14, padding:"9px 0", borderBottom:"1px solid var(--line)" }}>
+                  <span style={{ width:110, flexShrink:0, fontSize:11, fontWeight:600, color:"var(--t-mute)", textTransform:"uppercase", letterSpacing:"0.04em" }}>{k}</span>
+                  <span style={{ fontSize:13, fontFamily:"'IBM Plex Mono',monospace", color:"var(--ink)", wordBreak:"break-all" }}>{v}</span>
+                </div>
+              ))}
+            </div>
+            {/* OCR data if available */}
+            {viewSlip.ocr_data && Object.keys(viewSlip.ocr_data).some(k => viewSlip.ocr_data[k]) && (
+              <div style={{ background:"rgba(139,63,196,0.06)", borderRadius:12, padding:"12px 16px", marginBottom:12, border:"1px solid rgba(139,63,196,0.15)" }}>
+                <div className="fw-7 text-xs" style={{ marginBottom:8, color:"var(--pea-purple-600)", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                  {s("ข้อมูลจาก OCR","OCR Data")}
+                </div>
+                {Object.entries(viewSlip.ocr_data).filter(([,v]) => v != null).map(([k, v]) => (
+                  <div key={k} style={{ display:"flex", gap:12, padding:"6px 0", borderBottom:"1px solid rgba(139,63,196,0.1)", fontSize:12 }}>
+                    <span style={{ width:100, flexShrink:0, fontWeight:600, color:"var(--pea-purple-500)", textTransform:"uppercase", fontSize:10, letterSpacing:"0.04em", paddingTop:2 }}>{k}</span>
+                    <span style={{ fontFamily:"monospace", color:"var(--ink)" }}>{String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {viewSlip.status === "pending" && (
+              <div className="field" style={{ marginBottom:0 }}>
+                <label className="field-label">{s("หมายเหตุ (ไม่บังคับ)","Notes (optional)")}</label>
+                <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)}
+                  placeholder={s("เหตุผลในการอนุมัติหรือปฏิเสธ…","Reason for approval or rejection…")}
+                  style={{ resize:"vertical" }} />
+              </div>
+            )}
+            {viewSlip.status !== "pending" && viewSlip.notes && (
+              <div style={{ padding:"10px 14px", background: viewSlip.status === "rejected" ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)", borderRadius:10, border:`1px solid ${viewSlip.status === "rejected" ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`, fontSize:13 }}>
+                <span className="fw-6">{s("หมายเหตุ: ","Note: ")}</span>{viewSlip.notes}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

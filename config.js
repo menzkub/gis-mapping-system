@@ -92,6 +92,7 @@ function toProfile(row) {
     role:              row.role              || "user",
     status:            row.status            || "pending",
     require_2fa:       row.require_2fa       || false,
+    team_leader_id:    row.team_leader_id    || null,
     created:           row.created_at        ? row.created_at.slice(0, 10) : "",
     lastLogin:         row.last_login        ? row.last_login.replace("T", " ").slice(0, 16) : "—",
     passwordChangedAt: row.password_changed_at || null,

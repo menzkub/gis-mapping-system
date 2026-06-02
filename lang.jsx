@@ -21,6 +21,11 @@ const TRANSLATIONS = {
 
     // ── Navigation ─────────────────────────────────────────
     navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin", navGuide: "คู่มือการใช้งาน", navChangelog: "อัปเดต",
+    navPayment: "ชำระเงิน",
+    baseMapStreet: "ถนน", baseMapSatellite: "ดาวเทียม",
+
+    // ── Admin payments tab ──────────────────────────────────
+    admPayments: "การชำระเงิน",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "วันนี้ •", greeting: "สวัสดี",
@@ -213,6 +218,11 @@ const TRANSLATIONS = {
 
     // ── Navigation ─────────────────────────────────────────
     navSearch: "Search", navProfile: "My Account", navAdmin: "Admin", navGuide: "User Manual", navChangelog: "Updates",
+    navPayment: "Payment",
+    baseMapStreet: "Street", baseMapSatellite: "Satellite",
+
+    // ── Admin payments tab ──────────────────────────────────
+    admPayments: "Payments",
 
     // ── Topbar ─────────────────────────────────────────────
     todayLabel: "Today •", greeting: "Hello",

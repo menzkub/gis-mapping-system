@@ -3472,11 +3472,15 @@ function App() {
     />
   );
 
-  const isAdmin = currentUser.role === "admin";
+  const isAdmin      = currentUser.role === "admin";
+  const isTeamLeader = currentUser.role === "team_leader";
   const navItems = [
     { id: "search",    icon: "search",   label: t("navSearch")    },
     { id: "profile",   icon: "user",     label: t("navProfile")   },
     { id: "guide",     icon: "book",     label: t("navGuide")     },
+    ...(isTeamLeader ? [
+      { id: "payment",   icon: "wallet",   label: t("navPayment")   },
+    ] : []),
     ...(isAdmin ? [
       { id: "changelog", icon: "bolt",     label: t("navChangelog") },
       { id: "admin",     icon: "settings", label: t("navAdmin")     },
@@ -3489,6 +3493,7 @@ function App() {
     { id: "trs",       icon: "tr",        label: t("admTrs")       },
     { id: "map",       icon: "map",       label: t("admMap")       },
     { id: "import",    icon: "upload",    label: t("admImport")    },
+    { id: "payments",  icon: "wallet",    label: t("admPayments")  },
     { id: "audit",     icon: "history",   label: t("admAudit")     },
     { id: "security",  icon: "lock",      label: t("admSecurity")  },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
@@ -4081,6 +4086,9 @@ function App() {
           )}
           {route === "guide" && (
             <UserGuide role={currentUser.role} />
+          )}
+          {route === "payment" && isTeamLeader && (
+            <PaymentView currentUser={currentUser} addAudit={addAudit} />
           )}
           {route === "changelog" && currentUser.role === "admin" && (
             <ChangelogView />

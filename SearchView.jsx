@@ -23,7 +23,8 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [selectedId, setSelectedId] = useStateS(null);
   const [showHeatmap, setShowHeatmap] = useStateS(false);
   const [showCluster, setShowCluster] = useStateS(true);
-  const [view, setView]             = useStateS(() => window.innerWidth <= 640 ? "map" : "split");
+  const [svBaseMap, setSvBaseMap]   = useStateS(baseMap || "street");
+  const [showBaseMenu, setShowBaseMenu] = useStateS(false);
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
   const [showExportDialog, setShowExportDialog] = useStateS(false);
@@ -158,7 +159,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-body { padding: 12px 18px 16px; }
         }
         .sv-body.sv-map-only { padding: 0 !important; }
-        .sv-mob-vtoggle { display: none; }
+        .sv-basemap-btn { height: 54px; border-radius: 16px; white-space: nowrap; flex-shrink: 0; gap: 6px; }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
@@ -167,17 +168,13 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           .sv-tabs { width: 100% !important; flex-shrink: 1 !important; }
           .sv-tabs .tab { flex: 1; justify-content: center; font-size: 13px !important; padding: 0 12px !important; height: 44px !important; white-space: nowrap; }
           .sv-controls { flex-wrap: wrap; gap: 8px; }
-          .sv-search-wrap { flex-basis: 100%; }
+          .sv-search-wrap { flex-basis: 100%; flex: 1; }
           .sv-actions { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; width: 100%; }
           .sv-actions::-webkit-scrollbar { display: none; }
           .search-filter-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
-          .search-view-switcher { display: none !important; }
+          .sv-basemap-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; }
           .search-export-btn { height: 40px !important; font-size: 12px !important; border-radius: 12px !important; white-space: nowrap; flex-shrink: 0; }
           .input-lg { height: 48px !important; }
-          .sv-split-btn { display: none !important; }
-          .sv-mob-vtoggle { display: flex; flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--line); }
-          .sv-vtab { flex: 1; padding: 10px 0; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink-mute); display: flex; align-items: center; justify-content: center; gap: 6px; border-bottom: 2.5px solid transparent; transition: all 140ms; }
-          .sv-vtab.on { color: var(--pea-purple-600); border-bottom-color: var(--pea-purple-500); background: rgba(139,63,196,0.07); }
         }
       `}</style>
 
@@ -271,16 +268,34 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               )}
             </button>
 
-            <div className="search-view-switcher tabs" style={{ padding: 4, flexShrink: 0 }}>
-              {[
-                { id: "list",  icon: "list",   label: "รายการ",       cls: "" },
-                { id: "split", icon: "layers", label: t("splitView"), cls: "sv-split-btn" },
-                { id: "map",   icon: "map",    label: t("mapView"),   cls: "" },
-              ].map(v => (
-                <button key={v.id} className={"tab " + (view === v.id ? "active" : "") + (v.cls ? " " + v.cls : "")} style={{ height: 46, padding: "0 14px" }} onClick={() => setView(v.id)}>
-                  <Icon name={v.icon} size={14} /> {v.label}
-                </button>
-              ))}
+            {/* Street / Satellite basemap toggle */}
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <button className="sv-basemap-btn btn btn-outline" onClick={() => setShowBaseMenu(m => !m)}>
+                <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={15} />
+                {svBaseMap === "satellite" ? t("baseMapSatellite") : t("baseMapStreet")}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.5, marginLeft:2, transition:"transform 0.15s", transform: showBaseMenu ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {showBaseMenu && (
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
+                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 150 }}>
+                    {[
+                      { id: "street",    icon: "map",   label: t("baseMapStreet")    },
+                      { id: "satellite", icon: "globe", label: t("baseMapSatellite") },
+                    ].map(opt => (
+                      <div key={opt.id} onClick={() => { setSvBaseMap(opt.id); setShowBaseMenu(false); }}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer",
+                          background: svBaseMap === opt.id ? "rgba(139,63,196,0.07)" : "transparent",
+                          color: svBaseMap === opt.id ? "var(--pea-purple-600)" : "var(--ink)",
+                          fontWeight: svBaseMap === opt.id ? 600 : 400, fontSize:14 }}>
+                        <Icon name={opt.icon} size={14} />
+                        <span style={{ flex:1 }}>{opt.label}</span>
+                        {svBaseMap === opt.id && <Icon name="check" size={13} />}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {(allowExport || currentUser?.role === "admin") ? (
@@ -338,76 +353,19 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         )}
       </div>
 
-      {/* Mobile-only view toggle (desktop uses search-view-switcher inside sv-actions) */}
-      <div className="sv-mob-vtoggle">
-        <button className={"sv-vtab" + (view !== "map" ? " on" : "")} onClick={() => setView("list")}>
-          <Icon name="list" size={14} /> รายการ
-        </button>
-        <button className={"sv-vtab" + (view === "map" ? " on" : "")} onClick={() => setView("map")}>
-          <Icon name="map" size={14} /> แผนที่
-        </button>
-      </div>
+      {/* Content — always map */}
+      <div className="sv-body sv-map-only" style={{ flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
 
-      {/* Content */}
-      <div className={"sv-body" + (view === "map" ? " sv-map-only" : "")} style={{ flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: view === "split" ? "clamp(300px,38%,520px) 1fr" : "1fr", gap: view === "split" ? 16 : 0 }}>
-
-          {/* List panel — shown in "list" and "split" views */}
-          {(view === "list" || view === "split") && (
-            <div style={{ minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              {!hasSearched ? (
-                <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ textAlign: "center", padding: 40 }}>
-                    <div style={{ width: 72, height: 72, borderRadius: 20, margin: "0 auto 20px", background: "var(--soft)", display: "grid", placeItems: "center" }}>
-                      <Icon name="search" size={32} style={{ color: "var(--ink-mute)" }} />
-                    </div>
-                    <div className="fw-7" style={{ fontSize: 18, marginBottom: 8 }}>{t("typeToSearch")}</div>
-                    <div className="t-mute text-sm">
-                      {tab === "meter"
-                        ? t("searchFromMeter").replace("{n}", totalCount.toLocaleString())
-                        : t("searchFromTr").replace("{n}", totalCount.toLocaleString())}
-                    </div>
-                    <div className="t-mute text-xs" style={{ marginTop: 8 }}>{t("useFilter")}</div>
-                  </div>
-                </div>
-              ) : searching ? (
-                <div className="card" style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 14, margin: "0 auto 16px", background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center", animation: "pea-spin 1.2s linear infinite" }}>
-                      <Icon name="search" size={22} style={{ color: "white" }} />
-                    </div>
-                    <div className="fw-6">{t("searching")}</div>
-                  </div>
-                </div>
-              ) : results.length === 0 ? (
-                <div className="card" style={{ flex: 1, minHeight: 0 }}>
-                  <EmptyState title={t("notFound")} hint={t("notFoundHint")} />
-                </div>
-              ) : (
-                <ResultList
-                  kind={tab}
-                  items={results}
-                  selectedId={selectedId}
-                  onSelect={(p) => setSelectedId(p.OBJECTID)}
-                  onNavigate={(p) => setNavTarget(p)}
-                  capped={results.length >= 500}
-                  copyCoords={copyCoords}
-                  copied={copied}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Map panel — always visible in "map" and "split" views (even before search) */}
-          {(view === "map" || view === "split") && (
-            <div style={{ position: "relative", height: "100%", minHeight: 300, overflow: "hidden" }}>
+          {/* Map — always visible */}
+          <div style={{ position: "relative", height: "100%", minHeight: 300, overflow: "hidden" }}>
               <MapView
                 points={results}
                 kind={tab}
                 selectedId={selectedId}
                 onSelect={(p) => setSelectedId(p.OBJECTID)}
                 onNavigate={(p) => setNavTarget(p)}
-                baseMap={baseMap}
+                baseMap={svBaseMap}
                 showHeatmap={showHeatmap}
                 showCluster={showCluster}
               />
@@ -437,7 +395,6 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 </div>
               )}
             </div>
-          )}
         </div>
       </div>
 
