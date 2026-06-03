@@ -524,6 +524,12 @@ function DbUsageCard() {
 
   useEffectAd(() => { load(); }, []);
 
+  useEffectAd(() => {
+    const handler = () => loadPhotoStats();
+    window.addEventListener("pea-photo-changed", handler);
+    return () => window.removeEventListener("pea-photo-changed", handler);
+  }, []);
+
   const totalEstKb  = counts ? DB_TABLES.reduce((a, t) => a + ((counts[t.key] ?? 0) * t.kb), 0) : 0;
   const totalEstMb  = totalEstKb / 1024;
   const pct         = Math.min((totalEstMb / FREE_LIMIT_MB) * 100, 100);

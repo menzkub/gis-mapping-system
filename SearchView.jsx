@@ -1127,16 +1127,38 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
       const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const maxDim = 1200;
+        const maxDim = 900;
         const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH"), addedBy: currentUser?.username || "user" };
-        const next = [photo, ...photos];
-        setPhotos(next);
-        try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+
+        // ลองคุณภาพสูงสุดก่อน แล้วลดลงถ้า localStorage เต็ม
+        const tryQualities = [0.72, 0.55, 0.40];
+        let saved = false;
+        for (const q of tryQualities) {
+          const dataUrl = canvas.toDataURL("image/jpeg", q);
+          const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH"), addedBy: currentUser?.username || "user" };
+          const next = [photo, ...photos];
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(next));
+            setPhotos(next);
+            saved = true;
+            try { window.dispatchEvent(new CustomEvent("pea-photo-changed")); } catch {}
+            break;
+          } catch (err) {
+            if (q === tryQualities[tryQualities.length - 1]) {
+              // ลองทุกคุณภาพแล้วยังไม่ได้ — storage เต็ม
+              toast?.("⚠️ พื้นที่เก็บข้อมูลเต็ม — ลบภาพเก่าออกก่อนแล้วลองใหม่\n(localStorage เต็ม: " + err.name + ")", "error");
+            }
+          }
+        }
+        if (!saved) {
+          // ไม่บันทึก localStorage แต่แสดงในหน้าต่อนี้ชั่วคราว
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.40);
+          const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH"), addedBy: currentUser?.username || "user" };
+          setPhotos([photo, ...photos]);
+        }
       };
       img.src = ev.target.result;
     };
@@ -1152,7 +1174,10 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
     setPhotos(next);
     if (preview?.id === id) setPreview(null);
     setConfirmId(null);
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("pea-photo-changed"));
+    } catch {}
     // บันทึกประวัติการลบลง Supabase audit_log (fallback localStorage)
     const auditRow = {
       username: currentUser?.username || "admin",
