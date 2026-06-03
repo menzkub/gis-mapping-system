@@ -112,7 +112,7 @@ function Modal({ open, onClose, title, children, footer, width = 520 }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  return ReactDOM.createPortal(
     <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{
         background: "var(--surface)", borderRadius: 20, width: "100%", maxWidth: width,
@@ -126,7 +126,8 @@ function Modal({ open, onClose, title, children, footer, width = 520 }) {
         <div style={{ padding: "20px 24px", flex: 1, overflow: "auto" }}>{children}</div>
         {footer && <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", padding: "16px 24px", borderTop: "1px solid var(--line)", background: "var(--bg)", flexShrink: 0 }}>{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
