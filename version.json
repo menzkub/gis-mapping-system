@@ -1,7 +1,7 @@
 {
-  "commit": "bd7da4171aa814dd86fbc662dd7184256f838b30",
-  "shortCommit": "bd7da41",
-  "message": "Fix transformer search: remove ::text cast from .or() filter",
-  "date": "2026-06-03T15:05:22Z",
+  "commit": "f204094d1f33857004bef74ef9fbe76345b35e04",
+  "shortCommit": "f204094",
+  "message": "Add save-popup-as-image button to meter and transformer popups",
+  "date": "2026-06-03T15:11:42Z",
   "branch": "main"
 }
