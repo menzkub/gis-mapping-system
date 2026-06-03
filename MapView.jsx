@@ -105,6 +105,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
           <div style="display:flex;gap:6px;margin-top:6px">
             <button data-qr data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">🔗 QR Code</button>
             <button data-photo data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">📷 ภาพถ่าย</button>
+            <button data-saveimg data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">📥 บันทึกภาพ</button>
           </div>
         </div>`;
     } else {
@@ -135,6 +136,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
           <div style="display:flex;gap:6px;margin-top:6px">
             <button data-qr data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">🔗 QR Code</button>
             <button data-photo data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">📷 ภาพถ่าย</button>
+            <button data-saveimg data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">📥 บันทึกภาพ</button>
           </div>
         </div>`;
     }
@@ -185,6 +187,28 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
         });
         root.querySelectorAll("button[data-qr]").forEach(b => { b.onclick = () => onQrCode?.(p); });
         root.querySelectorAll("button[data-photo]").forEach(b => { b.onclick = () => onPhoto?.(p); });
+        root.querySelectorAll("button[data-saveimg]").forEach(b => {
+          b.onclick = async () => {
+            const wrapper = root.querySelector(".leaflet-popup-content-wrapper") || root;
+            const origHtml = b.innerHTML;
+            b.innerHTML = "⏳";
+            b.disabled = true;
+            try {
+              const canvas = await window.html2canvas(wrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: null });
+              const link = document.createElement("a");
+              const label = p.PEANO || p.PEANO_TR || p.TAG || String(p.OBJECTID);
+              link.download = `pea-${kind === "meter" ? "meter" : "tr"}-${label}.png`;
+              link.href = canvas.toDataURL("image/png");
+              link.click();
+            } catch (err) {
+              console.error("html2canvas error", err);
+              alert("ไม่สามารถบันทึกภาพได้");
+            } finally {
+              b.innerHTML = origHtml;
+              b.disabled = false;
+            }
+          };
+        });
       });
       return m;
     };
