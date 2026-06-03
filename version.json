@@ -1,7 +1,7 @@
 {
-  "commit": "c97807aac98d7f88e52b16c44e56e80c5d3d0b79",
-  "shortCommit": "c97807a",
-  "message": "Fix modal centering, suspended UX, and dashboard stats",
-  "date": "2026-06-03T03:12:12Z",
+  "commit": "d0d5f2283c29eaf2481d1606bd7cbb459a2ad892",
+  "shortCommit": "d0d5f22",
+  "message": "Update dashboard: add refresh button and 2 new DB tables",
+  "date": "2026-06-03T03:26:44Z",
   "branch": "main"
 }
