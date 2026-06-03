@@ -1,7 +1,7 @@
 {
-  "commit": "37332fd56ee3e1c2d710d3382780db0d43951403",
-  "shortCommit": "37332fd",
-  "message": "Fix search: use .eq() for numeric PEANO/accountnum, surface query errors",
-  "date": "2026-06-03T08:01:18Z",
+  "commit": "b7d71f35f461d1509b18621066598c9ae7d7983a",
+  "shortCommit": "b7d71f3",
+  "message": "Add SQL migration: database indexes for search columns",
+  "date": "2026-06-03T08:37:39Z",
   "branch": "main"
 }
