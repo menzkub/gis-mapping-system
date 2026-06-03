@@ -4217,55 +4217,130 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
 }
 
 function MapQuickEditModal({ target, saving, onClose, onSave }) {
-  const { lang } = useLang();
-  const s = (th, en) => lang === "en" ? en : th;
   const { p, isMeter } = target;
-  const [form, setForm] = useStateAd({ LATITUDE: p.LATITUDE, LONGITUDE: p.LONGITUDE });
+  const miniMapRef = React.useRef(null);
+  const miniMapInst = React.useRef(null);
+  const newMarkerRef = React.useRef(null);
+  const [newLat, setNewLat] = useStateAd(p.LATITUDE);
+  const [newLng, setNewLng] = useStateAd(p.LONGITUDE);
+  const [locating, setLocating] = useStateAd(false);
+  const [gpsError, setGpsError] = useStateAd("");
   const label = isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG);
 
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setGpsError("อุปกรณ์นี้ไม่รองรับ GPS"); return; }
+    setLocating(true);
+    setGpsError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = +pos.coords.latitude.toFixed(6);
+        const lng = +pos.coords.longitude.toFixed(6);
+        setNewLat(lat);
+        setNewLng(lng);
+        if (newMarkerRef.current) newMarkerRef.current.setLatLng([lat, lng]);
+        if (miniMapInst.current) miniMapInst.current.setView([lat, lng], 18);
+        setLocating(false);
+      },
+      (err) => {
+        setGpsError(err.code === 1 ? "กรุณาอนุญาตการเข้าถึงตำแหน่ง" : "ไม่สามารถรับพิกัดได้");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  useEffectAd(() => {
+    if (!miniMapRef.current || miniMapInst.current) return;
+    const map = L.map(miniMapRef.current, { center: [p.LATITUDE, p.LONGITUDE], zoom: 17, zoomControl: true });
+    L.tileLayer(TILE_LAYERS.street.url, { attribution: TILE_LAYERS.street.attribution, maxZoom: 19 }).addTo(map);
+    const oldIcon = L.divIcon({ className: "", html: `<div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>`, iconSize: [14,14], iconAnchor: [7,7] });
+    L.marker([p.LATITUDE, p.LONGITUDE], { icon: oldIcon }).addTo(map).bindTooltip("พิกัดเดิม", { permanent: false });
+    const newIcon = L.divIcon({ className: "", html: `<div style="width:18px;height:18px;border-radius:50%;background:#eab308;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:move"></div>`, iconSize: [18,18], iconAnchor: [9,9] });
+    const nm = L.marker([p.LATITUDE, p.LONGITUDE], { icon: newIcon, draggable: true }).addTo(map).bindTooltip("พิกัดใหม่", { permanent: false });
+    nm.on('drag dragend', () => {
+      const ll = nm.getLatLng();
+      setNewLat(+ll.lat.toFixed(6));
+      setNewLng(+ll.lng.toFixed(6));
+    });
+    map.on('click', (e) => {
+      nm.setLatLng(e.latlng);
+      setNewLat(+e.latlng.lat.toFixed(6));
+      setNewLng(+e.latlng.lng.toFixed(6));
+    });
+    newMarkerRef.current = nm;
+    miniMapInst.current = map;
+    return () => { if (miniMapInst.current) { miniMapInst.current.remove(); miniMapInst.current = null; } };
+  }, []);
+
+  useEffectAd(() => {
+    if (newMarkerRef.current && isFinite(newLat) && isFinite(newLng))
+      newMarkerRef.current.setLatLng([newLat, newLng]);
+  }, [newLat, newLng]);
+
+  const samePos = Math.abs(newLat - p.LATITUDE) < 0.00001 && Math.abs(newLng - p.LONGITUDE) < 0.00001;
+
   return (
-    <div className="fade-in pea-modal-overlay" style={{ zIndex: 9500 }} onClick={onClose}>
-      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 380, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9950, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div className="card card-elev fade-up" style={{ maxWidth: 580, width: "100%", padding: 0, overflow: "hidden" }}>
         {/* Header */}
-        <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: isMeter ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "linear-gradient(135deg,#f47b20,#d96512)", display: "grid", placeItems: "center", color: "white", fontWeight: 900, fontSize: 15, flexShrink: 0 }}>
-              {isMeter ? "M" : "T"}
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>{s("แก้ไขพิกัด","Edit Coordinates")}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "monospace" }}>{label}</div>
-            </div>
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg,#ca8a04,#eab308)", color: "white", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            📍
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer" }}>
-            <Icon name="close" size={14} />
-          </button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>แก้ไขพิกัด</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{isMeter ? "Meter" : "Transformer"} · <span style={{ fontFamily: "monospace" }}>{label}</span></div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: "20px 22px" }}>
-          <div style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(107,44,145,0.07)", border: "1px solid rgba(107,44,145,0.15)", fontSize: 12, color: "var(--ink-mute)", display: "flex", alignItems: "center", gap: 7 }}>
-            <Icon name="map" size={13} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
-            {s("แก้ไขเฉพาะพิกัด (Lat/Lng) เท่านั้น — บันทึกทันที","Edit coordinates only — saved immediately")}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div className="field" style={{ margin: 0 }}>
-              <label className="field-label">LATITUDE</label>
-              <input className="input" type="number" step="any" value={form.LATITUDE ?? ""} onChange={e => setForm(f => ({ ...f, LATITUDE: +e.target.value }))} style={{ height: 42, fontFamily: "monospace" }} />
+        {/* Body: mini-map left, form right */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          <div ref={miniMapRef} style={{ height: 300, borderRight: "1px solid var(--line)" }} />
+          <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", height: 300 }}>
+            {/* Old coords */}
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginBottom: 3 }}>🔴 พิกัดเดิม</div>
+              <div style={{ fontSize: 11, fontFamily: "monospace", background: "var(--surface-2)", padding: "4px 8px", borderRadius: 7, color: "var(--ink-mute)" }}>
+                {p.LATITUDE.toFixed(6)}, {p.LONGITUDE.toFixed(6)}
+              </div>
             </div>
-            <div className="field" style={{ margin: 0 }}>
-              <label className="field-label">LONGITUDE</label>
-              <input className="input" type="number" step="any" value={form.LONGITUDE ?? ""} onChange={e => setForm(f => ({ ...f, LONGITUDE: +e.target.value }))} style={{ height: 42, fontFamily: "monospace" }} />
+            {/* New coords */}
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 5 }}>🟡 พิกัดใหม่</div>
+              <button onClick={useMyLocation} disabled={locating} style={{
+                width: "100%", padding: "8px 0", borderRadius: 10, marginBottom: 7,
+                border: "1px solid #ca8a0455", background: locating ? "rgba(202,138,4,0.06)" : "rgba(202,138,4,0.1)",
+                color: "#ca8a04", fontSize: 12, fontWeight: 700, cursor: locating ? "wait" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}>
+                <span style={{ fontSize: 15, animation: locating ? "pea-spin 1s linear infinite" : "none", display: "inline-block" }}>
+                  {locating ? "⏳" : "📡"}
+                </span>
+                {locating ? "กำลังรับพิกัด GPS…" : "ใช้ตำแหน่งปัจจุบัน (GPS)"}
+              </button>
+              {gpsError && <div style={{ fontSize: 10, color: "#ef4444", marginBottom: 4 }}>{gpsError}</div>}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LAT</div>
+                  <input className="input" type="number" step="0.000001" value={newLat} onChange={e => setNewLat(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "4px 6px" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--ink-mute)", marginBottom: 2 }}>LNG</div>
+                  <input className="input" type="number" step="0.000001" value={newLng} onChange={e => setNewLng(+e.target.value)} style={{ fontSize: 11, fontFamily: "monospace", padding: "4px 6px" }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 9, color: "var(--ink-mute)", marginTop: 3 }}>* ลากหมุดสีเหลืองหรือแตะบนแผนที่เพื่อเลือกพิกัด</div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "12px 22px", borderTop: "1px solid var(--line)", display: "flex", gap: 10, flexShrink: 0 }}>
-          <button className="btn btn-outline" style={{ flex: 1, height: 40 }} onClick={onClose}>{s("ยกเลิก","Cancel")}</button>
-          <button className="btn btn-primary" style={{ flex: 2, height: 40 }} onClick={() => onSave({ ...p, ...form })} disabled={saving}>
-            <Icon name="check" size={14} />
-            {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึกพิกัด","Save Coordinates")}
+        <div style={{ padding: "10px 16px", borderTop: "1px solid var(--line)", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="btn btn-outline" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" onClick={() => onSave({ ...p, LATITUDE: newLat, LONGITUDE: newLng })} disabled={saving || samePos}
+            style={{ background: saving || samePos ? undefined : "linear-gradient(135deg,#ca8a04,#eab308)" }}>
+            {saving ? "…" : "💾 บันทึกพิกัด"}
           </button>
         </div>
       </div>

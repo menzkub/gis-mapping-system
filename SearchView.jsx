@@ -71,13 +71,13 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         let dbq;
         if (tab === "meter") {
           dbq = _supabase.from("meters").select("*").limit(500);
-          if (safe) dbq = dbq.or(`tag.ilike.%${safe}%,peano.ilike.%${safe}%,accountnum.ilike.%${safe}%,feederid.ilike.%${safe}%`);
+          if (safe) dbq = dbq.or(`tag.ilike.%${safe}%,peano::text.ilike.%${safe}%,accountnum::text.ilike.%${safe}%,feederid.ilike.%${safe}%`);
           if (filters.feeder) dbq = dbq.eq("feederid", filters.feeder);
           if (filters.owner)  dbq = dbq.eq("owner",    filters.owner);
           if (filters.code)   dbq = dbq.eq("code",     filters.code);
         } else {
           dbq = _supabase.from("transformers").select("*").limit(500);
-          if (safe) dbq = dbq.or(`tag.ilike.%${safe}%,peano_tr.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`);
+          if (safe) dbq = dbq.or(`tag.ilike.%${safe}%,peano_tr::text.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`);
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
           if (filters.owner)   dbq = dbq.eq("owner_tr", filters.owner);
           if (filters.phase)   dbq = dbq.eq("phase",    filters.phase);
