@@ -1,7 +1,7 @@
 {
-  "commit": "c07b9bddad5a489f3cc4887707f0cc2efddd573b",
-  "shortCommit": "c07b9bd",
-  "message": "Fix numeric search timeout: skip ilike for numeric queries",
-  "date": "2026-06-03T12:44:32Z",
+  "commit": "793beccc64dfbfe323f6566b2ba7cac5d38d078f",
+  "shortCommit": "793becc",
+  "message": "Fix transformer search: allow dash (-) in search input",
+  "date": "2026-06-03T12:57:21Z",
   "branch": "main"
 }
