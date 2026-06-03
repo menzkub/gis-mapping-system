@@ -73,10 +73,12 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         if (tab === "meter") {
           dbq = _supabase.from("meters").select("*").limit(500);
           if (safe) {
-            const peanoFilter = isNum
+            // numeric-only → B-tree exact lookup on peano/accountnum only (very fast)
+            // text → GIN trigram partial match on all text columns
+            const orFilter = isNum
               ? `peano.eq.${safe},accountnum.eq.${safe}`
-              : `peano::text.ilike.%${safe}%,accountnum::text.ilike.%${safe}%`;
-            dbq = dbq.or(`tag.ilike.%${safe}%,${peanoFilter},feederid.ilike.%${safe}%`);
+              : `tag.ilike.%${safe}%,peano::text.ilike.%${safe}%,accountnum::text.ilike.%${safe}%,feederid.ilike.%${safe}%`;
+            dbq = dbq.or(orFilter);
           }
           if (filters.feeder) dbq = dbq.eq("feederid", filters.feeder);
           if (filters.owner)  dbq = dbq.eq("owner",    filters.owner);
@@ -84,10 +86,10 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         } else {
           dbq = _supabase.from("transformers").select("*").limit(500);
           if (safe) {
-            const peanoFilter = isNum
+            const orFilter = isNum
               ? `peano_tr.eq.${safe}`
-              : `peano_tr::text.ilike.%${safe}%`;
-            dbq = dbq.or(`tag.ilike.%${safe}%,${peanoFilter},location.ilike.%${safe}%,feeder1.ilike.%${safe}%`);
+              : `tag.ilike.%${safe}%,peano_tr::text.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`;
+            dbq = dbq.or(orFilter);
           }
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
           if (filters.owner)   dbq = dbq.eq("owner_tr", filters.owner);
