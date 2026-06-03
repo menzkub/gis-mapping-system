@@ -76,12 +76,8 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         if (tab === "meter") {
           dbq = _supabase.from("meters").select("*").limit(500);
           if (safe) {
-            // numeric → exact B-tree lookup only (peano/accountnum may be bigint)
-            // text → ilike on text columns only — no ::text cast (not supported in .or())
-            const orFilter = isNum
-              ? `peano.eq.${safe},accountnum.eq.${safe}`
-              : `tag.ilike.%${safe}%,feederid.ilike.%${safe}%`;
-            dbq = dbq.or(orFilter);
+            // มิเตอร์กรอกเฉพาะตัวเลข → ค้นใน peano อย่างเดียว
+            dbq = dbq.eq("peano", safe);
           }
           if (filters.feeder) dbq = dbq.eq("feederid", filters.feeder);
           if (filters.owner)  dbq = dbq.eq("owner",    filters.owner);
@@ -89,9 +85,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         } else {
           dbq = _supabase.from("transformers").select("*").limit(500);
           if (safe) {
+            // ตัวเลขล้วน → ค้นใน peano_tr exact match
+            // มีตัวอักษร/ขีด → ค้นใน peano_tr และ location
             const orFilter = isNum
               ? `peano_tr.eq.${safe}`
-              : `peano_tr.ilike.%${safe}%,tag.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`;
+              : `peano_tr.ilike.%${safe}%,location.ilike.%${safe}%`;
             dbq = dbq.or(orFilter);
           }
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
