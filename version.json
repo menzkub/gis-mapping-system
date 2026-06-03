@@ -1,7 +1,7 @@
 {
-  "commit": "793beccc64dfbfe323f6566b2ba7cac5d38d078f",
-  "shortCommit": "793becc",
-  "message": "Fix transformer search: allow dash (-) in search input",
-  "date": "2026-06-03T12:57:21Z",
+  "commit": "835db9e19029689a4626e017789640bca4746b1e",
+  "shortCommit": "835db9e",
+  "message": "Add QR Code, area selection, and photo attachment features",
+  "date": "2026-06-03T13:10:57Z",
   "branch": "main"
 }
