@@ -1,7 +1,7 @@
 {
-  "commit": "076dd802179938a7549f99acdd6bab9806e2c52f",
-  "shortCommit": "076dd80",
-  "message": "Update README to v3.3 \u2014 complete feature documentation",
-  "date": "2026-06-03T17:45:16Z",
+  "commit": "92272a60de09e5be3c351410d37bf7922a285fb8",
+  "shortCommit": "92272a6",
+  "message": "fix: render Modal via ReactDOM.createPortal to fix centering on mobile",
+  "date": "2026-06-03T17:54:28Z",
   "branch": "main"
 }
