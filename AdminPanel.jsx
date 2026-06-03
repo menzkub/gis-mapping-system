@@ -3702,26 +3702,32 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     clearTimeout(mapSearchTimerRef.current);
     mapSearchTimerRef.current = setTimeout(async () => {
       try {
-        const [{ data: mRows }, { data: tRows }] = await Promise.all([
-          _supabase.from("meters")
-            .select("objectid,tag,peano,accountnum,latitude,longitude,route,feederid")
-            .or(`peano.ilike.%${q}%,tag.ilike.%${q}%,accountnum.ilike.%${q}%`)
-            .limit(6),
-          _supabase.from("transformers")
-            .select("objectid,tag,peano_tr,latitude,longitude,location")
-            .or(`peano_tr.ilike.%${q}%,tag.ilike.%${q}%,location.ilike.%${q}%`)
-            .limit(4),
-        ]);
+        const safe = q.replace(/%/g, "\\%").replace(/_/g, "\\_");
+        const isNum = /^\d+$/.test(safe);
+        const hasDigit = /\d/.test(safe);
+
+        // มิเตอร์: ค้นเฉพาะตอน input ตัวเลขล้วน (peano exact)
+        const mPromise = isNum
+          ? _supabase.from("meters").select("objectid,tag,peano,latitude,longitude,route,feederid").eq("peano", safe).limit(6)
+          : Promise.resolve({ data: [] });
+
+        // หม้อแปลง: ตัวเลขล้วน → peano_tr exact | มีขีด/ตัวเลข → peano_tr ilike | ตัวอักษรล้วน → location ilike
+        let tBase = _supabase.from("transformers").select("objectid,tag,peano_tr,latitude,longitude,location").limit(4);
+        const tPromise = isNum ? tBase.eq("peano_tr", safe)
+          : hasDigit ? tBase.ilike("peano_tr", `%${safe}%`)
+          : tBase.ilike("location", `%${safe}%`);
+
+        const [{ data: mRows }, { data: tRows }] = await Promise.all([mPromise, tPromise]);
         const results = [];
         (mRows || []).forEach(r => results.push({
           type: "M",
-          p: { OBJECTID: r.objectid, TAG: r.tag, PEANO: r.peano || r.accountnum, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, ROUTE: r.route, FEEDERID: r.feederid },
-          label: r.peano || r.accountnum || r.tag, sub: r.tag || (r.route || ""),
+          p: { OBJECTID: r.objectid, TAG: r.tag, PEANO: r.peano, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, ROUTE: r.route, FEEDERID: r.feederid },
+          label: r.peano, sub: r.route || "",
         }));
         (tRows || []).forEach(r => results.push({
           type: "T",
           p: { OBJECTID: r.objectid, TAG: r.tag, PEANO_TR: r.peano_tr, LATITUDE: +r.latitude, LONGITUDE: +r.longitude, LOCATION: r.location },
-          label: r.peano_tr || r.tag, sub: r.location || r.tag,
+          label: r.peano_tr, sub: r.location || "",
         }));
         setMapSearchResults(results);
       } catch (_) { setMapSearchResults([]); }
@@ -3895,8 +3901,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
               ref={mapSearchRef}
               value={mapSearchQ}
               onChange={e => setMapSearchQ(e.target.value)}
-              placeholder="ค้นหา PEANO, TAG, สถานที่… (ค้นหาจากทั้งหมด)"
-              inputMode="numeric"
+              placeholder="ค้นหา PEA Meter, PEA TR, สถานที่ใช้ไฟ…"
+              inputMode="text"
               style={{ width: "100%", padding: "10px 38px 10px 40px", background: "transparent", border: "none", outline: "none", color: "var(--ink)", fontSize: 13, fontWeight: 500, boxSizing: "border-box" }}
             />
             {mapSearchQ && (
