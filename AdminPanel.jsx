@@ -4143,8 +4143,8 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
             📍
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>{t("corrReportBtn")}</div>
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{target.isMeter ? "Meter" : "Transformer"} · <span style={{ fontFamily: "monospace" }}>{target.p.PEANO || target.p.TAG}</span></div>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>แจ้งแก้ไขพิกัด</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{target.isMeter ? "PEA Meter" : "PEA TR"}: <span style={{ fontFamily: "monospace" }}>{target.isMeter ? target.p.PEANO : target.p.PEANO_TR}</span></div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
@@ -4284,8 +4284,8 @@ function MapQuickEditModal({ target, onClose, onSubmit }) {
             📍
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>แก้ไขพิกัด</div>
-            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{isMeter ? "Meter" : "Transformer"} · <span style={{ fontFamily: "monospace" }}>{label}</span></div>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>แจ้งแก้ไขพิกัด</div>
+            <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{isMeter ? "PEA Meter" : "PEA TR"}: <span style={{ fontFamily: "monospace" }}>{isMeter ? p.PEANO : p.PEANO_TR}</span></div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
