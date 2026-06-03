@@ -2249,7 +2249,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     const tlId = edit.role === "user" ? (edit.team_leader_id || null) : null;
 
     // Core patch (always safe — no optional columns)
-    const corePatch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa };
+    const corePatch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa, permissions: edit.permissions || [] };
 
     const { error } = await _supabase.from("profiles")
       .update(fromProfilePatch(corePatch))
@@ -2457,6 +2457,16 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     <div className="t-mute text-xs" style={{ marginTop: 3, display:"flex", alignItems:"center", gap:4 }}>
                       <Icon name="users" size={10} />
                       {myLeader.name || `@${myLeader.username}`}
+                    </div>
+                  )}
+                  {u.role !== "admin" && (u.permissions || []).length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
+                      {(u.permissions || []).map(key => {
+                        const label = { correct_coords: "แก้พิกัด", view_overview_map: "แผนที่", view_changelog: "Changelog", export_data: "Export" }[key] || key;
+                        return (
+                          <span key={key} style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(107,44,145,0.12)", color: "var(--pea-purple-600)", border: "1px solid rgba(107,44,145,0.2)", letterSpacing: "0.01em" }}>{label}</span>
+                        );
+                      })}
                     </div>
                   )}
                 </td>
