@@ -10,9 +10,9 @@ const {
 /* ============================================================
    SearchView — PEA Meter + PEA TR tabs (server-side search)
    ============================================================ */
-function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = true, allowCorrectCoords = false, onCorrectCoords }) {
+function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = true, allowCorrectCoords = false, onCorrectCoords, allowMeter = true, allowTr = true }) {
   const { t } = useLang();
-  const [tab, setTab]               = useStateS("meter");
+  const [tab, setTab]               = useStateS(!allowMeter && allowTr ? "tr" : "meter");
   const [query, setQuery]           = useStateS("");
   const [showFilters, setShowFilters] = useStateS(false);
   const [filters, setFilters]       = useStateS({
@@ -165,6 +165,15 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
     : +(data.dashStats?.tr_count    || 0);
   const activeFilterCount = Object.values(filters).filter(v => v !== "").length;
 
+  if (!allowMeter && !allowTr) {
+    return (
+      <div className="f-col" style={{ height: "100%", overflow: "hidden", alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <Icon name="lock" size={32} style={{ color: "var(--ink-mute)", opacity: 0.5 }} />
+        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink-mute)" }}>คุณไม่มีสิทธิ์ค้นหาข้อมูล</div>
+      </div>
+    );
+  }
+
   return (
     <div className="f-col" style={{ height: "100%", overflow: "hidden" }}>
       <style>{`
@@ -254,12 +263,16 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             </div>
           </div>
           <div className="tabs sv-tabs" style={{ flexShrink: 0 }}>
-            <button className={"tab " + (tab === "meter" ? "active" : "")} onClick={() => { setTab("meter"); resetFilters(); setSelectedId(null); setResults([]); setHasSearched(false); }}>
-              <Icon name="meter" size={14} /> {t("searchPeaMeter")}
-            </button>
-            <button className={"tab " + (tab === "tr" ? "active" : "")} onClick={() => { setTab("tr"); resetFilters(); setSelectedId(null); setResults([]); setHasSearched(false); }}>
-              <Icon name="tr" size={14} /> {t("searchPeaTr")}
-            </button>
+            {allowMeter && (
+              <button className={"tab " + (tab === "meter" ? "active" : "")} onClick={() => { setTab("meter"); resetFilters(); setSelectedId(null); setResults([]); setHasSearched(false); }}>
+                <Icon name="meter" size={14} /> {t("searchPeaMeter")}
+              </button>
+            )}
+            {allowTr && (
+              <button className={"tab " + (tab === "tr" ? "active" : "")} onClick={() => { setTab("tr"); resetFilters(); setSelectedId(null); setResults([]); setHasSearched(false); }}>
+                <Icon name="tr" size={14} /> {t("searchPeaTr")}
+              </button>
+            )}
           </div>
         </div>
 

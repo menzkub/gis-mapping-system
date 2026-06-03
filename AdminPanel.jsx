@@ -2475,7 +2475,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   {u.role !== "admin" && (u.permissions || []).length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
                       {(u.permissions || []).map(key => {
-                        const label = { correct_coords: "แก้พิกัด", view_overview_map: "แผนที่", view_changelog: "Changelog", export_data: "Export" }[key] || key;
+                        const label = { correct_coords: "แก้พิกัด", view_overview_map: "แผนที่", view_changelog: "Changelog", export_data: "Export", search_meter: "ค้นหา Meter", search_tr: "ค้นหา TR" }[key] || key;
                         return (
                           <span key={key} style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(107,44,145,0.12)", color: "var(--pea-purple-600)", border: "1px solid rgba(107,44,145,0.2)", letterSpacing: "0.01em" }}>{label}</span>
                         );
@@ -2729,6 +2729,8 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     { key: "view_overview_map", label: "ดูแผนที่ภาพรวม",    desc: "เข้าดูแผนที่ภาพรวม (ดูได้อย่างเดียว)" },
                     { key: "view_changelog",    label: "ดู Changelog",        desc: "เข้าดูประวัติการพัฒนาระบบ" },
                     { key: "export_data",       label: "Export ข้อมูล",       desc: "ส่งออก CSV จากผลการค้นหา" },
+                    { key: "search_meter",      label: "ค้นหา PEA Meter",    desc: "เข้าถึงแท็บค้นหามิเตอร์ในหน้าค้นหา" },
+                    { key: "search_tr",         label: "ค้นหา PEA TR",        desc: "เข้าถึงแท็บค้นหาหม้อแปลงในหน้าค้นหา" },
                   ].map(perm => {
                     const perms = edit.permissions || [];
                     const has = perms.includes(perm.key);
@@ -2818,7 +2820,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {(u.permissions || []).map(key => {
-                        const label = { correct_coords: "แจ้งแก้ไขพิกัด", view_overview_map: "ดูแผนที่ภาพรวม", view_changelog: "ดู Changelog", export_data: "Export ข้อมูล" }[key] || key;
+                        const label = { correct_coords: "แจ้งแก้ไขพิกัด", view_overview_map: "ดูแผนที่ภาพรวม", view_changelog: "ดู Changelog", export_data: "Export ข้อมูล", search_meter: "ค้นหา Meter", search_tr: "ค้นหา TR" }[key] || key;
                         return (
                           <span key={key} style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 6, background: "rgba(107,44,145,0.12)", color: "var(--pea-purple-600)", border: "1px solid rgba(107,44,145,0.2)" }}>{label}</span>
                         );

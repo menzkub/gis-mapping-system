@@ -2326,6 +2326,31 @@ function UserGuide({ role }) {
           </div>
         </UGSection>
 
+        <UGSection icon="lock" title={ug("นโยบายความเป็นส่วนตัว (PDPA)", "Privacy Policy (PDPA)")} expandSignal={expandSig}>
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 14, fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
+            {[
+              { icon: "🏢", title: "ผู้ควบคุมข้อมูลส่วนบุคคล", body: "การไฟฟ้าส่วนภูมิภาค (PEA) ระบบ PEA Meter & TR Mapping ใช้สำหรับงานภายในองค์กรเท่านั้น" },
+              { icon: "📋", title: "ข้อมูลที่เก็บรวบรวม", body: "ตำแหน่ง GPS ที่ใช้แก้ไขพิกัด, ภาพถ่ายที่แนบกับ Meter/TR, ประวัติการค้นหา (เก็บใน device), บันทึกการใช้งานระบบ (ชื่อผู้ใช้, การกระทำ, เวลา)" },
+              { icon: "🎯", title: "วัตถุประสงค์การใช้ข้อมูล", body: "เพื่อปรับปรุงความถูกต้องของพิกัดมิเตอร์และหม้อแปลงในระบบ GIS และเพื่อการตรวจสอบการใช้งานระบบ (Audit)" },
+              { icon: "🔒", title: "การเปิดเผยข้อมูล", body: "ข้อมูลไม่ถูกเปิดเผยแก่บุคคลภายนอก เข้าถึงได้เฉพาะพนักงาน PEA ที่ได้รับอนุญาตและมีบัญชีผู้ใช้ในระบบเท่านั้น" },
+              { icon: "⏱", title: "ระยะเวลาเก็บรักษาข้อมูล", body: "ข้อมูลการใช้งาน (Audit Log) เก็บไว้ตราบเท่าที่จำเป็นสำหรับการตรวจสอบ ภาพถ่ายเก็บใน device ของผู้ใช้ ไม่ได้ส่งขึ้น Server" },
+              { icon: "✅", title: "สิทธิ์ของเจ้าของข้อมูล (PDPA)", body: "ท่านมีสิทธิ์: ขอเข้าถึงข้อมูล, ขอแก้ไขข้อมูล, ขอลบข้อมูล, ขอจำกัดการประมวลผล โดยติดต่อผ่าน Admin ของระบบ" },
+              { icon: "📞", title: "ติดต่อ", body: "หากมีข้อสงสัยเกี่ยวกับนโยบายความเป็นส่วนตัว กรุณาติดต่อผู้ดูแลระบบ (Admin) ผ่านช่องทางภายในองค์กร" },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, padding: "10px 14px", borderRadius: 10, background: "var(--soft)", border: "1px solid var(--soft-border)" }}>
+                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 3 }}>{item.title}</div>
+                  <div style={{ color: "var(--ink-mute)" }}>{item.body}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "var(--ink-mute)", textAlign: "center", padding: "8px 0" }}>
+              ปรับปรุงล่าสุด: มิถุนายน 2568 · อ้างอิง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)
+            </div>
+          </div>
+        </UGSection>
+
       </div>
     </div>
   );
@@ -4233,6 +4258,8 @@ function App() {
               onLogSearch={(entry) => addAudit(entry)}
               allowExport={isAdmin || hasPermission(currentUser, "export_data") || allowExport}
               allowCorrectCoords={hasPermission(currentUser, "correct_coords")}
+              allowMeter={isAdmin || hasPermission(currentUser, "search_meter")}
+              allowTr={isAdmin || hasPermission(currentUser, "search_tr")}
               onCorrectCoords={async (p, isMeter, newLat, newLng, note) => {
                 await _supabase.from("coordinate_corrections").insert({
                   record_type: isMeter ? "meter" : "transformer",
