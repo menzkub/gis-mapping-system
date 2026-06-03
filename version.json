@@ -1,7 +1,7 @@
 {
-  "commit": "f204094d1f33857004bef74ef9fbe76345b35e04",
-  "shortCommit": "f204094",
-  "message": "Add save-popup-as-image button to meter and transformer popups",
-  "date": "2026-06-03T15:11:42Z",
+  "commit": "7dcddd0b917d6d77623816f6fe943b4b0b1abd1e",
+  "shortCommit": "7dcddd0",
+  "message": "Fix transformer search not finding peano_tr text values like 64-005882",
+  "date": "2026-06-03T15:13:53Z",
   "branch": "main"
 }
