@@ -1,7 +1,7 @@
 {
-  "commit": "d9848130223bb0a29ff6f08a33b70ddf2bfd6c35",
-  "shortCommit": "d984813",
-  "message": "v3.3 \u2014 Privacy Consent dashboard, version display, guide updates",
-  "date": "2026-06-03T17:27:42Z",
+  "commit": "72370d432213bcb0f61ee0446c6079f19dde839d",
+  "shortCommit": "72370d4",
+  "message": "Fix last_login not recording + admin panel stale user data",
+  "date": "2026-06-03T17:34:12Z",
   "branch": "main"
 }
