@@ -1,7 +1,7 @@
 {
-  "commit": "b7d71f35f461d1509b18621066598c9ae7d7983a",
-  "shortCommit": "b7d71f3",
-  "message": "Add SQL migration: database indexes for search columns",
-  "date": "2026-06-03T08:37:39Z",
+  "commit": "b64c4213dd0c5afe1b19d997b75c5eef04ddce5d",
+  "shortCommit": "b64c421",
+  "message": "Require admin approval for all coordinate edits (yellow marker)",
+  "date": "2026-06-03T08:39:13Z",
   "branch": "main"
 }
