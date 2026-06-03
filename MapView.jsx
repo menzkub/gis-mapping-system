@@ -18,16 +18,22 @@ const TILE_LAYERS = {
   },
 };
 
-function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onMeasure, baseMap = "satellite", showHeatmap = false, showCluster = true }) {
+function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onMeasure, baseMap = "satellite", showHeatmap = false, showCluster = true, onQrCode, onPolygonSelect, onPhoto }) {
   const containerRef = useRefM(null);
   const mapRef = useRefM(null);
   const tileRef = useRefM(null);
   const markersLayerRef = useRefM(null);
   const heatLayerRef = useRefM(null);
   const measureLayerRef = useRefM(null);
+  const selectLayerRef = useRefM(null);
+  const pointsRef = useRefM(points);
   const [measureMode, setMeasureMode] = useStateM(false);
   const [measurePts, setMeasurePts] = useStateM([]);
   const [measureDist, setMeasureDist] = useStateM(0);
+  const [selectMode, setSelectMode] = useStateM(false);
+  const [selCount, setSelCount] = useStateM(null);
+
+  useEffectM(() => { pointsRef.current = points; }, [points]);
 
   // Initialize map ONCE
   useEffectM(() => {
@@ -43,6 +49,7 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
     mapRef.current = map;
     markersLayerRef.current = L.layerGroup().addTo(map);
     measureLayerRef.current = L.layerGroup().addTo(map);
+    selectLayerRef.current = L.layerGroup().addTo(map);
 
     // Auto-resize map when container dimensions change (sidebar collapse, window resize)
     const ro = new ResizeObserver(() => {
@@ -95,6 +102,10 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             <button data-nav="apple"  data-id="${p.OBJECTID}" style="height:34px;padding:0 10px;border-radius:8px;${outBtn}">Apple</button>
             <button data-copy="${p.LATITUDE.toFixed(6)},${p.LONGITUDE.toFixed(6)}" data-id="${p.OBJECTID}" style="height:34px;padding:0 10px;border-radius:8px;${outBtn}">📋 พิกัด</button>
           </div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button data-qr data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">🔗 QR Code</button>
+            <button data-photo data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">📷 ภาพถ่าย</button>
+          </div>
         </div>`;
     } else {
       return `
@@ -120,6 +131,10 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             <button data-nav="google" data-id="${p.OBJECTID}" style="height:34px;padding:0 10px;border-radius:8px;${outBtn}">Google</button>
             <button data-nav="apple"  data-id="${p.OBJECTID}" style="height:34px;padding:0 10px;border-radius:8px;${outBtn}">Apple</button>
             <button data-copy="${p.LATITUDE.toFixed(6)},${p.LONGITUDE.toFixed(6)}" data-id="${p.OBJECTID}" style="height:34px;padding:0 10px;border-radius:8px;${outBtn}">📋 พิกัด</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button data-qr data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">🔗 QR Code</button>
+            <button data-photo data-id="${p.OBJECTID}" style="flex:1;height:32px;border-radius:8px;${outBtn}">📷 ภาพถ่าย</button>
           </div>
         </div>`;
     }
@@ -168,6 +183,8 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             });
           };
         });
+        root.querySelectorAll("button[data-qr]").forEach(b => { b.onclick = () => onQrCode?.(p); });
+        root.querySelectorAll("button[data-photo]").forEach(b => { b.onclick = () => onPhoto?.(p); });
       });
       return m;
     };
@@ -340,6 +357,63 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
     };
   }, [measureMode]);
 
+  // Rectangle area-select tool
+  useEffectM(() => {
+    if (!mapRef.current || !selectLayerRef.current) return;
+    const map = mapRef.current;
+    const layer = selectLayerRef.current;
+    layer.clearLayers();
+    if (!selectMode) {
+      map.getContainer().style.cursor = "";
+      return;
+    }
+    map.getContainer().style.cursor = "crosshair";
+    let anchor = null;
+    let rectShape = null;
+
+    const redraw = (end) => {
+      layer.clearLayers();
+      L.circleMarker(anchor, { radius: 5, color: "#6b2c91", fillColor: "#6b2c91", fillOpacity: 0.9, weight: 0 }).addTo(layer);
+      if (end) {
+        rectShape = L.rectangle(L.latLngBounds(anchor, end), { color: "#6b2c91", weight: 2, dashArray: "6 4", fillOpacity: 0.08 });
+        rectShape.addTo(layer);
+      }
+    };
+
+    const onClick = (e) => {
+      if (!anchor) {
+        anchor = e.latlng;
+        redraw(null);
+      } else {
+        const bounds = L.latLngBounds(anchor, e.latlng);
+        layer.clearLayers();
+        L.rectangle(bounds, { color: "#6b2c91", weight: 2.5, fillOpacity: 0.1 }).addTo(layer);
+        const inside = pointsRef.current.filter(p => bounds.contains([p.LATITUDE, p.LONGITUDE]));
+        setSelCount(inside.length);
+        onPolygonSelect?.(inside);
+        setSelectMode(false);
+        anchor = null;
+      }
+    };
+
+    const onMousemove = (e) => { if (anchor) redraw(e.latlng); };
+
+    map.on("click", onClick);
+    map.on("mousemove", onMousemove);
+    return () => {
+      map.off("click", onClick);
+      map.off("mousemove", onMousemove);
+      map.getContainer().style.cursor = "";
+    };
+  }, [selectMode]);
+
+  const clearSelect = () => {
+    setSelCount(null);
+    setSelectMode(false);
+    selectLayerRef.current?.clearLayers();
+    onPolygonSelect?.(null);
+  };
+
   const [locating, setLocating] = useStateM(false);
   const goToMyLocation = () => {
     if (!navigator.geolocation || !mapRef.current) return;
@@ -386,9 +460,29 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
           </button>
         </div>
       )}
+      {(selectMode || selCount !== null) && (
+        <div className="fade-in" style={{
+          position: "absolute", top: 12, left: 12, zIndex: 500,
+          background: "var(--surface)", border: "1px solid var(--line)",
+          padding: "10px 14px", borderRadius: 14, boxShadow: "var(--shadow-md)",
+          display: "flex", alignItems: "center", gap: 10,
+        }}>
+          <span style={{ fontSize: 16 }}>🔲</span>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>
+            {selectMode ? "คลิกจุดเริ่มต้น → จุดสิ้นสุด" : `เลือกได้ ${selCount} จุด`}
+          </span>
+          <button className="btn-icon" style={{ width: 28, height: 28 }} onClick={clearSelect}>
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      )}
       <div className="map-controls">
-        <button className={"btn-icon " + (measureMode ? "active" : "")} title="วัดระยะทาง" onClick={() => setMeasureMode(m => !m)}>
+        <button className={"btn-icon " + (measureMode ? "active" : "")} title="วัดระยะทาง" onClick={() => { setMeasureMode(m => !m); if (selectMode) clearSelect(); }}>
           <Icon name="ruler" />
+        </button>
+        <button className={"btn-icon " + (selectMode ? "active" : "")} title="เลือกพื้นที่" onClick={() => { setSelectMode(m => !m); setMeasureMode(false); if (!selectMode) { setSelCount(null); onPolygonSelect?.(null); selectLayerRef.current?.clearLayers(); } }}
+          style={{ fontSize: 16 }}>
+          🔲
         </button>
       </div>
     </div>

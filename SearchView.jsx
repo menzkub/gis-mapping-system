@@ -33,6 +33,9 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [showExportDialog, setShowExportDialog] = useStateS(false);
   const [showHistory, setShowHistory] = useStateS(false);
   const [corrTarget, setCorrTarget] = useStateS(null);
+  const [qrTarget, setQrTarget]     = useStateS(null);
+  const [photoTarget, setPhotoTarget] = useStateS(null);
+  const [polygonSelected, setPolygonSelected] = useStateS(null); // null = no filter
   const [history, setHistory] = useStateS(() => {
     try { return JSON.parse(localStorage.getItem("pea_search_hist") || "[]"); } catch { return []; }
   });
@@ -418,7 +421,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           {/* Map — always visible */}
           <div style={{ position: "relative", height: "100%", minHeight: 300, overflow: "hidden" }}>
               <MapView
-                points={results}
+                points={polygonSelected !== null ? polygonSelected : results}
                 kind={tab}
                 selectedId={selectedId}
                 onSelect={(p) => setSelectedId(p.OBJECTID)}
@@ -426,6 +429,9 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 baseMap={svBaseMap}
                 showHeatmap={showHeatmap}
                 showCluster={showCluster}
+                onQrCode={(p) => setQrTarget({ p, kind: tab })}
+                onPhoto={(p) => setPhotoTarget({ p, kind: tab })}
+                onPolygonSelect={(pts) => setPolygonSelected(pts)}
               />
               {/* Hint overlay before any search */}
               {!hasSearched && (
@@ -530,6 +536,21 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           }}
         />
       )}
+
+      {/* Polygon filter banner */}
+      {polygonSelected !== null && (
+        <div className="fade-in" style={{ position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", zIndex: 2000, background: "var(--surface)", border: "1.5px solid var(--pea-purple-500)", borderRadius: 40, padding: "8px 18px", boxShadow: "0 4px 24px rgba(107,44,145,0.25)", display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
+          <span style={{ fontSize: 14 }}>🔲</span>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>เลือกได้ <strong style={{ color: "var(--pea-purple-500)" }}>{polygonSelected.length}</strong> จุดในพื้นที่</span>
+          <button onClick={() => setPolygonSelected(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-mute)", fontSize: 16, lineHeight: 1, padding: "0 2px" }}>✕</button>
+        </div>
+      )}
+
+      {/* QR Code modal */}
+      {qrTarget && <QrModal target={qrTarget.p} kind={qrTarget.kind} onClose={() => setQrTarget(null)} />}
+
+      {/* Photo attachment modal */}
+      {photoTarget && <PhotoModal target={photoTarget.p} kind={photoTarget.kind} onClose={() => setPhotoTarget(null)} />}
     </div>
   );
 }
@@ -947,6 +968,133 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── QR Code Modal ─────────────────────────────────────────── */
+function QrModal({ target, kind, onClose }) {
+  const divRef = useRefS(null);
+  const label = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
+  const mapsUrl = `https://www.google.com/maps?q=${target.LATITUDE},${target.LONGITUDE}`;
+
+  useEffectS(() => {
+    if (!divRef.current || typeof qrcode === "undefined") return;
+    try {
+      const qr = qrcode(0, "M");
+      qr.addData(mapsUrl);
+      qr.make();
+      divRef.current.innerHTML = qr.createSvgTag(6, 16);
+      const svg = divRef.current.querySelector("svg");
+      if (svg) { svg.style.borderRadius = "12px"; svg.style.display = "block"; }
+    } catch {
+      const qr = qrcode(4, "M");
+      qr.addData(mapsUrl);
+      qr.make();
+      divRef.current.innerHTML = qr.createSvgTag(5, 12);
+    }
+  }, []);
+
+  const download = () => {
+    const svg = divRef.current?.querySelector("svg");
+    if (!svg) return;
+    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `qr-${label}.svg`;
+    a.click();
+  };
+
+  return (
+    <Modal open onClose={onClose} title={`QR Code · ${label}`} width={340}>
+      <div style={{ textAlign: "center", padding: "8px 0 16px" }}>
+        <div ref={divRef} style={{ display: "flex", justifyContent: "center", marginBottom: 12 }} />
+        <div style={{ fontSize: 10, color: "var(--ink-mute)", fontFamily: "monospace", wordBreak: "break-all", padding: "0 8px", marginBottom: 16 }}>{mapsUrl}</div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <button className="btn btn-outline" onClick={download}>⬇ SVG</button>
+          {navigator.share && (
+            <button className="btn btn-primary" onClick={() => navigator.share({ title: `PEA ${kind === "meter" ? "Meter" : "TR"} · ${label}`, url: mapsUrl })}>
+              ↗ แชร์
+            </button>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ── Photo Attachment Modal ─────────────────────────────────── */
+function PhotoModal({ target, kind, onClose }) {
+  const storageKey = `pea_photos_${kind}_${target.OBJECTID}`;
+  const [photos, setPhotos] = useStateS(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
+  });
+  const [preview, setPreview] = useStateS(null);
+  const label = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxDim = 1200;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH") };
+        const next = [photo, ...photos];
+        setPhotos(next);
+        try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const del = (id) => {
+    const next = photos.filter(p => p.id !== id);
+    setPhotos(next);
+    if (preview?.id === id) setPreview(null);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+  };
+
+  return (
+    <Modal open onClose={onClose} title={`ภาพถ่าย · ${label}`} width={480}>
+      <div>
+        <label style={{ display: "block", cursor: "pointer" }}>
+          <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
+          <div className="btn btn-primary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 46, borderRadius: 14, marginBottom: 16 }}>
+            📷 ถ่ายรูป / เลือกภาพ
+          </div>
+        </label>
+        {photos.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {photos.map(ph => (
+              <div key={ph.id} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden", cursor: "pointer" }} onClick={() => setPreview(ph)}>
+                <img src={ph.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                <button onClick={e => { e.stopPropagation(); del(ph.id); }} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.65)", color: "white", border: "none", cursor: "pointer", fontSize: 11, display: "grid", placeItems: "center" }}>✕</button>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.5)", color: "white", fontSize: 9, padding: "2px 5px" }}>{ph.at}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "28px 0", color: "var(--ink-mute)", fontSize: 13 }}>
+            ยังไม่มีภาพถ่าย
+          </div>
+        )}
+      </div>
+      {preview && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 10100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setPreview(null)}>
+          <img src={preview.dataUrl} style={{ maxWidth: "95vw", maxHeight: "88vh", borderRadius: 12, objectFit: "contain" }} alt="" />
+          <button onClick={e => { e.stopPropagation(); del(preview.id); }} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", color: "white", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>🗑 ลบ</button>
+        </div>
+      )}
+    </Modal>
   );
 }
 
