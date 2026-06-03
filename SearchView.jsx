@@ -68,16 +68,27 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       setHasSearched(true);
       try {
         const safe = query.trim().replace(/%/g, "\\%").replace(/_/g, "\\_");
+        const isNum = /^\d+$/.test(safe);
         let dbq;
         if (tab === "meter") {
           dbq = _supabase.from("meters").select("*").limit(500);
-          if (safe) dbq = dbq.or(`tag.ilike.%${safe}%,peano::text.ilike.%${safe}%,accountnum::text.ilike.%${safe}%,feederid.ilike.%${safe}%`);
+          if (safe) {
+            const peanoFilter = isNum
+              ? `peano.eq.${safe},accountnum.eq.${safe}`
+              : `peano::text.ilike.%${safe}%,accountnum::text.ilike.%${safe}%`;
+            dbq = dbq.or(`tag.ilike.%${safe}%,${peanoFilter},feederid.ilike.%${safe}%`);
+          }
           if (filters.feeder) dbq = dbq.eq("feederid", filters.feeder);
           if (filters.owner)  dbq = dbq.eq("owner",    filters.owner);
           if (filters.code)   dbq = dbq.eq("code",     filters.code);
         } else {
           dbq = _supabase.from("transformers").select("*").limit(500);
-          if (safe) dbq = dbq.or(`tag.ilike.%${safe}%,peano_tr::text.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`);
+          if (safe) {
+            const peanoFilter = isNum
+              ? `peano_tr.eq.${safe}`
+              : `peano_tr::text.ilike.%${safe}%`;
+            dbq = dbq.or(`tag.ilike.%${safe}%,${peanoFilter},location.ilike.%${safe}%,feeder1.ilike.%${safe}%`);
+          }
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
           if (filters.owner)   dbq = dbq.eq("owner_tr", filters.owner);
           if (filters.phase)   dbq = dbq.eq("phase",    filters.phase);
@@ -86,21 +97,27 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           if (filters.maxKva)  dbq = dbq.lte("kva", +filters.maxKva);
         }
         const { data: rows, error } = await dbq;
-        if (!cancelled && !error) {
-          const mapped = (rows || []).map(tab === "meter" ? toMeter : toTransformer);
-          setResults(mapped);
-          setSearchFlash(mapped.length > 0 ? "ok" : "empty");
-          setTimeout(() => setSearchFlash(null), 1800);
-          if (query.trim()) {
-            saveHistory(query.trim());
-            onLogSearchRef.current?.({
-              at: formatThaiDate(),
-              user: currentUserRef.current?.username || "guest",
-              action: tab === "meter" ? "search_meter" : "search_tr",
-              target: query.trim(),
-              detail: `ค้นหา ${tab === "meter" ? "มิเตอร์" : "หม้อแปลง"} • พบ ${mapped.length} รายการ`,
-              ip: (navigator.userAgent || "").substring(0, 200),
-            });
+        if (!cancelled) {
+          if (error) {
+            console.error("Search error:", error);
+            toast?.(`ค้นหาผิดพลาด: ${error.message}`, "error");
+            setResults([]);
+          } else {
+            const mapped = (rows || []).map(tab === "meter" ? toMeter : toTransformer);
+            setResults(mapped);
+            setSearchFlash(mapped.length > 0 ? "ok" : "empty");
+            setTimeout(() => setSearchFlash(null), 1800);
+            if (query.trim()) {
+              saveHistory(query.trim());
+              onLogSearchRef.current?.({
+                at: formatThaiDate(),
+                user: currentUserRef.current?.username || "guest",
+                action: tab === "meter" ? "search_meter" : "search_tr",
+                target: query.trim(),
+                detail: `ค้นหา ${tab === "meter" ? "มิเตอร์" : "หม้อแปลง"} • พบ ${mapped.length} รายการ`,
+                ip: (navigator.userAgent || "").substring(0, 200),
+              });
+            }
           }
         }
       } finally {
