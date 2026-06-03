@@ -85,12 +85,17 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         } else {
           dbq = _supabase.from("transformers").select("*").limit(500);
           if (safe) {
-            // ตัวเลขล้วน → ค้นใน peano_tr exact match
-            // มีตัวอักษร/ขีด → ค้นใน peano_tr และ location
-            const orFilter = isNum
-              ? `peano_tr.eq.${safe}`
-              : `peano_tr.ilike.%${safe}%,location.ilike.%${safe}%`;
-            dbq = dbq.or(orFilter);
+            const hasDigit = /\d/.test(safe);
+            if (isNum) {
+              // ตัวเลขล้วน → peano_tr exact match
+              dbq = dbq.eq("peano_tr", safe);
+            } else if (hasDigit) {
+              // มีตัวเลข + ขีด เช่น 64-005882 → peano_tr ilike
+              dbq = dbq.ilike("peano_tr", `%${safe}%`);
+            } else {
+              // ตัวอักษร/ไทยล้วน เช่น สวนส้ม → location ilike
+              dbq = dbq.ilike("location", `%${safe}%`);
+            }
           }
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
           if (filters.owner)   dbq = dbq.eq("owner_tr", filters.owner);
