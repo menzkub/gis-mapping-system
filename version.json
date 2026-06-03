@@ -1,7 +1,7 @@
 {
-  "commit": "835db9e19029689a4626e017789640bca4746b1e",
-  "shortCommit": "835db9e",
-  "message": "Add QR Code, area selection, and photo attachment features",
-  "date": "2026-06-03T13:10:57Z",
+  "commit": "bd7da4171aa814dd86fbc662dd7184256f838b30",
+  "shortCommit": "bd7da41",
+  "message": "Fix transformer search: remove ::text cast from .or() filter",
+  "date": "2026-06-03T15:05:22Z",
   "branch": "main"
 }
