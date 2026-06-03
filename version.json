@@ -1,7 +1,7 @@
 {
-  "commit": "0c671c285267edf9e812adbcf07ef37c26854869",
-  "shortCommit": "0c671c2",
-  "message": "Fix photo deletion log: save to Supabase audit_log instead of localStorage",
-  "date": "2026-06-03T16:09:08Z",
+  "commit": "740d7d33220d1d9bdadbea1950b9a68f035a7a9c",
+  "shortCommit": "740d7d3",
+  "message": "Add Privacy Policy page, search tab permissions, audit log to Supabase",
+  "date": "2026-06-03T16:15:38Z",
   "branch": "main"
 }
