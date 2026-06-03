@@ -3388,13 +3388,14 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     if (!mapEditTarget) return;
     setMapSaving(true);
     const isMeter = mapEditTarget.isMeter;
+    const coordPatch = { latitude: edited.LATITUDE, longitude: edited.LONGITUDE };
     const { error } = isMeter
-      ? await _supabase.from("meters").update(fromMeter(edited)).eq("objectid", edited.OBJECTID)
-      : await _supabase.from("transformers").update(fromTransformer(edited)).eq("objectid", edited.OBJECTID);
+      ? await _supabase.from("meters").update(coordPatch).eq("objectid", edited.OBJECTID)
+      : await _supabase.from("transformers").update(coordPatch).eq("objectid", edited.OBJECTID);
     setMapSaving(false);
     if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
-    addAudit({ user: currentUser.username, action: isMeter ? "update_meter" : "update_transformer", target: `OBJECTID ${edited.OBJECTID}`, detail: `แก้ไขจากแผนที่: ${edited.TAG || edited.PEANO || edited.PEANO_TR}` });
-    toast?.(isMeter ? `บันทึกมิเตอร์ ${edited.TAG} แล้ว` : `บันทึกหม้อแปลง ${edited.TAG} แล้ว`, "success");
+    addAudit({ user: currentUser.username, action: isMeter ? "update_meter" : "update_transformer", target: `OBJECTID ${edited.OBJECTID}`, detail: `แก้ไขพิกัด: ${edited.TAG || edited.PEANO || edited.PEANO_TR} → (${edited.LATITUDE}, ${edited.LONGITUDE})` });
+    toast?.(isMeter ? `บันทึกพิกัดมิเตอร์ ${edited.TAG || edited.PEANO} แล้ว` : `บันทึกพิกัดหม้อแปลง ${edited.TAG || edited.PEANO_TR} แล้ว`, "success");
     setHighlightTarget(h => h ? { ...h, p: edited } : h);
     setMapEditTarget(null);
   };
@@ -4219,19 +4220,12 @@ function MapQuickEditModal({ target, saving, onClose, onSave }) {
   const { lang } = useLang();
   const s = (th, en) => lang === "en" ? en : th;
   const { p, isMeter } = target;
-  const [form, setForm] = useStateAd({ ...p });
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const Field = ({ label, k, type = "text" }) => (
-    <div className="field" style={{ margin: 0 }}>
-      <label className="field-label">{label}</label>
-      <input className="input" type={type} value={form[k] ?? ""} onChange={e => set(k, type === "number" ? +e.target.value : e.target.value)} style={{ height: 38 }} />
-    </div>
-  );
+  const [form, setForm] = useStateAd({ LATITUDE: p.LATITUDE, LONGITUDE: p.LONGITUDE });
+  const label = isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG);
 
   return (
     <div className="fade-in pea-modal-overlay" style={{ zIndex: 9500 }} onClick={onClose}>
-      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 560, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 380, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -4239,8 +4233,8 @@ function MapQuickEditModal({ target, saving, onClose, onSave }) {
               {isMeter ? "M" : "T"}
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>{s("แก้ไขจากแผนที่","Edit from Map")}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "monospace" }}>{isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG)}</div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>{s("แก้ไขพิกัด","Edit Coordinates")}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "monospace" }}>{label}</div>
             </div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer" }}>
@@ -4249,52 +4243,29 @@ function MapQuickEditModal({ target, saving, onClose, onSave }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: "18px 22px", overflow: "auto", flex: 1 }}>
-          {isMeter ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field label="TAG"         k="TAG" />
-              <Field label="PEANO"       k="PEANO" />
-              <Field label="ACCOUNTNUM"  k="ACCOUNTNUM" />
-              <Field label="FEEDERID"    k="FEEDERID" />
-              <Field label="ROUTE"       k="ROUTE" />
-              <Field label="CODE"        k="CODE" />
-              <div className="field" style={{ margin: 0 }}>
-                <label className="field-label">OWNER</label>
-                <PeaSelect style={{ height: 38 }} value={form.OWNER || ""} onChange={e => set("OWNER", e.target.value)}>
-                  {["PEA","Customer"].map(o => <option key={o} value={o}>{o}</option>)}
-                </PeaSelect>
-              </div>
-              <Field label="INSTALLATI"  k="INSTALLATI" />
-              <Field label="LATITUDE"    k="LATITUDE" type="number" />
-              <Field label="LONGITUDE"   k="LONGITUDE" type="number" />
+        <div style={{ padding: "20px 22px" }}>
+          <div style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(107,44,145,0.07)", border: "1px solid rgba(107,44,145,0.15)", fontSize: 12, color: "var(--ink-mute)", display: "flex", alignItems: "center", gap: 7 }}>
+            <Icon name="map" size={13} style={{ color: "var(--pea-purple-500)", flexShrink: 0 }} />
+            {s("แก้ไขเฉพาะพิกัด (Lat/Lng) เท่านั้น — บันทึกทันที","Edit coordinates only — saved immediately")}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label className="field-label">LATITUDE</label>
+              <input className="input" type="number" step="any" value={form.LATITUDE ?? ""} onChange={e => setForm(f => ({ ...f, LATITUDE: +e.target.value }))} style={{ height: 42, fontFamily: "monospace" }} />
             </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field label="TAG"         k="TAG" />
-              <Field label="PEANO_TR"    k="PEANO_TR" />
-              <Field label="LOCATION"    k="LOCATION" />
-              <Field label="FEEDER1"     k="FEEDER1" />
-              <Field label="PHASE"       k="PHASE" />
-              <Field label="VOLTAGE"     k="VOLTAGE" />
-              <Field label="KVA"         k="KVA" type="number" />
-              <div className="field" style={{ margin: 0 }}>
-                <label className="field-label">OWNER_TR</label>
-                <PeaSelect style={{ height: 38 }} value={form.OWNER_TR || ""} onChange={e => set("OWNER_TR", e.target.value)}>
-                  {["PEA","Customer"].map(o => <option key={o} value={o}>{o}</option>)}
-                </PeaSelect>
-              </div>
-              <Field label="LATITUDE"    k="LATITUDE" type="number" />
-              <Field label="LONGITUDE"   k="LONGITUDE" type="number" />
+            <div className="field" style={{ margin: 0 }}>
+              <label className="field-label">LONGITUDE</label>
+              <input className="input" type="number" step="any" value={form.LONGITUDE ?? ""} onChange={e => setForm(f => ({ ...f, LONGITUDE: +e.target.value }))} style={{ height: 42, fontFamily: "monospace" }} />
             </div>
-          )}
+          </div>
         </div>
 
         {/* Footer */}
         <div style={{ padding: "12px 22px", borderTop: "1px solid var(--line)", display: "flex", gap: 10, flexShrink: 0 }}>
           <button className="btn btn-outline" style={{ flex: 1, height: 40 }} onClick={onClose}>{s("ยกเลิก","Cancel")}</button>
-          <button className="btn btn-primary" style={{ flex: 2, height: 40 }} onClick={() => onSave(form)} disabled={saving}>
+          <button className="btn btn-primary" style={{ flex: 2, height: 40 }} onClick={() => onSave({ ...p, ...form })} disabled={saving}>
             <Icon name="check" size={14} />
-            {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}
+            {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึกพิกัด","Save Coordinates")}
           </button>
         </div>
       </div>
