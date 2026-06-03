@@ -1,7 +1,7 @@
 {
-  "commit": "cf37ec6aa9ea0f6872941b7a7d7e03f7ab2c1fbd",
-  "shortCommit": "cf37ec6",
-  "message": "Update overview map search logic and placeholder",
-  "date": "2026-06-03T15:36:04Z",
+  "commit": "0a952f07b30011e2b6844b147e3fdae1f37ffe66",
+  "shortCommit": "0a952f0",
+  "message": "Fix transformer popup header and update search placeholders",
+  "date": "2026-06-03T15:40:32Z",
   "branch": "main"
 }
