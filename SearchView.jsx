@@ -553,7 +553,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       {qrTarget && <QrModal target={qrTarget.p} kind={qrTarget.kind} onClose={() => setQrTarget(null)} />}
 
       {/* Photo attachment modal */}
-      {photoTarget && <PhotoModal target={photoTarget.p} kind={photoTarget.kind} onClose={() => setPhotoTarget(null)} />}
+      {photoTarget && <PhotoModal target={photoTarget.p} kind={photoTarget.kind} currentUser={currentUser} onClose={() => setPhotoTarget(null)} />}
     </div>
   );
 }
@@ -1091,13 +1091,15 @@ function QrModal({ target, kind, onClose }) {
 }
 
 /* ── Photo Attachment Modal ─────────────────────────────────── */
-function PhotoModal({ target, kind, onClose }) {
+function PhotoModal({ target, kind, currentUser, onClose }) {
   const storageKey = `pea_photos_${kind}_${target.OBJECTID}`;
   const [photos, setPhotos] = useStateS(() => {
     try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
   });
   const [preview, setPreview] = useStateS(null);
+  const [confirmId, setConfirmId] = useStateS(null); // id ที่กำลังจะลบ
   const label = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
+  const isAdmin = currentUser?.role === "admin";
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -1113,7 +1115,7 @@ function PhotoModal({ target, kind, onClose }) {
         canvas.height = img.height * scale;
         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH") };
+        const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH"), addedBy: currentUser?.username || "user" };
         const next = [photo, ...photos];
         setPhotos(next);
         try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -1124,18 +1126,36 @@ function PhotoModal({ target, kind, onClose }) {
     e.target.value = "";
   };
 
-  const del = (id) => {
+  const confirmDelete = (id) => setConfirmId(id);
+
+  const doDelete = (id) => {
+    const ph = photos.find(p => p.id === id);
     const next = photos.filter(p => p.id !== id);
     setPhotos(next);
     if (preview?.id === id) setPreview(null);
+    setConfirmId(null);
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+    // บันทึกประวัติการลบ
+    try {
+      const logKey = "pea_photo_del_log";
+      const log = JSON.parse(localStorage.getItem(logKey) || "[]");
+      log.unshift({
+        id: Date.now(),
+        kind, objectId: target.OBJECTID, label,
+        photoAt: ph?.at || "—",
+        deletedBy: currentUser?.username || "admin",
+        deletedAt: new Date().toLocaleString("th-TH"),
+      });
+      localStorage.setItem(logKey, JSON.stringify(log.slice(0, 300)));
+    } catch {}
   };
 
   return (
     <Modal open onClose={onClose} title={`ภาพถ่าย · ${label}`} width={480}>
       <div>
+        {/* ปุ่มถ่ายรูป/เลือกภาพ — ไม่มี capture เพื่อให้เลือกจาก gallery ได้ */}
         <label style={{ display: "block", cursor: "pointer" }}>
-          <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
+          <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
           <div className="btn btn-primary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 46, borderRadius: 14, marginBottom: 16 }}>
             📷 ถ่ายรูป / เลือกภาพ
           </div>
@@ -1145,7 +1165,10 @@ function PhotoModal({ target, kind, onClose }) {
             {photos.map(ph => (
               <div key={ph.id} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden", cursor: "pointer" }} onClick={() => setPreview(ph)}>
                 <img src={ph.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-                <button onClick={e => { e.stopPropagation(); del(ph.id); }} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.65)", color: "white", border: "none", cursor: "pointer", fontSize: 11, display: "grid", placeItems: "center" }}>✕</button>
+                {/* ปุ่มลบ — เฉพาะ admin */}
+                {isAdmin && (
+                  <button onClick={e => { e.stopPropagation(); confirmDelete(ph.id); }} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(220,38,38,0.85)", color: "white", border: "none", cursor: "pointer", fontSize: 11, display: "grid", placeItems: "center" }}>✕</button>
+                )}
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.5)", color: "white", fontSize: 9, padding: "2px 5px" }}>{ph.at}</div>
               </div>
             ))}
@@ -1155,11 +1178,36 @@ function PhotoModal({ target, kind, onClose }) {
             ยังไม่มีภาพถ่าย
           </div>
         )}
+        {!isAdmin && photos.length > 0 && (
+          <div style={{ marginTop: 12, fontSize: 11, color: "var(--ink-mute)", textAlign: "center" }}>
+            🔒 เฉพาะ Admin เท่านั้นที่สามารถลบภาพได้
+          </div>
+        )}
       </div>
+
+      {/* Full-screen preview */}
       {preview && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 10100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setPreview(null)}>
           <img src={preview.dataUrl} style={{ maxWidth: "95vw", maxHeight: "88vh", borderRadius: 12, objectFit: "contain" }} alt="" />
-          <button onClick={e => { e.stopPropagation(); del(preview.id); }} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", color: "white", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>🗑 ลบ</button>
+          {isAdmin && (
+            <button onClick={e => { e.stopPropagation(); confirmDelete(preview.id); }} style={{ position: "absolute", top: 16, right: 16, background: "rgba(220,38,38,0.75)", border: "none", color: "white", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>🗑 ลบ</button>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation dialog */}
+      {confirmId && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 10200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div className="card card-elev" style={{ maxWidth: 340, width: "100%", padding: "24px 20px", borderRadius: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>🗑 ยืนยันการลบภาพ</div>
+            <div style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 20 }}>
+              ภาพนี้จะถูกลบถาวร และจะบันทึกประวัติการลบโดย <b>{currentUser?.username}</b>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setConfirmId(null)}>ยกเลิก</button>
+              <button className="btn" style={{ flex: 1, background: "linear-gradient(135deg,#dc2626,#ef4444)", color: "white", border: "none", fontWeight: 700 }} onClick={() => doDelete(confirmId)}>ลบภาพ</button>
+            </div>
+          </div>
         </div>
       )}
     </Modal>
