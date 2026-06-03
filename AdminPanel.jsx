@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, pushPermission, subscribePush, unsubscribePush }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -133,7 +133,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
       </div>
 
       <div className={"adm-body" + (tab === "map" ? " adm-map-body" : "")}>
-        {tab === "dashboard" && <AdminDashboard data={data} />}
+        {tab === "dashboard" && <AdminDashboard data={data} onRefresh={onRefresh} refreshing={refreshing} />}
         {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
@@ -166,7 +166,7 @@ function fmtStat(n) {
   return n.toLocaleString();
 }
 
-function AdminDashboard({ data }) {
+function AdminDashboard({ data, onRefresh, refreshing }) {
   const { t } = useLang();
   const s = data.dashStats || {};
   const meterCount = +(s.meter_count  || 0);
@@ -220,6 +220,21 @@ function AdminDashboard({ data }) {
           .db-donut-svg  { width: 130px; height: 130px; flex-shrink: 0; }
         }
       `}</style>
+
+      {/* Header row with refresh button */}
+      {onRefresh && (
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", marginBottom:4 }}>
+          <button onClick={onRefresh} disabled={refreshing} style={{
+            display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:20,
+            background:"var(--surface-2)", border:"1px solid var(--line)",
+            cursor: refreshing ? "default" : "pointer", fontSize:12, fontWeight:700,
+            color:"var(--pea-purple-500)", opacity: refreshing ? 0.6 : 1, transition:"opacity 200ms",
+          }}>
+            <Icon name="refresh" size={13} style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none" }} />
+            {refreshing ? "กำลังอัพเดท…" : "อัพเดทข้อมูล"}
+          </button>
+        </div>
+      )}
 
       {/* Stat cards — skeleton while loading */}
       <div className="db-stat-grid">
@@ -336,8 +351,10 @@ function DbUsageCard() {
     { key: "trs",         table: "transformers",           label: "PEA หม้อแปลง",      color: "#f47b20", kb: 1.5 },
     { key: "profiles",    table: "profiles",               label: "ผู้ใช้งาน",          color: "#10b981", kb: 0.5 },
     { key: "audit",       table: "audit_log",              label: "Audit Log",          color: "#64748b", kb: 0.4 },
+    { key: "slips",       table: "payment_slips",          label: "สลิปชำระเงิน",       color: "#ec4899", kb: 3.0 },
+    { key: "notifs",      table: "notifications",          label: "การแจ้งเตือน",        color: "#06b6d4", kb: 0.5 },
     { key: "push",        table: "push_subscriptions",     label: "Push Subscriptions", color: "#8b5cf6", kb: 2.0 },
-    { key: "corrections", table: "coordinate_corrections", label: "คำขอแก้ไขพิกัด",  color: "#0ea5e9", kb: 0.5 },
+    { key: "corrections", table: "coordinate_corrections", label: "คำขอแก้ไขพิกัด",    color: "#0ea5e9", kb: 0.5 },
     { key: "settings",    table: "settings",               label: "Settings",           color: "#94a3b8", kb: 0.1 },
   ];
   const FREE_LIMIT_MB = 500;

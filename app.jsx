@@ -4246,7 +4246,8 @@ function App() {
               maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
               devInfo={devInfo} setDevInfo={setDevInfo}
               allowExport={allowExport} setAllowExport={setAllowExport}
-              pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />
+              pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush}
+              onRefresh={handleRefresh} refreshing={refreshing} />
           )}
           </div>
         </main>
