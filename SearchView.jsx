@@ -1135,19 +1135,26 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
     if (preview?.id === id) setPreview(null);
     setConfirmId(null);
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-    // บันทึกประวัติการลบ
-    try {
-      const logKey = "pea_photo_del_log";
-      const log = JSON.parse(localStorage.getItem(logKey) || "[]");
-      log.unshift({
-        id: Date.now(),
-        kind, objectId: target.OBJECTID, label,
-        photoAt: ph?.at || "—",
-        deletedBy: currentUser?.username || "admin",
-        deletedAt: new Date().toLocaleString("th-TH"),
-      });
-      localStorage.setItem(logKey, JSON.stringify(log.slice(0, 300)));
-    } catch {}
+    // บันทึกประวัติการลบลง Supabase audit_log (fallback localStorage)
+    const auditRow = {
+      username: currentUser?.username || "admin",
+      action:   "delete_photo",
+      target:   `${kind === "meter" ? "Meter" : "TR"} ${label} (OBJECTID: ${target.OBJECTID})`,
+      detail:   `ลบภาพที่ถ่ายเมื่อ ${ph?.at || "—"}`,
+      ip:       (navigator.userAgent || "").substring(0, 200),
+    };
+    _supabase.from("audit_log").insert(auditRow).then(({ error }) => {
+      if (error) {
+        console.warn("[photo del log] Supabase insert failed:", error.message);
+        // fallback: localStorage
+        try {
+          const logKey = "pea_photo_del_log";
+          const log = JSON.parse(localStorage.getItem(logKey) || "[]");
+          log.unshift({ ...auditRow, at: new Date().toLocaleString("th-TH") });
+          localStorage.setItem(logKey, JSON.stringify(log.slice(0, 300)));
+        } catch {}
+      }
+    });
   };
 
   return (
