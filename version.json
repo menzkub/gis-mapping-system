@@ -1,7 +1,7 @@
 {
-  "commit": "512f74e606cb3e011c402321c638d3236d08c3da",
-  "shortCommit": "512f74e",
-  "message": "feat: custom PeaSelect dropdown, centered user detail modal, and permissions system",
-  "date": "2026-06-03T05:15:21Z",
+  "commit": "c101640d98fe868d6d824220b9100ae1d8b1e6ff",
+  "shortCommit": "c101640",
+  "message": "fix: save permissions when editing user, add permission chips in user table",
+  "date": "2026-06-03T05:23:47Z",
   "branch": "main"
 }
