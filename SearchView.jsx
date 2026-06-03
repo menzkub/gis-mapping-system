@@ -997,14 +997,77 @@ function QrModal({ target, kind, onClose }) {
     }
   }, []);
 
-  const download = () => {
+  const [saving, setSaving] = useStateS(false);
+
+  const saveCard = async () => {
     const svg = divRef.current?.querySelector("svg");
-    if (!svg) return;
-    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `qr-${label}.svg`;
-    a.click();
+    if (!svg || saving) return;
+    setSaving(true);
+    try {
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgUrl = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+      const qrImg = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = svgUrl; });
+
+      const S = 2, W = 360, PAD = 20, QR = 260;
+      const accent = kind === "meter" ? "#6b2c91" : "#f47b20";
+      // Build info lines
+      const lines = [];
+      if (kind === "meter") {
+        if (target.TAG) lines.push(`TAG: ${target.TAG}`);
+        if (target.FEEDERID) lines.push(`Feeder: ${target.FEEDERID}  Route: ${target.ROUTE || "—"}`);
+        if (target.OWNER) lines.push(`Owner: ${target.OWNER}`);
+      } else {
+        if (target.TAG) lines.push(`TAG: ${target.TAG}`);
+        if (target.KVA) lines.push(`${target.KVA} kVA · ${target.PHASE || ""} · ${target.VOLTAGE || ""}`);
+        if (target.LOCATION) lines.push(`${target.LOCATION}`);
+        if (target.FEEDER1) lines.push(`Feeder: ${target.FEEDER1}`);
+      }
+      lines.push(`${target.LATITUDE?.toFixed(6)}, ${target.LONGITUDE?.toFixed(6)}`);
+      const LH = 18, infoH = lines.length * LH + 16;
+      const H = PAD + 64 + 12 + QR + 12 + infoH + PAD;
+
+      const c = document.createElement("canvas");
+      c.width = W * S; c.height = H * S;
+      const ctx = c.getContext("2d");
+      ctx.scale(S, S);
+
+      // Background
+      ctx.fillStyle = "#f5f3fb";
+      ctx.fillRect(0, 0, W, H);
+
+      // Header
+      ctx.fillStyle = accent;
+      ctx.fillRect(0, 0, W, 64 + PAD);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `700 10px sans-serif`;
+      ctx.fillText(kind === "meter" ? "PEA METER" : "PEA TR", PAD, PAD + 18);
+      ctx.font = `800 22px monospace`;
+      ctx.fillText(label, PAD, PAD + 50);
+
+      // QR white bg + image
+      const qrX = (W - QR) / 2;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(qrX - 10, PAD + 64 + 4, QR + 20, QR + 16);
+      ctx.drawImage(qrImg, qrX, PAD + 64 + 12, QR, QR);
+
+      // Info lines
+      ctx.fillStyle = "#444444";
+      ctx.font = `500 13px sans-serif`;
+      const infoTop = PAD + 64 + 12 + QR + 20;
+      lines.forEach((ln, i) => ctx.fillText(ln, PAD, infoTop + i * LH));
+
+      const blob = await new Promise(r => c.toBlob(r, "image/png"));
+      const filename = `qr-${kind === "meter" ? "meter" : "tr"}-${label}.png`;
+      const file = new File([blob], filename, { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: `QR · ${label}` }); }
+        catch (e) { if (e.name !== "AbortError") { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = filename; a.click(); URL.revokeObjectURL(u); } }
+      } else {
+        const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = filename; a.click(); URL.revokeObjectURL(u);
+      }
+    } catch (err) { console.error("QR save error", err); alert("ไม่สามารถบันทึกภาพได้"); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -1013,10 +1076,12 @@ function QrModal({ target, kind, onClose }) {
         <div ref={divRef} style={{ display: "flex", justifyContent: "center", marginBottom: 12 }} />
         <div style={{ fontSize: 10, color: "var(--ink-mute)", fontFamily: "monospace", wordBreak: "break-all", padding: "0 8px", marginBottom: 16 }}>{mapsUrl}</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-          <button className="btn btn-outline" onClick={download}>⬇ SVG</button>
+          <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveCard} disabled={saving}>
+            {saving ? "⏳ กำลังบันทึก…" : "📥 บันทึกภาพ"}
+          </button>
           {navigator.share && (
-            <button className="btn btn-primary" onClick={() => navigator.share({ title: `PEA ${kind === "meter" ? "Meter" : "TR"} · ${label}`, url: mapsUrl })}>
-              ↗ แชร์
+            <button className="btn btn-outline" onClick={() => navigator.share({ title: `PEA ${kind === "meter" ? "Meter" : "TR"} · ${label}`, url: mapsUrl })}>
+              ↗ แชร์ลิงก์
             </button>
           )}
         </div>

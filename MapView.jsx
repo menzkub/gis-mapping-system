@@ -194,14 +194,19 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
             b.innerHTML = "⏳";
             b.disabled = true;
             try {
-              const canvas = await window.html2canvas(wrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: null });
-              const link = document.createElement("a");
+              const canvas = await window.html2canvas(wrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" });
               const label = p.PEANO || p.PEANO_TR || p.TAG || String(p.OBJECTID);
-              link.download = `pea-${kind === "meter" ? "meter" : "tr"}-${label}.png`;
-              link.href = canvas.toDataURL("image/png");
-              link.click();
+              const filename = `pea-${kind === "meter" ? "meter" : "tr"}-${label}.png`;
+              const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+              const file = new File([blob], filename, { type: "image/png" });
+              if (navigator.canShare?.({ files: [file] })) {
+                try { await navigator.share({ files: [file], title: `PEA ${kind === "meter" ? "Meter" : "TR"} · ${label}` }); }
+                catch (e) { if (e.name !== "AbortError") { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = filename; a.click(); URL.revokeObjectURL(u); } }
+              } else {
+                const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = filename; a.click(); URL.revokeObjectURL(u);
+              }
             } catch (err) {
-              console.error("html2canvas error", err);
+              console.error("save error", err);
               alert("ไม่สามารถบันทึกภาพได้");
             } finally {
               b.innerHTML = origHtml;
