@@ -1,7 +1,7 @@
 {
-  "commit": "92272a60de09e5be3c351410d37bf7922a285fb8",
-  "shortCommit": "92272a6",
-  "message": "fix: render Modal via ReactDOM.createPortal to fix centering on mobile",
-  "date": "2026-06-03T17:54:28Z",
+  "commit": "d5ecf213245aff9afde6861eb090d281b8e38647",
+  "shortCommit": "d5ecf21",
+  "message": "feat: migrate photos to Supabase Storage + premium logo + mobile UX fixes",
+  "date": "2026-06-03T18:14:01Z",
   "branch": "main"
 }
