@@ -1,7 +1,7 @@
 {
-  "commit": "910ec601f19cd84a962b0b0c5198429c66022839",
-  "shortCommit": "910ec60",
-  "message": "Fix search for numeric peano/accountnum columns + unify yellow marker form",
-  "date": "2026-06-03T06:49:36Z",
+  "commit": "37332fd56ee3e1c2d710d3382780db0d43951403",
+  "shortCommit": "37332fd",
+  "message": "Fix search: use .eq() for numeric PEANO/accountnum, surface query errors",
+  "date": "2026-06-03T08:01:18Z",
   "branch": "main"
 }
