@@ -4458,7 +4458,7 @@ function makeAdmMarker(p, symbol, isMeter, accent, accent2, onCorrection, corrLa
           <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,${accent},${accent2});color:white;font-weight:900;display:grid;place-items:center;font-size:12px">▲</div>
           <div>
             <div style="font-weight:800;font-size:13px;font-family:'IBM Plex Mono',monospace">${p.PEANO_TR || p.TAG}</div>
-            ${p.PEANO_TR ? '<div style="font-size:10px;color:#888;font-family:monospace">' + p.TAG + '</div>' : ""}
+            <div style="font-size:10px;color:#888;font-family:monospace">${p.TAG}</div>
           </div>
         </div>
         <div style="font-size:11px;color:var(--ink-mute)">${p.KVA} kVA · ${p.PHASE}Φ · ${p.VOLTAGE} kV · Feeder: <b>${p.FEEDER1||"—"}</b></div>
