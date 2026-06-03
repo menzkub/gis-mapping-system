@@ -411,17 +411,21 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               {/* Hint overlay before any search */}
               {!hasSearched && (
                 <div className="fade-up" style={{
-                  position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 500,
-                  background: "rgba(var(--surface-rgb,255,255,255),0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-                  borderRadius: 20, padding: "11px 22px",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid rgba(139,63,196,0.18)",
-                  fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap",
-                  display: "flex", alignItems: "center", gap: 9, pointerEvents: "none",
+                  position: "absolute", bottom: 28, left: 0, right: 0, zIndex: 500,
+                  display: "flex", justifyContent: "center", pointerEvents: "none", padding: "0 16px",
                 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 9, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                    <Icon name="search" size={13} style={{ color: "white" }} />
+                  <div style={{
+                    background: "rgba(var(--surface-rgb,255,255,255),0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                    borderRadius: 20, padding: "11px 22px",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid rgba(139,63,196,0.18)",
+                    fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap",
+                    display: "flex", alignItems: "center", gap: 9,
+                  }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 9, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <Icon name="search" size={13} style={{ color: "white" }} />
+                    </div>
+                    พิมพ์คำค้นหาเพื่อดูตำแหน่งบนแผนที่
                   </div>
-                  พิมพ์คำค้นหาเพื่อดูตำแหน่งบนแผนที่
                 </div>
               )}
               {/* Result count badge */}
