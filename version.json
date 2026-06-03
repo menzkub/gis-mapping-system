@@ -1,7 +1,7 @@
 {
-  "commit": "72370d432213bcb0f61ee0446c6079f19dde839d",
-  "shortCommit": "72370d4",
-  "message": "Fix last_login not recording + admin panel stale user data",
-  "date": "2026-06-03T17:34:12Z",
+  "commit": "076dd802179938a7549f99acdd6bab9806e2c52f",
+  "shortCommit": "076dd80",
+  "message": "Update README to v3.3 \u2014 complete feature documentation",
+  "date": "2026-06-03T17:45:16Z",
   "branch": "main"
 }
