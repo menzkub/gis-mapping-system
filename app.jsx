@@ -2419,6 +2419,65 @@ function MaintenanceScreen({ currentUser, message, until, onLogout }) {
   );
 }
 
+// ── SuspendedScreen ───────────────────────────────────────────────────────
+function SuspendedScreen({ onBack }) {
+  return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center",
+      background: "radial-gradient(120% 100% at 0% 0%, #7f1d1d 0%, #1b0926 60%, #0f172a 100%)", padding: "0 16px" }}>
+      <div className="fade-up" style={{ width: "100%", maxWidth: 480,
+        background: "var(--surface)", borderRadius: 24, boxShadow: "0 28px 72px rgba(0,0,0,0.6)", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ background: "linear-gradient(135deg,#991b1b 0%,#b91c1c 60%,#dc2626 100%)",
+          padding: "22px 28px", display: "flex", alignItems: "center", gap: 14,
+          position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", right: -40, top: -40, width: 160, height: 160,
+            borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
+          <div style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+            background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center" }}>
+            <Icon name="lock" size={26} stroke={2} style={{ color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 20, color: "white", lineHeight: 1.2 }}>บัญชีถูกระงับ</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>Account Suspended</div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "26px 28px 28px" }}>
+          <div style={{ display: "flex", gap: 14, padding: "16px", borderRadius: 14, marginBottom: 20,
+            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+              background: "rgba(239,68,68,0.15)", display: "grid", placeItems: "center" }}>
+              <Icon name="warning" size={18} style={{ color: "#ef4444" }} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#dc2626", marginBottom: 4 }}>
+                บัญชีถูกระงับเนื่องจากยังไม่ได้ชำระค่าบริการ
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.65 }}>
+                กรุณาติดต่อผู้ดูแลระบบ (Admin) เพื่อชำระค่าบริการและเปิดใช้งานบัญชีอีกครั้ง
+              </div>
+            </div>
+          </div>
+
+          <div style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 20,
+            background: "var(--soft)", border: "1px solid var(--line)", fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.7 }}>
+            <span style={{ fontWeight: 700, color: "var(--ink)" }}>ขั้นตอนการเปิดใช้งาน:</span><br />
+            1. ชำระค่าบริการตามที่กำหนด<br />
+            2. ส่งหลักฐานการชำระเงินให้ Admin<br />
+            3. Admin จะดำเนินการเปิดใช้งานบัญชี
+          </div>
+
+          <button className="btn btn-outline" style={{ width: "100%", height: 46 }} onClick={onBack}>
+            <Icon name="logout" size={14} /> กลับไปหน้าเข้าสู่ระบบ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── PasswordExpiredScreen ─────────────────────────────────────────────────
 function PasswordExpiredScreen({ currentUser, onLogout }) {
   const initials = (currentUser?.name || currentUser?.username || "?")[0].toUpperCase();
@@ -3115,12 +3174,14 @@ function App() {
       const myProfile = myProfileRes.data;
       if (myProfile.status === "pending" || myProfile.status === "banned" || myProfile.status === "suspended") {
         await _supabase.auth.signOut();
-        window.__peaAuthErr = myProfile.status === "pending"
-          ? "บัญชีของคุณรอการอนุมัติจากผู้ดูแลระบบ"
-          : myProfile.status === "suspended"
-          ? "บัญชีถูกระงับเนื่องจากยังไม่ได้ชำระค่าบริการ กรุณาติดต่อ Admin"
-          : "บัญชีของคุณถูกระงับการใช้งาน";
-        setAppState("unauthed");
+        if (myProfile.status === "suspended") {
+          setAppState("suspended");
+        } else {
+          window.__peaAuthErr = myProfile.status === "pending"
+            ? "บัญชีของคุณรอการอนุมัติจากผู้ดูแลระบบ"
+            : "บัญชีของคุณถูกระงับการใช้งาน";
+          setAppState("unauthed");
+        }
         return;
       }
 
@@ -3488,6 +3549,10 @@ function App() {
   // ── Render states ────────────────────────────────────────────────────────
   if (appState === "checking") return <LoadingScreen message="กำลังตรวจสอบการเข้าสู่ระบบ…" />;
   if (appState === "loading")  return <LoadingScreen message="กำลังโหลดข้อมูล…" />;
+
+  if (appState === "suspended") return (
+    <SuspendedScreen onBack={() => setAppState("unauthed")} />
+  );
 
   if (appState === "maintenance") return (
     <MaintenanceScreen

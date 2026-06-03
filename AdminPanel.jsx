@@ -2099,7 +2099,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
   const filterFn = (u) => {
     if (statusFilter === "active")    return u.status === "active";
     if (statusFilter === "pending")   return u.status === "pending";
-    if (statusFilter === "banned")    return u.status === "banned";
+    if (statusFilter === "banned")    return u.status === "banned" || u.status === "suspended";
     if (statusFilter === "admin")     return u.role === "admin";
     if (statusFilter === "user")      return u.role === "user";
     if (statusFilter === "with2fa")   return !!u.require_2fa;
@@ -2265,7 +2265,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
   const total   = users.length;
   const active  = users.filter(u => u.status === "active").length;
   const pending = users.filter(u => u.status === "pending").length;
-  const banned  = users.filter(u => u.status === "banned").length;
+  const banned  = users.filter(u => u.status === "banned" || u.status === "suspended").length;
   const admins  = users.filter(u => u.role === "admin").length;
   const with2fa = users.filter(u => u.require_2fa).length;
   const pwExpired = users.filter(u => {
@@ -2444,8 +2444,8 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   )}
                 </td>
                 <td>
-                  <span className={"badge " + (u.status === "active" ? "badge-green" : u.status === "banned" ? "badge-red" : "badge-amber")}>
-                    {u.status === "active" ? "ใช้งานได้" : u.status === "banned" ? "ระงับ" : "รออนุมัติ"}
+                  <span className={"badge " + (u.status === "active" ? "badge-green" : (u.status === "banned" || u.status === "suspended") ? "badge-red" : "badge-amber")}>
+                    {u.status === "active" ? "ใช้งานได้" : (u.status === "banned" || u.status === "suspended") ? "ระงับ" : "รออนุมัติ"}
                   </span>
                 </td>
                 <td onClick={e => e.stopPropagation()}>
@@ -2516,7 +2516,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       <div className="au-cards">
         {list.map(u => {
           const isPending  = u.status === "pending";
-          const isBanned   = u.status === "banned";
+          const isBanned   = u.status === "banned" || u.status === "suspended";
           const isMe       = u.id === currentUser.id;
           const dl         = pwDaysLeft(u);
           const isPwExpired = !u.pw_force_change && dl !== null && dl <= 0;

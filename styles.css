@@ -601,11 +601,19 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
   /* desktop default: sidebar=260px, topbar=64px */
   padding: calc(64px + 16px) 20px 20px calc(260px + 20px);
   background: rgba(14,10,22,0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+/* Collapsed desktop sidebar (72px) */
+.app-root.sidebar-dt-collapsed .pea-modal-overlay {
+  padding-left: calc(72px + 12px);
+}
+.app-root.sidebar-dt-collapsed.sidebar-1440 .pea-modal-overlay {
+  padding-left: calc(72px + 12px);
 }
 
 /* Large desktop ≥1440px: sidebar=290px, topbar=68px */
