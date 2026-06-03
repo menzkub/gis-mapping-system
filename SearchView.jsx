@@ -834,6 +834,26 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
   const [note, setNote] = useStateS("");
   const [submitting, setSubmitting] = useStateS(false);
   const [done, setDone] = useStateS(false);
+  const [locating, setLocating] = useStateS(false);
+  const [gpsError, setGpsError] = useStateS("");
+
+  const useGPS = () => {
+    if (!navigator.geolocation) { setGpsError("อุปกรณ์ไม่รองรับ GPS"); return; }
+    setLocating(true);
+    setGpsError("");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setNewLat(pos.coords.latitude.toFixed(8));
+        setNewLng(pos.coords.longitude.toFixed(8));
+        setLocating(false);
+      },
+      err => {
+        setGpsError(err.code === 1 ? "ไม่ได้รับอนุญาตเข้าถึง GPS" : "ไม่สามารถระบุตำแหน่งได้");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -857,14 +877,37 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
           {done ? (
             <div style={{ textAlign: "center", padding: "20px 0", color: "#10b981", fontWeight: 700, fontSize: 16 }}>✓ ส่งคำขอแล้ว รอ Admin อนุมัติ</div>
           ) : (<>
+            {/* GPS button */}
+            <button onClick={useGPS} disabled={locating} style={{
+              width: "100%", height: 44, marginBottom: 12, borderRadius: 12, border: "1.5px solid rgba(244,123,32,0.4)",
+              background: locating ? "rgba(244,123,32,0.06)" : "rgba(244,123,32,0.09)",
+              color: "#d96512", fontWeight: 700, fontSize: 13, cursor: locating ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "background 0.15s",
+            }}>
+              {locating ? (
+                <>
+                  <span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(244,123,32,0.25)", borderTopColor: "#f47b20", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+                  กำลังระบุตำแหน่ง…
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+                  </svg>
+                  ใช้ตำแหน่ง GPS ปัจจุบัน
+                </>
+              )}
+            </button>
+            {gpsError && <div style={{ fontSize: 11, color: "#dc2626", marginBottom: 10, textAlign: "center" }}>{gpsError}</div>}
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
               <div className="field" style={{ margin: 0 }}>
                 <label className="field-label">Latitude ใหม่</label>
-                <input className="input" type="number" step="0.00001" value={newLat} onChange={e => setNewLat(e.target.value)} style={{ height: 38 }} />
+                <input className="input" type="number" step="0.00000001" value={newLat} onChange={e => setNewLat(e.target.value)} style={{ height: 38, fontFamily: "monospace" }} />
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label className="field-label">Longitude ใหม่</label>
-                <input className="input" type="number" step="0.00001" value={newLng} onChange={e => setNewLng(e.target.value)} style={{ height: 38 }} />
+                <input className="input" type="number" step="0.00000001" value={newLng} onChange={e => setNewLng(e.target.value)} style={{ height: 38, fontFamily: "monospace" }} />
               </div>
             </div>
             <div className="field" style={{ marginBottom: 14 }}>
