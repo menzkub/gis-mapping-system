@@ -59,7 +59,7 @@ const TRANSLATIONS = {
     notifications: "การแจ้งเตือน", logout: "ออกจากระบบ",
     switchLang: "Switch to English",
     themeDark: "โหมดมืด", themeLight: "โหมดสว่าง",
-    mapStreet: "Street", mapSatellite: "Satellite",
+    mapStreet: "ถนน", mapSatellite: "ดาวเทียม",
 
     // ── Deploy status popup ────────────────────────────────
     deployChecking: "กำลังตรวจสอบ…", deployCurrent: "ระบบเป็นปัจจุบัน", deployPending: "มีการอัปเดตรอ Deploy",

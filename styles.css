@@ -28,6 +28,7 @@
   --line-2: #e3dbef;
   --bg: #f8f5fd;
   --surface: #ffffff;
+  --surface-rgb: 255,255,255;
   --soft: #f6efff;
   --soft-border: #d4abff;
   --row-hover: #f6efff;
@@ -77,6 +78,7 @@
   --line-2: #382d54;
   --bg: #0e0a16;
   --surface: #1a1330;
+  --surface-rgb: 26,19,48;
   --soft: #251a3d;
   --soft-border: #382d54;
   --row-hover: #32254f;
@@ -561,23 +563,24 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
-   ProfileView — equal-width tab bar (flex, all 4 tabs same width)
+   ProfileView — equal-width tab bar (CSS grid, guaranteed equal columns)
    ============================================================ */
 .pv-tabs {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  flex-wrap: nowrap !important;
-  overflow-x: unset !important;
 }
 .pv-tabs .tab {
-  flex: 1 1 0 !important;
+  width: 100% !important;
   min-width: 0 !important;
   justify-content: center !important;
-  padding: 0 6px !important;
+  padding: 0 8px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  /* Smooth background/color only — no spring/bounce transform */
+  transition: background 220ms ease, color 180ms ease, box-shadow 220ms ease !important;
 }
 
 /* ============================================================
@@ -723,6 +726,14 @@ a { color: inherit; text-decoration: none; }
   from { opacity: 0; transform: translateX(-12px); }
   to   { opacity: 1; transform: none; }
 }
+@keyframes admPanelIn {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes admPanelBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 @keyframes authLogoFloat {
   0%, 100% { transform: translateY(0px) scale(1); }
   50%       { transform: translateY(-10px) scale(1.04); }
@@ -829,6 +840,20 @@ a { color: inherit; text-decoration: none; }
 }
 .input:focus, .select:focus, .textarea:focus {
   animation: focusRing 0.22s var(--ease-out) forwards;
+}
+
+/* PeaSelect custom dropdown */
+@keyframes psDropIn {
+  from { opacity: 0; transform: scaleY(0.92) translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+.pea-sel-open {
+  border-color: var(--pea-purple-500) !important;
+  box-shadow: 0 0 0 4px var(--pea-purple-100) !important;
+  outline: none !important;
+}
+[data-theme="dark"] .pea-sel-open {
+  box-shadow: 0 0 0 3px rgba(107,44,145,0.35) !important;
 }
 
 /* Shimmer skeleton for loading states */

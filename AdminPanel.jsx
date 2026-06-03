@@ -2408,7 +2408,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       </div>
 
       {/* ── User Table Card ── */}
-      <div className="card card-elev" ref={tableRef}>
+      <div className="card card-elev" ref={tableRef} style={{ position: "relative" }}>
       {/* Header */}
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: statusFilter ? 8 : 16 }}>
         <div>
@@ -2668,39 +2668,68 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
               <div className="field"><label className="field-label">Username</label><input className="input" value={edit.username} onChange={e => setEdit({ ...edit, username: e.target.value })} /></div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div className="field"><label className="field-label">Role</label>
-                  <select className="input" value={edit.role} onChange={e => setEdit({ ...edit, role: e.target.value, team_leader_id: e.target.value !== "user" ? null : edit.team_leader_id })}>
+                  <PeaSelect value={edit.role} onChange={e => setEdit({ ...edit, role: e.target.value, team_leader_id: e.target.value !== "user" ? null : edit.team_leader_id })}>
                     <option value="user">user</option>
                     <option value="team_leader">team_leader</option>
                     <option value="admin">admin</option>
-                  </select>
+                  </PeaSelect>
                 </div>
                 <div className="field"><label className="field-label">สถานะ</label>
-                  <select className="input" value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value })}>
-                    <option value="active">active</option><option value="pending">pending</option><option value="banned">banned</option>
-                  </select>
+                  <PeaSelect value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value })}>
+                    <option value="active">active</option>
+                    <option value="pending">pending</option>
+                    <option value="banned">banned</option>
+                  </PeaSelect>
                 </div>
               </div>
               {edit.role === "user" && (
                 <div className="field">
                   <label className="field-label">สังกัดหัวหน้าทีม</label>
-                  <select className="input" value={edit.team_leader_id || ""} onChange={e => setEdit({ ...edit, team_leader_id: e.target.value || null })}>
+                  <PeaSelect value={edit.team_leader_id || ""} onChange={e => setEdit({ ...edit, team_leader_id: e.target.value || null })}>
                     <option value="">— ไม่มี (ทั่วไป) —</option>
                     {teamLeaders.map(tl => (
                       <option key={tl.id} value={tl.id}>{tl.name} (@{tl.username})</option>
                     ))}
-                  </select>
+                  </PeaSelect>
                   {teamLeaders.length === 0 && (
                     <div className="t-mute text-xs" style={{ marginTop: 5 }}>ยังไม่มีหัวหน้าทีม — เปลี่ยน role ผู้ใช้คนใดก็ได้เป็น team_leader ก่อน</div>
                   )}
                 </div>
               )}
+              <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Icon name="lock" size={13} /> สิทธิ์เพิ่มเติม
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { key: "correct_coords",    label: "แจ้งแก้ไขพิกัด",    desc: "ส่งคำขอแก้ไขพิกัด (Admin อนุมัติก่อน)" },
+                    { key: "view_overview_map", label: "ดูแผนที่ภาพรวม",    desc: "เข้าดูแผนที่ภาพรวม (ดูได้อย่างเดียว)" },
+                    { key: "view_changelog",    label: "ดู Changelog",        desc: "เข้าดูประวัติการพัฒนาระบบ" },
+                    { key: "export_data",       label: "Export ข้อมูล",       desc: "ส่งออก CSV จากผลการค้นหา" },
+                  ].map(perm => {
+                    const perms = edit.permissions || [];
+                    const has = perms.includes(perm.key);
+                    return (
+                      <label key={perm.key} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 10px", borderRadius: 9, border: `1px solid ${has ? "rgba(107,44,145,0.3)" : "var(--line)"}`, background: has ? "rgba(107,44,145,0.06)" : "transparent", cursor: "pointer" }}>
+                        <input type="checkbox" checked={has} onChange={e => {
+                          const next = e.target.checked ? [...perms, perm.key] : perms.filter(k => k !== perm.key);
+                          setEdit({ ...edit, permissions: next });
+                        }} style={{ marginTop: 2, accentColor: "var(--pea-purple-600)", flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 13 }}>{perm.label}</div>
+                          <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 1 }}>{perm.desc}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           );
         })()}
       </Modal>
-      </div>
 
-      {/* ── Password History Modal ── */}
+      {/* ── User Detail Modal ── */}
       {pwModal && (() => {
         const u    = pwModal.user;
         const dl   = pwDaysLeft(u);
@@ -2714,27 +2743,24 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
         }[a] || a);
 
         return (
-          <div className="fade-in pea-modal-overlay"
-            onClick={() => setPwModal(null)}>
-            <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 580, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "86vh", display: "flex", flexDirection: "column" }}>
-
-              {/* Header */}
-              <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: avatarBg(u.username), display: "grid", placeItems: "center", fontWeight: 800, fontSize: 18, color: "white", flexShrink: 0 }}>
-                    {(u.name || u.username || "?")[0]}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: "white" }}>{u.name}</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>@{u.username} · {u.role}</div>
-                  </div>
+          <Modal
+            open={true}
+            onClose={() => setPwModal(null)}
+            title={
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: avatarBg(u.username), display: "grid", placeItems: "center", fontWeight: 800, fontSize: 17, color: "white", flexShrink: 0 }}>
+                  {(u.name || u.username || "?")[0]}
                 </div>
-                <button onClick={() => setPwModal(null)} style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer", flexShrink: 0 }}>
-                  <Icon name="close" size={14} />
-                </button>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{u.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 1 }}>@{u.username} · {u.role}</div>
+                </div>
               </div>
-
-              <div style={{ padding: "20px 24px", overflow: "auto", flex: 1 }}>
+            }
+            width={480}
+            footer={<button className="btn btn-outline" style={{ width: "100%", height: 40 }} onClick={() => setPwModal(null)}>ปิด</button>}
+          >
+            <div>
 
                 {/* Personal info grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
@@ -2762,6 +2788,21 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   ))}
                 </div>
 
+                {(u.permissions || []).length > 0 && (
+                  <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(107,44,145,0.2)", background: "rgba(107,44,145,0.04)" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--pea-purple-600)", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                      <Icon name="lock" size={11} /> สิทธิ์เพิ่มเติม
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {(u.permissions || []).map(key => {
+                        const label = { correct_coords: "แจ้งแก้ไขพิกัด", view_overview_map: "ดูแผนที่ภาพรวม", view_changelog: "ดู Changelog", export_data: "Export ข้อมูล" }[key] || key;
+                        return (
+                          <span key={key} style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 6, background: "rgba(107,44,145,0.12)", color: "var(--pea-purple-600)", border: "1px solid rgba(107,44,145,0.2)" }}>{label}</span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {/* Expiry status card */}
                 <div style={{ borderRadius: 16, border: `2px solid ${isPwExpired ? "rgba(220,38,38,0.35)" : u.pw_force_change ? "rgba(217,119,6,0.35)" : "rgba(16,185,129,0.25)"}`, background: isPwExpired ? "rgba(220,38,38,0.06)" : u.pw_force_change ? "rgba(217,119,6,0.06)" : "rgba(16,185,129,0.05)", padding: "18px 20px", marginBottom: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
@@ -2844,14 +2885,10 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
                   </div>
                 )}
               </div>
-
-              <div style={{ padding: "14px 24px", borderTop: "1px solid var(--line)", flexShrink: 0 }}>
-                <button className="btn btn-outline" style={{ width: "100%", height: 40 }} onClick={() => setPwModal(null)}>ปิด</button>
-              </div>
-            </div>
-          </div>
+          </Modal>
         );
       })()}
+      </div>
     </div>
   );
 }
@@ -3078,12 +3115,11 @@ function MinSelect({ label, value, options, onChange }) {
   return (
     <div className="field">
       <label className="field-label">{label}</label>
-      <select className="input" value={value} onChange={e => onChange(e.target.value)}
-        style={{ cursor:"pointer" }}>
+      <PeaSelect value={value} onChange={e => onChange(e.target.value)}>
         {options.map(opt => (
           <option key={opt} value={opt}>{opt}</option>
         ))}
-      </select>
+      </PeaSelect>
     </div>
   );
 }
@@ -3321,7 +3357,24 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const mapSearchTimerRef = React.useRef(null);
   const [highlightTarget, setHighlightTarget] = useStateAd(null); // {p, type}
   const highlightLayerRef = React.useRef(null);
+  const [mapEditTarget, setMapEditTarget] = useStateAd(null); // {p, isMeter}
+  const [mapSaving, setMapSaving] = useStateAd(false);
   const toast = useToast();
+
+  const saveMapEdit = async (edited) => {
+    if (!mapEditTarget) return;
+    setMapSaving(true);
+    const isMeter = mapEditTarget.isMeter;
+    const { error } = isMeter
+      ? await _supabase.from("meters").update(fromMeter(edited)).eq("objectid", edited.OBJECTID)
+      : await _supabase.from("transformers").update(fromTransformer(edited)).eq("objectid", edited.OBJECTID);
+    setMapSaving(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    addAudit({ user: currentUser.username, action: isMeter ? "update_meter" : "update_transformer", target: `OBJECTID ${edited.OBJECTID}`, detail: `แก้ไขจากแผนที่: ${edited.TAG || edited.PEANO || edited.PEANO_TR}` });
+    toast?.(isMeter ? `บันทึกมิเตอร์ ${edited.TAG} แล้ว` : `บันทึกหม้อแปลง ${edited.TAG} แล้ว`, "success");
+    setHighlightTarget(h => h ? { ...h, p: edited } : h);
+    setMapEditTarget(null);
+  };
 
   const loadCorrections = React.useCallback(async () => {
     const { data: rows, error } = await _supabase
@@ -3695,11 +3748,21 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     });
     const label = isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG);
     const m = L.marker([p.LATITUDE, p.LONGITUDE], { icon, zIndexOffset: 1000 });
-    m.bindPopup(`<div style="padding:8px 12px;text-align:center;min-width:140px">
+    const editBtnStyle = `display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;width:100%;height:34px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:linear-gradient(135deg,#6b2c91,#8b3fc4);color:white;`;
+    m.bindPopup(`<div style="padding:10px 14px;text-align:center;min-width:160px">
       <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#888;text-transform:uppercase;margin-bottom:4px">พบผลค้นหา</div>
       <div style="font-family:monospace;font-weight:800;font-size:14px">${label}</div>
       <div style="font-size:11px;color:#888;margin-top:2px">${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}</div>
-    </div>`, { maxWidth: 220 });
+      <button data-edit="1" style="${editBtnStyle}">✏️ แก้ไขข้อมูล</button>
+    </div>`, { maxWidth: 240 });
+    m.on("popupopen", (ev) => {
+      const root = ev.popup.getElement();
+      if (!root) return;
+      root.querySelector("button[data-edit]")?.addEventListener("click", () => {
+        m.closePopup();
+        setMapEditTarget({ p, isMeter });
+      });
+    });
     m.addTo(highlightLayerRef.current);
     m.openPopup();
   }, [highlightTarget]);
@@ -3966,6 +4029,16 @@ function AdminMapTab({ data, currentUser, addAudit }) {
           t={t}
         />
       )}
+
+      {/* Quick edit from map modal */}
+      {mapEditTarget && (
+        <MapQuickEditModal
+          target={mapEditTarget}
+          saving={mapSaving}
+          onClose={() => setMapEditTarget(null)}
+          onSave={saveMapEdit}
+        />
+      )}
     </div>
   );
 }
@@ -4112,6 +4185,93 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
           <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting || samePos}
             style={{ background: submitting || samePos ? undefined : "linear-gradient(135deg,#ea580c,#f47b20)" }}>
             {submitting ? "…" : `📍 ${t("corrSubmit")}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MapQuickEditModal({ target, saving, onClose, onSave }) {
+  const { lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
+  const { p, isMeter } = target;
+  const [form, setForm] = useStateAd({ ...p });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const Field = ({ label, k, type = "text" }) => (
+    <div className="field" style={{ margin: 0 }}>
+      <label className="field-label">{label}</label>
+      <input className="input" type={type} value={form[k] ?? ""} onChange={e => set(k, type === "number" ? +e.target.value : e.target.value)} style={{ height: 38 }} />
+    </div>
+  );
+
+  return (
+    <div className="fade-in pea-modal-overlay" style={{ zIndex: 9500 }} onClick={onClose}>
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 560, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+        {/* Header */}
+        <div style={{ background: "linear-gradient(135deg,#1b0926,#321148,#4f1e6e)", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: isMeter ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "linear-gradient(135deg,#f47b20,#d96512)", display: "grid", placeItems: "center", color: "white", fontWeight: 900, fontSize: 15, flexShrink: 0 }}>
+              {isMeter ? "M" : "T"}
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>{s("แก้ไขจากแผนที่","Edit from Map")}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "monospace" }}>{isMeter ? (p.PEANO || p.TAG) : (p.PEANO_TR || p.TAG)}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer" }}>
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "18px 22px", overflow: "auto", flex: 1 }}>
+          {isMeter ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <Field label="TAG"         k="TAG" />
+              <Field label="PEANO"       k="PEANO" />
+              <Field label="ACCOUNTNUM"  k="ACCOUNTNUM" />
+              <Field label="FEEDERID"    k="FEEDERID" />
+              <Field label="ROUTE"       k="ROUTE" />
+              <Field label="CODE"        k="CODE" />
+              <div className="field" style={{ margin: 0 }}>
+                <label className="field-label">OWNER</label>
+                <PeaSelect style={{ height: 38 }} value={form.OWNER || ""} onChange={e => set("OWNER", e.target.value)}>
+                  {["PEA","Customer"].map(o => <option key={o} value={o}>{o}</option>)}
+                </PeaSelect>
+              </div>
+              <Field label="INSTALLATI"  k="INSTALLATI" />
+              <Field label="LATITUDE"    k="LATITUDE" type="number" />
+              <Field label="LONGITUDE"   k="LONGITUDE" type="number" />
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <Field label="TAG"         k="TAG" />
+              <Field label="PEANO_TR"    k="PEANO_TR" />
+              <Field label="LOCATION"    k="LOCATION" />
+              <Field label="FEEDER1"     k="FEEDER1" />
+              <Field label="PHASE"       k="PHASE" />
+              <Field label="VOLTAGE"     k="VOLTAGE" />
+              <Field label="KVA"         k="KVA" type="number" />
+              <div className="field" style={{ margin: 0 }}>
+                <label className="field-label">OWNER_TR</label>
+                <PeaSelect style={{ height: 38 }} value={form.OWNER_TR || ""} onChange={e => set("OWNER_TR", e.target.value)}>
+                  {["PEA","Customer"].map(o => <option key={o} value={o}>{o}</option>)}
+                </PeaSelect>
+              </div>
+              <Field label="LATITUDE"    k="LATITUDE" type="number" />
+              <Field label="LONGITUDE"   k="LONGITUDE" type="number" />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 22px", borderTop: "1px solid var(--line)", display: "flex", gap: 10, flexShrink: 0 }}>
+          <button className="btn btn-outline" style={{ flex: 1, height: 40 }} onClick={onClose}>{s("ยกเลิก","Cancel")}</button>
+          <button className="btn btn-primary" style={{ flex: 2, height: 40 }} onClick={() => onSave(form)} disabled={saving}>
+            <Icon name="check" size={14} />
+            {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}
           </button>
         </div>
       </div>
@@ -4839,17 +4999,17 @@ function AdminAudit() {
             placeholder="🔍 ค้นหา user / target / detail…"
             value={q} onChange={e => setQ(e.target.value)} />
 
-          <select className="input" style={{ flex: "1 1 160px", height: 36 }}
+          <PeaSelect style={{ flex: "1 1 160px", height: 36 }}
             value={userF} onChange={e => setUserF(e.target.value)}>
             <option value="">👤 ผู้ใช้ทั้งหมด</option>
             {userList.map(u => <option key={u} value={u}>@{u}</option>)}
-          </select>
+          </PeaSelect>
 
-          <select className="input" style={{ flex: "1 1 160px", height: 36 }}
+          <PeaSelect style={{ flex: "1 1 160px", height: 36 }}
             value={actionF} onChange={e => setActionF(e.target.value)}>
             <option value="">⚡ การกระทำทั้งหมด</option>
             {ALL_ACTIONS.map(a => <option key={a} value={a}>{actionLabel(a)}</option>)}
-          </select>
+          </PeaSelect>
 
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span className="t-mute text-xs">วันที่</span>
@@ -6457,6 +6617,11 @@ function AdminPayments({ currentUser, addAudit }) {
   const [notes, setNotes]         = useStateAd("");
   const [refreshKey, setRefreshKey] = useStateAd(0);
 
+  // Section collapse state — leaders/dashboard open by default, others collapsed
+  const [showLeaders, setShowLeaders] = useStateAd(true);
+  const [showNotif,   setShowNotif]   = useStateAd(false);
+  const [showSlips,   setShowSlips]   = useStateAd(false);
+
   // Notify panel state
   const [notifTarget,  setNotifTarget]  = useStateAd("all");
   const [notifType,    setNotifType]    = useStateAd("payment_due");
@@ -6638,10 +6803,14 @@ function AdminPayments({ currentUser, addAudit }) {
 
       {/* ── Team Leaders Overview ── */}
       <div className="card card-elev">
-        <div style={{ marginBottom:16 }}>
-          <div className="text-lg fw-7">{s("หัวหน้าทีม","Team Leaders")}</div>
-          <div className="t-mute text-sm">{s("ระงับหรือคืนสิทธิ์การใช้งานระบบของทั้งทีม","Suspend or restore system access for entire teams")}</div>
-        </div>
+        <button onClick={() => setShowLeaders(v => !v)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"none", border:"none", cursor:"pointer", padding:0, marginBottom: showLeaders ? 16 : 0, textAlign:"left" }}>
+          <div>
+            <div className="text-lg fw-7">{s("หัวหน้าทีม","Team Leaders")}</div>
+            <div className="t-mute text-sm">{s("ระงับหรือคืนสิทธิ์การใช้งานระบบของทั้งทีม","Suspend or restore system access for entire teams")}</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color:"var(--ink-mute)", flexShrink:0, transition:"transform 0.2s", transform: showLeaders ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {showLeaders && (<>
 
         {/* Stats row */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
@@ -6710,11 +6879,12 @@ function AdminPayments({ currentUser, addAudit }) {
             })}
           </div>
         )}
+        </>)}
       </div>
 
       {/* ── Payment Notification Composer ── */}
       <div className="card card-elev">
-        <div style={{ marginBottom:16 }}>
+        <button onClick={() => setShowNotif(v => !v)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"none", border:"none", cursor:"pointer", padding:0, marginBottom: showNotif ? 16 : 0, textAlign:"left" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#6b2c91,#8b3fc4)", display:"grid", placeItems:"center", flexShrink:0 }}>
               <Icon name="bell" size={18} style={{ color:"white" }} />
@@ -6724,15 +6894,17 @@ function AdminPayments({ currentUser, addAudit }) {
               <div className="t-mute text-sm">{s("ส่งการแจ้งเตือนถึงหัวหน้าทีมโดยตรง","Send payment reminders directly to team leaders")}</div>
             </div>
           </div>
-        </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color:"var(--ink-mute)", flexShrink:0, transition:"transform 0.2s", transform: showNotif ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {showNotif && (<>
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
           <div className="field" style={{ margin:0 }}>
             <label className="field-label">{s("ผู้รับ","Recipient")}</label>
-            <select className="input" style={{ height:40 }} value={notifTarget} onChange={e => setNotifTarget(e.target.value)}>
+            <PeaSelect style={{ height:40 }} value={notifTarget} onChange={e => setNotifTarget(e.target.value)}>
               <option value="all">{s("หัวหน้าทีมทั้งหมด","All team leaders")} ({leaders.length})</option>
               {leaders.map(l => <option key={l.id} value={l.id}>{l.name} (@{l.username})</option>)}
-            </select>
+            </PeaSelect>
           </div>
           <div className="field" style={{ margin:0 }}>
             <label className="field-label">{s("เดือนอ้างอิง","Reference month")}</label>
@@ -6782,27 +6954,32 @@ function AdminPayments({ currentUser, addAudit }) {
               ? s("ส่งแจ้งเตือนทุกคน (" + leaders.length + ")", "Send to All (" + leaders.length + ")")
               : s("ส่งแจ้งเตือน","Send Notification")}
         </button>
+        </>)}
       </div>
 
       {/* ── Payment Slips Table ── */}
       <div className="card card-elev">
-        <div style={{ marginBottom:16 }}>
-          <div className="text-lg fw-7">{s("สลิปการชำระเงิน","Payment Slips")} {loading ? "…" : `(${filtered.length})`}</div>
-          <div className="t-mute text-sm">{s("ตรวจสอบและอนุมัติสลิปการชำระเงินของหัวหน้าทีม","Review and approve team leader payment slips")}</div>
-        </div>
+        <button onClick={() => setShowSlips(v => !v)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"none", border:"none", cursor:"pointer", padding:0, marginBottom: showSlips ? 16 : 0, textAlign:"left" }}>
+          <div>
+            <div className="text-lg fw-7">{s("สลิปการชำระเงิน","Payment Slips")} {loading ? "…" : `(${filtered.length})`}</div>
+            <div className="t-mute text-sm">{s("ตรวจสอบและอนุมัติสลิปการชำระเงินของหัวหน้าทีม","Review and approve team leader payment slips")}</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color:"var(--ink-mute)", flexShrink:0, transition:"transform 0.2s", transform: showSlips ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {showSlips && (<>
 
         {/* Filters */}
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:16 }}>
-        <select className="input" style={{ flex:"1 1 160px", height:38 }} value={filterLeader} onChange={e => setFilterLeader(e.target.value)}>
+        <PeaSelect style={{ flex:"1 1 160px", height:38 }} value={filterLeader} onChange={e => setFilterLeader(e.target.value)}>
           <option value="">{s("ทุกหัวหน้าทีม","All team leaders")}</option>
           {leaders.map(l => <option key={l.id} value={l.id}>{l.name} (@{l.username})</option>)}
-        </select>
-        <select className="input" style={{ flex:"0 0 140px", height:38 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        </PeaSelect>
+        <PeaSelect style={{ flex:"0 0 140px", height:38 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">{s("ทุกสถานะ","All statuses")}</option>
           <option value="pending">{s("รอตรวจสอบ","Pending")}</option>
           <option value="approved">{s("อนุมัติแล้ว","Approved")}</option>
           <option value="rejected">{s("ปฏิเสธ","Rejected")}</option>
-        </select>
+        </PeaSelect>
         <input className="input" type="month" style={{ flex:"0 0 160px", height:38 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
       </div>
 
@@ -6924,6 +7101,7 @@ function AdminPayments({ currentUser, addAudit }) {
           </div>
         )}
       </Modal>
+        </>)}
       </div>{/* end Payment Slips card */}
     </div>
   );

@@ -80,10 +80,13 @@ const NOTIF_TYPE_COLOR = {
   custom:            { bg: "rgba(139,63,196,0.06)", border: "rgba(139,63,196,0.2)",  icon: "💬", color: "#6b2c91" },
 };
 
+const hasPermission = (user, key) => user?.role === "admin" || (user?.permissions || []).includes(key);
+
 function NotifPanel({ data, currentUser, myNotifs = [], setMyNotifs }) {
   const { t } = useLang();
   const pendingUsers = currentUser?.role === "admin"
     ? data.users.filter(u => u.status === "pending") : [];
+
   const recentLog = data.auditLog
     .filter(r => r.user === currentUser?.username)
     .slice(0, 5);
@@ -3615,6 +3618,12 @@ function App() {
     { id: "search",    icon: "search",   label: t("navSearch")    },
     { id: "profile",   icon: "user",     label: t("navProfile")   },
     { id: "guide",     icon: "book",     label: t("navGuide")     },
+    ...(hasPermission(currentUser, "view_overview_map") && !isAdmin ? [
+      { id: "overview",  icon: "map",      label: t("admMap")       },
+    ] : []),
+    ...(hasPermission(currentUser, "view_changelog") && !isAdmin ? [
+      { id: "changelog", icon: "bolt",     label: t("navChangelog") },
+    ] : []),
     ...(isTeamLeader ? [
       { id: "payment",   icon: "wallet",   label: t("navPayment")   },
     ] : []),
@@ -4222,7 +4231,23 @@ function App() {
               baseMap={baseMap}
               currentUser={currentUser}
               onLogSearch={(entry) => addAudit(entry)}
-              allowExport={allowExport}
+              allowExport={isAdmin || hasPermission(currentUser, "export_data") || allowExport}
+              allowCorrectCoords={hasPermission(currentUser, "correct_coords")}
+              onCorrectCoords={async (p, isMeter, newLat, newLng, note) => {
+                await _supabase.from("coordinate_corrections").insert({
+                  record_type: isMeter ? "meter" : "transformer",
+                  record_id: p.OBJECTID,
+                  record_tag: p.PEANO || p.TAG,
+                  old_lat: p.LATITUDE,
+                  old_lng: p.LONGITUDE,
+                  new_lat: newLat,
+                  new_lng: newLng,
+                  note,
+                  submitted_by: currentUser.username,
+                  status: "pending",
+                });
+                addAudit({ user: currentUser.username, action: "report_coords", target: p.PEANO || p.TAG, detail: `แจ้งแก้ไขพิกัด ${p.PEANO || p.TAG}` });
+              }}
             />
           )}
           {route === "profile" && (
@@ -4235,7 +4260,10 @@ function App() {
           {route === "payment" && isTeamLeader && (
             <PaymentView currentUser={currentUser} addAudit={addAudit} />
           )}
-          {route === "changelog" && currentUser.role === "admin" && (
+          {route === "overview" && hasPermission(currentUser, "view_overview_map") && !isAdmin && (
+            <AdminMapTab data={data} currentUser={currentUser} addAudit={addAudit} readOnly={true} />
+          )}
+          {route === "changelog" && (isAdmin || hasPermission(currentUser, "view_changelog")) && (
             <ChangelogView />
           )}
           {route === "admin" && currentUser.role === "admin" && (

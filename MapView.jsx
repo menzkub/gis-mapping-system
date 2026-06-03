@@ -43,7 +43,17 @@ function MapView({ points, kind = "meter", selectedId, onSelect, onNavigate, onM
     mapRef.current = map;
     markersLayerRef.current = L.layerGroup().addTo(map);
     measureLayerRef.current = L.layerGroup().addTo(map);
+
+    // Auto-resize map when container dimensions change (sidebar collapse, window resize)
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        if (mapRef.current) mapRef.current.invalidateSize({ animate: false });
+      });
+    });
+    ro.observe(containerRef.current);
+
     return () => {
+      ro.disconnect();
       map.stop();
       map.remove();
       mapRef.current = null;

@@ -10,7 +10,7 @@ const {
 /* ============================================================
    SearchView — PEA Meter + PEA TR tabs (server-side search)
    ============================================================ */
-function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = true }) {
+function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = true, allowCorrectCoords = false, onCorrectCoords }) {
   const { t } = useLang();
   const [tab, setTab]               = useStateS("meter");
   const [query, setQuery]           = useStateS("");
@@ -26,12 +26,13 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [showCluster, setShowCluster] = useStateS(true);
   const [svBaseMap, setSvBaseMap]   = useStateS(baseMap || "street");
   const [showBaseMenu, setShowBaseMenu] = useStateS(false);
-  const [baseMenuPos, setBaseMenuPos] = useStateS({ top: 0, left: 0, width: 0 });
+  const [searchFlash, setSearchFlash] = useStateS(null); // null | "ok" | "empty"
   const baseMapBtnRef = useRefS(null);
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
   const [showExportDialog, setShowExportDialog] = useStateS(false);
   const [showHistory, setShowHistory] = useStateS(false);
+  const [corrTarget, setCorrTarget] = useStateS(null);
   const [history, setHistory] = useStateS(() => {
     try { return JSON.parse(localStorage.getItem("pea_search_hist") || "[]"); } catch { return []; }
   });
@@ -88,6 +89,8 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         if (!cancelled && !error) {
           const mapped = (rows || []).map(tab === "meter" ? toMeter : toTransformer);
           setResults(mapped);
+          setSearchFlash(mapped.length > 0 ? "ok" : "empty");
+          setTimeout(() => setSearchFlash(null), 1800);
           if (query.trim()) {
             saveHistory(query.trim());
             onLogSearchRef.current?.({
@@ -167,6 +170,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         }
         .sv-body.sv-map-only { padding: 0 !important; }
         .sv-basemap-icon-btn { flex-shrink: 0; height: 54px; min-width: 108px; padding: 0 14px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+        @keyframes sv-search-bar { 0%{left:-60%} 100%{left:110%} }
+        .sv-search-loading-bar { position:absolute; bottom:0; left:0; right:0; height:2px; border-radius:0 0 14px 14px; overflow:hidden; background:rgba(139,63,196,0.12); }
+        .sv-search-loading-bar::after { content:""; position:absolute; top:0; width:60%; height:100%; background:linear-gradient(90deg,transparent,var(--pea-purple-500),var(--pea-orange-400),transparent); animation:sv-search-bar 1s linear infinite; }
+        @keyframes sv-flash-in { 0%{opacity:0;transform:scale(0.85) translateY(-4px)} 40%{opacity:1;transform:scale(1.06) translateY(0)} 70%{transform:scale(0.97)} 100%{transform:scale(1)} }
+        .sv-result-flash { animation: sv-flash-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
         @media (max-width: 680px) {
           .sv-header { padding: 10px 14px 0; gap: 8px; }
           .sv-body { padding: 10px 12px 14px; }
@@ -192,7 +200,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             <div className="search-title-text sv-search-title t-display" style={{ fontSize: 28, marginTop: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0 8px" }}>
               <span>{tab === "meter" ? t("peaMeter") : t("peaTr")}</span>
               {hasSearched ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
+                <span key={results.length} className={searchFlash === "ok" ? "sv-result-flash" : ""} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
                   <span style={{ fontWeight: 800 }}>{results.length.toLocaleString()}{results.length >= 500 ? "+" : ""}</span>
                   <span style={{ fontWeight: 500, opacity: 0.7 }}>/ {totalCount.toLocaleString()} {t("foundItems")}</span>
                 </span>
@@ -203,8 +211,19 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 </span>
               )}
               {searching && (
-                <span style={{ fontSize: 12, color: "var(--pea-purple-500)", fontWeight: 600 }}>
+                <span style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"4px 12px 4px 8px", borderRadius:999, background:"linear-gradient(90deg,rgba(107,44,145,0.12),rgba(244,123,32,0.1))", border:"1px solid rgba(139,63,196,0.3)", fontSize:12, fontWeight:700, color:"var(--pea-purple-600)", animation:"sv-flash-in 0.2s ease both" }}>
+                  <span style={{ width:16, height:16, borderRadius:"50%", border:"2.5px solid rgba(139,63,196,0.25)", borderTopColor:"var(--pea-purple-500)", display:"inline-block", flexShrink:0, animation:"spin 0.7s linear infinite" }} />
                   {t("searching")}
+                </span>
+              )}
+              {!searching && searchFlash === "ok" && (
+                <span className="sv-result-flash" style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:12, color:"#16a34a", fontWeight:700 }}>
+                  ✓ พบ {results.length.toLocaleString()} รายการ
+                </span>
+              )}
+              {!searching && searchFlash === "empty" && (
+                <span className="sv-result-flash" style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:12, color:"var(--pea-orange-500)", fontWeight:700 }}>
+                  ไม่พบข้อมูล
                 </span>
               )}
             </div>
@@ -223,12 +242,16 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         <div className="sv-controls">
           <div className="sv-search-row">
             <div className="sv-search-wrap">
-              <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: searching ? "var(--pea-orange-500)" : "var(--pea-purple-500)", zIndex: 1 }}>
-                <Icon name="search" size={19} />
+              <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", zIndex: 1, display:"flex", alignItems:"center", justifyContent:"center", width:20, height:20 }}>
+                {searching ? (
+                  <span style={{ width:18, height:18, borderRadius:"50%", border:"2.5px solid rgba(244,123,32,0.25)", borderTopColor:"var(--pea-orange-500)", display:"inline-block", animation:"spin 0.7s linear infinite", flexShrink:0 }} />
+                ) : (
+                  <Icon name="search" size={19} style={{ color:"var(--pea-purple-500)" }} />
+                )}
               </div>
               <input
                 className="input input-lg"
-                style={{ paddingLeft: 48, paddingRight: query ? 46 : 16, width: "100%", boxSizing: "border-box" }}
+                style={{ paddingLeft: 48, paddingRight: query ? 46 : 16, width: "100%", boxSizing: "border-box", transition:"box-shadow 0.25s, border-color 0.25s", ...(searching ? { borderColor:"rgba(244,123,32,0.5)", boxShadow:"0 0 0 3px rgba(244,123,32,0.12)" } : {}) }}
                 placeholder={tab === "meter" ? t("phMeter") : t("phTr")}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
@@ -242,6 +265,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                   <Icon name="close" size={15} />
                 </button>
               )}
+              {searching && <div className="sv-search-loading-bar" />}
               {/* Search history dropdown */}
               {showHistory && !query && history.length > 0 && (
                 <div style={{
@@ -292,47 +316,40 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             </div>
 
             {/* Street / Satellite basemap toggle — shows translated label */}
-            <button
-              ref={baseMapBtnRef}
-              className="sv-basemap-icon-btn btn btn-outline"
-              onClick={() => {
-                if (!showBaseMenu && baseMapBtnRef.current) {
-                  const r = baseMapBtnRef.current.getBoundingClientRect();
-                  const menuHeight = 92;
-                  const spaceBelow = window.innerHeight - r.bottom;
-                  const topPos = spaceBelow >= menuHeight + 10 ? r.bottom + 4 : r.top - menuHeight - 4;
-                  setBaseMenuPos({ top: topPos, right: window.innerWidth - r.right, width: 160 });
-                }
-                setShowBaseMenu(m => !m);
-              }}
-            >
-              <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={16} />
-              <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
-                {svBaseMap === "satellite" ? t("baseMapSatellite") : t("baseMapStreet")}
-              </span>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.45, transition:"transform 0.15s", transform: showBaseMenu ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            {showBaseMenu && (
-              <>
-                <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
-                <div style={{ position: "fixed", top: baseMenuPos.top, right: baseMenuPos.right, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 160 }}>
-                  {[
-                    { id: "street",    icon: "map",   label: t("baseMapStreet")    },
-                    { id: "satellite", icon: "globe", label: t("baseMapSatellite") },
-                  ].map(opt => (
-                    <div key={opt.id} onClick={() => { setSvBaseMap(opt.id); setShowBaseMenu(false); }}
-                      style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", cursor:"pointer",
-                        background: svBaseMap === opt.id ? "rgba(139,63,196,0.08)" : "transparent",
-                        color: svBaseMap === opt.id ? "var(--pea-purple-600)" : "var(--ink)",
-                        fontWeight: svBaseMap === opt.id ? 600 : 400, fontSize:14 }}>
-                      <Icon name={opt.icon} size={15} />
-                      <span style={{ flex:1 }}>{opt.label}</span>
-                      {svBaseMap === opt.id && <Icon name="check" size={13} />}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+            <div style={{ position: "relative" }}>
+              <button
+                ref={baseMapBtnRef}
+                className="sv-basemap-icon-btn btn btn-outline"
+                onClick={() => setShowBaseMenu(m => !m)}
+              >
+                <Icon name={svBaseMap === "satellite" ? "globe" : "map"} size={16} />
+                <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+                  {svBaseMap === "satellite" ? t("baseMapSatellite") : t("baseMapStreet")}
+                </span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.45, transition:"transform 0.15s", transform: showBaseMenu ? "rotate(180deg)" : "none" }}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {showBaseMenu && (
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 599 }} onClick={() => setShowBaseMenu(false)} />
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 600, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.13)", overflow: "hidden", minWidth: 160 }}>
+                    {[
+                      { id: "street",    icon: "map",   label: t("baseMapStreet")    },
+                      { id: "satellite", icon: "globe", label: t("baseMapSatellite") },
+                    ].map(opt => (
+                      <div key={opt.id} onClick={() => { setSvBaseMap(opt.id); setShowBaseMenu(false); }}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", cursor:"pointer",
+                          background: svBaseMap === opt.id ? "rgba(139,63,196,0.08)" : "transparent",
+                          color: svBaseMap === opt.id ? "var(--pea-purple-600)" : "var(--ink)",
+                          fontWeight: svBaseMap === opt.id ? 600 : 400, fontSize:14 }}>
+                        <Icon name={opt.icon} size={15} />
+                        <span style={{ flex:1 }}>{opt.label}</span>
+                        {svBaseMap === opt.id && <Icon name="check" size={13} />}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -393,29 +410,50 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               />
               {/* Hint overlay before any search */}
               {!hasSearched && (
-                <div style={{
-                  position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 500,
-                  background: "var(--surface)", borderRadius: 14, padding: "10px 20px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.16)", border: "1px solid var(--line)",
+                <div className="fade-up" style={{
+                  position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 500,
+                  background: "rgba(var(--surface-rgb,255,255,255),0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                  borderRadius: 20, padding: "11px 22px",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid rgba(139,63,196,0.18)",
                   fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap",
-                  display: "flex", alignItems: "center", gap: 8, pointerEvents: "none",
+                  display: "flex", alignItems: "center", gap: 9, pointerEvents: "none",
                 }}>
-                  <Icon name="search" size={14} style={{ color: "var(--pea-purple-500)" }} />
+                  <div style={{ width: 28, height: 28, borderRadius: 9, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                    <Icon name="search" size={13} style={{ color: "white" }} />
+                  </div>
                   พิมพ์คำค้นหาเพื่อดูตำแหน่งบนแผนที่
                 </div>
               )}
               {/* Result count badge */}
               {results.length > 0 && (
-                <div style={{
+                <div key={results.length} className="fade-up" style={{
                   position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 500,
-                  background: "var(--surface)", borderRadius: 20, padding: "5px 14px",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.12)", border: "1px solid rgba(139,63,196,0.2)",
+                  background: "var(--surface)", borderRadius: 20, padding: "6px 16px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.18)", border: "1px solid rgba(139,63,196,0.25)",
                   fontSize: 12, fontWeight: 700, color: "var(--pea-purple-600)", whiteSpace: "nowrap",
-                  pointerEvents: "none",
+                  pointerEvents: "none", display: "flex", alignItems: "center", gap: 6,
+                  backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+                  background: "rgba(var(--surface-rgb,255,255,255),0.88)",
                 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--pea-purple-500)", display: "inline-block", flexShrink: 0 }} />
                   {results.length.toLocaleString()}{results.length >= 500 ? "+" : ""} จุดบนแผนที่
                 </div>
               )}
+              {allowCorrectCoords && selectedId && (() => {
+                const sel = results.find(r => r.OBJECTID === selectedId);
+                if (!sel) return null;
+                return (
+                  <button onClick={() => setCorrTarget({ p: sel, isMeter: tab === "meter" })} style={{
+                    position: "absolute", bottom: 24, right: 16, zIndex: 500,
+                    display: "flex", alignItems: "center", gap: 7, padding: "9px 16px",
+                    borderRadius: 14, border: "none", cursor: "pointer",
+                    background: "linear-gradient(135deg,#f47b20,#d96512)", color: "white",
+                    fontWeight: 700, fontSize: 13, boxShadow: "0 4px 18px rgba(244,123,32,0.45)",
+                  }}>
+                    <Icon name="edit" size={14} /> แจ้งแก้ไขพิกัด
+                  </button>
+                );
+              })()}
             </div>
         </div>
       </div>
@@ -459,6 +497,16 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       )}
 
       {navTarget && <NavigationPanel target={navTarget} kind={tab} onClose={() => setNavTarget(null)} />}
+      {corrTarget && (
+        <CorrSearchModal
+          target={corrTarget}
+          onClose={() => setCorrTarget(null)}
+          onSubmit={async (newLat, newLng, note) => {
+            await onCorrectCoords?.(corrTarget.p, corrTarget.isMeter, newLat, newLng, note);
+            setCorrTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -467,10 +515,10 @@ function FilterSelect({ label, value, options, onChange, t }) {
   return (
     <div className="field">
       <label className="field-label">{label}</label>
-      <select className="input" style={{ height: 40 }} value={value} onChange={e => onChange(e.target.value)}>
+      <PeaSelect style={{ height: 40 }} value={value} onChange={e => onChange(e.target.value)}>
         <option value="">{t("fAll")}</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
+      </PeaSelect>
     </div>
   );
 }
@@ -773,6 +821,63 @@ function NavigationPanel({ target, kind, onClose }) {
           <button className="btn btn-outline" onClick={() => window.open(appleUrl, "_blank")}>
             <Icon name="map" size={14} /> {t("appleMapsBtn")}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CorrSearchModal({ target, onClose, onSubmit }) {
+  const { p } = target;
+  const [newLat, setNewLat] = useStateS(p.LATITUDE);
+  const [newLng, setNewLng] = useStateS(p.LONGITUDE);
+  const [note, setNote] = useStateS("");
+  const [submitting, setSubmitting] = useStateS(false);
+  const [done, setDone] = useStateS(false);
+
+  const submit = async () => {
+    setSubmitting(true);
+    await onSubmit(+newLat, +newLng, note);
+    setDone(true);
+    setSubmitting(false);
+    setTimeout(onClose, 1500);
+  };
+
+  return (
+    <div className="fade-in pea-modal-overlay" style={{ zIndex: 9500 }} onClick={onClose}>
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 440, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(135deg,#1b0926,#d96512)", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>แจ้งแก้ไขพิกัด</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "monospace" }}>{p.PEANO || p.TAG}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer" }}>✕</button>
+        </div>
+        <div style={{ padding: "18px 22px" }}>
+          {done ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#10b981", fontWeight: 700, fontSize: 16 }}>✓ ส่งคำขอแล้ว รอ Admin อนุมัติ</div>
+          ) : (<>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+              <div className="field" style={{ margin: 0 }}>
+                <label className="field-label">Latitude ใหม่</label>
+                <input className="input" type="number" step="0.00001" value={newLat} onChange={e => setNewLat(e.target.value)} style={{ height: 38 }} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label className="field-label">Longitude ใหม่</label>
+                <input className="input" type="number" step="0.00001" value={newLng} onChange={e => setNewLng(e.target.value)} style={{ height: 38 }} />
+              </div>
+            </div>
+            <div className="field" style={{ marginBottom: 14 }}>
+              <label className="field-label">หมายเหตุ (ไม่บังคับ)</label>
+              <textarea className="input" rows={2} value={note} onChange={e => setNote(e.target.value)} style={{ resize: "none", fontFamily: "inherit" }} />
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-outline" style={{ flex: 1, height: 40 }} onClick={onClose}>ยกเลิก</button>
+              <button className="btn btn-primary" style={{ flex: 2, height: 40, background: "linear-gradient(135deg,#f47b20,#d96512)" }} onClick={submit} disabled={submitting}>
+                {submitting ? "กำลังส่ง…" : "ส่งคำขอ"}
+              </button>
+            </div>
+          </>)}
         </div>
       </div>
     </div>

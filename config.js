@@ -97,6 +97,7 @@ function toProfile(row) {
     lastLogin:         row.last_login        ? row.last_login.replace("T", " ").slice(0, 16) : "—",
     passwordChangedAt: row.password_changed_at || null,
     pw_force_change:   row.pw_force_change   || false,
+    permissions:       row.permissions       || [],
   };
 }
 function fromProfilePatch(patch) {
@@ -108,6 +109,7 @@ function fromProfilePatch(patch) {
   if (patch.require_2fa       !== undefined) out.require_2fa        = patch.require_2fa;
   if (patch.pw_force_change   !== undefined) out.pw_force_change    = patch.pw_force_change;
   if (patch.team_leader_id    !== undefined) out.team_leader_id     = patch.team_leader_id;
+  if (patch.permissions       !== undefined) out.permissions        = patch.permissions;
   return out;
 }
 

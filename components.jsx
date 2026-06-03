@@ -385,8 +385,115 @@ function ConfirmProvider({ children }) {
   );
 }
 
+/* ── PeaSelect — custom dropdown replacing native <select> ─── */
+function PeaSelect({ value, onChange, children, className = "", style = {}, disabled = false, placeholder = "" }) {
+  const [open, setOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState(null);
+  const trigRef = useRef(null);
+  const dropRef = useRef(null);
+
+  const options = [];
+  const collect = ch => React.Children.forEach(ch, c => {
+    if (!c || typeof c !== "object") return;
+    if (c.type === "option") options.push({ value: String(c.props.value ?? ""), label: c.props.children, disabled: !!c.props.disabled });
+    if (c.type === "optgroup") collect(c.props.children);
+  });
+  collect(children);
+
+  const strVal = String(value ?? "");
+  const selected = options.find(o => o.value === strVal);
+
+  const openMenu = () => {
+    if (disabled) return;
+    if (!open && trigRef.current) setMenuRect(trigRef.current.getBoundingClientRect());
+    setOpen(o => !o);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = e => {
+      if (!trigRef.current?.contains(e.target) && !dropRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onEsc = e => e.key === "Escape" && setOpen(false);
+    const rePos = () => trigRef.current && setMenuRect(trigRef.current.getBoundingClientRect());
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    window.addEventListener("scroll", rePos, true);
+    window.addEventListener("resize", rePos);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+      window.removeEventListener("scroll", rePos, true);
+      window.removeEventListener("resize", rePos);
+    };
+  }, [open]);
+
+  const pick = v => { onChange({ target: { value: v } }); setOpen(false); };
+
+  const { height: h, ...wrapStyle } = style;
+  const trigH = h || 44;
+
+  return (
+    <div style={{ position: "relative", ...wrapStyle }} className={`pea-sel-w${className ? " " + className : ""}`}>
+      <div
+        ref={trigRef}
+        tabIndex={disabled ? -1 : 0}
+        role="combobox"
+        aria-expanded={open}
+        onClick={openMenu}
+        onKeyDown={e => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMenu(); }
+          else if (e.key === "Escape") setOpen(false);
+        }}
+        className={`input${open ? " pea-sel-open" : ""}`}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, height: trigH, cursor: disabled ? "not-allowed" : "pointer", userSelect: "none", opacity: disabled ? 0.5 : 1, paddingRight: 10, boxSizing: "border-box", width: "100%" }}
+      >
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, color: selected ? "inherit" : "var(--ink-mute)" }}>
+          {selected?.label ?? placeholder}
+        </span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ flexShrink: 0, opacity: 0.4, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.18s ease" }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </div>
+      {open && menuRect && (
+        <div ref={dropRef} style={{
+          position: "fixed", top: menuRect.bottom + 4, left: menuRect.left, width: menuRect.width, zIndex: 99999,
+          background: "var(--surface)", border: "1.5px solid rgba(107,44,145,0.3)", borderRadius: 10,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.14)",
+          maxHeight: 220, overflowY: "auto", padding: "4px 0",
+          transformOrigin: "top center", animation: "psDropIn 0.14s cubic-bezier(0.22,1,0.36,1) both"
+        }}>
+          {options.map(opt => {
+            const isSel = opt.value === strVal;
+            return (
+              <div key={opt.value}
+                onClick={() => !opt.disabled && pick(opt.value)}
+                style={{
+                  padding: "9px 14px", fontSize: 14, cursor: opt.disabled ? "default" : "pointer",
+                  opacity: opt.disabled ? 0.38 : 1, display: "flex", alignItems: "center", gap: 8,
+                  background: isSel ? "rgba(107,44,145,0.12)" : "transparent",
+                  color: isSel ? "var(--pea-purple-500)" : "var(--ink)",
+                  fontWeight: isSel ? 600 : 400,
+                }}
+                onMouseEnter={e => { if (!isSel && !opt.disabled) e.currentTarget.style.background = "var(--soft)"; }}
+                onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{ width: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {isSel ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg> : null}
+                </span>
+                {opt.label}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* expose */
-Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, formatThaiDate });
+Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, formatThaiDate, PeaSelect });
 
 /* ── SkeletonCard ───────────────────────────────────────────── */
 function SkeletonCard({ height = 120, style = {} }) {
