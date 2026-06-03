@@ -2249,7 +2249,7 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
     const tlId = edit.role === "user" ? (edit.team_leader_id || null) : null;
 
     // Core patch (always safe — no optional columns)
-    const corePatch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa, permissions: edit.permissions || [] };
+    const corePatch = { name: edit.name, username: edit.username, role: edit.role, status: edit.status, require_2fa: auto2fa };
 
     const { error } = await _supabase.from("profiles")
       .update(fromProfilePatch(corePatch))
@@ -2266,7 +2266,20 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
       if (!tlErr) savedTlId = tlId;
     }
 
-    const patch = { ...corePatch, team_leader_id: savedTlId };
+    // Try to save permissions separately — column requires migration: add_permissions.sql
+    const newPerms = edit.permissions || [];
+    const oldPerms = data.users.find(u => u.id === edit.id)?.permissions || [];
+    const permsChanged = JSON.stringify([...newPerms].sort()) !== JSON.stringify([...oldPerms].sort());
+    let savedPerms = oldPerms;
+    if (permsChanged) {
+      const { error: permErr } = await _supabase.from("profiles")
+        .update({ permissions: newPerms })
+        .eq("id", edit.id);
+      if (!permErr) savedPerms = newPerms;
+      else toast?.("⚠️ สิทธิ์เพิ่มเติม: " + permErr.message, "error");
+    }
+
+    const patch = { ...corePatch, team_leader_id: savedTlId, permissions: savedPerms };
     setData(d => ({ ...d, users: d.users.map(u => u.id === edit.id ? { ...u, ...patch } : u) }));
 
     const roleChanged = edit.role !== data.users.find(u => u.id === edit.id)?.role;
