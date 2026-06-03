@@ -1,7 +1,7 @@
 {
-  "commit": "02862c0ad67ee9ad669cb69e797b643a9792af6a",
-  "shortCommit": "02862c0",
-  "message": "feat: add GPS location button to coordinate correction modal",
-  "date": "2026-06-03T06:33:01Z",
+  "commit": "3b6920493327c05120ef1d0327d997e71a63c88f",
+  "shortCommit": "3b69204",
+  "message": "fix: center map search hint on mobile using flex wrapper",
+  "date": "2026-06-03T06:34:54Z",
   "branch": "main"
 }
