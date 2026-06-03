@@ -276,7 +276,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 onChange={e => setQuery(e.target.value)}
                 onFocus={() => setShowHistory(true)}
                 onBlur={() => setTimeout(() => setShowHistory(false), 180)}
-                inputMode="numeric"
+                inputMode={tab === "meter" ? "numeric" : "text"}
                 autoFocus
               />
               {query && (
