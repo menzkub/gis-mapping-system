@@ -480,6 +480,7 @@ function DbUsageCard() {
     { key: "push",        table: "push_subscriptions",     label: "Push Subscriptions", color: "#8b5cf6", kb: 2.0 },
     { key: "corrections", table: "coordinate_corrections", label: "คำขอแก้ไขพิกัด",    color: "#0ea5e9", kb: 0.5 },
     { key: "settings",    table: "settings",               label: "Settings",           color: "#94a3b8", kb: 0.1 },
+    { key: "photos",      table: "photos",                 label: "ภาพถ่าย (metadata)", color: "#10b981", kb: 0.2 },
   ];
   const FREE_LIMIT_MB = 500;
 
@@ -488,20 +489,16 @@ function DbUsageCard() {
   const [refreshedAt, setRefreshedAt] = useStateAd(null);
   const [photoStats, setPhotoStats] = useStateAd(null);
 
-  function loadPhotoStats() {
+  async function loadPhotoStats() {
     try {
-      let totalBytes = 0; let photoCount = 0; let meterCount = 0; let trCount = 0;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key?.startsWith("pea_photos_")) continue;
-        const raw = localStorage.getItem(key) || "[]";
-        totalBytes += raw.length * 2;
-        try {
-          const photos = JSON.parse(raw);
-          photoCount += photos.length;
-          if (key.startsWith("pea_photos_meter_")) meterCount += photos.length;
-          else if (key.startsWith("pea_photos_tr_")) trCount += photos.length;
-        } catch {}
+      const { data, error } = await _supabase.from("photos").select("kind, file_size");
+      if (error) throw error;
+      let photoCount = 0, meterCount = 0, trCount = 0, totalBytes = 0;
+      for (const row of data || []) {
+        photoCount++;
+        totalBytes += row.file_size || 0;
+        if (row.kind === "meter") meterCount++;
+        else if (row.kind === "tr") trCount++;
       }
       setPhotoStats({ totalMb: totalBytes / (1024 * 1024), photoCount, meterCount, trCount });
     } catch { setPhotoStats({ totalMb: 0, photoCount: 0, meterCount: 0, trCount: 0 }); }
@@ -509,7 +506,7 @@ function DbUsageCard() {
 
   async function load() {
     setLoading(true);
-    loadPhotoStats();
+    await loadPhotoStats();
     const result = {};
     await Promise.all(DB_TABLES.map(async t => {
       try {
@@ -653,23 +650,23 @@ function DbUsageCard() {
         })}
       </div>
 
-      {/* ── Local Storage (รูปภาพ) ── */}
+      {/* ── Supabase Storage (รูปภาพ) ── */}
       <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 7 }}>
             <span style={{ fontSize: 18 }}>📷</span> รูปภาพมิเตอร์ & หม้อแปลง
           </div>
-          <span style={{ fontSize: 10, color: "var(--ink-mute)", background: "var(--surface)", padding: "3px 9px", borderRadius: 20, border: "1px solid var(--line)", fontWeight: 600 }}>
-            Local Storage · อุปกรณ์นี้
+          <span style={{ fontSize: 10, color: "#10b981", background: "rgba(16,185,129,0.1)", padding: "3px 9px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.3)", fontWeight: 700 }}>
+            ☁️ Supabase Cloud
           </span>
         </div>
         {photoStats ? (
           <div style={{ display: "flex", gap: 10 }}>
             {[
-              { label: "ภาพทั้งหมด", value: photoStats.photoCount, color: "#6b2c91" },
-              { label: "ภาพมิเตอร์", value: photoStats.meterCount, color: "#8b3fc4" },
-              { label: "ภาพหม้อแปลง", value: photoStats.trCount,  color: "#f47b20" },
-              { label: "พื้นที่ใช้",   value: photoStats.totalMb < 1 ? `${(photoStats.totalMb * 1024).toFixed(0)} KB` : `${photoStats.totalMb.toFixed(1)} MB`, color: "#10b981" },
+              { label: "ภาพทั้งหมด",  value: photoStats.photoCount, color: "#6b2c91" },
+              { label: "ภาพมิเตอร์",  value: photoStats.meterCount, color: "#8b3fc4" },
+              { label: "ภาพหม้อแปลง", value: photoStats.trCount,    color: "#f47b20" },
+              { label: "ขนาดรวม",     value: photoStats.totalMb < 1 ? `${(photoStats.totalMb * 1024).toFixed(0)} KB` : `${photoStats.totalMb.toFixed(1)} MB`, color: "#10b981" },
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, textAlign: "center", padding: "8px 6px", background: "var(--surface)", borderRadius: 10, border: "1px solid var(--line)" }}>
                 <div style={{ fontWeight: 900, fontSize: 18, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
@@ -681,8 +678,8 @@ function DbUsageCard() {
           <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
         )}
         <div style={{ marginTop: 10, fontSize: 11, color: "var(--ink-mute)", display: "flex", alignItems: "flex-start", gap: 5, lineHeight: 1.6 }}>
-          <span style={{ flexShrink: 0 }}>ℹ️</span>
-          <span>รูปภาพเก็บบน <b>อุปกรณ์แต่ละเครื่อง</b> (localStorage) ไม่นับรวมใน Supabase quota — ข้อมูลนี้แสดงเฉพาะอุปกรณ์ที่กำลังใช้งานอยู่เท่านั้น</span>
+          <span style={{ flexShrink: 0 }}>☁️</span>
+          <span>รูปภาพเก็บบน <b>Supabase Storage</b> — ทุกอุปกรณ์เห็นภาพพร้อมกัน ไม่หายเมื่อเคลียร์แคช และนับรวมใน Supabase quota</span>
         </div>
       </div>
     </div>
@@ -6194,6 +6191,7 @@ function UserQuickGuideCard() {
     { emoji: "🔐", title: "สมัครสมาชิก & เข้าสู่ระบบ", lines: ["กรอกอีเมล + รหัสผ่าน (ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข + อักขระพิเศษ)", "รอ Admin อนุมัติบัญชีก่อนใช้งาน — ระบบแจ้งอัตโนมัติ"] },
     { emoji: "🔍", title: "ค้นหาข้อมูล Meter / Transformer", lines: ["พิมพ์ TAG, PEANO, สถานที่, หรือ Feeder ID", "กรองตามประเภท / เจ้าของ (PEA/Customer) / Feeder"] },
     { emoji: "🗺️", title: "ดูบนแผนที่", lines: ["กด marker เพื่อดูรายละเอียด — คัดลอกพิกัดได้ทันที", "กดที่กลุ่ม marker (cluster) เพื่อ zoom เข้าดูรายตัว", "สลับ Street / Satellite บน Topbar"] },
+    { emoji: "📷", title: "ถ่ายรูปมิเตอร์ & หม้อแปลง", lines: ["กด marker → กดปุ่ม 'ภาพถ่าย' → ถ่ายรูปหรือเลือกจาก Gallery", "ภาพเก็บบน Cloud (Supabase) — ทุกอุปกรณ์เห็นพร้อมกันทันที"] },
     { emoji: "📍", title: "นำทาง GPS ไปยังอุปกรณ์", lines: ["กด marker → กดปุ่มนำทาง → ระบบเปิด Google Maps / Apple Maps", "ระบบแสดงระยะทางและเวลาโดยประมาณ (คำนวณที่ 40 กม./ชม.)"] },
     { emoji: "📝", title: "แจ้งแก้ไขพิกัดที่ไม่ถูกต้อง", lines: ["กด marker → 'แจ้งแก้ไขพิกัด' → วางพิกัดใหม่ด้วย GPS หรือลากหมุด", "ส่งคำขอ → รอ Admin อนุมัติ (พิกัดอัปเดตทันทีที่ Admin กดอนุมัติ)"] },
     { emoji: "📲", title: "ติดตั้งเป็นแอป (PWA)", lines: ["iOS: Safari → กดปุ่ม Share → 'เพิ่มลงหน้าจอหลัก'", "Android: Chrome → เมนู → 'Add to Home Screen'"] },
@@ -6212,7 +6210,7 @@ function UserQuickGuideCard() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
-          {["🔍 ค้นหามิเตอร์/หม้อแปลง","📍 นำทาง GPS","📝 แจ้งแก้ไขพิกัด","📱 ติดตั้งเป็นแอป"].map(lbl => (
+          {["🔍 ค้นหามิเตอร์/หม้อแปลง","📷 ถ่ายรูปอุปกรณ์","📍 นำทาง GPS","📱 ติดตั้งเป็นแอป"].map(lbl => (
             <span key={lbl} style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.9)" }}>{lbl}</span>
           ))}
         </div>
@@ -6327,8 +6325,8 @@ function UserQuickGuideCard() {
           <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#a78bfa", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.1 · Active</span>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 2 มิ.ย. 2569</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.3 · Active</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 3 มิ.ย. 2569</span>
           </div>
         </div>
       </div>
@@ -6468,8 +6466,8 @@ function AdminQuickGuideCard() {
           <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#ffba7a", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference · v3.1</span>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 2 มิ.ย. 2569</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference · v3.3</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 3 มิ.ย. 2569</span>
           </div>
         </div>
       </div>
@@ -6506,13 +6504,31 @@ function DocDownloadSection({ isOpen, onToggle }) {
     const wrap = makeWrap(el, bg);
     document.body.appendChild(wrap);
     const cleanup = () => { try { document.body.removeChild(wrap); } catch(_) {} setBusy(null); };
-    html2pdf().set({
-      margin: [12, 10, 12, 10],
-      filename,
+    const opts = {
+      margin: [12, 10, 12, 10], filename,
       image: { type: "jpeg", quality: 0.97 },
       html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: bg, windowWidth: 560 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    }).from(wrap.firstChild).save().then(cleanup).catch(cleanup);
+    };
+    try {
+      const blob = await html2pdf().set(opts).from(wrap.firstChild).output("blob");
+      const file = new File([blob], filename, { type: "application/pdf" });
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); }
+        catch (err) {
+          if (err.name !== "AbortError") {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+          }
+        }
+        cleanup();
+      } else {
+        html2pdf().set(opts).from(wrap.firstChild).save().then(cleanup).catch(cleanup);
+      }
+    } catch {
+      html2pdf().set(opts).from(wrap.firstChild).save().then(cleanup).catch(cleanup);
+    }
   }
 
   async function dlPng(ref, filename, key, bg) {
@@ -6526,11 +6542,23 @@ function DocDownloadSection({ isOpen, onToggle }) {
     document.body.appendChild(wrap);
     const cleanup = () => { try { document.body.removeChild(wrap); } catch(_) {} setBusy(null); };
     canvasFn(wrap.firstChild, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: bg, width: 560 })
-      .then(canvas => {
-        const a = document.createElement("a");
-        a.download = filename;
-        a.href = canvas.toDataURL("image/png");
-        a.click();
+      .then(async canvas => {
+        const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+        const file = new File([blob], filename, { type: "image/png" });
+        if (blob && navigator.canShare?.({ files: [file] })) {
+          // Mobile: share sheet → user can save to Photos app directly
+          try { await navigator.share({ files: [file] }); }
+          catch (err) {
+            if (err.name !== "AbortError") {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+              setTimeout(() => URL.revokeObjectURL(url), 30000);
+            }
+          }
+        } else {
+          const a = document.createElement("a");
+          a.download = filename; a.href = canvas.toDataURL("image/png"); a.click();
+        }
         cleanup();
       })
       .catch(cleanup);

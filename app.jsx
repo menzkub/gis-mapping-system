@@ -747,6 +747,12 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
           </button>
         </div>
       </div>
+      <div style={{ marginTop: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(107,44,145,0.06)", border: "1px solid rgba(107,44,145,0.12)", fontSize: 11, color: "var(--ink-mute)", lineHeight: 1.7 }}>
+        <b style={{ color: "var(--ink)" }}>หากกด "โหลดใหม่" แล้วเวอร์ชันยังไม่เปลี่ยน</b> ให้ล้างแคชเบราว์เซอร์:<br />
+        • <b>iOS Safari:</b> ตั้งค่า → Safari → ล้างประวัติและข้อมูลเว็บไซต์<br />
+        • <b>Android Chrome:</b> กด ⋮ → การตั้งค่า → ความเป็นส่วนตัว → ล้างข้อมูลการท่องเว็บ<br />
+        • <b>PC:</b> กด <kbd style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 4, padding: "1px 5px", fontFamily: "monospace" }}>Ctrl+Shift+R</kbd> (Win) หรือ <kbd style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 4, padding: "1px 5px", fontFamily: "monospace" }}>⌘+Shift+R</kbd> (Mac)
+      </div>
 
       <style>{`
         .pv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }

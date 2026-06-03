@@ -1109,116 +1109,142 @@ function QrModal({ target, kind, onClose }) {
 
 /* ── Photo Attachment Modal ─────────────────────────────────── */
 function PhotoModal({ target, kind, currentUser, onClose }) {
-  const storageKey = `pea_photos_${kind}_${target.OBJECTID}`;
-  const [photos, setPhotos] = useStateS(() => {
-    try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
-  });
-  const [preview, setPreview] = useStateS(null);
-  const [confirmId, setConfirmId] = useStateS(null); // id ที่กำลังจะลบ
-  const label = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
+  const BUCKET = "pea-photos";
+  const objId  = target.OBJECTID;
+  const [photos, setPhotos]           = useStateS([]);
+  const [loadingPhotos, setLoadingPhotos] = useStateS(true);
+  const [uploading, setUploading]     = useStateS(false);
+  const [preview, setPreview]         = useStateS(null);
+  const [confirmId, setConfirmId]     = useStateS(null);
+  const label   = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
   const isAdmin = currentUser?.role === "admin";
-  const toast = useToast();
+  const toast   = useToast();
+
+  const loadPhotos = useCallbackS(async () => {
+    setLoadingPhotos(true);
+    try {
+      const { data, error } = await _supabase
+        .from("photos")
+        .select("id, storage_path, uploaded_by, created_at")
+        .eq("kind", kind)
+        .eq("objectid", objId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const mapped = (data || []).map(row => ({
+        id: row.id,
+        storagePath: row.storage_path,
+        dataUrl: _supabase.storage.from(BUCKET).getPublicUrl(row.storage_path).data.publicUrl,
+        at: new Date(row.created_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" }),
+        addedBy: row.uploaded_by,
+      }));
+      setPhotos(mapped);
+    } catch (err) {
+      toast?.("โหลดภาพไม่สำเร็จ: " + err.message, "error");
+      setPhotos([]);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  }, [kind, objId]);
+
+  useEffectS(() => { loadPhotos(); }, [loadPhotos]);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    setUploading(true);
     const reader = new FileReader();
+    reader.onerror = () => { setUploading(false); toast?.("อ่านไฟล์ไม่สำเร็จ", "error"); };
     reader.onload = (ev) => {
       const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxDim = 900;
-        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-        canvas.width  = Math.round(img.width  * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.onerror = () => { setUploading(false); toast?.("ไฟล์ภาพไม่ถูกต้อง — ลองเลือกภาพใหม่", "error"); };
+      img.onload = async () => {
+        try {
+          const maxDim = 1024;
+          const scale  = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width  = Math.round(img.width  * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // ลองคุณภาพสูงสุดก่อน แล้วลดลงถ้า localStorage เต็ม
-        const tryQualities = [0.72, 0.55, 0.40];
-        let saved = false;
-        for (const q of tryQualities) {
-          const dataUrl = canvas.toDataURL("image/jpeg", q);
-          const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH"), addedBy: currentUser?.username || "user" };
-          const next = [photo, ...photos];
-          try {
-            localStorage.setItem(storageKey, JSON.stringify(next));
-            setPhotos(next);
-            saved = true;
-            try { window.dispatchEvent(new CustomEvent("pea-photo-changed")); } catch {}
-            break;
-          } catch (err) {
-            if (q === tryQualities[tryQualities.length - 1]) {
-              // ลองทุกคุณภาพแล้วยังไม่ได้ — storage เต็ม
-              toast?.("⚠️ พื้นที่เก็บข้อมูลเต็ม — ลบภาพเก่าออกก่อนแล้วลองใหม่\n(localStorage เต็ม: " + err.name + ")", "error");
-            }
+          let blob = null;
+          for (const q of [0.82, 0.65, 0.50]) {
+            blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", q));
+            if (blob && blob.size < 900_000) break;
           }
-        }
-        if (!saved) {
-          // ไม่บันทึก localStorage แต่แสดงในหน้าต่อนี้ชั่วคราว
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.40);
-          const photo = { id: Date.now(), dataUrl, at: new Date().toLocaleString("th-TH"), addedBy: currentUser?.username || "user" };
-          setPhotos([photo, ...photos]);
+          if (!blob) throw new Error("ไม่สามารถบีบอัดภาพได้");
+
+          const storagePath = `${kind}/${objId}/${Date.now()}.jpg`;
+          const { error: uploadErr } = await _supabase.storage
+            .from(BUCKET).upload(storagePath, blob, { contentType: "image/jpeg", upsert: false });
+          if (uploadErr) throw uploadErr;
+
+          const { error: dbErr } = await _supabase.from("photos").insert({
+            kind, objectid: objId, storage_path: storagePath,
+            uploaded_by: currentUser?.username || "user", file_size: blob.size,
+          });
+          if (dbErr) {
+            await _supabase.storage.from(BUCKET).remove([storagePath]).catch(() => {});
+            throw dbErr;
+          }
+
+          await loadPhotos();
+          window.dispatchEvent(new CustomEvent("pea-photo-changed"));
+        } catch (err) {
+          toast?.("บันทึกภาพไม่สำเร็จ: " + err.message, "error");
+        } finally {
+          setUploading(false);
         }
       };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
-    e.target.value = "";
   };
 
-  const confirmDelete = (id) => setConfirmId(id);
-
-  const doDelete = (id) => {
+  const doDelete = async (id) => {
     const ph = photos.find(p => p.id === id);
-    const next = photos.filter(p => p.id !== id);
-    setPhotos(next);
-    if (preview?.id === id) setPreview(null);
     setConfirmId(null);
+    if (preview?.id === id) setPreview(null);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      if (ph?.storagePath) await _supabase.storage.from(BUCKET).remove([ph.storagePath]);
+      const { error } = await _supabase.from("photos").delete().eq("id", id);
+      if (error) throw error;
+      setPhotos(prev => prev.filter(p => p.id !== id));
       window.dispatchEvent(new CustomEvent("pea-photo-changed"));
-    } catch {}
-    // บันทึกประวัติการลบลง Supabase audit_log (fallback localStorage)
-    const auditRow = {
-      username: currentUser?.username || "admin",
-      action:   "delete_photo",
-      target:   `${kind === "meter" ? "Meter" : "TR"} ${label} (OBJECTID: ${target.OBJECTID})`,
-      detail:   `ลบภาพที่ถ่ายเมื่อ ${ph?.at || "—"}`,
-      ip:       (navigator.userAgent || "").substring(0, 200),
-    };
-    _supabase.from("audit_log").insert(auditRow).then(({ error }) => {
-      if (error) {
-        console.warn("[photo del log] Supabase insert failed:", error.message);
-        toast?.("⚠️ บันทึกประวัติล้มเหลว — กรุณาตรวจสอบการเชื่อมต่อ\nภาพถูกลบแล้ว แต่ประวัติอาจไม่ครบ", "error");
-        // fallback: localStorage
-        try {
-          const logKey = "pea_photo_del_log";
-          const log = JSON.parse(localStorage.getItem(logKey) || "[]");
-          log.unshift({ ...auditRow, at: new Date().toLocaleString("th-TH") });
-          localStorage.setItem(logKey, JSON.stringify(log.slice(0, 300)));
-        } catch {}
-      }
-    });
+      _supabase.from("audit_log").insert({
+        username: currentUser?.username || "admin",
+        action:   "delete_photo",
+        target:   `${kind === "meter" ? "Meter" : "TR"} ${label} (OBJECTID: ${objId})`,
+        detail:   `ลบภาพที่ถ่ายเมื่อ ${ph?.at || "—"}`,
+        ip:       (navigator.userAgent || "").substring(0, 200),
+      }).catch(err => console.warn("[photo del log]", err.message));
+    } catch (err) {
+      toast?.("ลบภาพไม่สำเร็จ: " + err.message, "error");
+    }
   };
 
   return (
     <Modal open onClose={onClose} title={`ภาพถ่าย · ${label}`} width={480}>
       <div>
-        {/* ปุ่มถ่ายรูป/เลือกภาพ — ไม่มี capture เพื่อให้เลือกจาก gallery ได้ */}
-        <label style={{ display: "block", cursor: "pointer" }}>
-          <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+        <label style={{ display: "block", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1 }}>
+          <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} disabled={uploading} />
           <div className="btn btn-primary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 46, borderRadius: 14, marginBottom: 16 }}>
-            📷 ถ่ายรูป / เลือกภาพ
+            {uploading ? <>⏳ กำลังบันทึก...</> : <>📷 ถ่ายรูป / เลือกภาพ</>}
           </div>
         </label>
-        {photos.length > 0 ? (
+
+        {loadingPhotos ? (
+          <div style={{ textAlign: "center", padding: "32px 0", color: "var(--ink-mute)", fontSize: 13 }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>กำลังโหลดภาพ...
+          </div>
+        ) : photos.length > 0 ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
             {photos.map(ph => (
               <div key={ph.id} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden", cursor: "pointer" }} onClick={() => setPreview(ph)}>
-                <img src={ph.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-                {/* ปุ่มลบ — เฉพาะ admin */}
+                <img src={ph.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" loading="lazy" />
                 {isAdmin && (
-                  <button onClick={e => { e.stopPropagation(); confirmDelete(ph.id); }} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(220,38,38,0.85)", color: "white", border: "none", cursor: "pointer", fontSize: 11, display: "grid", placeItems: "center" }}>✕</button>
+                  <button onClick={e => { e.stopPropagation(); setConfirmId(ph.id); }}
+                    style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(220,38,38,0.85)", color: "white", border: "none", cursor: "pointer", fontSize: 11, display: "grid", placeItems: "center" }}>✕</button>
                 )}
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.5)", color: "white", fontSize: 9, padding: "2px 5px" }}>{ph.at}</div>
               </div>
@@ -1229,6 +1255,7 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
             ยังไม่มีภาพถ่าย
           </div>
         )}
+
         {!isAdmin && photos.length > 0 && (
           <div style={{ marginTop: 12, fontSize: 11, color: "var(--ink-mute)", textAlign: "center" }}>
             🔒 เฉพาะ Admin เท่านั้นที่สามารถลบภาพได้
@@ -1236,30 +1263,31 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
         )}
       </div>
 
-      {/* Full-screen preview */}
-      {preview && (
+      {preview && ReactDOM.createPortal(
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.93)", zIndex: 10100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setPreview(null)}>
           <img src={preview.dataUrl} style={{ maxWidth: "95vw", maxHeight: "88vh", borderRadius: 12, objectFit: "contain" }} alt="" />
           {isAdmin && (
-            <button onClick={e => { e.stopPropagation(); confirmDelete(preview.id); }} style={{ position: "absolute", top: 16, right: 16, background: "rgba(220,38,38,0.75)", border: "none", color: "white", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>🗑 ลบ</button>
+            <button onClick={e => { e.stopPropagation(); setConfirmId(preview.id); setPreview(null); }}
+              style={{ position: "absolute", top: 16, right: 16, background: "rgba(220,38,38,0.75)", border: "none", color: "white", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>🗑 ลบ</button>
           )}
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Confirmation dialog */}
-      {confirmId && (
+      {confirmId && ReactDOM.createPortal(
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 10200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div className="card card-elev" style={{ maxWidth: 340, width: "100%", padding: "24px 20px", borderRadius: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>🗑 ยืนยันการลบภาพ</div>
             <div style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 20 }}>
-              ภาพนี้จะถูกลบถาวร และจะบันทึกประวัติการลบโดย <b>{currentUser?.username}</b>
+              ภาพนี้จะถูกลบถาวรจากระบบ และจะบันทึกประวัติการลบโดย <b>{currentUser?.username}</b>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setConfirmId(null)}>ยกเลิก</button>
               <button className="btn" style={{ flex: 1, background: "linear-gradient(135deg,#dc2626,#ef4444)", color: "white", border: "none", fontWeight: 700 }} onClick={() => doDelete(confirmId)}>ลบภาพ</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </Modal>
   );
