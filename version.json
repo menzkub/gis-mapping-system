@@ -1,7 +1,7 @@
 {
-  "commit": "0e0e172a4c586995526b17ebb54f813cc0a08506",
-  "shortCommit": "0e0e172",
-  "message": "fix: MapQuickEditModal shows only lat/lng coordinates, not all fields",
-  "date": "2026-06-03T06:31:10Z",
+  "commit": "02862c0ad67ee9ad669cb69e797b643a9792af6a",
+  "shortCommit": "02862c0",
+  "message": "feat: add GPS location button to coordinate correction modal",
+  "date": "2026-06-03T06:33:01Z",
   "branch": "main"
 }
