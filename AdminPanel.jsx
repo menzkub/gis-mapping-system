@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -149,6 +149,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           addAudit={addAudit} currentUser={currentUser}
           devInfo={devInfo} setDevInfo={setDevInfo}
           allowExport={allowExport} setAllowExport={setAllowExport}
+          privacyPolicy={privacyPolicy} setPrivacyPolicy={setPrivacyPolicy}
           pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />}
         {tab === "guide"     && <AdminGuide />}
         {tab === "powered"   && <PoweredByTab />}
@@ -362,9 +363,30 @@ function DbUsageCard() {
   const [counts, setCounts] = useStateAd(null);
   const [loading, setLoading] = useStateAd(true);
   const [refreshedAt, setRefreshedAt] = useStateAd(null);
+  const [photoStats, setPhotoStats] = useStateAd(null);
+
+  function loadPhotoStats() {
+    try {
+      let totalBytes = 0; let photoCount = 0; let meterCount = 0; let trCount = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key?.startsWith("pea_photos_")) continue;
+        const raw = localStorage.getItem(key) || "[]";
+        totalBytes += raw.length * 2;
+        try {
+          const photos = JSON.parse(raw);
+          photoCount += photos.length;
+          if (key.startsWith("pea_photos_meter_")) meterCount += photos.length;
+          else if (key.startsWith("pea_photos_tr_")) trCount += photos.length;
+        } catch {}
+      }
+      setPhotoStats({ totalMb: totalBytes / (1024 * 1024), photoCount, meterCount, trCount });
+    } catch { setPhotoStats({ totalMb: 0, photoCount: 0, meterCount: 0, trCount: 0 }); }
+  }
 
   async function load() {
     setLoading(true);
+    loadPhotoStats();
     const result = {};
     await Promise.all(DB_TABLES.map(async t => {
       try {
@@ -500,6 +522,39 @@ function DbUsageCard() {
             </div>
           );
         })}
+      </div>
+
+      {/* ── Local Storage (รูปภาพ) ── */}
+      <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 14, background: "var(--soft)", border: "1px solid var(--soft-border)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ fontSize: 18 }}>📷</span> รูปภาพมิเตอร์ & หม้อแปลง
+          </div>
+          <span style={{ fontSize: 10, color: "var(--ink-mute)", background: "var(--surface)", padding: "3px 9px", borderRadius: 20, border: "1px solid var(--line)", fontWeight: 600 }}>
+            Local Storage · อุปกรณ์นี้
+          </span>
+        </div>
+        {photoStats ? (
+          <div style={{ display: "flex", gap: 10 }}>
+            {[
+              { label: "ภาพทั้งหมด", value: photoStats.photoCount, color: "#6b2c91" },
+              { label: "ภาพมิเตอร์", value: photoStats.meterCount, color: "#8b3fc4" },
+              { label: "ภาพหม้อแปลง", value: photoStats.trCount,  color: "#f47b20" },
+              { label: "พื้นที่ใช้",   value: photoStats.totalMb < 1 ? `${(photoStats.totalMb * 1024).toFixed(0)} KB` : `${photoStats.totalMb.toFixed(1)} MB`, color: "#10b981" },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center", padding: "8px 6px", background: "var(--surface)", borderRadius: 10, border: "1px solid var(--line)" }}>
+                <div style={{ fontWeight: 900, fontSize: 18, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--ink-mute)", marginTop: 3 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+        )}
+        <div style={{ marginTop: 10, fontSize: 11, color: "var(--ink-mute)", display: "flex", alignItems: "flex-start", gap: 5, lineHeight: 1.6 }}>
+          <span style={{ flexShrink: 0 }}>ℹ️</span>
+          <span>รูปภาพเก็บบน <b>อุปกรณ์แต่ละเครื่อง</b> (localStorage) ไม่นับรวมใน Supabase quota — ข้อมูลนี้แสดงเฉพาะอุปกรณ์ที่กำลังใช้งานอยู่เท่านั้น</span>
+        </div>
       </div>
     </div>
   );
@@ -5438,7 +5493,7 @@ function DateTimePicker({ value, onChange }) {
 /* ---------- Settings ---------- */
 const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
 
-function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo, allowExport, setAllowExport, pushPermission, subscribePush, unsubscribePush }) {
+function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, pushPermission, subscribePush, unsubscribePush }) {
   const [loading, setLoading] = useStateAd(false);
   const [savingMsg, setSavingMsg] = useStateAd(false);
   const [localMsg, setLocalMsg] = useStateAd(maintenanceMessage || DEFAULT_MSG);
@@ -5789,6 +5844,34 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
         )}
       </div>
 
+      {/* ── Privacy Policy Editor ── */}
+      <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
+        <button onClick={() => toggleSection("privacy")} style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>🔒</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>นโยบายความเป็นส่วนตัว (PDPA)</div>
+              <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>แก้ไขเนื้อหาที่แสดงในหน้าคู่มือ</div>
+            </div>
+          </div>
+          <span style={{ color: "var(--ink-mute)", fontSize: 12 }}>{openSection === "privacy" ? "▲" : "▼"}</span>
+        </button>
+        {openSection === "privacy" && (
+          <PrivacyPolicyEditor
+            sections={privacyPolicy || []}
+            onSave={async (newSections) => {
+              const { error } = await _supabase.from("settings")
+                .update({ value: JSON.stringify(newSections), updated_at: new Date().toISOString(), updated_by: currentUser.username })
+                .eq("key", "privacy_policy");
+              if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+              setPrivacyPolicy(newSections);
+              addAudit({ user: currentUser.username, action: "update_privacy_policy", target: "system", detail: "อัปเดตนโยบายความเป็นส่วนตัว" });
+              toast?.("บันทึกนโยบายความเป็นส่วนตัวสำเร็จ", "success");
+            }}
+          />
+        )}
+      </div>
+
       {/* ── Document Downloads ── */}
       <DocDownloadSection isOpen={openSection === "docs"} onToggle={() => toggleSection("docs")} />
 
@@ -5802,6 +5885,56 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
         isOpen={openSection === "push"}
         onToggle={() => toggleSection("push")}
       />
+    </div>
+  );
+}
+
+function PrivacyPolicyEditor({ sections, onSave }) {
+  const [items, setItems] = useStateAd(() => sections.map(s => ({ ...s })));
+  const [saving, setSaving] = useStateAd(false);
+
+  const update = (i, field, val) => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(items);
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ padding: "0 18px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ border: "1px solid var(--line)", borderRadius: 10, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={item.icon}
+              onChange={e => update(i, "icon", e.target.value)}
+              style={{ width: 44, textAlign: "center", borderRadius: 8, border: "1px solid var(--line)", padding: "4px 6px", fontSize: 18, background: "var(--soft)" }}
+            />
+            <input
+              value={item.title}
+              onChange={e => update(i, "title", e.target.value)}
+              style={{ flex: 1, borderRadius: 8, border: "1px solid var(--line)", padding: "4px 10px", fontSize: 13, fontWeight: 700, background: "var(--surface)" }}
+              placeholder="หัวข้อ"
+            />
+          </div>
+          <textarea
+            value={item.body}
+            onChange={e => update(i, "body", e.target.value)}
+            rows={3}
+            style={{ width: "100%", borderRadius: 8, border: "1px solid var(--line)", padding: "6px 10px", fontSize: 12, background: "var(--surface)", resize: "vertical", boxSizing: "border-box", color: "var(--ink)" }}
+            placeholder="เนื้อหา"
+          />
+        </div>
+      ))}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="btn btn-primary"
+        style={{ alignSelf: "flex-end", minWidth: 120 }}
+      >
+        {saving ? "⏳ กำลังบันทึก…" : "💾 บันทึก"}
+      </button>
     </div>
   );
 }
@@ -7096,7 +7229,7 @@ function AdminPayments({ currentUser, addAudit }) {
                   <td className="mono fw-6">{sl.amount_baht ? `฿${Number(sl.amount_baht).toLocaleString()}` : "—"}</td>
                   <td className="mono text-xs t-mute">{sl.ref_number || "—"}</td>
                   <td>{statusBadge(sl.status)}</td>
-                  <td className="text-xs t-mute">{sl.submitted_at?.slice(0,16).replace("T"," ")}</td>
+                  <td className="text-xs t-mute">{utcToThai(sl.submitted_at, false)}</td>
                   <td>
                     {sl.status === "pending" && (
                       <div className="row-action" onClick={e => e.stopPropagation()}>
@@ -7148,7 +7281,7 @@ function AdminPayments({ currentUser, addAudit }) {
                 [s("จำนวนเงิน","Amount"),        viewSlip.amount_baht ? `฿${Number(viewSlip.amount_baht).toLocaleString()}` : "—"],
                 [s("เลขอ้างอิง","Reference"),    viewSlip.ref_number || "—"],
                 [s("สถานะ","Status"),            {pending:s("รอตรวจสอบ","Pending"),approved:s("อนุมัติแล้ว","Approved"),rejected:s("ปฏิเสธ","Rejected")}[viewSlip.status]],
-                [s("ส่งเมื่อ","Submitted"),      viewSlip.submitted_at?.slice(0,16).replace("T"," ")],
+                [s("ส่งเมื่อ","Submitted"),      utcToThai(viewSlip.submitted_at, false)],
               ].map(([k, v]) => (
                 <div key={k} style={{ display:"flex", alignItems:"baseline", gap:14, padding:"9px 0", borderBottom:"1px solid var(--line)" }}>
                   <span style={{ width:110, flexShrink:0, fontSize:11, fontWeight:600, color:"var(--t-mute)", textTransform:"uppercase", letterSpacing:"0.04em" }}>{k}</span>

@@ -94,10 +94,11 @@ function toProfile(row) {
     require_2fa:       row.require_2fa       || false,
     team_leader_id:    row.team_leader_id    || null,
     created:           row.created_at        ? row.created_at.slice(0, 10) : "",
-    lastLogin:         row.last_login        ? row.last_login.replace("T", " ").slice(0, 16) : "—",
-    passwordChangedAt: row.password_changed_at || null,
-    pw_force_change:   row.pw_force_change   || false,
-    permissions:       row.permissions       || [],
+    lastLogin:         utcToThai(row.last_login, false),
+    passwordChangedAt:  row.password_changed_at  || null,
+    pw_force_change:    row.pw_force_change      || false,
+    permissions:        row.permissions          || [],
+    privacyAcceptedAt:  row.privacy_accepted_at  || null,
   };
 }
 function fromProfilePatch(patch) {
@@ -113,10 +114,22 @@ function fromProfilePatch(patch) {
   return out;
 }
 
+// แปลง ISO UTC จาก Supabase → เวลาไทย (UTC+7) สำหรับแสดงผล
+function utcToThai(iso, sec = true) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const bkk = new Date(d.getTime() + 7 * 3600 * 1000);
+  const p = n => String(n).padStart(2, "0");
+  const date = `${bkk.getUTCFullYear()}-${p(bkk.getUTCMonth()+1)}-${p(bkk.getUTCDate())}`;
+  const time = `${p(bkk.getUTCHours())}:${p(bkk.getUTCMinutes())}${sec ? `:${p(bkk.getUTCSeconds())}` : ""}`;
+  return `${date} ${time}`;
+}
+
 function toAuditEntry(row) {
   return {
     id:     String(row.id),
-    at:     row.at ? row.at.replace("T", " ").slice(0, 19) : "",
+    at:     utcToThai(row.at, true),
     user:   row.username || "",
     action: row.action   || "",
     target: row.target   || "",
@@ -155,7 +168,7 @@ function toNotification(row) {
     message:     row.message     || "",
     dueMonth:    row.due_month   || null,
     isRead:      row.is_read     || false,
-    createdAt:   row.created_at  ? row.created_at.replace("T", " ").slice(0, 16) : "",
+    createdAt:   utcToThai(row.created_at, false),
     sentBy:      row.sent_by     || null,
   };
 }
@@ -164,6 +177,7 @@ Object.assign(window, {
   _supabase,
   SUPABASE_URL,
   VAPID_PUBLIC_KEY,
+  utcToThai,
   toMeter, fromMeter,
   toTransformer, fromTransformer,
   toProfile, fromProfilePatch,

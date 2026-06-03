@@ -929,7 +929,11 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
         <div style={{ background: "linear-gradient(135deg,#1b0926,#d96512)", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>แจ้งแก้ไขพิกัด</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "monospace" }}>{p.PEANO || p.TAG}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontFamily: "monospace" }}>
+              {target.isMeter
+                ? `PEA Meter: ${p.PEANO || p.TAG}`
+                : `PEA TR: ${p.PEANO_TR || p.TAG}`}
+            </div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "white", display: "grid", placeItems: "center", border: "none", cursor: "pointer" }}>✕</button>
         </div>
@@ -1113,6 +1117,7 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
   const [confirmId, setConfirmId] = useStateS(null); // id ที่กำลังจะลบ
   const label = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
   const isAdmin = currentUser?.role === "admin";
+  const toast = useToast();
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -1159,6 +1164,7 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
     _supabase.from("audit_log").insert(auditRow).then(({ error }) => {
       if (error) {
         console.warn("[photo del log] Supabase insert failed:", error.message);
+        toast?.("⚠️ บันทึกประวัติล้มเหลว — กรุณาตรวจสอบการเชื่อมต่อ\nภาพถูกลบแล้ว แต่ประวัติอาจไม่ครบ", "error");
         // fallback: localStorage
         try {
           const logKey = "pea_photo_del_log";

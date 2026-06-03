@@ -1082,10 +1082,15 @@ function MFAVerifyScreen({ currentUser, onComplete, onCancel }) {
                     })}
                   </div>
                   <input
-                    style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "text", fontSize: 1 }}
-                    maxLength={6} inputMode="numeric" autoComplete="one-time-code"
+                    style={{ position: "absolute", inset: 0, opacity: 0, width: "100%", height: "100%", cursor: "text", fontSize: 16 }}
+                    maxLength={6} inputMode="numeric" autoComplete="one-time-code" type="tel"
                     value={code}
-                    onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setErr(null); }}
+                    onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setErr(null); }}
+                    onPaste={e => {
+                      e.preventDefault();
+                      const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 6);
+                      if (pasted) { setCode(pasted); setErr(null); }
+                    }}
                     autoFocus
                   />
                 </div>
@@ -1852,7 +1857,7 @@ function UGTable({ rows }) {
   );
 }
 
-function UserGuide({ role }) {
+function UserGuide({ role, privacyPolicy }) {
   const { lang } = useLang();
   const ug = (th, en) => lang === "en" ? en : th;
   const isAdmin = role === "admin";
@@ -2328,15 +2333,7 @@ function UserGuide({ role }) {
 
         <UGSection icon="lock" title={ug("นโยบายความเป็นส่วนตัว (PDPA)", "Privacy Policy (PDPA)")} expandSignal={expandSig}>
           <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 14, fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7 }}>
-            {[
-              { icon: "🏢", title: "ผู้ควบคุมข้อมูลส่วนบุคคล", body: "การไฟฟ้าส่วนภูมิภาค (PEA) ระบบ PEA Meter & TR Mapping ใช้สำหรับงานภายในองค์กรเท่านั้น" },
-              { icon: "📋", title: "ข้อมูลที่เก็บรวบรวม", body: "ตำแหน่ง GPS ที่ใช้แก้ไขพิกัด, ภาพถ่ายที่แนบกับ Meter/TR, ประวัติการค้นหา (เก็บใน device), บันทึกการใช้งานระบบ (ชื่อผู้ใช้, การกระทำ, เวลา)" },
-              { icon: "🎯", title: "วัตถุประสงค์การใช้ข้อมูล", body: "เพื่อปรับปรุงความถูกต้องของพิกัดมิเตอร์และหม้อแปลงในระบบ GIS และเพื่อการตรวจสอบการใช้งานระบบ (Audit)" },
-              { icon: "🔒", title: "การเปิดเผยข้อมูล", body: "ข้อมูลไม่ถูกเปิดเผยแก่บุคคลภายนอก เข้าถึงได้เฉพาะพนักงาน PEA ที่ได้รับอนุญาตและมีบัญชีผู้ใช้ในระบบเท่านั้น" },
-              { icon: "⏱", title: "ระยะเวลาเก็บรักษาข้อมูล", body: "ข้อมูลการใช้งาน (Audit Log) เก็บไว้ตราบเท่าที่จำเป็นสำหรับการตรวจสอบ ภาพถ่ายเก็บใน device ของผู้ใช้ ไม่ได้ส่งขึ้น Server" },
-              { icon: "✅", title: "สิทธิ์ของเจ้าของข้อมูล (PDPA)", body: "ท่านมีสิทธิ์: ขอเข้าถึงข้อมูล, ขอแก้ไขข้อมูล, ขอลบข้อมูล, ขอจำกัดการประมวลผล โดยติดต่อผ่าน Admin ของระบบ" },
-              { icon: "📞", title: "ติดต่อ", body: "หากมีข้อสงสัยเกี่ยวกับนโยบายความเป็นส่วนตัว กรุณาติดต่อผู้ดูแลระบบ (Admin) ผ่านช่องทางภายในองค์กร" },
-            ].map((item, i) => (
+            {(privacyPolicy || []).map((item, i) => (
               <div key={i} style={{ display: "flex", gap: 10, padding: "10px 14px", borderRadius: 10, background: "var(--soft)", border: "1px solid var(--soft-border)" }}>
                 <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
                 <div>
@@ -3172,6 +3169,9 @@ function App() {
     database: "", stack: "", systems: "",
     version: "1.0.0", footer: "", showBtn: false,
   });
+  const [privacyPolicy, setPrivacyPolicy] = useStateApp(null);
+  const [privacyPolicyUpdatedAt, setPrivacyPolicyUpdatedAt] = useStateApp(null);
+  const [showPrivacyConsent, setShowPrivacyConsent] = useStateApp(false);
   const [daysUntilExpiry, setDaysUntilExpiry] = useStateApp(null);
   const [idleWarnSecs, setIdleWarnSecs] = useStateApp(null);
   const [pushPermission, setPushPermission] = useStateApp(() =>
@@ -3191,7 +3191,7 @@ function App() {
     try {
       const [myProfileRes, settingsRes] = await Promise.all([
         _supabase.from("profiles").select("*").eq("id", supabaseUser.id).single(),
-        _supabase.from("settings").select("key,value"),
+        _supabase.from("settings").select("key,value,updated_at"),
       ]);
 
       if (myProfileRes.error || !myProfileRes.data) {
@@ -3232,6 +3232,23 @@ function App() {
         footer:     settingsMap["dev_footer"]     || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
         showBtn:    settingsMap["dev_show_btn"]   === "true",
       });
+      // Privacy Policy
+      const DEFAULT_PRIVACY = [
+        { icon: "🏢", title: "ผู้ควบคุมข้อมูลส่วนบุคคล", body: "การไฟฟ้าส่วนภูมิภาค (PEA) ระบบ PEA Meter & TR Mapping ใช้สำหรับงานภายในองค์กรเท่านั้น" },
+        { icon: "📋", title: "ข้อมูลที่เก็บรวบรวม", body: "ตำแหน่ง GPS ที่ใช้แก้ไขพิกัด, ภาพถ่ายที่แนบกับ Meter/TR, ประวัติการค้นหา (เก็บใน device), บันทึกการใช้งานระบบ" },
+        { icon: "🎯", title: "วัตถุประสงค์การใช้ข้อมูล", body: "เพื่อปรับปรุงความถูกต้องของพิกัดมิเตอร์และหม้อแปลงในระบบ GIS และเพื่อการตรวจสอบการใช้งานระบบ (Audit)" },
+        { icon: "🔒", title: "การเปิดเผยข้อมูล", body: "ข้อมูลไม่ถูกเปิดเผยแก่บุคคลภายนอก เข้าถึงได้เฉพาะพนักงาน PEA ที่ได้รับอนุญาต" },
+        { icon: "⏱", title: "ระยะเวลาเก็บรักษาข้อมูล", body: "ข้อมูลการใช้งาน (Audit Log) เก็บไว้ตราบเท่าที่จำเป็นสำหรับการตรวจสอบ" },
+        { icon: "✅", title: "สิทธิ์ของเจ้าของข้อมูล (PDPA)", body: "ท่านมีสิทธิ์: ขอเข้าถึงข้อมูล, ขอแก้ไขข้อมูล, ขอลบข้อมูล โดยติดต่อผ่าน Admin" },
+        { icon: "📞", title: "ติดต่อ", body: "หากมีข้อสงสัยเกี่ยวกับนโยบายความเป็นส่วนตัว กรุณาติดต่อผู้ดูแลระบบ (Admin)" },
+      ];
+      try { setPrivacyPolicy(JSON.parse(settingsMap["privacy_policy"] || "null") || DEFAULT_PRIVACY); }
+      catch { setPrivacyPolicy(DEFAULT_PRIVACY); }
+      const privacySettingRow = (settingsRes.data || []).find(r => r.key === "privacy_policy");
+      const policyUpdatedAt = privacySettingRow?.updated_at || null;
+      setPrivacyPolicyUpdatedAt(policyUpdatedAt);
+      const privacyAccepted = myProfile.privacy_accepted_at;
+      const needsConsent = !privacyAccepted || (policyUpdatedAt && privacyAccepted < policyUpdatedAt);
       if (isMaintenance && myProfile.role !== "admin") {
         setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
         setAppState("maintenance");
@@ -3321,6 +3338,7 @@ function App() {
       setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
       setData({ meters: [], transformers: [], users, auditLog, feeders, dashStats });
       setAppState("ready");
+      if (needsConsent) setShowPrivacyConsent(true);
 
       // Load in-app notifications for this user (non-blocking)
       _supabase.from("notifications")
@@ -3332,9 +3350,11 @@ function App() {
           if (ndata) setMyNotifs(ndata.map(toNotification));
         }).catch(() => {});
 
+      const nowIso = new Date().toISOString();
       await _supabase.from("profiles")
-        .update({ last_login: new Date().toISOString() })
+        .update({ last_login: nowIso })
         .eq("id", supabaseUser.id);
+      setCurrentUser(prev => ({ ...prev, lastLogin: utcToThai(nowIso, false) }));
     } catch (err) {
       console.error("loadAppData failed:", err);
       setAppState("unauthed");
@@ -3515,7 +3535,7 @@ function App() {
     if (error) {
       console.warn("[Audit] insert failed:", error.message, row);
       // still update local state optimistically so ProfileView shows it
-      const fake = { id: String(Date.now()), at: new Date().toISOString().replace("T"," ").slice(0,19),
+      const fake = { id: String(Date.now()), at: formatThaiDate(),
         user: row.username, action: row.action, target: row.target, detail: row.detail, ip: row.ip };
       setData(d => ({ ...d, auditLog: [fake, ...d.auditLog].slice(0, 500) }));
       return;
@@ -4282,7 +4302,7 @@ function App() {
               onPasswordChanged={() => setDaysUntilExpiry(45)} />
           )}
           {route === "guide" && (
-            <UserGuide role={currentUser.role} />
+            <UserGuide role={currentUser.role} privacyPolicy={privacyPolicy} />
           )}
           {route === "payment" && isTeamLeader && (
             <PaymentView currentUser={currentUser} addAudit={addAudit} />
@@ -4301,6 +4321,7 @@ function App() {
               maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
               devInfo={devInfo} setDevInfo={setDevInfo}
               allowExport={allowExport} setAllowExport={setAllowExport}
+              privacyPolicy={privacyPolicy} setPrivacyPolicy={setPrivacyPolicy}
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush}
               onRefresh={handleRefresh} refreshing={refreshing} />
           )}
@@ -4310,6 +4331,19 @@ function App() {
         <DevInfoButton devInfo={devInfo} />
 
         {/* Logout confirm dialog */}
+        {/* ── Privacy Policy Consent — blocks all interaction until accepted ── */}
+        {showPrivacyConsent && (
+          <PrivacyConsentModal
+            sections={privacyPolicy || []}
+            currentUser={currentUser}
+            updatedAt={privacyPolicyUpdatedAt}
+            onAccept={(acceptedAt) => {
+              setCurrentUser(prev => ({ ...prev, privacyAcceptedAt: acceptedAt }));
+              setShowPrivacyConsent(false);
+            }}
+          />
+        )}
+
         {showLogoutConfirm && (
           <div className="fade-in pea-modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
             <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 420, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
@@ -4350,6 +4384,166 @@ function App() {
         )}
       </div>
     </ConfirmProvider></ToastProvider>
+  );
+}
+
+/* ============================================================
+   PrivacyConsentModal — blocks app until user reads & accepts
+   ============================================================ */
+function PrivacyConsentModal({ sections, currentUser, updatedAt, onAccept }) {
+  const [hasReadAll, setHasReadAll] = React.useState(false);
+  const [scrollPct, setScrollPct] = React.useState(0);
+  const [saving, setSaving] = React.useState(false);
+  const [saveError, setSaveError] = React.useState("");
+  const scrollRef = React.useRef(null);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const pct = Math.min(100, Math.round(((el.scrollTop + el.clientHeight) / el.scrollHeight) * 100));
+    setScrollPct(pct);
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) setHasReadAll(true);
+  };
+
+  React.useEffect(() => {
+    // เช็คทันทีกรณีเนื้อหาสั้นกว่า viewport
+    handleScroll();
+  }, []);
+
+  const doAccept = async () => {
+    if (!hasReadAll || saving) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      const now = new Date().toISOString();
+      const { error } = await _supabase.from("profiles")
+        .update({ privacy_accepted_at: now })
+        .eq("id", currentUser.id);
+      if (error) {
+        setSaveError("บันทึกไม่สำเร็จ: " + error.message + " — กรุณาแจ้ง Admin รัน supabase/add_privacy_consent.sql");
+      } else {
+        onAccept(now);
+      }
+    } catch (e) {
+      setSaveError("เกิดข้อผิดพลาด: " + (e?.message || "ไม่ทราบสาเหตุ"));
+    } finally { setSaving(false); }
+  };
+
+  const doLogout = async () => {
+    await _supabase.auth.signOut();
+    window.location.reload();
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(14,10,22,0.88)", backdropFilter: "blur(10px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 520,
+        background: "var(--surface)", borderRadius: 24,
+        boxShadow: "0 32px 80px rgba(0,0,0,0.65)",
+        overflow: "hidden", display: "flex", flexDirection: "column",
+        maxHeight: "calc(100dvh - 32px)",
+      }}>
+
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px 16px", flexShrink: 0,
+          background: "linear-gradient(135deg,#1b0926 0%,#6b2c91 55%,#f47b20 130%)",
+          color: "white",
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", opacity: 0.65, textTransform: "uppercase", marginBottom: 6 }}>
+            นโยบายความเป็นส่วนตัว · PDPA
+          </div>
+          <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 6 }}>🔒 กรุณาอ่านและรับทราบ</div>
+          <div style={{ fontSize: 13, opacity: 0.85 }}>
+            สวัสดี <b>{currentUser.name || currentUser.username}</b> — กรุณาอ่านนโยบายทั้งหมดก่อนใช้งานระบบ
+          </div>
+          {updatedAt && (
+            <div style={{ fontSize: 11, opacity: 0.55, marginTop: 4 }}>
+              อัปเดตล่าสุด: {utcToThai(updatedAt, false)}
+            </div>
+          )}
+        </div>
+
+        {/* Scroll progress bar */}
+        <div style={{ height: 3, background: "var(--line)", flexShrink: 0 }}>
+          <div style={{
+            height: "100%", width: `${scrollPct}%`,
+            background: hasReadAll ? "#16a34a" : "linear-gradient(90deg,#6b2c91,#f47b20)",
+            transition: "width 0.15s ease, background 0.4s",
+          }} />
+        </div>
+
+        {/* Scrollable policy content */}
+        <div ref={scrollRef} onScroll={handleScroll} style={{
+          flex: 1, overflowY: "auto", padding: "16px 20px",
+          display: "flex", flexDirection: "column", gap: 10,
+          WebkitOverflowScrolling: "touch",
+        }}>
+          {sections.map((item, i) => (
+            <div key={i} style={{
+              background: "var(--soft)", borderRadius: 12,
+              padding: "12px 14px", border: "1px solid var(--soft-border)",
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 20 }}>{item.icon}</span>
+                <span>{item.title}</span>
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.75 }}>{item.body}</div>
+            </div>
+          ))}
+          <div style={{ height: 4 }} />
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 20px 18px", borderTop: "1px solid var(--line)", flexShrink: 0 }}>
+          <div style={{
+            marginBottom: 10, fontSize: 12, fontWeight: 600,
+            color: hasReadAll ? "#16a34a" : "var(--pea-orange-600)",
+            display: "flex", alignItems: "center", gap: 6,
+            transition: "color 0.3s",
+          }}>
+            {hasReadAll
+              ? <><span>✓</span> อ่านครบแล้ว — สามารถกดรับทราบได้</>
+              : <><span>⬇</span> เลื่อนอ่านนโยบายถึงด้านล่างก่อนกดรับทราบ ({scrollPct}%)</>
+            }
+          </div>
+          {saveError && (
+            <div style={{ marginBottom: 8, padding: "8px 12px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 10, fontSize: 12, color: "#dc2626", lineHeight: 1.5 }}>
+              ⚠️ {saveError}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={doLogout} style={{
+              height: 48, padding: "0 16px", borderRadius: 14, flexShrink: 0,
+              background: "none", border: "1px solid var(--line)",
+              color: "var(--ink-mute)", cursor: "pointer", fontWeight: 600, fontSize: 13,
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              ออกจากระบบ
+            </button>
+            <button onClick={doAccept} disabled={!hasReadAll || saving} style={{
+              flex: 1, height: 48, borderRadius: 14, border: "none", fontWeight: 700, fontSize: 14,
+              cursor: hasReadAll && !saving ? "pointer" : "not-allowed",
+              background: hasReadAll ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "var(--soft)",
+              color: hasReadAll ? "white" : "var(--ink-mute)",
+              boxShadow: hasReadAll ? "0 8px 22px rgba(107,44,145,0.4)" : "none",
+              transition: "all 0.35s",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}>
+              {saving
+                ? <><span style={{ width: 16, height: 16, borderRadius: "50%", border: "2.5px solid rgba(255,255,255,0.3)", borderTopColor: "white", display: "inline-block", animation: "spin 0.7s linear infinite" }} /> กำลังบันทึก…</>
+                : <>✓ รับทราบและยอมรับนโยบาย</>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
