@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -133,7 +133,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
       </div>
 
       <div className={"adm-body" + (tab === "map" ? " adm-map-body" : "")}>
-        {tab === "dashboard" && <AdminDashboard data={data} onRefresh={onRefresh} refreshing={refreshing} />}
+        {tab === "dashboard" && <AdminDashboard data={data} privacyPolicyUpdatedAt={privacyPolicyUpdatedAt} onRefresh={onRefresh} refreshing={refreshing} />}
         {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
@@ -167,7 +167,7 @@ function fmtStat(n) {
   return n.toLocaleString();
 }
 
-function AdminDashboard({ data, onRefresh, refreshing }) {
+function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing }) {
   const { t } = useLang();
   const s = data.dashStats || {};
   const meterCount = +(s.meter_count  || 0);
@@ -340,7 +340,130 @@ function AdminDashboard({ data, onRefresh, refreshing }) {
         </div>
       </div>
 
+      <PrivacyConsentCard users={data.users || []} privacyPolicyUpdatedAt={privacyPolicyUpdatedAt} />
       <DbUsageCard />
+    </div>
+  );
+}
+
+/* ── Privacy Policy Consent Stats Card ──────────────────────────────────── */
+function PrivacyConsentCard({ users, privacyPolicyUpdatedAt }) {
+  const [showAll, setShowAll] = useStateAd(false);
+  const total    = users.length;
+  const accepted = users.filter(u => u.privacyAcceptedAt);
+  const pending  = users.filter(u => !u.privacyAcceptedAt);
+  const pct      = total > 0 ? Math.round(accepted.length / total * 100) : 0;
+  const policyDate = privacyPolicyUpdatedAt ? utcToThai(privacyPolicyUpdatedAt, false) : null;
+  const allGood  = pending.length === 0 && total > 0;
+
+  const barColor = allGood ? "#10b981" : pct > 60 ? "#f59e0b" : "#ef4444";
+
+  return (
+    <div className="card card-elev" style={{ overflow: "hidden", position: "relative" }}>
+      <div style={{ position:"absolute", top:-50, right:-50, width:200, height:200, borderRadius:"50%",
+                    background:`radial-gradient(circle, ${barColor}18 0%, transparent 65%)`, pointerEvents:"none" }} />
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:16, position:"relative" }}>
+        <div>
+          <div className="t-eyebrow" style={{ color:"#6b2c91", marginBottom:4 }}>PRIVACY POLICY</div>
+          <div style={{ fontWeight:900, fontSize:20, letterSpacing:"-0.02em" }}>ความยินยอมนโยบาย</div>
+          {policyDate && (
+            <div style={{ fontSize:11, color:"var(--ink-mute)", marginTop:2 }}>อัปเดตล่าสุด: {policyDate}</div>
+          )}
+        </div>
+        <div style={{
+          padding:"5px 12px", borderRadius:999,
+          background: allGood ? "#d1fae5" : pct > 60 ? "#fef3c7" : "#fee2e2",
+          color:       allGood ? "#065f46" : pct > 60 ? "#92400e" : "#b91c1c",
+          fontSize:12, fontWeight:800, flexShrink:0,
+        }}>
+          {pct}% รับทราบ
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+          <span style={{ fontSize:12, fontWeight:600, color:"#059669", display:"flex", alignItems:"center", gap:4 }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:"#10b981", display:"inline-block" }} />
+            รับทราบแล้ว {accepted.length} คน
+          </span>
+          <span style={{ fontSize:12, fontWeight:600, color:pending.length > 0 ? "#d97706" : "var(--ink-mute)", display:"flex", alignItems:"center", gap:4 }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:pending.length > 0 ? "#f59e0b" : "var(--line)", display:"inline-block" }} />
+            รอดำเนินการ {pending.length} คน
+          </span>
+        </div>
+        <div style={{ height:10, background:"var(--line)", borderRadius:999, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,#059669,#10b981,#34d399)`,
+                        borderRadius:999, transition:"width 700ms var(--ease-out)" }} />
+        </div>
+        <div style={{ textAlign:"right", fontSize:11, color:"var(--ink-mute)", marginTop:3 }}>
+          {accepted.length} / {total} ผู้ใช้งาน
+        </div>
+      </div>
+
+      {/* All accepted banner */}
+      {allGood && (
+        <div style={{ textAlign:"center", padding:"10px 0", color:"#065f46", fontSize:13, fontWeight:700,
+                      background:"rgba(16,185,129,0.08)", borderRadius:10, border:"1px solid rgba(16,185,129,0.2)" }}>
+          ✓ ผู้ใช้งานทั้งหมดรับทราบนโยบายแล้ว
+        </div>
+      )}
+
+      {/* Accepted users — collapsible */}
+      {accepted.length > 0 && (
+        <div style={{ marginBottom: pending.length > 0 ? 14 : 0 }}>
+          <button onClick={() => setShowAll(s => !s)} style={{ background:"none", border:"none", cursor:"pointer", padding:"6px 0", fontSize:12, fontWeight:700, color:"#059669", display:"flex", alignItems:"center", gap:4 }}>
+            <Icon name={showAll ? "chevUp" : "chevDown"} size={13} />
+            รายการผู้รับทราบ ({accepted.length})
+          </button>
+          {showAll && (
+            <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:200, overflowY:"auto", marginTop:4 }}>
+              {accepted.map(u => (
+                <div key={u.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:"rgba(16,185,129,0.05)", borderRadius:8, border:"1px solid rgba(16,185,129,0.15)" }}>
+                  <div style={{ width:26, height:26, borderRadius:"50%", background:"rgba(16,185,129,0.15)", display:"grid", placeItems:"center", fontSize:11, fontWeight:800, color:"#059669", flexShrink:0 }}>
+                    {(u.name || u.username || "?")[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:12, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name || u.username}</div>
+                    <div style={{ fontSize:10, color:"var(--ink-mute)" }}>@{u.username}</div>
+                  </div>
+                  <div style={{ fontSize:10, color:"#059669", fontFamily:"monospace", flexShrink:0, textAlign:"right" }}>
+                    {utcToThai(u.privacyAcceptedAt, false)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pending users */}
+      {pending.length > 0 && (
+        <div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#92400e", marginBottom:7, display:"flex", alignItems:"center", gap:5 }}>
+            <Icon name="warning" size={13} style={{ color:"#f59e0b" }} />
+            ยังไม่รับทราบ ({pending.length} คน)
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:180, overflowY:"auto" }}>
+            {pending.map(u => (
+              <div key={u.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:"rgba(245,158,11,0.06)", borderRadius:8, border:"1px solid rgba(245,158,11,0.2)" }}>
+                <div style={{ width:26, height:26, borderRadius:"50%", background:"rgba(245,158,11,0.15)", display:"grid", placeItems:"center", fontSize:11, fontWeight:800, color:"#92400e", flexShrink:0 }}>
+                  {(u.name || u.username || "?")[0].toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:12, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name || u.username}</div>
+                  <div style={{ fontSize:10, color:"var(--ink-mute)" }}>@{u.username} · {u.role}</div>
+                </div>
+                <span style={{ fontSize:10, color:"#92400e", background:"rgba(245,158,11,0.15)", padding:"2px 7px", borderRadius:4, fontWeight:700, flexShrink:0 }}>
+                  รอรับทราบ
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -701,7 +824,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
 }
 
 /* ---------- Guide ---------- */
-const GUIDE_VERSION = { version: "v3.1", date: "2 มิ.ย. 2569" };
+const GUIDE_VERSION = { version: "v3.3", date: "3 มิ.ย. 2569" };
 
 function GuideSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateAd(false);
@@ -1036,10 +1159,42 @@ function AdminGuide() {
         </div>
       </GuideSection>
 
+      {/* ─── SECTION: Privacy Policy ─── */}
+      <GuideSection icon="book" title={s("นโยบายความเป็นส่วนตัว (Privacy Policy)", "Privacy Policy Consent")} badge="admin only" expandSignal={expandSig}>
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{s("ภาพรวม", "Overview")}</div>
+          <GuideTable rows={[
+            [s("รายการ", "Feature"), s("รายละเอียด", "Details")],
+            [s("ใครต้องรับทราบ", "Who must consent"), s("ผู้ใช้ทุกคนที่ยังไม่ได้กด 'รับทราบ' หรือนโยบายถูกอัปเดตหลังจากที่ผู้ใช้รับทราบครั้งล่าสุด", "Every user who hasn't accepted yet, or whose last acceptance predates the latest policy update")],
+            [s("ฟิลด์ DB", "DB field"), "profiles.privacy_accepted_at TIMESTAMPTZ"],
+            [s("ตรวจสอบ", "Condition"), s("needsConsent = !accepted || accepted < policyUpdatedAt", "needsConsent = !accepted || accepted < policyUpdatedAt")],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("การตั้งค่าสำหรับ Admin", "Admin Setup")}</div>
+          <GuideStep n={1} text={s("รัน SQL: supabase/add_privacy_consent.sql เพื่อเพิ่ม column privacy_accepted_at ในตาราง profiles", "Run SQL: supabase/add_privacy_consent.sql to add privacy_accepted_at column to profiles table")} />
+          <GuideStep n={2} text={s("ไปที่ Admin → ตั้งค่า → Privacy Policy Editor เพื่อแก้ไขเนื้อหานโยบาย", "Go to Admin → Settings → Privacy Policy Editor to edit policy content")} />
+          <GuideStep n={3} text={s("หลังบันทึกนโยบายใหม่ ผู้ใช้ทุกคนที่เคยรับทราบก่อนหน้าจะต้องรับทราบใหม่อัตโนมัติ", "After saving updated policy, all users who previously accepted will need to re-accept automatically")} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("Dashboard ความยินยอม", "Consent Dashboard")}</div>
+          <GuideStep n={1} text={s("ไปที่ Admin → Dashboard — ดูการ์ด 'ความยินยอมนโยบาย' แสดงสถิติ accepted/pending พร้อม progress bar", "Go to Admin → Dashboard — see 'Privacy Consent' card showing accepted/pending stats with progress bar")} />
+          <GuideStep n={2} text={s("กดปุ่ม 'รายการผู้รับทราบ' เพื่อดูรายชื่อและวันที่รับทราบ", "Click 'Accepted list' to see names and acceptance dates")} />
+          <GuideTip>{s("RLS Policy: ต้องมี UPDATE policy บน profiles เพื่อให้ผู้ใช้อัปเดต privacy_accepted_at ได้ — ดู supabase/add_privacy_consent.sql", "RLS Policy: profiles table needs an UPDATE policy allowing users to update privacy_accepted_at — see supabase/add_privacy_consent.sql")}</GuideTip>
+        </div>
+      </GuideSection>
+
       {/* ─── SECTION: ประวัติ UX/UI ─── */}
       <GuideSection icon="bolt" title={s("ประวัติการปรับปรุง UX/UI", "UX/UI Changelog")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>v3.1 — 2 มิ.ย. 2569 {s("(ล่าสุด)", "(latest)")}</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>v3.3 — 3 มิ.ย. 2569 {s("(ล่าสุด)", "(latest)")}</div>
+          <GuideTable rows={[
+            [s("รายการ", "Feature"), s("รายละเอียด", "Details")],
+            [s("Privacy Consent", "Privacy Consent"), s("Modal บังหน้าจอ ต้องเลื่อนอ่านก่อนกด รับทราบ — บันทึก timestamp ใน DB", "Full-screen modal, scroll-to-bottom required before accepting — saves timestamp in DB")],
+            [s("Consent Dashboard", "Consent Dashboard"), s("การ์ดใน Admin Dashboard แสดง accepted/pending พร้อม progress bar + รายชื่อ", "Admin Dashboard card showing accepted/pending with progress bar and user lists")],
+            [s("สถิติรูปภาพ", "Photo Stats"), s("Database Usage แสดงจำนวนภาพมิเตอร์/หม้อแปลง + พื้นที่ใช้", "Database Usage shows meter/TR photo counts + storage used")],
+            [s("เวลาไทย UTC+7", "Thai time UTC+7"), s("utcToThai() แปลง timestamp ทุกจุด — audit log, last login, notification", "utcToThai() converts all timestamps — audit log, last login, notifications")],
+            [s("Last Login", "Last Login"), s("อัปเดต last_login ถูกต้องทันทีหลัง login", "last_login updates correctly immediately after login")],
+            [s("2FA paste iOS", "2FA paste iOS"), s("onPaste handler + type='tel' แก้ปัญหา iOS Safari วาง OTP ไม่ได้", "onPaste handler + type='tel' fixes iOS Safari OTP paste")],
+            [s("Modal cut-off", "Modal cut-off"), s("maxHeight: min(92vh, calc(100dvh-180px)) ป้องกันล้นบนมือถือ", "maxHeight: min(92vh, calc(100dvh-180px)) prevents overflow on mobile")],
+          ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>v3.1 — 2 มิ.ย. 2569</div>
           <GuideTable rows={[
             [s("รายการ", "Feature"), s("รายละเอียด", "Details")],
             [s("Dashboard — FitText", "Dashboard — FitText"), s("ตัวเลข StatCard ย่อ/ขยายอัตโนมัติด้วย ResizeObserver ไม่ต้องแก้ code", "StatCard numbers auto-resize via ResizeObserver — no code change needed")],
@@ -1779,7 +1934,7 @@ addAudit({
       </GuideSection>
 
       {/* ─── SECTION: Recent UX/UI Changes ─── */}
-      <GuideSection icon="bolt" title={s("การอัปเดต UX/UI ล่าสุด (v3.1)","Recent UX/UI Updates (v3.1)")} expandSignal={expandSig}>
+      <GuideSection icon="bolt" title={s("การอัปเดต UX/UI ล่าสุด (v3.3)","Recent UX/UI Updates (v3.3)")} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
 
           <div style={{ fontWeight: 700, marginBottom: 8 }}>FitText — Auto-Resize Dashboard Numbers <DevBadge color="purple">components.jsx</DevBadge></div>
@@ -1873,6 +2028,48 @@ const CACHE = "gis-meter-v14";  // ← bump ทุกครั้ง
 // install event: pre-cache ไฟล์ทั้งหมด
 // activate event: ลบ cache เก่าทิ้ง
 // ⚠ ถ้าลืม bump → user ยังได้ไฟล์เก่าอยู่`}</CodeBlock>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Privacy Policy Consent System (v3.3) <DevBadge color="green">app.jsx</DevBadge><DevBadge color="blue">Supabase</DevBadge></div>
+          <GuideTable rows={[
+            ["Component / Field", "คำอธิบาย"],
+            ["profiles.privacy_accepted_at", "TIMESTAMPTZ — เวลาที่ผู้ใช้กด 'รับทราบ' ล่าสุด"],
+            ["settings.privacy_policy.updated_at", "เวลาที่ policy content ถูกอัปเดต — ใช้เปรียบเทียบ"],
+            ["PrivacyConsentModal", "Modal เต็มจอ z-index 9999 — non-dismissable จนกว่าจะรับทราบ"],
+            ["PrivacyConsentCard", "Admin Dashboard card — accepted/pending stats + รายชื่อ"],
+          ]} />
+          <CodeBlock>{`// app.jsx — needsConsent logic
+const privacyAccepted  = myProfile.privacy_accepted_at;
+const needsConsent = !privacyAccepted ||
+  (policyUpdatedAt && privacyAccepted < policyUpdatedAt);
+if (needsConsent) setShowPrivacyConsent(true);
+
+// doAccept — อัปเดต DB + state
+const { error } = await _supabase
+  .from("profiles")
+  .update({ privacy_accepted_at: new Date().toISOString() })
+  .eq("id", currentUser.id);
+if (!error) onAccept(acceptedAt);`}</CodeBlock>
+          <CodeBlock>{`-- SQL: supabase/add_privacy_consent.sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS privacy_accepted_at TIMESTAMPTZ;
+-- RLS: อนุญาตให้ user อัปเดต field ของตัวเอง
+CREATE POLICY "users_update_own_privacy" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);`}</CodeBlock>
+          <GuideTip>ทุกครั้งที่อัปเดตเนื้อหา Privacy Policy ใน settings table → ผู้ใช้ทุกคนจะต้องรับทราบใหม่อัตโนมัติ เพราะ privacy_accepted_at {'<'} updated_at</GuideTip>
+
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>utcToThai() — UTC to Bangkok Time (v3.3) <DevBadge color="gray">config.js</DevBadge></div>
+          <CodeBlock>{`// config.js — แปลง ISO UTC → เวลาไทย (UTC+7)
+function utcToThai(iso, sec = true) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const bkk = new Date(d.getTime() + 7 * 3600 * 1000);
+  const p = n => String(n).padStart(2, "0");
+  const date = \`\${bkk.getUTCFullYear()}-\${p(bkk.getUTCMonth()+1)}-\${p(bkk.getUTCDate())}\`;
+  const time = \`\${p(bkk.getUTCHours())}:\${p(bkk.getUTCMinutes())}\${sec?\`:\${p(bkk.getUTCSeconds())}\`:""}\`;
+  return \`\${date} \${time}\`;
+}
+// ใช้ใน: toAuditEntry.at, toProfile.lastLogin, toNotification.createdAt`}</CodeBlock>
         </div>
       </GuideSection>
 

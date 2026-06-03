@@ -727,6 +727,27 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
       })()}
 
 
+      {/* ── App Version Footer — visible to all users for support/troubleshooting ── */}
+      <div style={{ marginTop: 24, padding: "12px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#6b2c91,#f47b20)", display: "grid", placeItems: "center" }}>
+            <Icon name="package" size={14} style={{ color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", letterSpacing: "0.08em", textTransform: "uppercase" }}>เวอร์ชั่นแอปพลิเคชัน</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--ink)" }}>
+              {CHANGELOG[0].version} <span style={{ fontWeight: 500, color: "var(--ink-mute)" }}>— {CHANGELOG[0].tag}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "var(--ink-mute)" }}>{CHANGELOG[0].date}</span>
+          <button onClick={() => { window.location.reload(true); }} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "var(--surface)", border: "1px solid var(--line)", cursor: "pointer", color: "var(--pea-purple-500)", display: "flex", alignItems: "center", gap: 5 }}>
+            <Icon name="refresh" size={12} /> โหลดใหม่
+          </button>
+        </div>
+      </div>
+
       <style>{`
         .pv-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .pv-tabs::-webkit-scrollbar { display: none; }
@@ -1162,6 +1183,21 @@ function formatUntil(until) {
    ChangelogView — UX/UI improvement history
    ============================================================ */
 const CHANGELOG = [
+  {
+    version: "v3.3", date: "3 มิ.ย. 2569", tag: "Privacy & Fixes",
+    tagColor: "#059669", items: [
+      { cat: "new",  text: { th: "Privacy Policy Consent: modal เต็มจอบังทุก interaction — ต้องเลื่อนอ่านครบแล้วถึงกด 'รับทราบ' ได้ ใช้กับทุก role รวมถึง admin", en: "Privacy Policy Consent: full-screen modal blocks all interaction — must scroll to bottom before accepting, applies to all roles including admin" } },
+      { cat: "new",  text: { th: "Dashboard นโยบายความเป็นส่วนตัว: แสดงจำนวนผู้ที่รับทราบ / ยังไม่รับทราบ พร้อม progress bar และรายชื่อผู้ใช้ในแต่ละกลุ่ม", en: "Privacy Consent Dashboard card: shows accepted vs. pending count with progress bar and user lists" } },
+      { cat: "new",  text: { th: "สถิติรูปภาพใน Database Usage: แสดงจำนวนภาพมิเตอร์ / ภาพหม้อแปลง / พื้นที่ใช้จาก localStorage ของอุปกรณ์ปัจจุบัน", en: "Photo stats in Database Usage: shows meter / TR photo counts and storage used from current device's localStorage" } },
+      { cat: "fix",  text: { th: "เวลาทั้งหมดแสดงเป็นเวลาไทย (UTC+7) ด้วย utcToThai() — แก้ timestamp ที่เคยแสดงเป็น UTC ใน audit log, last login, notification", en: "All timestamps now display in Thai time (UTC+7) via utcToThai() — fixed UTC display in audit log, last login, notifications" } },
+      { cat: "fix",  text: { th: "บันทึกเวลาเข้าสู่ระบบล่าสุด (last_login) อัปเดตถูกต้องในแท็บบัญชี ทันทีหลัง login", en: "Last login timestamp now updates correctly in the account tab immediately after signing in" } },
+      { cat: "fix",  text: { th: "CorrSearchModal header: แสดง 'PEA Meter: {PEANO}' / 'PEA TR: {PEANO_TR}' แทน TAG", en: "CorrSearchModal header: shows 'PEA Meter: {PEANO}' / 'PEA TR: {PEANO_TR}' instead of TAG" } },
+      { cat: "fix",  text: { th: "2FA OTP บน iOS Safari: รองรับ paste รหัส 6 หลักด้วย onPaste handler และ type='tel' เพื่อเปิดแป้นตัวเลข", en: "2FA OTP on iOS Safari: fixed paste of 6-digit code with explicit onPaste handler and type='tel' for numeric keyboard" } },
+      { cat: "fix",  text: { th: "Modal popup ถูกตัดบนมือถือ: แก้ maxHeight เป็น min(92vh, calc(100dvh - 180px)) ป้องกันเนื้อหาล้นนอกหน้าจอ", en: "Modal popup cut off on mobile: fixed maxHeight to min(92vh, calc(100dvh - 180px)) to prevent content overflow" } },
+      { cat: "new",  text: { th: "แสดงเวอร์ชั่นแอปในแท็บบัญชีของผู้ใช้ทุกคน พร้อมปุ่ม 'โหลดใหม่' สำหรับรับเวอร์ชั่นล่าสุด", en: "App version displayed in every user's account tab with a 'Reload' button to fetch the latest version" } },
+      { cat: "fix",  text: { th: "Toast แจ้งเตือนเมื่อบันทึก audit log ล้มเหลวระหว่างลบภาพ — แสดงข้อความ error ชัดเจน", en: "Toast notification when audit log fails during photo deletion — clear error message shown" } },
+    ],
+  },
   {
     version: "v3.2", date: "2 มิ.ย. 2569", tag: "UX Overhaul",
     tagColor: "#8b3fc4", items: [
@@ -4322,6 +4358,7 @@ function App() {
               devInfo={devInfo} setDevInfo={setDevInfo}
               allowExport={allowExport} setAllowExport={setAllowExport}
               privacyPolicy={privacyPolicy} setPrivacyPolicy={setPrivacyPolicy}
+              privacyPolicyUpdatedAt={privacyPolicyUpdatedAt}
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush}
               onRefresh={handleRefresh} refreshing={refreshing} />
           )}

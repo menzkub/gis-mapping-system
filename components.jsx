@@ -116,7 +116,7 @@ function Modal({ open, onClose, title, children, footer, width = 520 }) {
     <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{
         background: "var(--surface)", borderRadius: 20, width: "100%", maxWidth: width,
-        maxHeight: "92vh", display: "flex", flexDirection: "column",
+        maxHeight: "min(92vh, calc(100dvh - 180px))", display: "flex", flexDirection: "column",
         boxShadow: "var(--shadow-lg)", border: "1px solid var(--line)", overflow: "hidden",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
