@@ -3381,24 +3381,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
   const [highlightTarget, setHighlightTarget] = useStateAd(null); // {p, type}
   const highlightLayerRef = React.useRef(null);
   const [mapEditTarget, setMapEditTarget] = useStateAd(null); // {p, isMeter}
-  const [mapSaving, setMapSaving] = useStateAd(false);
   const toast = useToast();
-
-  const saveMapEdit = async (edited) => {
-    if (!mapEditTarget) return;
-    setMapSaving(true);
-    const isMeter = mapEditTarget.isMeter;
-    const coordPatch = { latitude: edited.LATITUDE, longitude: edited.LONGITUDE };
-    const { error } = isMeter
-      ? await _supabase.from("meters").update(coordPatch).eq("objectid", edited.OBJECTID)
-      : await _supabase.from("transformers").update(coordPatch).eq("objectid", edited.OBJECTID);
-    setMapSaving(false);
-    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
-    addAudit({ user: currentUser.username, action: isMeter ? "update_meter" : "update_transformer", target: `OBJECTID ${edited.OBJECTID}`, detail: `แก้ไขพิกัด: ${edited.TAG || edited.PEANO || edited.PEANO_TR} → (${edited.LATITUDE}, ${edited.LONGITUDE})` });
-    toast?.(isMeter ? `บันทึกพิกัดมิเตอร์ ${edited.TAG || edited.PEANO} แล้ว` : `บันทึกพิกัดหม้อแปลง ${edited.TAG || edited.PEANO_TR} แล้ว`, "success");
-    setHighlightTarget(h => h ? { ...h, p: edited } : h);
-    setMapEditTarget(null);
-  };
 
   const loadCorrections = React.useCallback(async () => {
     const { data: rows, error } = await _supabase
@@ -3412,24 +3395,36 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     if (loadState === "done") loadCorrections();
   }, [loadState]);
 
-  const submitCorrection = async ({ newLat, newLng, note }) => {
+  // ส่งคำขอแก้ไขพิกัด (ทุกกรณีต้องผ่าน admin อนุมัติก่อน)
+  const submitCorrectionFor = async (target, { newLat, newLng, note }) => {
     const { error } = await _supabase.from("coordinate_corrections").insert({
-      record_type: corrTarget.isMeter ? "meter" : "transformer",
-      record_id: corrTarget.p.OBJECTID,
-      record_tag: corrTarget.p.PEANO || corrTarget.p.TAG,
-      old_lat: corrTarget.p.LATITUDE,
-      old_lng: corrTarget.p.LONGITUDE,
+      record_type: target.isMeter ? "meter" : "transformer",
+      record_id: target.p.OBJECTID,
+      record_tag: target.p.PEANO || target.p.PEANO_TR || target.p.TAG,
+      old_lat: target.p.LATITUDE,
+      old_lng: target.p.LONGITUDE,
       new_lat: newLat,
       new_lng: newLng,
       note: note || null,
       submitted_by_username: currentUser?.username || "user",
       status: "pending",
     });
-    if (!error) {
-      setCorrTarget(null);
-      loadCorrections();
-      toast?.(t("corrSubmitOk"), "success");
+    if (error) {
+      toast?.("เกิดข้อผิดพลาด: " + error.message, "error");
+      return false;
     }
+    loadCorrections();
+    return true;
+  };
+
+  const submitCorrection = async (args) => {
+    const ok = await submitCorrectionFor(corrTarget, args);
+    if (ok) { setCorrTarget(null); toast?.(t("corrSubmitOk"), "success"); }
+  };
+
+  const submitMapCorrection = async (args) => {
+    const ok = await submitCorrectionFor(mapEditTarget, args);
+    if (ok) { setMapEditTarget(null); toast?.("ส่งคำขอแก้ไขพิกัดแล้ว — รอแอดมินอนุมัติ", "success"); }
   };
 
   const approveCorrection = async (corr) => {
@@ -4058,9 +4053,8 @@ function AdminMapTab({ data, currentUser, addAudit }) {
       {mapEditTarget && (
         <MapQuickEditModal
           target={mapEditTarget}
-          saving={mapSaving}
           onClose={() => setMapEditTarget(null)}
-          onSave={saveMapEdit}
+          onSubmit={submitMapCorrection}
         />
       )}
     </div>
@@ -4216,10 +4210,12 @@ function CorrectionModal({ target, currentUser, onClose, onSubmit, t }) {
   );
 }
 
-function MapQuickEditModal({ target, saving, onClose, onSave }) {
+function MapQuickEditModal({ target, onClose, onSubmit }) {
   const { p, isMeter } = target;
   const miniMapRef = React.useRef(null);
   const miniMapInst = React.useRef(null);
+  const [submitting, setSubmitting] = useStateAd(false);
+  const [note, setNote] = useStateAd("");
   const newMarkerRef = React.useRef(null);
   const [newLat, setNewLat] = useStateAd(p.LATITUDE);
   const [newLng, setNewLng] = useStateAd(p.LONGITUDE);
@@ -4332,15 +4328,27 @@ function MapQuickEditModal({ target, saving, onClose, onSave }) {
               </div>
               <div style={{ fontSize: 9, color: "var(--ink-mute)", marginTop: 3 }}>* ลากหมุดสีเหลืองหรือแตะบนแผนที่เพื่อเลือกพิกัด</div>
             </div>
+            {/* Note */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 3 }}>หมายเหตุ (ถ้ามี)</div>
+              <textarea className="input" placeholder="เหตุผลการแก้ไขพิกัด…" value={note} onChange={e => setNote(e.target.value)}
+                style={{ width: "100%", minHeight: 48, resize: "none", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "10px 16px", borderTop: "1px solid var(--line)", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <div style={{ padding: "10px 16px", borderTop: "1px solid var(--line)", display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
+          <div style={{ flex: 1, fontSize: 10, color: "var(--ink-mute)" }}>⏳ รอแอดมินอนุมัติก่อนบันทึก</div>
           <button className="btn btn-outline" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" onClick={() => onSave({ ...p, LATITUDE: newLat, LONGITUDE: newLng })} disabled={saving || samePos}
-            style={{ background: saving || samePos ? undefined : "linear-gradient(135deg,#ca8a04,#eab308)" }}>
-            {saving ? "…" : "💾 บันทึกพิกัด"}
+          <button className="btn btn-primary" disabled={submitting || samePos}
+            style={{ background: submitting || samePos ? undefined : "linear-gradient(135deg,#ca8a04,#eab308)" }}
+            onClick={async () => {
+              setSubmitting(true);
+              await onSubmit({ newLat, newLng, note });
+              setSubmitting(false);
+            }}>
+            {submitting ? "…" : "📍 ส่งคำขอแก้ไข"}
           </button>
         </div>
       </div>
