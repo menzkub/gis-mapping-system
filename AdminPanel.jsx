@@ -4606,7 +4606,7 @@ function AdminSecurity({ data }) {
     ...auditEvents.filter(e => e.action === "ban_user").slice(0, 5).map(e => ({ ...e, threat: "ban", icon: "🚫", color: "#f59e0b" })),
     ...auditEvents.filter(e => e.action === "disable_2fa").slice(0, 3).map(e => ({ ...e, threat: "2fa_off", icon: "🔓", color: "#f59e0b" })),
     ...auditEvents.filter(e => e.action === "unlock_password").slice(0, 5).map(e => ({ ...e, threat: "unlock", icon: "🗝️", color: "#6b7280" })),
-  ].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 12);
+  ].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 12);
 
   const fmtDate = (iso) => {
     const d = new Date(iso);
