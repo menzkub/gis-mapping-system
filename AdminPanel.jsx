@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -134,7 +134,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
 
       <div className={"adm-body" + (tab === "map" ? " adm-map-body" : "")}>
         {tab === "dashboard" && <AdminDashboard data={data} privacyPolicyUpdatedAt={privacyPolicyUpdatedAt} onRefresh={onRefresh} refreshing={refreshing} />}
-        {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
+        {tab === "users"     && <AdminUsers  data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} refreshUsersOnly={refreshUsersOnly} />}
         {tab === "meters"    && <AdminMeters data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "trs"       && <AdminTrs    data={data} setData={setData} addAudit={addAudit} currentUser={currentUser} />}
         {tab === "map"       && <AdminMapTab data={data} currentUser={currentUser} addAudit={addAudit} />}
@@ -2355,15 +2355,24 @@ function parseDeviceAd(ua = "") {
 }
 
 /* ---------- Users ---------- */
-function AdminUsers({ data, setData, addAudit, currentUser }) {
+function AdminUsers({ data, setData, addAudit, currentUser, refreshUsersOnly }) {
   const [q, setQ]                     = useStateAd("");
   const [statusFilter, setStatusFilter] = useStateAd("");
   const [edit, setEdit]               = useStateAd(null);
   const [saving, setSaving]           = useStateAd(false);
   const [pwModal, setPwModal]         = useStateAd(null);
+  const [userRefreshing, setUserRefreshing] = useStateAd(false);
   const tableRef = React.useRef(null);
   const confirm = useConfirm();
   const toast   = useToast();
+
+  useEffectAd(() => { refreshUsersOnly?.(); }, []);
+
+  const doRefreshUsers = async () => {
+    setUserRefreshing(true);
+    await refreshUsersOnly?.();
+    setUserRefreshing(false);
+  };
 
   const filterFn = (u) => {
     if (statusFilter === "active")    return u.status === "active";
@@ -2580,7 +2589,18 @@ function AdminUsers({ data, setData, addAudit, currentUser }) {
 
       {/* ── User Stats Dashboard ── */}
       <div>
-        <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)", marginBottom: 4 }}>Overview</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <div className="t-eyebrow" style={{ color: "var(--pea-orange-500)" }}>Overview</div>
+          <button onClick={doRefreshUsers} disabled={userRefreshing} style={{
+            display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 16,
+            background: "var(--surface)", border: "1px solid var(--line)",
+            cursor: userRefreshing ? "default" : "pointer", fontSize: 12, fontWeight: 700,
+            color: "var(--pea-purple-500)", opacity: userRefreshing ? 0.6 : 1, transition: "opacity 200ms",
+          }}>
+            <Icon name="refresh" size={12} style={{ animation: userRefreshing ? "adm-spin 1s linear infinite" : "none" }} />
+            {userRefreshing ? "กำลังอัพเดท…" : "อัพเดทรายการ"}
+          </button>
+        </div>
         <div className="text-lg fw-7" style={{ marginBottom: 14 }}>สถิติผู้ใช้งาน</div>
 
         {/* Stat cards row */}

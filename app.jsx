@@ -3387,9 +3387,10 @@ function App() {
         }).catch(() => {});
 
       const nowIso = new Date().toISOString();
-      await _supabase.from("profiles")
+      const { error: llErr } = await _supabase.from("profiles")
         .update({ last_login: nowIso })
         .eq("id", supabaseUser.id);
+      if (llErr) console.warn("last_login update blocked (RLS?):", llErr.message, "— run supabase/fix_last_login.sql");
       setCurrentUser(prev => ({ ...prev, lastLogin: utcToThai(nowIso, false) }));
     } catch (err) {
       console.error("loadAppData failed:", err);
@@ -3629,6 +3630,13 @@ function App() {
       setRefreshing(false);
     }
   }, [refreshing]);
+
+  const refreshUsersOnly = useCallbackApp(async () => {
+    try {
+      const { data: profiles } = await _supabase.from("profiles").select("*").order("created_at");
+      if (profiles) setData(d => ({ ...d, users: profiles.map(toProfile) }));
+    } catch(_) {}
+  }, []);
 
   // ── Render states ────────────────────────────────────────────────────────
   if (appState === "checking") return <LoadingScreen message="กำลังตรวจสอบการเข้าสู่ระบบ…" />;
@@ -4360,7 +4368,8 @@ function App() {
               privacyPolicy={privacyPolicy} setPrivacyPolicy={setPrivacyPolicy}
               privacyPolicyUpdatedAt={privacyPolicyUpdatedAt}
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush}
-              onRefresh={handleRefresh} refreshing={refreshing} />
+              onRefresh={handleRefresh} refreshing={refreshing}
+              refreshUsersOnly={refreshUsersOnly} />
           )}
           </div>
         </main>
