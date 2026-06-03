@@ -29,9 +29,13 @@ CREATE INDEX IF NOT EXISTS idx_meters_feederid_trgm
 -- TRANSFORMERS — index สำหรับคอลัมน์ที่ค้นหา
 -- ============================================================
 
--- peano_tr (อาจเป็น bigint) — สำหรับค้นหาด้วยเลขหม้อแปลง
+-- peano_tr — exact match (B-tree)
 CREATE INDEX IF NOT EXISTS idx_trs_peano_tr
   ON public.transformers (peano_tr);
+
+-- peano_tr — ILIKE partial match เช่น 64-005882 (GIN trigram)
+CREATE INDEX IF NOT EXISTS idx_trs_peano_tr_trgm
+  ON public.transformers USING gin (peano_tr gin_trgm_ops);
 
 -- tag — สำหรับ ILIKE partial match
 CREATE INDEX IF NOT EXISTS idx_trs_tag_trgm

@@ -91,7 +91,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           if (safe) {
             const orFilter = isNum
               ? `peano_tr.eq.${safe}`
-              : `tag.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`;
+              : `peano_tr.ilike.%${safe}%,tag.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`;
             dbq = dbq.or(orFilter);
           }
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
