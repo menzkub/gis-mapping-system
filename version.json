@@ -1,7 +1,7 @@
 {
-  "commit": "19dda50166439bc65b83afb51fccd2c254c3363b",
-  "shortCommit": "19dda50",
-  "message": "Fix AdminSecurity crash: guard created_at before localeCompare",
-  "date": "2026-06-03T02:52:08Z",
+  "commit": "c97807aac98d7f88e52b16c44e56e80c5d3d0b79",
+  "shortCommit": "c97807a",
+  "message": "Fix modal centering, suspended UX, and dashboard stats",
+  "date": "2026-06-03T03:12:12Z",
   "branch": "main"
 }
