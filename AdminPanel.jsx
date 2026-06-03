@@ -3505,7 +3505,7 @@ function AdminMapTab({ data, currentUser, addAudit }) {
             .filter(r => +r.latitude && +r.longitude)
             .map(r => ({
               OBJECTID: r.objectid, TAG: r.tag || String(r.objectid),
-              PEANO: r.peano_tr || "",
+              PEANO_TR: r.peano_tr || "",
               LATITUDE: +r.latitude, LONGITUDE: +r.longitude,
               KVA: r.kva || 0, PHASE: r.phase || "", VOLTAGE: r.voltage || "",
               FEEDER1: r.feeder1 || "",
