@@ -1,7 +1,7 @@
 {
-  "commit": "e06e8e0ab0fde697311710581cea9325bf946b9a",
-  "shortCommit": "e06e8e0",
-  "message": "fix: save permissions separately to handle missing column gracefully",
-  "date": "2026-06-03T05:47:59Z",
+  "commit": "0e0e172a4c586995526b17ebb54f813cc0a08506",
+  "shortCommit": "0e0e172",
+  "message": "fix: MapQuickEditModal shows only lat/lng coordinates, not all fields",
+  "date": "2026-06-03T06:31:10Z",
   "branch": "main"
 }
