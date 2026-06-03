@@ -1,7 +1,7 @@
 {
-  "commit": "2372f51189e87cbc06f7404b27d3606297345474",
-  "shortCommit": "2372f51",
-  "message": "Photo modal: gallery selection, admin-only delete with confirmation + audit log",
-  "date": "2026-06-03T15:56:13Z",
+  "commit": "d85a5bba12bdfaa384eaf369d70c6a401fa0e7aa",
+  "shortCommit": "d85a5bb",
+  "message": "Fix transformer map data: PEANO \u2192 PEANO_TR field name",
+  "date": "2026-06-03T15:58:17Z",
   "branch": "main"
 }
