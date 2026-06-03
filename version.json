@@ -1,7 +1,7 @@
 {
-  "commit": "7dcddd0b917d6d77623816f6fe943b4b0b1abd1e",
-  "shortCommit": "7dcddd0",
-  "message": "Fix transformer search not finding peano_tr text values like 64-005882",
-  "date": "2026-06-03T15:13:53Z",
+  "commit": "542db0f0c79d1291af0472d8d56725aa5238e37e",
+  "shortCommit": "542db0f",
+  "message": "Simplify search logic per field rules",
+  "date": "2026-06-03T15:15:03Z",
   "branch": "main"
 }
