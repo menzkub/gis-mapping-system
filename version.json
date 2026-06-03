@@ -1,7 +1,7 @@
 {
-  "commit": "d85a5bba12bdfaa384eaf369d70c6a401fa0e7aa",
-  "shortCommit": "d85a5bb",
-  "message": "Fix transformer map data: PEANO \u2192 PEANO_TR field name",
-  "date": "2026-06-03T15:58:17Z",
+  "commit": "0c671c285267edf9e812adbcf07ef37c26854869",
+  "shortCommit": "0c671c2",
+  "message": "Fix photo deletion log: save to Supabase audit_log instead of localStorage",
+  "date": "2026-06-03T16:09:08Z",
   "branch": "main"
 }
