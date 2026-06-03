@@ -1,7 +1,7 @@
 {
-  "commit": "542db0f0c79d1291af0472d8d56725aa5238e37e",
-  "shortCommit": "542db0f",
-  "message": "Simplify search logic per field rules",
-  "date": "2026-06-03T15:15:03Z",
+  "commit": "c5a867adcc677966861c6556c4a8cf12b65d561d",
+  "shortCommit": "c5a867a",
+  "message": "Refine transformer search: 3-way split by input type",
+  "date": "2026-06-03T15:18:28Z",
   "branch": "main"
 }
