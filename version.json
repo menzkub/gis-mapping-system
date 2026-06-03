@@ -1,7 +1,7 @@
 {
-  "commit": "c101640d98fe868d6d824220b9100ae1d8b1e6ff",
-  "shortCommit": "c101640",
-  "message": "fix: save permissions when editing user, add permission chips in user table",
-  "date": "2026-06-03T05:23:47Z",
+  "commit": "e06e8e0ab0fde697311710581cea9325bf946b9a",
+  "shortCommit": "e06e8e0",
+  "message": "fix: save permissions separately to handle missing column gracefully",
+  "date": "2026-06-03T05:47:59Z",
   "branch": "main"
 }
