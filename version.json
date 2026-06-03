@@ -1,7 +1,7 @@
 {
-  "commit": "4cd28606d425983da99fe244fc45464f5b76f4ea",
-  "shortCommit": "4cd2860",
-  "message": "Save images to phone photos via Web Share API",
-  "date": "2026-06-03T15:51:11Z",
+  "commit": "2372f51189e87cbc06f7404b27d3606297345474",
+  "shortCommit": "2372f51",
+  "message": "Photo modal: gallery selection, admin-only delete with confirmation + audit log",
+  "date": "2026-06-03T15:56:13Z",
   "branch": "main"
 }
