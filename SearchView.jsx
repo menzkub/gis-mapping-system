@@ -76,11 +76,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
         if (tab === "meter") {
           dbq = _supabase.from("meters").select("*").limit(500);
           if (safe) {
-            // numeric-only → B-tree exact lookup on peano/accountnum only (very fast)
-            // text → GIN trigram partial match on all text columns
+            // numeric → exact B-tree lookup only (peano/accountnum may be bigint)
+            // text → ilike on text columns only — no ::text cast (not supported in .or())
             const orFilter = isNum
               ? `peano.eq.${safe},accountnum.eq.${safe}`
-              : `tag.ilike.%${safe}%,peano::text.ilike.%${safe}%,accountnum::text.ilike.%${safe}%,feederid.ilike.%${safe}%`;
+              : `tag.ilike.%${safe}%,feederid.ilike.%${safe}%`;
             dbq = dbq.or(orFilter);
           }
           if (filters.feeder) dbq = dbq.eq("feederid", filters.feeder);
@@ -91,7 +91,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           if (safe) {
             const orFilter = isNum
               ? `peano_tr.eq.${safe}`
-              : `tag.ilike.%${safe}%,peano_tr::text.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`;
+              : `tag.ilike.%${safe}%,location.ilike.%${safe}%,feeder1.ilike.%${safe}%`;
             dbq = dbq.or(orFilter);
           }
           if (filters.feeder)  dbq = dbq.eq("feeder1",  filters.feeder);
