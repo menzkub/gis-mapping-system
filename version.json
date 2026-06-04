@@ -1,7 +1,7 @@
 {
-  "commit": "16b330ddaadb964cb16a413f6225cff8fec4ef34",
-  "shortCommit": "16b330d",
-  "message": "feat: add Settings & Help tab for regular users",
-  "date": "2026-06-04T05:04:13Z",
+  "commit": "a0dcdfc34ec50ea4d39fff67abd3bdaf2fa232d2",
+  "shortCommit": "a0dcdfc",
+  "message": "Refactor user-settings into main sidebar sub-nav; fix bilingual contact tab",
+  "date": "2026-06-04T05:19:08Z",
   "branch": "main"
 }
