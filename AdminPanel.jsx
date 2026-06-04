@@ -26,16 +26,19 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"trs",       icon:"tr",        label:t("admMobTrs")     },
     { id:"map",       icon:"map",       label:t("admMobMap")     },
   ];
-  const MOB_MORE = [
-    { id:"import",    icon:"upload",    label:t("admMobImport")  },
-    { id:"payments",  icon:"wallet",    label:t("admPayments")   },
-    { id:"audit",     icon:"history",   label:t("admMobAudit")   },
-    { id:"security",  icon:"lock",      label:t("admMobSecurity")},
-    { id:"settings",  icon:"settings",  label:t("admSettings")   },
-    { id:"guide",     icon:"book",      label:t("admMobGuide")   },
-    { id:"powered",   icon:"bolt",      label:t("admMobPowered") },
-    { id:"dev",       icon:"code",      label:t("admMobDev")     },
+  const MOB_MORE_MAIN = [
+    { id:"import",   icon:"upload",  label:t("admMobImport")  },
+    { id:"payments", icon:"wallet",  label:t("admPayments")   },
+    { id:"audit",    icon:"history", label:t("admMobAudit")   },
+    { id:"security", icon:"lock",    label:t("admMobSecurity")},
   ];
+  const MOB_MORE_SETTINGS = [
+    { id:"settings", icon:"settings", label:t("admSettings")  },
+    { id:"guide",    icon:"book",     label:t("admMobGuide")  },
+    { id:"powered",  icon:"bolt",     label:t("admMobPowered")},
+    { id:"dev",      icon:"code",     label:t("admMobDev")    },
+  ];
+  const MOB_MORE = [...MOB_MORE_MAIN, ...MOB_MORE_SETTINGS];
   const activeInMore = MOB_MORE.some(n => n.id === tab);
 
   return (
@@ -119,11 +122,19 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
             <>
               <div style={{ position:"fixed", inset:0, zIndex:599 }} onClick={() => setShowMoreTabs(false)} />
               <div className="adm-more-panel">
-                {MOB_MORE.map(n => (
+                {MOB_MORE_MAIN.map(n => (
                   <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
                     <Icon name={n.icon} size={15} style={{ flexShrink:0 }} />
                     {n.label}
-                    {n.id === "users" && pendingCount > 0 && <span className="adm-mob-badge" style={{ position:"static", marginLeft:"auto" }}>{pendingCount}</span>}
+                  </button>
+                ))}
+                <div style={{ margin: "6px 8px 4px", fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", color: "var(--ink-mute)", textTransform: "uppercase" }}>
+                  {t("navSettings")}
+                </div>
+                {MOB_MORE_SETTINGS.map(n => (
+                  <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
+                    <Icon name={n.icon} size={15} style={{ flexShrink:0 }} />
+                    {n.label}
                   </button>
                 ))}
               </div>
