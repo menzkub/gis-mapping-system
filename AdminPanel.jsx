@@ -3433,8 +3433,8 @@ function AdminMeters({ addAudit, currentUser }) {
                 <td className="mono text-xs">{m.LATITUDE.toFixed(4)}, {m.LONGITUDE.toFixed(4)}</td>
                 <td>
                   <div className="row-action">
-                    <button className="btn-icon" onClick={e => { e.stopPropagation(); setEdit(m); }}><Icon name="edit" size={14} /></button>
-                    <button className="btn-icon" onClick={e => { e.stopPropagation(); remove(m); }}><Icon name="trash" size={14} /></button>
+                    <button className="btn-icon" title="แก้ไข" onClick={e => { e.stopPropagation(); setEdit(m); }}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" title="ลบ" onClick={e => { e.stopPropagation(); remove(m); }}><Icon name="trash" size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -3658,8 +3658,8 @@ function AdminTrs({ addAudit, currentUser }) {
                 <td><span className="badge">{t.FEEDER1}</span></td>
                 <td>
                   <div className="row-action">
-                    <button className="btn-icon" onClick={e => { e.stopPropagation(); setEdit(t); }}><Icon name="edit" size={14} /></button>
-                    <button className="btn-icon" onClick={e => { e.stopPropagation(); remove(t); }}><Icon name="trash" size={14} /></button>
+                    <button className="btn-icon" title="แก้ไข" onClick={e => { e.stopPropagation(); setEdit(t); }}><Icon name="edit" size={14} /></button>
+                    <button className="btn-icon" title="ลบ" onClick={e => { e.stopPropagation(); remove(t); }}><Icon name="trash" size={14} /></button>
                   </div>
                 </td>
               </tr>

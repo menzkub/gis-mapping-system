@@ -624,7 +624,6 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           onClose={() => setCorrTarget(null)}
           onSubmit={async (newLat, newLng, note) => {
             await onCorrectCoords?.(corrTarget.p, corrTarget.isMeter, newLat, newLng, note);
-            setCorrTarget(null);
           }}
         />
       )}
@@ -665,12 +664,27 @@ function FilterSelect({ label, value, options, onChange, t }) {
 function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, copyCoords, copied, searchQuery }) {
   return (
     <div className="surface" style={{ overflow: "auto", height: "100%" }}>
+      {items.length === 0 && !searchQuery && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: 14, color: "var(--ink-mute)" }}>
+          <div style={{ width: 60, height: 60, borderRadius: 18, background: "var(--pea-purple-50)", display: "grid", placeItems: "center", color: "var(--pea-purple-400)" }}>
+            <Icon name="search" size={28} stroke={1.5} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "var(--ink)" }}>
+              {kind === "meter" ? "ค้นหา PEA มิเตอร์" : "ค้นหา PEA หม้อแปลง"}
+            </div>
+            <div style={{ fontSize: 13, marginTop: 5, lineHeight: 1.6, maxWidth: 240 }}>
+              พิมพ์ TAG, PEANO, หรือหมายเลขผู้ใช้<br />ในช่องค้นหาด้านบน
+            </div>
+          </div>
+        </div>
+      )}
       {items.length === 0 && searchQuery && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: 12, color: "var(--ink-mute)" }}>
           <div style={{ fontSize: 48, lineHeight: 1 }}>🔍</div>
           <div style={{ fontWeight: 800, fontSize: 17, color: "var(--ink)" }}>ไม่พบผลลัพธ์</div>
           <div style={{ fontSize: 14, textAlign: "center", maxWidth: 280, lineHeight: 1.6 }}>
-            ไม่พบ{kind === "meter" ? "มิเตอร์" : "หม้อแปลง"} ที่ตรงกับ "{searchQuery}"
+            ไม่พบ{kind === "meter" ? "มิเตอร์" : "หม้อแปลง"} ที่ตรงกับ "{searchQuery}"<br />
             ลองค้นหาด้วย TAG, PEANO, หรือหมายเลขผู้ใช้
           </div>
         </div>
@@ -1126,11 +1140,15 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
   };
 
   const submit = async () => {
+    if (submitting) return;
     setSubmitting(true);
-    await onSubmit(+newLat, +newLng, note);
-    setDone(true);
-    setSubmitting(false);
-    setTimeout(onClose, 1500);
+    try {
+      await onSubmit(+newLat, +newLng, note);
+      setDone(true);
+      setTimeout(onClose, 1800);
+    } catch (err) {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1363,6 +1381,10 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
+    if (!file.type.startsWith("image/")) {
+      toast?.("รองรับเฉพาะไฟล์ภาพ (JPG, PNG, WEBP)", "error");
+      return;
+    }
     setUploading(true);
     setGpsStatus("getting");
     const reader = new FileReader();
