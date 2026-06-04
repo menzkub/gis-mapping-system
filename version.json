@@ -1,7 +1,7 @@
 {
-  "commit": "48a5c6a88f330729e63ae0d47c556f5c6b54b509",
-  "shortCommit": "48a5c6a",
-  "message": "fix: move version badge inside auth-card so it's visible on mobile",
-  "date": "2026-06-04T04:11:59Z",
+  "commit": "c808d2fab075326eccc454f1c29aba3c08b61c7a",
+  "shortCommit": "c808d2f",
+  "message": "fix: fallback to DEFAULT_CONTACT when DB returns empty array",
+  "date": "2026-06-04T04:19:13Z",
   "branch": "main"
 }
