@@ -8,13 +8,14 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly, onPasswordChanged }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
     trs: t("admTrs"), map: t("admMap"),
     import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
     guide: t("admGuide"), security: t("admSecurity"),
+    profile: t("admProfile"),
     dev: t("admDev"),
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
@@ -33,6 +34,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
     { id:"security", icon:"lock",    label:t("admMobSecurity")},
   ];
   const MOB_MORE_SETTINGS = [
+    { id:"profile",  icon:"user",     label:t("admMobProfile")},
     { id:"settings", icon:"settings", label:t("admSettings")  },
     { id:"guide",    icon:"book",     label:t("admMobGuide")  },
     { id:"powered",  icon:"bolt",     label:t("admMobPowered")},
@@ -52,32 +54,29 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
         @media (max-width: 640px) {
           .adm-body { padding: 10px 12px 20px; }
           .adm-mob-tabs-wrap {
-            display: flex; align-items: center;
+            display: flex; align-items: stretch;
             border-bottom: 1px solid var(--line); flex-shrink: 0;
           }
           .adm-mob-tabs {
-            display: flex; gap: 4px; align-items: center;
-            padding: 8px 0 8px 12px;
+            display: flex; gap: 0; align-items: stretch;
+            padding: 0 0 0 4px;
             scrollbar-width: none; flex: 1; overflow-x: auto;
           }
           .adm-mob-tabs::-webkit-scrollbar { display: none; }
           .adm-mob-tab {
-            display: flex; flex-direction: column; align-items: center; gap: 3px;
-            padding: 6px 12px; border-radius: 10px; flex-shrink: 0;
-            font-size: 11px; font-weight: 700;
-            color: var(--ink-mute); border: 1px solid transparent;
+            display: flex; flex-direction: row; align-items: center; gap: 6px;
+            padding: 10px 14px; border-radius: 0; flex-shrink: 0;
+            font-size: 13px; font-weight: 600;
+            color: var(--ink-mute); background: transparent;
+            border: none; border-bottom: 2px solid transparent;
             cursor: pointer; white-space: nowrap; position: relative; transition: all 140ms;
           }
-          .adm-mob-tab.on {
-            background: linear-gradient(135deg,rgba(244,123,32,0.14),rgba(139,63,196,0.14));
-            border-color: rgba(244,123,32,0.35); color: var(--ink);
-          }
+          .adm-mob-tab.on { color: var(--ink); border-bottom-color: var(--pea-orange-500); }
           .adm-mob-badge {
-            position: absolute; top: 3px; right: 5px;
+            display: inline-flex; align-items: center; justify-content: center;
             background: var(--pea-orange-500); color: white;
-            border-radius: 99px; min-width: 14px; height: 14px;
-            font-size: 8px; font-weight: 800;
-            display: flex; align-items: center; justify-content: center; padding: 0 3px;
+            border-radius: 99px; min-width: 16px; height: 16px;
+            font-size: 9px; font-weight: 800; padding: 0 4px; flex-shrink: 0;
           }
           .adm-more-panel {
             position: absolute; top: calc(100% + 4px); right: 0; z-index: 600;
@@ -162,6 +161,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
           allowExport={allowExport} setAllowExport={setAllowExport}
           privacyPolicy={privacyPolicy} setPrivacyPolicy={setPrivacyPolicy}
           pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />}
+        {tab === "profile"   && <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} onPasswordChanged={onPasswordChanged} />}
         {tab === "guide"     && <AdminGuide />}
         {tab === "powered"   && <PoweredByTab />}
         {tab === "dev"       && currentUser.role === "admin" && <AdminDevGuide />}

@@ -3885,6 +3885,7 @@ function App() {
     { id: "security",  icon: "lock",      label: t("admSecurity")  },
   ];
   const ADMIN_NAV_SETTINGS = [
+    { id: "profile",   icon: "user",      label: t("admProfile")   },
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
     { id: "powered",   icon: "bolt",      label: t("admPowered")   },
@@ -4628,7 +4629,8 @@ function App() {
               privacyPolicyUpdatedAt={privacyPolicyUpdatedAt}
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush}
               onRefresh={handleRefresh} refreshing={refreshing}
-              refreshUsersOnly={refreshUsersOnly} />
+              refreshUsersOnly={refreshUsersOnly}
+              onPasswordChanged={() => setDaysUntilExpiry(45)} />
           )}
           </div>
         </main>
