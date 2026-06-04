@@ -941,9 +941,11 @@ function AppInfoModal({ onClose }) {
   ];
 
   const DEFAULT_CONTACT = [
-    { icon: "🏢", title: s("หน่วยงาน","Department"), body: s("แผนกไอที · การไฟฟ้าส่วนภูมิภาค (PEA)","IT Department · Provincial Electricity Authority (PEA)") },
+    { icon: "🏢", title: s("หน่วยงาน","Department"), body: s(
+      "IT · PEA FANG Smartflow\nการไฟฟ้าส่วนภูมิภาคสาขาฝาง\nโทรศัพท์: 053-453-170\nเวลาทำการ: จันทร์–ศุกร์ 08:30–16:30 น.",
+      "IT · PEA FANG Smartflow\nProvincial Electricity Authority, Fang Branch\nPhone: 053-453-170\nOffice Hours: Mon–Fri 08:30–16:30"
+    )},
     { icon: "👤", title: s("Admin ระบบ","System Admin"), body: s("ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล","Contact the system Admin for access requests, password resets, or data corrections.") },
-    { icon: "🐛", title: s("แจ้งปัญหา / Bug Report","Report Issues / Bug Report"), body: s("พบปัญหาในระบบ กรุณาแจ้ง Admin พร้อมแนบ screenshot และรายละเอียดขั้นตอนที่พบปัญหา","If you encounter a problem, notify the Admin with a screenshot and step-by-step description.") },
     { icon: "🔄", title: s("ขอฟีเจอร์ใหม่","Feature Requests"), body: s("ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น","Have feature requests or suggestions? We welcome your feedback to improve the system.") },
   ];
   const CONTACT = fetchedContact || DEFAULT_CONTACT;
@@ -1081,11 +1083,25 @@ function AppInfoModal({ onClose }) {
               <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
                 <span>{c.icon}</span> {c.title}
               </div>
-              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.7 }}>{c.body}</div>
+              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.8, whiteSpace: "pre-line" }}>{c.body}</div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(107,44,145,0.06)", border: "1px solid rgba(107,44,145,0.18)", textAlign: "center" }}>
+
+        {/* Report Problem — highlighted card */}
+        <div style={{ marginTop: 12, padding: "16px 18px", borderRadius: 12, background: "rgba(59,130,246,0.06)", border: "1.5px solid rgba(59,130,246,0.22)" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "#2563eb", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+            <span>📋</span> {s("การรายงานปัญหา","Report an Issue")}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.7 }}>
+            {s(
+              "หากพบปัญหาด้านความปลอดภัยหรือการละเมิดข้อมูล กรุณาแจ้งให้เราทราบโดยทันทีผ่านช่องทางติดต่อด้านบน",
+              "If you encounter a security issue or data breach, please notify us immediately through the contact channels above."
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 12, background: "rgba(107,44,145,0.06)", border: "1px solid rgba(107,44,145,0.18)", textAlign: "center" }}>
           <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{s("เวอร์ชันปัจจุบัน","Current Version")}</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: "var(--pea-purple-500)", marginTop: 2 }}>{meta.version}</div>
           <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{meta.tag} · {meta.date}</div>
