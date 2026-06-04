@@ -1,7 +1,7 @@
 {
-  "commit": "0dcd4eadb9d67c0ed43b4d9f32ba5e2f7e2ad77c",
-  "shortCommit": "0dcd4ea",
-  "message": "Redesign admin More dropdown: 2\u00d72 grid + settings list with icon boxes",
-  "date": "2026-06-04T05:58:55Z",
+  "commit": "d36d0cc16eb99a1bc1d04f3a64288f79a30f23cd",
+  "shortCommit": "d36d0cc",
+  "message": "Export: add Excel (XLSX) format option alongside CSV",
+  "date": "2026-06-04T06:16:34Z",
   "branch": "main"
 }
