@@ -265,15 +265,17 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             <div className="search-title-text sv-search-title t-display" style={{ fontSize: 28, marginTop: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0 8px" }}>
               <span>{tab === "meter" ? t("peaMeter") : t("peaTr")}</span>
               {hasSearched ? (
-                <span key={results.length} className={searchFlash === "ok" ? "sv-result-flash" : ""} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
-                  <span style={{ fontWeight: 800 }}>{results.length.toLocaleString()}{results.length >= 500 ? "+" : ""}</span>
-                  <span style={{ fontWeight: 500, opacity: 0.7 }}>/ {totalCount.toLocaleString()} {t("foundItems")}</span>
-                </span>
-                {fromCache && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.35)", color: "#92400e" }}>
-                    📦 cache
+                <>
+                  <span key={results.length} className={searchFlash === "ok" ? "sv-result-flash" : ""} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
+                    <span style={{ fontWeight: 800 }}>{results.length.toLocaleString()}{results.length >= 500 ? "+" : ""}</span>
+                    <span style={{ fontWeight: 500, opacity: 0.7 }}>/ {totalCount.toLocaleString()} {t("foundItems")}</span>
                   </span>
-                )}
+                  {fromCache && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.35)", color: "#92400e" }}>
+                      📦 cache
+                    </span>
+                  )}
+                </>
               ) : (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
                   <span style={{ fontWeight: 800, fontSize: 15 }}>{totalCount.toLocaleString()}</span>
