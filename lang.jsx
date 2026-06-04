@@ -139,6 +139,8 @@ const TRANSLATIONS = {
     // ── Export dialog ──────────────────────────────────────
     confirmExportTitle: "ยืนยันการส่งออกข้อมูล",
     itemsToExport: "รายการที่จะส่งออก", exportAsCSV: "บันทึกเป็นไฟล์ CSV",
+    exportAsXLSX: "บันทึกเป็นไฟล์ Excel",
+    exportFormatLabel: "รูปแบบไฟล์",
     exportCap500: "ผลลัพธ์ถูกจำกัดที่ 500 รายการ — พิมพ์คำค้นหาเพิ่มเพื่อลดจำนวน",
 
     // ── Profile view ───────────────────────────────────────
@@ -370,6 +372,8 @@ const TRANSLATIONS = {
     // ── Export dialog ──────────────────────────────────────
     confirmExportTitle: "Confirm Export",
     itemsToExport: "Items to export", exportAsCSV: "Saved as CSV file",
+    exportAsXLSX: "Saved as Excel file",
+    exportFormatLabel: "File format",
     exportCap500: "Results capped at 500 — refine your search to reduce count",
 
     // ── Profile view ───────────────────────────────────────

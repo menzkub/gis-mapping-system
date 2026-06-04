@@ -1,4 +1,4 @@
-/* global React, Icon, StatCard, Modal, downloadCSV, useToast, useConfirm, formatThaiDate,
+/* global React, Icon, StatCard, Modal, downloadCSV, downloadXLSX, useToast, useConfirm, formatThaiDate,
    _supabase, fromMeter, fromTransformer, fromProfilePatch, toMeter, toTransformer, toProfile, useLang */
 const {
   useState:  useStateAd,
@@ -860,7 +860,10 @@ function PremiumDonut({ segs, grandTotal }) {
 
 function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
   const { t } = useLang();
+  const [fmt, setFmt] = useStateAd("csv");
   if (!open) return null;
+  const baseName = filename.replace(/\.(csv|xlsx)$/, "");
+  const finalFile = `${baseName}.${fmt}`;
   return (
     <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 440, background: "var(--surface)", borderRadius: 24, boxShadow: "var(--shadow-lg)", overflow: "hidden" }}>
@@ -879,8 +882,26 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
               <div className="t-mute" style={{ fontSize: 13, marginTop: 2 }}>{t("itemsToExport")}</div>
             </div>
           </div>
-          <div className="t-mute" style={{ fontSize: 13, marginBottom: 14 }}>
-            {t("exportAsCSV")} · <span className="mono" style={{ fontSize: 12 }}>{filename}</span>
+          <div style={{ marginBottom: 14 }}>
+            <div className="t-mute" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>{t("exportFormatLabel")}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {[{ id: "csv", label: "CSV", icon: "📄", hint: ".csv" }, { id: "xlsx", label: "Excel", icon: "📊", hint: ".xlsx" }].map(f => (
+                <button key={f.id} onClick={() => setFmt(f.id)} style={{
+                  padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
+                  borderColor: fmt === f.id ? "var(--pea-purple-500)" : "var(--line)",
+                  background: fmt === f.id ? "rgba(107,44,145,0.07)" : "var(--soft)",
+                  color: fmt === f.id ? "var(--pea-purple-600)" : "var(--ink-mute)",
+                  fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 140ms",
+                }}>
+                  <span style={{ fontSize: 16 }}>{f.icon}</span>
+                  <span>{f.label}</span>
+                  <span className="mono" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.65 }}>{f.hint}</span>
+                </button>
+              ))}
+            </div>
+            <div className="t-mute" style={{ fontSize: 12, marginTop: 8 }}>
+              {fmt === "xlsx" ? t("exportAsXLSX") : t("exportAsCSV")} · <span className="mono" style={{ fontSize: 11 }}>{finalFile}</span>
+            </div>
           </div>
           {count >= 500 && (
             <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "#ffe7d4", border: "1px solid #f9b27a", marginBottom: 14 }}>
@@ -890,7 +911,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
           )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
             <button className="btn btn-outline" style={{ height: 48 }} onClick={onClose}>{t("cancel")}</button>
-            <button className="btn btn-primary" style={{ height: 48 }} onClick={onConfirm}>
+            <button className="btn btn-primary" style={{ height: 48 }} onClick={() => onConfirm(fmt)}>
               <Icon name="download" size={15} /> {t("exportLabel")}
             </button>
           </div>
@@ -1667,7 +1688,7 @@ if (ok) { /* ดำเนินการต่อ */ }`}</CodeBlock>
 
           <div style={{ fontWeight: 700, margin: "14px 0 6px" }}>ExportDialog <DevBadge color="orange">AdminPanel only</DevBadge></div>
           <CodeBlock>{`<ExportDialog open={showExport} onClose={() => setShowExport(false)}
-  onConfirm={() => { downloadCSV("file.csv", rows); setShowExport(false); }}
+  onConfirm={(fmt) => { (fmt==="xlsx"?downloadXLSX:downloadCSV)("file."+fmt, rows); setShowExport(false); }}
   count={rows.length} filename="file.csv" label="PEA Meter" />`}</CodeBlock>
         </div>
       </GuideSection>
@@ -3474,7 +3495,7 @@ function AdminMeters({ addAudit, currentUser }) {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={() => { downloadCSV("pea-meter-export.csv", list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ` }); setShowExport(false); }}
+        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : downloadCSV)(`pea-meter-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
         count={list.length}
         filename="pea-meter-export.csv"
         label="PEA Meter"
@@ -3701,7 +3722,7 @@ function AdminTrs({ addAudit, currentUser }) {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={() => { downloadCSV("pea-tr-export.csv", list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ` }); setShowExport(false); }}
+        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : downloadCSV)(`pea-tr-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
         count={list.length}
         filename="pea-tr-export.csv"
         label="PEA Transformer"
@@ -5534,7 +5555,7 @@ function AdminAudit() {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={() => { downloadCSV("audit-log.csv", logs); setShowExport(false); }}
+        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : downloadCSV)(`audit-log.${fmt}`, logs); setShowExport(false); }}
         count={logs.length}
         filename="audit-log.csv"
         label="Audit Log"

@@ -260,6 +260,14 @@ function downloadCSV(filename, rows) {
   URL.revokeObjectURL(url);
 }
 
+function downloadXLSX(filename, rows) {
+  if (!rows.length) return;
+  const ws = window.XLSX.utils.json_to_sheet(rows);
+  const wb = window.XLSX.utils.book_new();
+  window.XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+  window.XLSX.writeFile(wb, filename);
+}
+
 function formatThaiDate(d = new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -494,7 +502,7 @@ function PeaSelect({ value, onChange, children, className = "", style = {}, disa
 }
 
 /* expose */
-Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, formatThaiDate, PeaSelect });
+Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, formatThaiDate, PeaSelect });
 
 /* ── SkeletonCard ───────────────────────────────────────────── */
 function SkeletonCard({ height = 120, style = {} }) {

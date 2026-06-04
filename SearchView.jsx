@@ -1,4 +1,4 @@
-/* global React, Icon, MapView, downloadCSV, EmptyState, useToast, formatThaiDate,
+/* global React, Icon, MapView, downloadCSV, downloadXLSX, EmptyState, useToast, formatThaiDate,
    _supabase, toMeter, toTransformer, useLang */
 const {
   useState:  useStateS,
@@ -31,6 +31,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
   const [showExportDialog, setShowExportDialog] = useStateS(false);
+  const [exportFormat, setExportFormat] = useStateS("csv");
   const [showHistory, setShowHistory] = useStateS(false);
   const [corrTarget, setCorrTarget] = useStateS(null);
   const [qrTarget, setQrTarget]     = useStateS(null);
@@ -146,14 +147,19 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   };
 
   const doExport = () => {
-    downloadCSV(`pea-${tab}-${Date.now()}.csv`, results);
+    const fname = `pea-${tab}-${Date.now()}.${exportFormat}`;
+    if (exportFormat === "xlsx") {
+      downloadXLSX(fname, results);
+    } else {
+      downloadCSV(fname, results);
+    }
     toast?.(`ส่งออก ${results.length} รายการ`, "success");
     onLogSearch?.({
       at: formatThaiDate(),
       user: currentUser?.username || "guest",
       action: "export_csv",
       target: tab === "meter" ? "PEA Meter" : "PEA TR",
-      detail: `ส่งออก ${results.length} รายการ • query="${query || "—"}"`,
+      detail: `ส่งออก ${results.length} รายการ (${exportFormat.toUpperCase()}) • query="${query || "—"}"`,
       ip: (navigator.userAgent || "").substring(0, 200),
     });
     setShowExportDialog(false);
@@ -541,8 +547,26 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                   <div className="t-mute" style={{ fontSize: 13, marginTop: 2 }}>{t("itemsToExport")}</div>
                 </div>
               </div>
-              <div className="t-mute" style={{ fontSize: 13, marginBottom: 14 }}>
-                {t("exportAsCSV")} · <span className="mono" style={{ fontSize: 12 }}>pea-{tab}-export.csv</span>
+              <div style={{ marginBottom: 14 }}>
+                <div className="t-mute" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>{t("exportFormatLabel")}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[{ id: "csv", label: "CSV", icon: "📄", hint: ".csv" }, { id: "xlsx", label: "Excel", icon: "📊", hint: ".xlsx" }].map(fmt => (
+                    <button key={fmt.id} onClick={() => setExportFormat(fmt.id)} style={{
+                      padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
+                      borderColor: exportFormat === fmt.id ? "var(--pea-purple-500)" : "var(--line)",
+                      background: exportFormat === fmt.id ? "rgba(107,44,145,0.07)" : "var(--soft)",
+                      color: exportFormat === fmt.id ? "var(--pea-purple-600)" : "var(--ink-mute)",
+                      fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 140ms",
+                    }}>
+                      <span style={{ fontSize: 16 }}>{fmt.icon}</span>
+                      <span>{fmt.label}</span>
+                      <span className="mono" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.65 }}>{fmt.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="t-mute" style={{ fontSize: 12, marginTop: 8 }}>
+                  {exportFormat === "xlsx" ? t("exportAsXLSX") : t("exportAsCSV")} · <span className="mono" style={{ fontSize: 11 }}>pea-{tab}-export.{exportFormat}</span>
+                </div>
               </div>
               {results.length >= 500 && (
                 <div style={{ display: "flex", gap: 8, padding: "10px 14px", borderRadius: 10, background: "#ffe7d4", border: "1px solid #f9b27a", marginBottom: 14 }}>
