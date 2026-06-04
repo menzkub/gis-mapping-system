@@ -202,7 +202,7 @@ function NotifPanel({ data, currentUser, myNotifs = [], setMyNotifs }) {
 
 // ── ProfileView ───────────────────────────────────────────────────────────
 function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [tab, setTabPV]           = useStateApp("info");
   const [currentPw, setCurrentPw] = useStateApp("");
   const [newPw, setNewPw]         = useStateApp("");
@@ -217,6 +217,9 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const [pwSuccess, setPwSuccess] = useStateApp(false);
   const [mfaStatus, setMfaStatus] = useStateApp(null); // null=loading | true=enrolled | false=not
   const [show2FASetup, setShow2FASetup] = useStateApp(false);
+  const [bioCred, setBioCred]   = useStateApp(() => !!localStorage.getItem("pea_bio_cred"));
+  const [bioAvail, setBioAvail] = useStateApp(false);
+  const [bioLoading, setBioLoading] = useStateApp(false);
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -239,6 +242,35 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         setPwHistLoad(false);
       });
   }, [tab]);
+
+  useEffectApp(() => {
+    if (!window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) return;
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      .then(ok => setBioAvail(ok)).catch(() => {});
+  }, []);
+
+  const enableBiometric = async () => {
+    if (!window.__peaRegisterBiometric) return;
+    setBioLoading(true);
+    await window.__peaRegisterBiometric();
+    setBioCred(!!localStorage.getItem("pea_bio_cred"));
+    setBioLoading(false);
+  };
+
+  const disableBiometric = async () => {
+    const ok = await confirm({
+      title: lang === "en" ? "Disable Face ID / Fingerprint?" : "ปิดใช้งาน Face ID / ลายนิ้วมือ?",
+      message: lang === "en" ? "Next login will require your password." : "ครั้งถัดไปต้องใช้รหัสผ่านในการเข้าสู่ระบบ",
+      confirmText: lang === "en" ? "Disable" : "ปิดใช้งาน",
+      cancelText: t("cancel"),
+      tone: "danger",
+    });
+    if (!ok) return;
+    localStorage.removeItem("pea_bio_cred");
+    localStorage.removeItem("pea_bio_session");
+    setBioCred(false);
+    toast?.(lang === "en" ? "Face ID / Fingerprint disabled" : "ปิดใช้งาน Biometric แล้ว", "info");
+  };
 
   const checks = {
     length:  newPw.length >= 8,
@@ -376,6 +408,61 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Biometric / Face ID setting card ── */}
+      {tab === "info" && bioAvail && (
+        <div className="card card-elev fade-up" style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ fontSize: 26 }}>🔐</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Face ID / {lang === "en" ? "Fingerprint" : "ลายนิ้วมือ"}</div>
+                <div className="t-mute text-sm">
+                  {bioCred
+                    ? (lang === "en" ? "Enabled on this device" : "เปิดใช้งานบนอุปกรณ์นี้แล้ว")
+                    : (lang === "en" ? "Not set up" : "ยังไม่ได้ตั้งค่า")}
+                </div>
+              </div>
+            </div>
+            <span style={{
+              padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+              background: bioCred ? "rgba(22,163,74,0.12)" : "rgba(107,44,145,0.08)",
+              color: bioCred ? "#16a34a" : "var(--pea-purple-600)",
+              border: `1px solid ${bioCred ? "#16a34a44" : "rgba(107,44,145,0.25)"}`,
+            }}>
+              {bioCred ? (lang === "en" ? "🔒 On" : "🔒 เปิดอยู่") : (lang === "en" ? "Off" : "ปิดอยู่")}
+            </span>
+          </div>
+
+          {!bioCred && (
+            <div style={{ marginTop: 14 }}>
+              <div className="t-mute text-xs" style={{ marginBottom: 10, lineHeight: 1.6 }}>
+                {lang === "en"
+                  ? "Sign in faster next time using Face ID or fingerprint — no password required"
+                  : "เข้าสู่ระบบครั้งถัดไปด้วย Face ID หรือลายนิ้วมือ โดยไม่ต้องพิมพ์รหัสผ่าน"}
+              </div>
+              <button className="btn btn-primary" style={{ height: 38, fontSize: 13 }}
+                onClick={enableBiometric} disabled={bioLoading}>
+                {bioLoading
+                  ? "…"
+                  : <><Icon name="lock" size={14} /> {lang === "en" ? "Enable Face ID / Fingerprint" : "เปิดใช้งาน Face ID / ลายนิ้วมือ"}</>}
+              </button>
+            </div>
+          )}
+
+          {bioCred && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+              <span className="t-mute text-xs">
+                {lang === "en" ? "Linked to this browser on this device" : "ผูกกับเบราว์เซอร์นี้บนอุปกรณ์นี้"}
+              </span>
+              <button className="btn" style={{ fontSize: 12, height: 32, padding: "0 14px", color: "var(--red)", border: "1px solid var(--red)", borderRadius: 8 }}
+                onClick={disableBiometric}>
+                {lang === "en" ? "Disable" : "ปิดใช้งาน"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -3349,6 +3436,12 @@ function DevInfoButton({ devInfo }) {
 }
 
 // ── Root App ──────────────────────────────────────────────────────────────
+function _ToastExporter() {
+  const toast = useToast();
+  useEffectApp(() => { window.__peaToast = toast; }, [toast]);
+  return null;
+}
+
 function App() {
   const { t, lang, setLang } = useLang();
   const [appState, setAppState] = useStateApp("checking");
@@ -3760,6 +3853,8 @@ function App() {
     }
   }, [currentUser, lang]);
 
+  useEffectApp(() => { window.__peaRegisterBiometric = registerBiometric; }, [registerBiometric]);
+
   // ── Push Notification subscription ───────────────────────────────────────
   const subscribePush = React.useCallback(async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return "unsupported";
@@ -4055,13 +4150,14 @@ function App() {
 
   return (
     <ToastProvider><ConfirmProvider>
+      <_ToastExporter />
       <div className={"app-root" + (sidebarExpanded ? " sidebar-expanded" : "") + (sidebarCollapsed ? " sidebar-dt-collapsed" : "")}>
 
         {/* ── Biometric registration banner ── */}
         {showBioBanner && (
           <div className="fade-up" style={{
-            position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)",
-            zIndex: 9800, width: "min(92vw, 400px)",
+            position: "fixed", bottom: 80, left: 16, right: 16,
+            zIndex: 9800,
             background: "var(--surface)", border: "1px solid var(--line)",
             borderRadius: 18, padding: "16px 18px",
             boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
