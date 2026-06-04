@@ -1,7 +1,7 @@
 {
-  "commit": "ff49722a7380df1a57879d5cd78e1f9c3ea3677f",
-  "shortCommit": "ff49722",
-  "message": "fix: center modal overlay on full viewport instead of content area",
-  "date": "2026-06-04T14:18:35Z",
+  "commit": "ffdeb156e931cb29e26363b3a34f6417f33e2537",
+  "shortCommit": "ffdeb15",
+  "message": "Add Remember Me and Biometric login (WebAuthn Face ID / Fingerprint)",
+  "date": "2026-06-04T14:32:46Z",
   "branch": "main"
 }
