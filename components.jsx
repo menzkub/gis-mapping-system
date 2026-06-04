@@ -262,44 +262,58 @@ function downloadCSV(filename, rows) {
 
 function downloadXLSX(filename, rows) {
   if (!rows.length) return;
-  const ws = window.XLSX.utils.json_to_sheet(rows);
-  const wb = window.XLSX.utils.book_new();
-  window.XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  window.XLSX.writeFile(wb, filename);
+  try {
+    if (!window.XLSX) throw new Error("ไม่พบไลบรารี SheetJS กรุณารีเฟรชหน้าเว็บ");
+    const ws = window.XLSX.utils.json_to_sheet(rows);
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    window.XLSX.writeFile(wb, filename);
+  } catch (err) {
+    throw new Error(err?.message || "Excel export ล้มเหลว");
+  }
 }
 
 function downloadPDF(filename, rows, title) {
-  if (!rows.length) return;
-  const cols = Object.keys(rows[0]);
-  const headerCells = cols.map(c =>
-    `<th style="padding:5px 8px;background:#6b2c91;color:white;font-size:9px;font-weight:700;text-align:left;white-space:nowrap;">${c}</th>`
-  ).join("");
-  const bodyRows = rows.map((r, i) =>
-    `<tr style="background:${i % 2 === 0 ? "#ffffff" : "#f6efff"};">` +
-    cols.map(c => `<td style="padding:4px 8px;font-size:9px;border-bottom:1px solid #ece6f4;">${r[c] ?? "—"}</td>`).join("") +
-    `</tr>`
-  ).join("");
-  const html = `<div style="font-family:Arial,sans-serif;padding:16px;">
-    <div style="background:linear-gradient(135deg,#6b2c91,#f47b20);color:white;padding:14px 18px;border-radius:8px;margin-bottom:14px;">
-      <div style="font-weight:800;font-size:16px;">${title || "PEA Export"}</div>
-      <div style="font-size:10px;opacity:0.8;margin-top:4px;">${rows.length.toLocaleString()} รายการ · ${new Date().toLocaleString("th-TH", {timeZone:"Asia/Bangkok"})}</div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;">
-      <thead><tr>${headerCells}</tr></thead>
-      <tbody>${bodyRows}</tbody>
-    </table>
-    <div style="margin-top:12px;font-size:8px;color:#6b6685;text-align:center;">พิมพ์จากระบบ GIS PEA · Meter &amp; Transformer Mapping System</div>
-  </div>`;
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  el.style.cssText = "position:fixed;left:-9999px;top:0;width:1200px;";
-  document.body.appendChild(el);
-  window.html2pdf().set({
-    margin: 6,
-    filename,
-    html2canvas: { scale: 1.5, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-  }).from(el).save().then(() => document.body.removeChild(el));
+  if (!rows.length) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    try {
+      if (!window.html2pdf) throw new Error("ไม่พบไลบรารี html2pdf กรุณารีเฟรชหน้าเว็บ");
+      const cols = Object.keys(rows[0]);
+      const headerCells = cols.map(c =>
+        `<th style="padding:5px 8px;background:#6b2c91;color:white;font-size:9px;font-weight:700;text-align:left;white-space:nowrap;">${c}</th>`
+      ).join("");
+      const bodyRows = rows.map((r, i) =>
+        `<tr style="background:${i % 2 === 0 ? "#ffffff" : "#f6efff"};">` +
+        cols.map(c => `<td style="padding:4px 8px;font-size:9px;border-bottom:1px solid #ece6f4;">${r[c] ?? "—"}</td>`).join("") +
+        `</tr>`
+      ).join("");
+      const html = `<div style="font-family:Arial,sans-serif;padding:16px;">
+        <div style="background:linear-gradient(135deg,#6b2c91,#f47b20);color:white;padding:14px 18px;border-radius:8px;margin-bottom:14px;">
+          <div style="font-weight:800;font-size:16px;">${title || "PEA Export"}</div>
+          <div style="font-size:10px;opacity:0.8;margin-top:4px;">${rows.length.toLocaleString()} รายการ · ${new Date().toLocaleString("th-TH", {timeZone:"Asia/Bangkok"})}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+        <div style="margin-top:12px;font-size:8px;color:#6b6685;text-align:center;">พิมพ์จากระบบ GIS PEA · Meter &amp; Transformer Mapping System</div>
+      </div>`;
+      const el = document.createElement("div");
+      el.innerHTML = html;
+      el.style.cssText = "position:fixed;left:-9999px;top:0;width:1200px;";
+      document.body.appendChild(el);
+      window.html2pdf().set({
+        margin: 6,
+        filename,
+        html2canvas: { scale: 1.5, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+      }).from(el).save()
+        .then(() => { try { document.body.removeChild(el); } catch {} resolve(); })
+        .catch(err => { try { document.body.removeChild(el); } catch {} reject(new Error(err?.message || "PDF export ล้มเหลว")); });
+    } catch (err) {
+      reject(new Error(err?.message || "PDF export ล้มเหลว"));
+    }
+  });
 }
 
 function formatThaiDate(d = new Date()) {

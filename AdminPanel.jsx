@@ -3499,7 +3499,7 @@ function AdminMeters({ addAudit, currentUser }) {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : fmt === "pdf" ? (f, r) => downloadPDF(f, r, "PEA Meter") : downloadCSV)(`pea-meter-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
+        onConfirm={async (fmt) => { try { if (fmt === "xlsx") downloadXLSX(`pea-meter-export.xlsx`, list); else if (fmt === "pdf") await downloadPDF(`pea-meter-export.pdf`, list, "PEA Meter"); else downloadCSV(`pea-meter-export.csv`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); } catch (err) { toast?.("ส่งออกไม่สำเร็จ: " + (err?.message || "ข้อผิดพลาดไม่ทราบสาเหตุ"), "error"); } }}
         count={list.length}
         filename="pea-meter-export.csv"
         label="PEA Meter"
@@ -3726,7 +3726,7 @@ function AdminTrs({ addAudit, currentUser }) {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : fmt === "pdf" ? (f, r) => downloadPDF(f, r, "PEA Transformer") : downloadCSV)(`pea-tr-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
+        onConfirm={async (fmt) => { try { if (fmt === "xlsx") downloadXLSX(`pea-tr-export.xlsx`, list); else if (fmt === "pdf") await downloadPDF(`pea-tr-export.pdf`, list, "PEA Transformer"); else downloadCSV(`pea-tr-export.csv`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); } catch (err) { toast?.("ส่งออกไม่สำเร็จ: " + (err?.message || "ข้อผิดพลาดไม่ทราบสาเหตุ"), "error"); } }}
         count={list.length}
         filename="pea-tr-export.csv"
         label="PEA Transformer"
@@ -3822,28 +3822,29 @@ function AdminMapTab({ data, currentUser, addAudit }) {
     const { error } = await _supabase.from(table)
       .update({ latitude: +corr.new_lat, longitude: +corr.new_lng })
       .eq("objectid", corr.record_id);
-    if (!error) {
-      await _supabase.from("coordinate_corrections").update({
-        status: "approved",
-        reviewed_by_username: currentUser?.username || "admin",
-        reviewed_at: new Date().toISOString(),
-      }).eq("id", corr.id);
-      setCorrections(prev => prev.map(c => c.id === corr.id ? { ...c, status: "approved" } : c));
-      if (corr.record_type === "meter") {
-        setMeters(prev => prev.map(m => m.OBJECTID === corr.record_id ? { ...m, LATITUDE: +corr.new_lat, LONGITUDE: +corr.new_lng } : m));
-      } else {
-        setTrs(prev => prev.map(tr => tr.OBJECTID === corr.record_id ? { ...tr, LATITUDE: +corr.new_lat, LONGITUDE: +corr.new_lng } : tr));
-      }
-      toast?.(t("corrApprovedMsg"), "success");
+    if (error) { toast?.("อนุมัติไม่สำเร็จ: " + error.message, "error"); return; }
+    const { error: e2 } = await _supabase.from("coordinate_corrections").update({
+      status: "approved",
+      reviewed_by_username: currentUser?.username || "admin",
+      reviewed_at: new Date().toISOString(),
+    }).eq("id", corr.id);
+    if (e2) { toast?.("อัปเดตสถานะไม่สำเร็จ: " + e2.message, "error"); return; }
+    setCorrections(prev => prev.map(c => c.id === corr.id ? { ...c, status: "approved" } : c));
+    if (corr.record_type === "meter") {
+      setMeters(prev => prev.map(m => m.OBJECTID === corr.record_id ? { ...m, LATITUDE: +corr.new_lat, LONGITUDE: +corr.new_lng } : m));
+    } else {
+      setTrs(prev => prev.map(tr => tr.OBJECTID === corr.record_id ? { ...tr, LATITUDE: +corr.new_lat, LONGITUDE: +corr.new_lng } : tr));
     }
+    toast?.(t("corrApprovedMsg"), "success");
   };
 
   const rejectCorrection = async (corr) => {
-    await _supabase.from("coordinate_corrections").update({
+    const { error } = await _supabase.from("coordinate_corrections").update({
       status: "rejected",
       reviewed_by_username: currentUser?.username || "admin",
       reviewed_at: new Date().toISOString(),
     }).eq("id", corr.id);
+    if (error) { toast?.("ปฏิเสธไม่สำเร็จ: " + error.message, "error"); return; }
     setCorrections(prev => prev.map(c => c.id === corr.id ? { ...c, status: "rejected" } : c));
   };
 
@@ -5559,7 +5560,7 @@ function AdminAudit() {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : fmt === "pdf" ? (f, r) => downloadPDF(f, r, "Audit Log") : downloadCSV)(`audit-log.${fmt}`, logs); setShowExport(false); }}
+        onConfirm={async (fmt) => { try { if (fmt === "xlsx") downloadXLSX(`audit-log.xlsx`, logs); else if (fmt === "pdf") await downloadPDF(`audit-log.pdf`, logs, "Audit Log"); else downloadCSV(`audit-log.csv`, logs); setShowExport(false); } catch (err) { toast?.("ส่งออกไม่สำเร็จ: " + (err?.message || "ข้อผิดพลาดไม่ทราบสาเหตุ"), "error"); } }}
         count={logs.length}
         filename="audit-log.csv"
         label="Audit Log"

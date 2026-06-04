@@ -1,4 +1,4 @@
-/* global React, Icon, MapView, downloadCSV, downloadXLSX, EmptyState, useToast, formatThaiDate,
+/* global React, Icon, MapView, downloadCSV, downloadXLSX, downloadPDF, EmptyState, useToast, formatThaiDate,
    _supabase, toMeter, toTransformer, useLang, PeaDB */
 const {
   useState:  useStateS,
@@ -165,25 +165,29 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
     });
   };
 
-  const doExport = () => {
+  const doExport = async () => {
     const fname = `pea-${tab}-${Date.now()}.${exportFormat === "pdf" ? "pdf" : exportFormat}`;
-    if (exportFormat === "xlsx") {
-      downloadXLSX(fname, results);
-    } else if (exportFormat === "pdf") {
-      downloadPDF(fname, results, tab === "meter" ? "PEA มิเตอร์" : "PEA หม้อแปลง");
-    } else {
-      downloadCSV(fname, results);
+    try {
+      if (exportFormat === "xlsx") {
+        downloadXLSX(fname, results);
+      } else if (exportFormat === "pdf") {
+        await downloadPDF(fname, results, tab === "meter" ? "PEA มิเตอร์" : "PEA หม้อแปลง");
+      } else {
+        downloadCSV(fname, results);
+      }
+      toast?.(`ส่งออก ${results.length} รายการ`, "success");
+      onLogSearch?.({
+        at: formatThaiDate(),
+        user: currentUser?.username || "guest",
+        action: "export_csv",
+        target: tab === "meter" ? "PEA Meter" : "PEA TR",
+        detail: `ส่งออก ${results.length} รายการ (${exportFormat.toUpperCase()}) • query="${query || "—"}"`,
+        ip: (navigator.userAgent || "").substring(0, 200),
+      });
+      setShowExportDialog(false);
+    } catch (err) {
+      toast?.("ส่งออกไม่สำเร็จ: " + (err?.message || "ข้อผิดพลาดไม่ทราบสาเหตุ"), "error");
     }
-    toast?.(`ส่งออก ${results.length} รายการ`, "success");
-    onLogSearch?.({
-      at: formatThaiDate(),
-      user: currentUser?.username || "guest",
-      action: "export_csv",
-      target: tab === "meter" ? "PEA Meter" : "PEA TR",
-      detail: `ส่งออก ${results.length} รายการ (${exportFormat.toUpperCase()}) • query="${query || "—"}"`,
-      ip: (navigator.userAgent || "").substring(0, 200),
-    });
-    setShowExportDialog(false);
   };
   const handleExport = () => setShowExportDialog(true);
 
