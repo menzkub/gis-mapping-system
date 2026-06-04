@@ -930,7 +930,7 @@ function AppInfoModal({ onClose }) {
     { icon: "⏱", title: s("ระยะเวลาเก็บรักษาข้อมูล","Retention Period"), body: s("ข้อมูล Audit Log เก็บไว้ตราบเท่าที่จำเป็น — ภาพถ่ายเก็บจนกว่า Admin จะลบออก","Audit logs are retained as long as necessary — photos are kept until removed by an Admin.") },
     { icon: "✅", title: s("สิทธิ์ของเจ้าของข้อมูล (PDPA)","Data Subject Rights (PDPA)"), body: s("ท่านมีสิทธิ์ขอเข้าถึง แก้ไข หรือลบข้อมูลส่วนตัว โดยติดต่อผ่าน Admin ของระบบ","You have the right to access, correct, or delete your personal data by contacting the system Admin.") },
   ];
-  const PRIVACY = fetchedPrivacy || DEFAULT_PRIVACY;
+  const PRIVACY = (fetchedPrivacy && fetchedPrivacy.length > 0) ? fetchedPrivacy : DEFAULT_PRIVACY;
 
   const TERMS = [
     { icon: "🏛", title: s("ขอบเขตการใช้งาน","Scope of Use"), body: s("ระบบนี้จัดทำขึ้นสำหรับพนักงานการไฟฟ้าส่วนภูมิภาค (PEA) เท่านั้น ห้ามบุคคลภายนอกใช้งาน","This system is for PEA employees only. Unauthorized access by external parties is prohibited.") },
@@ -949,7 +949,7 @@ function AppInfoModal({ onClose }) {
     { icon: "👤", title: s("Admin ระบบ","System Admin"), body: s("ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล","Contact the system Admin for access requests, password resets, or data corrections.") },
     { icon: "🔄", title: s("ขอฟีเจอร์ใหม่","Feature Requests"), body: s("ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น","Have feature requests or suggestions? We welcome your feedback to improve the system.") },
   ];
-  const CONTACT = fetchedContact || DEFAULT_CONTACT;
+  const CONTACT = (fetchedContact && fetchedContact.length > 0) ? fetchedContact : DEFAULT_CONTACT;
 
   const FEATURES = [
     { icon: "🔍", t: s("ค้นหาข้อมูล","Search"), d: "Meter / Transformer" },
