@@ -620,33 +620,15 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  /* desktop default: sidebar=260px, topbar=64px */
-  padding: calc(64px + 16px) 20px 20px calc(260px + 20px);
+  padding: 20px;
   background: rgba(14,10,22,0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-/* Collapsed desktop sidebar (72px) */
-.app-root.sidebar-dt-collapsed .pea-modal-overlay {
-  padding-left: calc(72px + 12px);
-}
-.app-root.sidebar-dt-collapsed.sidebar-1440 .pea-modal-overlay {
-  padding-left: calc(72px + 12px);
-}
 
-/* Large desktop ≥1440px: sidebar=290px, topbar=68px */
-@media (min-width: 1440px) {
-  .pea-modal-overlay { padding: calc(68px + 16px) 20px 20px calc(290px + 20px); }
-}
-
-/* Tablet 641–1024px: icon sidebar=72px, topbar=64px */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .pea-modal-overlay { padding: calc(64px + 12px) 12px 12px calc(72px + 12px); }
-}
-
-/* Mobile ≤640px: no sidebar, top bar=56px, bottom nav=76px */
+/* Mobile ≤640px: extra bottom padding for bottom nav bar */
 @media (max-width: 640px) {
-  .pea-modal-overlay { padding: calc(56px + 12px) 12px calc(76px + 12px); }
+  .pea-modal-overlay { padding: 16px 12px calc(76px + 12px); }
 }
 
 /* Deploy popup — center on mobile */
