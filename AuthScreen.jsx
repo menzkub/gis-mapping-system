@@ -1228,40 +1228,42 @@ function AppInfoModal({ onClose }) {
       }}>
 
         {/* ── Title header ── */}
-        <div style={{ textAlign: "center", padding: "22px 64px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0, position: "relative" }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--ink)", letterSpacing: "-0.02em" }}>
-            {s("ข้อกำหนดและนโยบายการใช้งาน","Terms & Policy")}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 3 }}>
-            {s("ระบบ PEA GIS Meter & TR · การไฟฟ้าส่วนภูมิภาค","PEA GIS Meter & TR System · Provincial Electricity Authority")}
-          </div>
-
-          {/* Language toggle */}
-          <div style={{ position: "absolute", top: 16, left: 16, display: "flex", background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 999, padding: 3, gap: 2 }}>
-            {["th","en"].map(l => (
-              <button key={l} onClick={() => setLang(l)} style={{
-                padding: "4px 12px", borderRadius: 999, border: "none", cursor: "pointer",
-                fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", transition: "all 180ms",
-                background: lang === l ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
-                color: lang === l ? "white" : "var(--ink-mute)",
-                boxShadow: lang === l ? "0 2px 6px rgba(107,44,145,0.3)" : "none",
-              }}>{l.toUpperCase()}</button>
-            ))}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 14px 14px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+          {/* Title — takes remaining space */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "var(--ink)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {s("ข้อกำหนดและนโยบายการใช้งาน","Terms & Policy")}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {s("ระบบ PEA GIS Meter & TR · การไฟฟ้าส่วนภูมิภาค","PEA GIS Meter & TR System · Provincial Electricity Authority")}
+            </div>
           </div>
 
-          {/* Close button — prominent */}
-          <button onClick={onClose} style={{
-            position: "absolute", top: 14, right: 14,
-            width: 40, height: 40, borderRadius: 10,
-            border: "1.5px solid var(--line)", background: "var(--soft)",
-            cursor: "pointer", display: "grid", placeItems: "center",
-            transition: "all 160ms", color: "var(--ink)",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.45)"; e.currentTarget.style.color = "#ef4444"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "var(--soft)"; e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = "var(--ink)"; }}
-          >
-            <Icon name="close" size={18} />
-          </button>
+          {/* Right controls: language toggle + close */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <div style={{ display: "flex", background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 999, padding: 3, gap: 2 }}>
+              {["th","en"].map(l => (
+                <button key={l} onClick={() => setLang(l)} style={{
+                  padding: "4px 10px", borderRadius: 999, border: "none", cursor: "pointer",
+                  fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", transition: "all 180ms",
+                  background: lang === l ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
+                  color: lang === l ? "white" : "var(--ink-mute)",
+                  boxShadow: lang === l ? "0 2px 6px rgba(107,44,145,0.3)" : "none",
+                }}>{l.toUpperCase()}</button>
+              ))}
+            </div>
+            <button onClick={onClose} style={{
+              width: 36, height: 36, borderRadius: 10,
+              border: "1.5px solid var(--line)", background: "var(--soft)",
+              cursor: "pointer", display: "grid", placeItems: "center",
+              transition: "all 160ms", color: "var(--ink)", flexShrink: 0,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.45)"; e.currentTarget.style.color = "#ef4444"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--soft)"; e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = "var(--ink)"; }}
+            >
+              <Icon name="close" size={16} />
+            </button>
+          </div>
         </div>
 
         {/* ── Two-column body ── */}
