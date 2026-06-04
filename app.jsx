@@ -3328,7 +3328,13 @@ function App() {
     dashStats: {},
   });
   const [route, setRoute] = useStateApp("search");
-  const [theme, setTheme] = useStateApp(() => localStorage.getItem("pea_theme") || "light");
+  const [theme, setTheme] = useStateApp(() => {
+    try {
+      const saved = localStorage.getItem("pea_theme");
+      if (saved) return saved;
+      return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } catch { return "light"; }
+  });
   const [baseMap, setBaseMap] = useStateApp(() => {
     const saved = localStorage.getItem("pea_base") || "satellite";
     return saved === "dark" ? "satellite" : saved;
@@ -3365,12 +3371,23 @@ function App() {
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
   );
   const [myNotifs, setMyNotifs] = useStateApp([]);
+  const [isOnline, setIsOnline] = useStateApp(() => navigator.onLine !== false);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("pea_theme", theme);
   }, [theme]);
   useEffectApp(() => { localStorage.setItem("pea_base", baseMap); }, [baseMap]);
+  useEffectApp(() => {
+    const goOnline  = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online",  goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online",  goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   // ── Load app data after auth ─────────────────────────────────────────────
   const loadAppData = useCallbackApp(async (supabaseUser, logLogin = false) => {
@@ -3524,6 +3541,10 @@ function App() {
 
       setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
       setData({ meters: [], transformers: [], users, auditLog, feeders, dashStats });
+      try {
+        localStorage.setItem("pea_cache_ts", Date.now().toString());
+        localStorage.setItem("pea_cache_data", JSON.stringify({ feeders, dashStats }));
+      } catch {}
       setAppState("ready");
       if (needsConsent) setShowPrivacyConsent(true);
 
@@ -3545,6 +3566,18 @@ function App() {
       setCurrentUser(prev => ({ ...prev, lastLogin: utcToThai(nowIso, false) }));
     } catch (err) {
       console.error("loadAppData failed:", err);
+      // Try to restore cached dashboard data so the app is still usable offline
+      try {
+        const cached = JSON.parse(localStorage.getItem("pea_cache_data") || "null");
+        const cachedTs = localStorage.getItem("pea_cache_ts");
+        if (cached && cachedTs) {
+          setData(prev => ({
+            ...prev,
+            feeders: cached.feeders || prev.feeders,
+            dashStats: cached.dashStats || prev.dashStats,
+          }));
+        }
+      } catch {}
       setAppState("unauthed");
     }
   }, []);
@@ -3902,6 +3935,22 @@ function App() {
   return (
     <ToastProvider><ConfirmProvider>
       <div className={"app-root" + (sidebarExpanded ? " sidebar-expanded" : "") + (sidebarCollapsed ? " sidebar-dt-collapsed" : "")}>
+
+        {/* ── Offline indicator banner ── */}
+        {!isOnline && (
+          <div style={{
+            position: "fixed", zIndex: 9900,
+            top: 0, left: 0, right: 0,
+            background: "linear-gradient(135deg, #374151, #1f2937)",
+            color: "white", padding: "10px 18px",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            fontSize: 13, fontWeight: 700, letterSpacing: "0.02em",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 0 2px rgba(239,68,68,0.3)", flexShrink: 0 }} />
+            {lang === "en" ? "You are offline — some features may be unavailable" : "ไม่มีสัญญาณอินเทอร์เน็ต — บางฟีเจอร์อาจใช้ไม่ได้"}
+          </div>
+        )}
 
         {/* ── Idle-logout warning banner ── */}
         {idleWarnSecs !== null && (

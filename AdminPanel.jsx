@@ -215,6 +215,7 @@ function fmtStat(n) {
 
 function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing }) {
   const { t } = useLang();
+  const [filterFeeder, setFilterFeeder] = useStateAd("all");
   const s = data.dashStats || {};
   const meterCount = +(s.meter_count  || 0);
   const trCount    = +(s.tr_count     || 0);
@@ -231,6 +232,10 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
   const otherTr     = Math.max(0, trCount - peaTr - custTr);
 
   const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
+  const filteredMeters = filterFeeder === "all" ? null : (data.meters || []).filter(m => m.FEEDERID === filterFeeder);
+  const filteredTrs    = filterFeeder === "all" ? null : (data.trs    || []).filter(t => t.FEEDER1  === filterFeeder);
+  const displayMeterCount = filteredMeters ? filteredMeters.length : meterCount;
+  const displayTrCount    = filteredTrs    ? filteredTrs.length    : trCount;
   const grandTotal = meterCount + trCount;
   const isLoading = meterCount === 0 && trCount === 0 && totalKva === 0;
   const donutSegs = [
@@ -283,6 +288,29 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
         </div>
       )}
 
+      {/* Feeder filter */}
+      {(data.dashStats?.top_feeders || []).length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-mute)" }}>Feeder:</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button onClick={() => setFilterFeeder("all")} style={{
+              padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              background: filterFeeder === "all" ? "var(--pea-orange-500)" : "var(--soft)",
+              color: filterFeeder === "all" ? "white" : "var(--ink-mute)",
+              border: "none", transition: "all 140ms",
+            }}>ทั้งหมด</button>
+            {(data.dashStats?.top_feeders || []).slice(0, 8).map(f => (
+              <button key={f.feeder} onClick={() => setFilterFeeder(f.feeder)} style={{
+                padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: filterFeeder === f.feeder ? "var(--pea-orange-500)" : "var(--soft)",
+                color: filterFeeder === f.feeder ? "white" : "var(--ink-mute)",
+                border: "none", transition: "all 140ms",
+              }}>{f.feeder}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stat cards — skeleton while loading */}
       <div className="db-stat-grid">
         {isLoading ? (
@@ -293,8 +321,8 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
           </>
         ) : (
           <>
-            <StatCard label={t("dbMeters")} value={fmtStat(meterCount)} delta={4} icon="meter-m" accent="purple" />
-            <StatCard label={t("dbTrs")}    value={fmtStat(trCount)}    delta={2} icon="tr-tri" accent="orange" />
+            <StatCard label={t("dbMeters")} value={fmtStat(displayMeterCount)} delta={4} icon="meter-m" accent="purple" />
+            <StatCard label={t("dbTrs")}    value={fmtStat(displayTrCount)}    delta={2} icon="tr-tri" accent="orange" />
             <div className="db-kva-span">
               <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
                 breakdown={[
@@ -3386,6 +3414,13 @@ function AdminMeters({ addAudit, currentUser }) {
                 </td>
               </tr>
             ))}
+            {sortedList.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "48px 20px", color: "var(--ink-mute)" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>ไม่พบข้อมูล</div>
+                <div style={{ fontSize: 13 }}>ลองค้นหาด้วยคำอื่น หรือล้างตัวกรอง</div>
+              </td></tr>
+            )}
           </tbody>
         </table>
         {list.length >= 100 && (
@@ -3604,6 +3639,13 @@ function AdminTrs({ addAudit, currentUser }) {
                 </td>
               </tr>
             ))}
+            {sortedList.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "48px 20px", color: "var(--ink-mute)" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>ไม่พบข้อมูล</div>
+                <div style={{ fontSize: 13 }}>ลองค้นหาด้วยคำอื่น หรือล้างตัวกรอง</div>
+              </td></tr>
+            )}
           </tbody>
         </table>
         {list.length >= 100 && (

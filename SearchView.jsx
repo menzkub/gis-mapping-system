@@ -469,6 +469,26 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                   </div>
                 </div>
               )}
+              {/* Empty state overlay — shown after search returns no results */}
+              {hasSearched && results.length === 0 && query && !searching && (
+                <div className="fade-up" style={{
+                  position: "absolute", bottom: 28, left: 0, right: 0, zIndex: 500,
+                  display: "flex", justifyContent: "center", pointerEvents: "none", padding: "0 16px",
+                }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "18px 28px", gap: 10,
+                    background: "rgba(var(--surface-rgb,255,255,255),0.92)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+                    borderRadius: 20, boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid rgba(139,63,196,0.18)",
+                    color: "var(--ink-mute)", maxWidth: 340,
+                  }}>
+                    <div style={{ fontSize: 36, lineHeight: 1 }}>🔍</div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ink)" }}>ไม่พบผลลัพธ์</div>
+                    <div style={{ fontSize: 13, textAlign: "center", maxWidth: 280, lineHeight: 1.6 }}>
+                      ไม่พบ{tab === "meter" ? "มิเตอร์" : "หม้อแปลง"} ที่ตรงกับ "{query}"
+                      ลองค้นหาด้วย TAG, PEANO, หรือหมายเลขผู้ใช้
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Result count badge */}
               {results.length > 0 && (
                 <div key={results.length} className="fade-up" style={{
@@ -586,9 +606,19 @@ function FilterSelect({ label, value, options, onChange, t }) {
 /* ============================================================
    ResultList — left rail / fullscreen table
    ============================================================ */
-function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, copyCoords, copied }) {
+function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, copyCoords, copied, searchQuery }) {
   return (
     <div className="surface" style={{ overflow: "auto", height: "100%" }}>
+      {items.length === 0 && searchQuery && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: 12, color: "var(--ink-mute)" }}>
+          <div style={{ fontSize: 48, lineHeight: 1 }}>🔍</div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: "var(--ink)" }}>ไม่พบผลลัพธ์</div>
+          <div style={{ fontSize: 14, textAlign: "center", maxWidth: 280, lineHeight: 1.6 }}>
+            ไม่พบ{kind === "meter" ? "มิเตอร์" : "หม้อแปลง"} ที่ตรงกับ "{searchQuery}"
+            ลองค้นหาด้วย TAG, PEANO, หรือหมายเลขผู้ใช้
+          </div>
+        </div>
+      )}
       {items.map((p, i) => (
         <ResultCard key={p.OBJECTID} item={p} kind={kind} selected={p.OBJECTID === selectedId} onClick={() => onSelect(p)} onNavigate={() => onNavigate(p)} index={i} copyCoords={copyCoords} copied={copied} />
       ))}
