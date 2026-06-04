@@ -449,24 +449,6 @@ function AuthScreen({ initialError }) {
           <div style={{ fontSize: 13, color: "#c4b5fd" }}>{t("authBrandTitle3")} · {t("authBrandTag")}</div>
         </div>
 
-        {/* Language toggle — segmented pill above card */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-          <div style={{ display: "flex", background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 999, padding: 3, gap: 2 }}>
-            {["th", "en"].map(l => (
-              <button key={l} onClick={() => setLang(l)} title={t("switchLang")} style={{
-                padding: "5px 16px", borderRadius: 999, border: "none", cursor: "pointer",
-                fontSize: 12, fontWeight: 800, letterSpacing: "0.06em",
-                transition: "all 180ms",
-                background: lang === l ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
-                color: lang === l ? "white" : "var(--ink-mute)",
-                boxShadow: lang === l ? "0 2px 8px rgba(107,44,145,0.3)" : "none",
-              }}>
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Form card */}
         <div className="auth-card">
 
@@ -526,13 +508,29 @@ function AuthScreen({ initialError }) {
           ) : (
             /* ── Login / Signup tabs ───────────────────────── */
             <>
-              <div className="tabs" style={{ marginBottom: 28, width: "100%", display: "flex" }}>
-                <button className={"tab " + (mode === "login" ? "active" : "")} onClick={() => { setMode("login"); setErr(null); }} style={{ flex: 1, justifyContent: "center" }}>
-                  <Icon name="user" size={15} /> {t("authTabLogin")}
-                </button>
-                <button className={"tab " + (mode === "signup" ? "active" : "")} onClick={() => { setMode("signup"); setErr(null); setSignupDone(false); }} style={{ flex: 1, justifyContent: "center" }}>
-                  <Icon name="plus" size={15} /> {t("authTabSignup")}
-                </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
+                <div className="tabs" style={{ flex: 1, display: "flex" }}>
+                  <button className={"tab " + (mode === "login" ? "active" : "")} onClick={() => { setMode("login"); setErr(null); }} style={{ flex: 1, justifyContent: "center" }}>
+                    <Icon name="user" size={15} /> {t("authTabLogin")}
+                  </button>
+                  <button className={"tab " + (mode === "signup" ? "active" : "")} onClick={() => { setMode("signup"); setErr(null); setSignupDone(false); }} style={{ flex: 1, justifyContent: "center" }}>
+                    <Icon name="plus" size={15} /> {t("authTabSignup")}
+                  </button>
+                </div>
+                <div style={{ display: "flex", background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 999, padding: 3, gap: 2, flexShrink: 0 }}>
+                  {["th", "en"].map(l => (
+                    <button key={l} onClick={() => setLang(l)} style={{
+                      padding: "5px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+                      fontSize: 11, fontWeight: 800, letterSpacing: "0.06em",
+                      transition: "all 180ms",
+                      background: lang === l ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
+                      color: lang === l ? "white" : "var(--ink-mute)",
+                      boxShadow: lang === l ? "0 2px 8px rgba(107,44,145,0.3)" : "none",
+                    }}>
+                      {l.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {signupDone ? (() => {
