@@ -1,7 +1,7 @@
 {
-  "commit": "d5ecf213245aff9afde6861eb090d281b8e38647",
-  "shortCommit": "d5ecf21",
-  "message": "feat: migrate photos to Supabase Storage + premium logo + mobile UX fixes",
-  "date": "2026-06-03T18:14:01Z",
+  "commit": "99886a309385af34b318397f19e81b6d810b58c9",
+  "shortCommit": "99886a3",
+  "message": "feat: add version badge + AppInfoModal on login page",
+  "date": "2026-06-04T02:54:31Z",
   "branch": "main"
 }
