@@ -1,7 +1,7 @@
 {
-  "commit": "c371ef30b68f7fe3a45e62856e5d10e8998fa9a2",
-  "shortCommit": "c371ef3",
-  "message": "Fix PDF export rendering blank white pages",
-  "date": "2026-06-04T14:35:00Z",
+  "commit": "461fcccc837d6b860c322800f55c180be7420bef",
+  "shortCommit": "461fccc",
+  "message": "Fix biometric banner layout; add Face ID settings to account profile",
+  "date": "2026-06-04T14:51:56Z",
   "branch": "main"
 }
