@@ -1325,6 +1325,18 @@ function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, pri
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.4", date: "4 มิ.ย. 2569", tag: "UX & Export",
+    tagColor: "#f47b20", items: [
+      { cat: "new",  text: { th: "Export Excel (.xlsx): เพิ่มปุ่มเลือกรูปแบบไฟล์ CSV หรือ Excel ในทุก dialog Export (ค้นหา, Admin มิเตอร์/หม้อแปลง, Audit Log)", en: "Excel export: format picker (CSV or Excel .xlsx) added to all Export dialogs — Search, Admin Meters/Transformers, Audit Log" } },
+      { cat: "new",  text: { th: "Dark Mode อัตโนมัติ: ตรวจจาก prefers-color-scheme — ถ้าไม่เคยตั้งค่า ระบบจะตามธีมอุปกรณ์โดยอัตโนมัติ", en: "Auto dark mode: detects prefers-color-scheme — if never manually set, follows device theme automatically" } },
+      { cat: "new",  text: { th: "แถบแจ้งเตือนออฟไลน์: แสดง banner 'ไม่มีสัญญาณอินเทอร์เน็ต' ที่ด้านบนสุดเมื่อเครือข่ายขาดหาย", en: "Offline banner: shows 'You are offline' at top of screen when network is unavailable" } },
+      { cat: "new",  text: { th: "Offline Cache: บันทึก dashStats + feeders ลง localStorage หลัง login สำเร็จ — ใช้ข้อมูลเดิมได้เมื่อโหลดครั้งต่อไปล้มเหลว", en: "Offline cache: saves dashStats + feeders to localStorage after login — restores on next load failure" } },
+      { cat: "ux",   text: { th: "Dashboard ตัวกรอง Feeder: แสดงชิปกรอง Feeder ยอดนิยมใน Dashboard — คลิกเพื่อดูจำนวนมิเตอร์/หม้อแปลงของแต่ละ Feeder", en: "Dashboard feeder filter: popular feeder chips appear on dashboard — tap to filter meter/TR counts by feeder" } },
+      { cat: "ux",   text: { th: "Empty State ครบทุกหน้า: หน้าค้นหา, Admin มิเตอร์/หม้อแปลง แสดงไอคอน 🔍 'ไม่พบข้อมูล' แทนตารางว่างเปล่า", en: "Empty states everywhere: Search, Admin Meters/Transformers show 🔍 'No results' instead of blank tables" } },
+      { cat: "ux",   text: { th: "แปลภาษาไทย: ปุ่ม Heatmap → 'แผนที่ความร้อน', Cluster → 'จัดกลุ่ม', ป้ายกราฟ Donut ใช้ภาษาตาม setting ผู้ใช้", en: "Thai translations: Heatmap/Cluster buttons and Donut chart labels now follow user language setting" } },
+    ],
+  },
+  {
     version: "v3.3", date: "3 มิ.ย. 2569", tag: "Privacy & Fixes",
     tagColor: "#059669", items: [
       { cat: "new",  text: { th: "Privacy Policy Consent: modal เต็มจอบังทุก interaction — ต้องเลื่อนอ่านครบแล้วถึงกด 'รับทราบ' ได้ ใช้กับทุก role รวมถึง admin", en: "Privacy Policy Consent: full-screen modal blocks all interaction — must scroll to bottom before accepting, applies to all roles including admin" } },

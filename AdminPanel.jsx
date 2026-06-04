@@ -239,12 +239,12 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
   const grandTotal = meterCount + trCount;
   const isLoading = meterCount === 0 && trCount === 0 && totalKva === 0;
   const donutSegs = [
-    { v: peaMeters,  color: "#8b3fc4", label: "PEA Meter",   glow: "rgba(139,63,196,0.6)" },
-    { v: custMeters, color: "#c084fc", label: "Cust. Meter",  glow: "rgba(192,132,252,0.4)" },
-    ...(otherMeters > 0 ? [{ v: otherMeters, color: "#94a3b8", label: "ไม่ระบุ (M)", glow: "rgba(148,163,184,0.4)" }] : []),
-    { v: peaTr,      color: "#f47b20", label: "PEA TR",       glow: "rgba(244,123,32,0.6)" },
-    { v: custTr,     color: "#fbbf24", label: "Cust. TR",     glow: "rgba(251,191,36,0.4)" },
-    ...(otherTr > 0 ? [{ v: otherTr, color: "#cbd5e1", label: "ไม่ระบุ (TR)", glow: "rgba(203,213,225,0.3)" }] : []),
+    { v: peaMeters,  color: "#8b3fc4", label: t("peaMeter"),  glow: "rgba(139,63,196,0.6)" },
+    { v: custMeters, color: "#c084fc", label: t("custMeter"), glow: "rgba(192,132,252,0.4)" },
+    ...(otherMeters > 0 ? [{ v: otherMeters, color: "#94a3b8", label: t("unknownM"), glow: "rgba(148,163,184,0.4)" }] : []),
+    { v: peaTr,      color: "#f47b20", label: t("peaTr"),     glow: "rgba(244,123,32,0.6)" },
+    { v: custTr,     color: "#fbbf24", label: t("custTr"),    glow: "rgba(251,191,36,0.4)" },
+    ...(otherTr > 0 ? [{ v: otherTr, color: "#cbd5e1", label: t("unknownTr"), glow: "rgba(203,213,225,0.3)" }] : []),
   ];
 
   return (
@@ -326,9 +326,9 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
             <div className="db-kva-span">
               <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
                 breakdown={[
-                  { label: "PEA",      value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
-                  { label: "Customer", value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
-                  ...(otherKva > 0 ? [{ label: "ไม่ระบุ", value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
+                  { label: "PEA",           value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
+                  { label: t("custLabel"),  value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
+                  ...(otherKva > 0 ? [{ label: t("unknownLabel"), value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
                 ]}
               />
             </div>

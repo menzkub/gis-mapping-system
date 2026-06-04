@@ -426,10 +426,10 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
             </div>
             <div className="f-gap-2 flex" style={{ marginTop: 10, flexWrap: "wrap" }}>
               <button className={"btn btn-sm " + (showHeatmap ? "btn-primary" : "btn-outline")} onClick={() => setShowHeatmap(h => !h)}>
-                <Icon name="flame" size={13} /> Heatmap
+                <Icon name="flame" size={13} /> {t("heatmapBtn")}
               </button>
               <button className={"btn btn-sm " + (showCluster ? "btn-primary" : "btn-outline")} onClick={() => setShowCluster(c => !c)}>
-                <Icon name="grid" size={13} /> Cluster
+                <Icon name="grid" size={13} /> {t("clusterBtn")}
               </button>
             </div>
           </div>
