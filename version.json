@@ -1,7 +1,7 @@
 {
-  "commit": "22c91d99ca91bb7593a55df6bced7c720422ae0c",
-  "shortCommit": "22c91d9",
-  "message": "style: move TH/EN toggle inline with login tabs row",
-  "date": "2026-06-04T04:37:56Z",
+  "commit": "e92c011da696a2b2e81bfaed1bae58302852e399",
+  "shortCommit": "e92c011",
+  "message": "style: round right edge of brand panel + darken auth-root bg",
+  "date": "2026-06-04T04:40:44Z",
   "branch": "main"
 }
