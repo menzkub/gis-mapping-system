@@ -1,7 +1,7 @@
 {
-  "commit": "0da222316f54c886989c540cdf5545fd3f0bc351",
-  "shortCommit": "0da2223",
-  "message": "New version indicator + version.json update to v3.6",
-  "date": "2026-06-04T06:50:11Z",
+  "commit": "fdd0c6dddcd82e6827f070dc87d7a377758765e6",
+  "shortCommit": "fdd0c6d",
+  "message": "v3.7: error handling for exports + fix admin login (cache bust)",
+  "date": "2026-06-04T07:07:56Z",
   "branch": "main"
 }
