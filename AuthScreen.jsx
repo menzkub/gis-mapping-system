@@ -896,6 +896,7 @@ function AuthScreen({ initialError }) {
 /* ── AppInfoModal — version badge popup ──────────────────────────────────── */
 function AppInfoModal({ onClose }) {
   const [tab, setTab] = useStateA("about");
+  const [expandedVersion, setExpandedVersion] = useStateA(0);
   const meta = window.PEA_META || { version: "v3.3", tag: "Privacy & Fixes", date: "3 มิ.ย. 2569", changelog: [] };
 
   const TABS = [
@@ -964,7 +965,7 @@ function AppInfoModal({ onClose }) {
           ))}
         </div>
         <div style={{ marginTop: 20, padding: "12px 16px", borderRadius: 12, background: "rgba(244,123,32,0.06)", border: "1px solid rgba(244,123,32,0.2)", fontSize: 12, color: "var(--ink-mute)", textAlign: "center" }}>
-          พัฒนาโดย <b style={{ color: "var(--ink)" }}>IT · การไฟฟ้าส่วนภูมิภาค (PEA)</b> · ลิขสิทธิ์ © 2569
+          พัฒนาโดย <b style={{ color: "var(--ink)" }}>IT · PEA FANG Smartflow</b> · ลิขสิทธิ์ © 2569
         </div>
       </div>
     ),
@@ -1004,30 +1005,41 @@ function AppInfoModal({ onClose }) {
     ),
     updates: (
       <div>
-        {(meta.changelog || []).slice(0, 4).map((v, vi) => (
-          <div key={vi} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: vi < 3 ? "1px solid var(--line)" : "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ fontWeight: 900, fontSize: 15, color: "var(--ink)" }}>{v.version}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: v.tagColor ? `${v.tagColor}18` : "var(--soft)", color: v.tagColor || "var(--ink-mute)", border: `1px solid ${v.tagColor ? `${v.tagColor}30` : "var(--line)"}` }}>{v.tag}</span>
-              <span style={{ fontSize: 11, color: "var(--ink-mute)", marginLeft: "auto" }}>{v.date}</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {(v.items || []).slice(0, 5).map((item, ii) => (
-                <div key={ii} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: `${CAT_COLOR[item.cat] || "#6b7280"}18`, color: CAT_COLOR[item.cat] || "#6b7280", border: `1px solid ${CAT_COLOR[item.cat] || "#6b7280"}30`, flexShrink: 0, marginTop: 1 }}>
-                    {CAT_LABEL[item.cat] || item.cat}
-                  </span>
-                  <span style={{ color: "var(--ink-mute)", lineHeight: 1.6 }}>
-                    {typeof item.text === "object" ? item.text.th : item.text}
-                  </span>
+        {(meta.changelog || []).slice(0, 6).map((v, vi) => {
+          const isOpen = expandedVersion === vi;
+          const isLatest = vi === 0;
+          return (
+            <div key={vi} style={{ marginBottom: 8, borderRadius: 12, border: `1px solid ${isLatest ? "rgba(107,44,145,0.3)" : "var(--line)"}`, background: isLatest ? "rgba(107,44,145,0.04)" : "var(--soft)", overflow: "hidden" }}>
+              <button onClick={() => setExpandedVersion(isOpen ? -1 : vi)} style={{
+                width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8,
+                background: "transparent", border: "none", cursor: "pointer", textAlign: "left",
+              }}>
+                <span style={{ fontWeight: 900, fontSize: 14, color: isLatest ? "#6b2c91" : "var(--ink)" }}>{v.version}</span>
+                {isLatest && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(107,44,145,0.12)", color: "#6b2c91", border: "1px solid rgba(107,44,145,0.25)" }}>ล่าสุด</span>}
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: v.tagColor ? `${v.tagColor}18` : "var(--surface)", color: v.tagColor || "var(--ink-mute)", border: `1px solid ${v.tagColor ? `${v.tagColor}30` : "var(--line)"}` }}>{v.tag}</span>
+                <span style={{ fontSize: 11, color: "var(--ink-mute)", marginLeft: "auto", flexShrink: 0 }}>{v.date}</span>
+                <span style={{ fontSize: 13, color: "var(--ink-mute)", flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms" }}>▾</span>
+              </button>
+              {isOpen && (
+                <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
+                  {(v.items || []).slice(0, 5).map((item, ii) => (
+                    <div key={ii} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: `${CAT_COLOR[item.cat] || "#6b7280"}18`, color: CAT_COLOR[item.cat] || "#6b7280", border: `1px solid ${CAT_COLOR[item.cat] || "#6b7280"}30`, flexShrink: 0, marginTop: 1 }}>
+                        {CAT_LABEL[item.cat] || item.cat}
+                      </span>
+                      <span style={{ color: "var(--ink-mute)", lineHeight: 1.6 }}>
+                        {typeof item.text === "object" ? item.text.th : item.text}
+                      </span>
+                    </div>
+                  ))}
+                  {(v.items || []).length > 5 && (
+                    <div style={{ fontSize: 11, color: "var(--ink-mute)", paddingLeft: 4 }}>+{v.items.length - 5} รายการ</div>
+                  )}
                 </div>
-              ))}
-              {(v.items || []).length > 5 && (
-                <div style={{ fontSize: 11, color: "var(--ink-mute)", paddingLeft: 4 }}>+{v.items.length - 5} รายการ</div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     ),
     contact: (
