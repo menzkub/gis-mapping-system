@@ -8,7 +8,7 @@
 จัดการข้อมูล **มิเตอร์ไฟฟ้า** และ **หม้อแปลงไฟฟ้า** พร้อมแผนที่ Real-time
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-menzkub.github.io-8b3fc4?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
-[![Version](https://img.shields.io/badge/Version-v3.6-059669?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
+[![Version](https://img.shields.io/badge/Version-v3.7-6b2c91?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
 [![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=for-the-badge&logo=github)](https://github.com/menzkub/gis-mapping-system)
 [![Supabase](https://img.shields.io/badge/Backend-Supabase-3ecf8e?style=for-the-badge&logo=supabase)](https://supabase.com)
 
@@ -166,6 +166,7 @@
 
 | เครื่องมือ | รายละเอียด |
 |-----------|-----------|
+| **Hamburger Drawer** | Navigation มือถือ — ☰ slide-in drawer 15 เมนู 3 หมวด (หลัก / เครื่องมือ / ตั้งค่า) |
 | จัดการผู้ใช้ | อนุมัติ / ระงับ / เปลี่ยน Role / บังคับ 2FA |
 | Import CSV | Batch 500 rows, Preview 10 แถวก่อน Confirm |
 | Audit Log | ทุก action + กรอง + Export CSV/Excel |
@@ -344,7 +345,8 @@ const VAPID_PUBLIC_KEY  = "YOUR_VAPID_PUBLIC_KEY";
 
 | Version | วันที่ | เนื้อหา |
 |---------|-------|--------|
-| **v3.6** | 4 มิ.ย. 2569 | GPS Geotag อัตโนมัติบนภาพ, Bulk PDF export, Remember Me, **Face ID / ลายนิ้วมือ (WebAuthn)**, Architecture tab, แก้ PDF blank page |
+| **v3.7** | 4 มิ.ย. 2569 | **Hamburger Drawer** มือถือ, Face ID status card ใน Dashboard, แก้ TH/EN toggle บัง title |
+| v3.6 | 4 มิ.ย. 2569 | GPS Geotag อัตโนมัติบนภาพ, Bulk PDF export, Remember Me, **Face ID / ลายนิ้วมือ (WebAuthn)**, Architecture tab |
 | v3.5 | 4 มิ.ย. 2569 | IndexedDB offline cache, ประวัติการแก้ไขรายอุปกรณ์, PDF รายบุคคล, Touch target 44px, iOS auto-zoom fix |
 | v3.4 | 4 มิ.ย. 2569 | Export Excel (.xlsx), Dark mode อัตโนมัติ, Offline banner, Dashboard Feeder filter |
 | v3.3 | 3 มิ.ย. 2569 | Privacy Consent modal, Consent Dashboard, สถิติรูปภาพ, UTC→Thai time, 2FA iOS paste fix |
@@ -393,6 +395,6 @@ const CACHE = "gis-meter-vXX"; // เพิ่มเลขทุกครั้�
 `service_role key` ไม่ถูก expose ฝั่ง client เด็ดขาด  
 Biometric ใช้ **WebAuthn** — private key อยู่ใน Secure Enclave ของอุปกรณ์เท่านั้น
 
-**v3.6** · พัฒนาโดย กฟภ. สาขาฝาง จ.เชียงใหม่
+**v3.7** · พัฒนาโดย กฟภ. สาขาฝาง จ.เชียงใหม่
 
 </div>

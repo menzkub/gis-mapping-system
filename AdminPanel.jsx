@@ -460,21 +460,36 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
           ))}
         </div>
 
-        {/* App / Biometric card */}
+        {/* Face ID & Security card */}
         <div className="card card-elev">
           <div className="t-eyebrow" style={{ marginBottom: 6 }}>อุปกรณ์ & แอป</div>
           <div className="text-lg fw-7" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="lock" size={16} style={{ color: "var(--pea-purple-500)" }} />
             ความปลอดภัย
           </div>
+
+          {/* Face ID prominent row */}
+          {(() => {
+            const hasCred = !!localStorage.getItem("pea_bio_cred");
+            const avail   = !!window.PublicKeyCredential;
+            return (
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 10px", borderRadius:10, marginBottom:8, background: hasCred ? "rgba(16,185,129,0.07)" : "var(--soft)", border:`1px solid ${hasCred ? "rgba(16,185,129,0.25)" : "var(--line)"}` }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ fontSize:18 }}>🔐</span>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700 }}>Face ID / ลายนิ้วมือ</div>
+                    <div style={{ fontSize:10, color:"var(--ink-mute)" }}>อุปกรณ์นี้ · WebAuthn</div>
+                  </div>
+                </div>
+                <span style={{ fontSize:11, fontWeight:800, padding:"3px 10px", borderRadius:999, background: hasCred ? "rgba(16,185,129,0.12)" : avail ? "rgba(139,63,196,0.10)" : "var(--soft)", color: hasCred ? "#10b981" : avail ? "var(--pea-purple-500)" : "var(--ink-mute)", border:`1px solid ${hasCred ? "rgba(16,185,129,0.3)" : "var(--line)"}` }}>
+                  {!avail ? "ไม่รองรับ" : hasCred ? "เปิดใช้งาน ✓" : "ยังไม่ได้ตั้งค่า"}
+                </span>
+              </div>
+            );
+          })()}
+
           {[
-            ["Biometric", (() => {
-              const hasCred = !!localStorage.getItem("pea_bio_cred");
-              const avail = !!window.PublicKeyCredential;
-              if (!avail) return "ไม่รองรับ";
-              return hasCred ? "เปิดใช้งาน ✓" : "ยังไม่เปิดใช้";
-            })()],
-            ["รุ่นแอป", "v3.6"],
+            ["รุ่นแอป", window.PEA_META?.version || "v3.7"],
             ["Service Worker", "navigator" in window && "serviceWorker" in navigator ? "พร้อมใช้ ✓" : "ไม่รองรับ"],
             ["ล็อกอินล่าสุด", data.auditLog?.find(l => l.action === "login" && l.user === (data.users?.find(u => u.role === "admin")?.username))?.at?.slice?.(0,16)?.replace("T"," ") || "—"],
           ].map(([k, v]) => (
@@ -1139,6 +1154,15 @@ function AdminGuide() {
           <GuideStep n={3} text={s("ติ๊ก 'จดจำฉันไว้ 7 วัน' เพื่อไม่ต้องล็อกอินบ่อย", "Check 'Remember me for 7 days' to stay logged in longer")} />
           <GuideTip>{s("ลืมรหัสผ่าน? กดลิงก์ 'ลืมรหัสผ่าน' ระบบจะส่ง link รีเซ็ตไปยังอีเมล", "Forgot password? Click 'Forgot password' — a reset link will be sent to your email")}</GuideTip>
           <GuideNote>{s("ระบบออกจากระบบอัตโนมัติหลังไม่ใช้งาน 30 นาที", "System auto-logs out after 30 minutes of inactivity")}</GuideNote>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px", display:"flex", alignItems:"center", gap:6 }}>
+            <span>🔐</span> {s("Face ID / ลายนิ้วมือ (WebAuthn)", "Face ID / Fingerprint (WebAuthn)")}
+          </div>
+          <GuideStep n={1} text={s("Login ด้วย Email + Password ครั้งแรกตามปกติ", "Log in with Email + Password the first time as usual")} />
+          <GuideStep n={2} text={s("แบนเนอร์ 'เปิดใช้ Face ID / ลายนิ้วมือ?' จะโผล่หลัง Login สำเร็จ — กด 'เปิดใช้งาน'", "A banner 'Enable Face ID / Fingerprint?' appears after login — tap 'Enable'")} />
+          <GuideStep n={3} text={s("ยืนยันด้วย Face ID, Touch ID, หรือ Windows Hello ของอุปกรณ์", "Authenticate with your device's Face ID, Touch ID, or Windows Hello")} />
+          <GuideStep n={4} text={s("ครั้งต่อไป: กดปุ่ม 🔐 บนหน้า Login — ไม่ต้องพิมพ์รหัสผ่าน", "Next time: tap the 🔐 button on the Login screen — no password needed")} />
+          <GuideTip>{s("จัดการ Face ID ได้ที่ บัญชีของฉัน → Face ID / ลายนิ้วมือ (เปิด/ปิดได้ทุกเมื่อ)", "Manage Face ID at My Account → Face ID / Fingerprint (can enable/disable anytime)")}</GuideTip>
+          <GuideNote>{s("ข้อมูล Biometric ถูกเก็บบนอุปกรณ์เท่านั้น (WebAuthn Secure Enclave) — ไม่ส่งออก server", "Biometric data stays on your device only (WebAuthn Secure Enclave) — never sent to the server")}</GuideNote>
         </div>
       </GuideSection>
 
@@ -1210,6 +1234,27 @@ function AdminGuide() {
       </GuideSection>
 
       {/* ─── SECTION: Dashboard ─── */}
+      {/* ─── SECTION: Admin Navigation ─── */}
+      <GuideSection icon="grid" title={s("การนำทาง Admin Panel", "Admin Panel Navigation")} badge="admin only" expandSignal={expandSig}>
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8, display:"flex", alignItems:"center", gap:6 }}>
+            <span>☰</span> {s("Hamburger Drawer (มือถือ)", "Hamburger Drawer (Mobile)")}
+          </div>
+          <GuideStep n={1} text={s("กดปุ่ม ☰ ที่มุมซ้ายบนของ Admin Panel (เห็นเฉพาะบนมือถือ ≤640px)", "Tap the ☰ button at the top-left of Admin Panel (visible on mobile ≤640px only)")} />
+          <GuideStep n={2} text={s("Drawer เลื่อนออกมาจากซ้าย — แสดง 15 เมนูแบ่ง 3 หมวด: หลัก / เครื่องมือ / ตั้งค่า", "Drawer slides in from the left — shows 15 menu items in 3 sections: Main / Tools / Settings")} />
+          <GuideStep n={3} text={s("แตะเมนูที่ต้องการ — Drawer ปิดอัตโนมัติ หรือแตะพื้นหลังเพื่อปิด", "Tap any menu item — Drawer closes automatically, or tap the backdrop to dismiss")} />
+          <GuideTable rows={[
+            [s("หมวด", "Section"), s("เมนู", "Menu Items")],
+            [s("หลัก", "Main"),       "Dashboard · ผู้ใช้งาน · มิเตอร์ · หม้อแปลง · แผนที่"],
+            [s("เครื่องมือ", "Tools"), s("นำเข้า · การชำระเงิน · Audit Log · ความปลอดภัย", "Import · Payments · Audit Log · Security")],
+            [s("ตั้งค่า", "Settings"), s("โปรไฟล์ · ตั้งค่า · คู่มือ · Tech Stack · Dev · Architecture", "Profile · Settings · Guide · Tech Stack · Dev · Architecture")],
+          ]} />
+          <GuideTip>{s("ไอคอน ● สีส้มบนปุ่ม ☰ = มีผู้ใช้รออนุมัติ · สีแดง = มีอัปเดตเวอร์ชันใหม่", "Orange ● on ☰ = pending users · Red ● = new version available")}</GuideTip>
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("Desktop Sidebar", "Desktop Sidebar")}</div>
+          <GuideNote>{s("บนหน้าจอ >640px จะเห็น sidebar ด้านซ้ายของหน้า App แทน Hamburger Drawer", "On screens >640px a permanent left sidebar replaces the Hamburger Drawer")}</GuideNote>
+        </div>
+      </GuideSection>
+
       <GuideSection icon="dashboard" title="Dashboard (Admin)" badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
           <GuideTable rows={[
@@ -1219,6 +1264,8 @@ function AdminGuide() {
             [s("กำลัง (kVA)", "Capacity (kVA)"), s("ผลรวม kVA ของหม้อแปลงทั้งหมด", "Total kVA of all transformers")],
             [s("ผู้ใช้งาน", "Users"), s("จำนวน user ทั้งหมด (active + pending)", "Total users (active + pending)")],
           ]} />
+          <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>{s("การ์ดความปลอดภัย — Face ID / ลายนิ้วมือ", "Security Card — Face ID / Fingerprint")}</div>
+          <GuideNote>{s("การ์ด 'อุปกรณ์ & แอป' แสดงสถานะ Face ID / ลายนิ้วมือ ของอุปกรณ์ที่ใช้งานอยู่ (เป็นข้อมูล per-device — ไม่ใช่ข้อมูลรวมทุกผู้ใช้)", "The 'Device & App' card shows the Face ID / Fingerprint status for the current device (per-device data — not a system-wide count)")}</GuideNote>
           <GuideNote>{s("ข้อมูล Dashboard โหลดจาก Supabase RPC ทุกครั้งที่กด Refresh หรือเข้าหน้า Dashboard", "Dashboard data loads from Supabase RPC each time you Refresh or open the Dashboard")}</GuideNote>
         </div>
       </GuideSection>
@@ -2023,10 +2070,12 @@ const {
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>เพิ่ม Admin Tab ใหม่</div>
           <GuideStep n={1} text="เพิ่ม key ใน lang.jsx (ทั้ง th และ en): admMyTab: 'ชื่อแท็บ'" />
-          <GuideStep n={2} text="เพิ่มใน NAV_LABELS และ MOB_NAV ใน AdminPanel.jsx" />
-          <GuideStep n={3} text="เพิ่มใน ADMIN_NAV ใน app.jsx (ซ้าย sidebar)" />
-          <GuideStep n={4} text="เพิ่ม {tab === 'myTab' && <MyComponent />} ใน return ของ AdminPanel" />
-          <GuideStep n={5} text="สร้าง function MyComponent() { } ใน AdminPanel.jsx" />
+          <GuideStep n={2} text="เพิ่มใน NAV_LABELS ใน AdminPanel.jsx (เพื่อให้ header แสดงชื่อถูกต้อง)" />
+          <GuideStep n={3} text="เพิ่ม item ใน DRAWER_SECTIONS ใน AdminPanel.jsx (มือถือ Hamburger Drawer)" />
+          <GuideStep n={4} text="เพิ่มใน ADMIN_NAV_SETTINGS ใน app.jsx (desktop sidebar)" />
+          <GuideStep n={5} text="เพิ่ม {tab === 'myTab' && <MyComponent />} ใน .adm-body ของ AdminPanel" />
+          <GuideStep n={6} text="สร้าง function MyComponent() { } ใน AdminPanel.jsx" />
+          <GuideNote>Hamburger Drawer (มือถือ) ใช้ DRAWER_SECTIONS array แทน MOB_MORE_MAIN/SETTINGS เดิม — เพิ่มในหมวดที่เหมาะสม (หลัก / เครื่องมือ / ตั้งค่า)</GuideNote>
 
           <div style={{ fontWeight: 700, margin: "14px 0 8px" }}>Query Supabase</div>
           <CodeBlock>{`// SELECT

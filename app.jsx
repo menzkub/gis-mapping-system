@@ -1412,6 +1412,15 @@ function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, pri
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.7", date: "4 มิ.ย. 2569", tag: "Hamburger Nav & Face ID",
+    tagColor: "#6b2c91", items: [
+      { cat: "ux",  text: { th: "Hamburger Drawer (มือถือ): แทนที่ bottom tab bar + More dropdown ด้วย slide-in drawer จากซ้าย — 15 เมนูใน 3 หมวด (หลัก / เครื่องมือ / ตั้งค่า) พร้อม badge ผู้ใช้รออนุมัติ และ new-version dot", en: "Hamburger Drawer (mobile): replaced bottom tab bar + More dropdown with a slide-in left drawer — 15 items in 3 sections (Main / Tools / Settings) with pending-user badge and new-version dot" } },
+      { cat: "new", text: { th: "Face ID Dashboard: การ์ดความปลอดภัยใน Dashboard แสดงสถานะ Face ID / ลายนิ้วมือ ของอุปกรณ์ปัจจุบัน — บอก 'เปิดใช้งาน ✓' หรือ 'ยังไม่ได้ตั้งค่า' พร้อม icon และ version ที่อ่านจาก PEA_META จริง", en: "Face ID Dashboard: security card now shows Face ID / Fingerprint status for the current device — shows 'Enabled ✓' or 'Not set up' with icon, version now reads from PEA_META" } },
+      { cat: "fix", text: { th: "Terms & Policy modal: ย้ายปุ่ม TH/EN จากซ้าย (บัง title) ไปขวาคู่กับปุ่มปิด — title ไม่ถูกบังอีกต่อไปบนมือถือ", en: "Terms & Policy modal: moved TH/EN toggle from left (was overlapping title) to the right side next to close button — title no longer obscured on mobile" } },
+      { cat: "ux",  text: { th: "คู่มือ: เพิ่มส่วน Face ID / WebAuthn และ Admin Navigation (Hamburger Drawer)", en: "Guide: added Face ID / WebAuthn section and Admin Navigation (Hamburger Drawer) section" } },
+    ],
+  },
+  {
     version: "v3.6", date: "4 มิ.ย. 2569", tag: "GPS & PDF",
     tagColor: "#059669", items: [
       { cat: "new",  text: { th: "GPS Geotag อัตโนมัติ: เมื่ออัปโหลดรูปภาพ ระบบขอตำแหน่ง GPS และประทับ 'GPS: lat, lng' ที่มุมล่างขวาของภาพก่อนบันทึก — ไม่ต้องเปลี่ยน schema ใดๆ", en: "Auto GPS geotag: when uploading a photo the app requests GPS and stamps 'GPS: lat, lng' watermark in the bottom-right corner before saving — no schema changes required" } },
