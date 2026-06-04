@@ -1,7 +1,7 @@
 {
-  "commit": "81bbea523f6c8b6c8a3b03bbbfa8506c35c59981",
-  "shortCommit": "81bbea5",
-  "message": "AppInfoModal: collapse version history, fix copyright text",
-  "date": "2026-06-04T03:13:06Z",
+  "commit": "5af6fd2ac2a1f3f926b4e6459eda7c694221a791",
+  "shortCommit": "5af6fd2",
+  "message": "AppInfoModal: TH/EN toggle, Supabase-linked content, admin contact editor",
+  "date": "2026-06-04T03:31:26Z",
   "branch": "main"
 }
