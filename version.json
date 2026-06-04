@@ -1,7 +1,7 @@
 {
-  "commit": "99886a309385af34b318397f19e81b6d810b58c9",
-  "shortCommit": "99886a3",
-  "message": "feat: add version badge + AppInfoModal on login page",
-  "date": "2026-06-04T02:54:31Z",
+  "commit": "54282df9907741ebee8ec80e285afa4dc102e64e",
+  "shortCommit": "54282df",
+  "message": "refactor: AppInfoModal layout \u2014 centered card with sidebar + left-border active state",
+  "date": "2026-06-04T03:04:14Z",
   "branch": "main"
 }
