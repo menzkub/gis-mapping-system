@@ -1,7 +1,7 @@
 {
-  "commit": "d36d0cc16eb99a1bc1d04f3a64288f79a30f23cd",
-  "shortCommit": "d36d0cc",
-  "message": "Export: add Excel (XLSX) format option alongside CSV",
-  "date": "2026-06-04T06:16:34Z",
+  "commit": "bed0bd0f5efe32cb190ebb122dcf4402219bafcd",
+  "shortCommit": "bed0bd0",
+  "message": "Thai translations + v3.4 changelog",
+  "date": "2026-06-04T06:22:34Z",
   "branch": "main"
 }
