@@ -3944,7 +3944,18 @@ function App() {
           ip:       "",
         });
         const hasBio = !!localStorage.getItem("pea_bio_cred");
-        await _supabase.auth.signOut(hasBio ? { scope: "local" } : undefined);
+        if (hasBio) {
+          // Same passive-logout approach: skip API call to avoid revoking the refresh token
+          try {
+            const sbKey = Object.keys(localStorage).find(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+            if (sbKey) localStorage.removeItem(sbKey);
+            await _supabase.auth._removeSession?.();
+          } catch (_) {}
+          setCurrentUser(null);
+          setAppState("unauthed");
+        } else {
+          await _supabase.auth.signOut();
+        }
       }, TIMEOUT);
     };
 
@@ -3990,10 +4001,19 @@ function App() {
     setShowLogoutConfirm(false);
     try { await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" }); } catch (_) {}
     const hasBio = !!localStorage.getItem("pea_bio_cred");
-    // If biometric is registered, use local-scope signout only — the server session stays
-    // alive so the stored refresh token in pea_bio_session remains valid for biometric re-login.
-    // Full global signout would invalidate the refresh token and break biometric.
-    try { await _supabase.auth.signOut(hasBio ? { scope: "local" } : undefined); } catch (_) {}
+    if (hasBio) {
+      // Passive logout: do NOT call the signOut API at all.
+      // signOut({ scope:'local' }) sends POST /auth/v1/logout which revokes the refresh
+      // token server-side — invalidating pea_bio_session and breaking biometric re-login.
+      // Instead, wipe the Supabase session from localStorage directly (no API = no revoke).
+      try {
+        const sbKey = Object.keys(localStorage).find(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+        if (sbKey) localStorage.removeItem(sbKey);
+        await _supabase.auth._removeSession?.();
+      } catch (_) {}
+    } else {
+      try { await _supabase.auth.signOut(); } catch (_) {}
+    }
     setCurrentUser(null);
     setAppState("unauthed");
   }, [currentUser, addAudit]);

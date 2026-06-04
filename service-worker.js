@@ -1,4 +1,4 @@
-const CACHE = "gis-meter-v25";
+const CACHE = "gis-meter-v26";
 
 const STATIC = [
   "/gis-mapping-system/",

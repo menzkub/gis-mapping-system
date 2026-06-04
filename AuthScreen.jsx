@@ -351,9 +351,13 @@ function AuthScreen({ initialError }) {
       }
       const { error } = await _supabase.auth.setSession(stored);
       if (error) {
-        localStorage.removeItem("pea_bio_cred");
-        localStorage.removeItem("pea_bio_session");
-        setBioAvail(false);
+        // Only clear registration on confirmed auth failures (4xx).
+        // For network errors (no status) keep credentials so user can retry.
+        if (error.status >= 400) {
+          localStorage.removeItem("pea_bio_cred");
+          localStorage.removeItem("pea_bio_session");
+          setBioAvail(false);
+        }
         setErr(t("bioExpired"));
       }
     } catch (e) {
