@@ -1,7 +1,7 @@
 {
-  "commit": "a0dcdfc34ec50ea4d39fff67abd3bdaf2fa232d2",
-  "shortCommit": "a0dcdfc",
-  "message": "Refactor user-settings into main sidebar sub-nav; fix bilingual contact tab",
-  "date": "2026-06-04T05:19:08Z",
+  "commit": "e84fca210651cb97cc1b7f0a851647b1f25570a2",
+  "shortCommit": "e84fca2",
+  "message": "Admin mobile: add settings section label; rename \u0e15\u0e31\u0e49\u0e07\u0e04\u0e48\u0e32\u2192\u0e15\u0e31\u0e49\u0e07\u0e04\u0e48\u0e32\u0e23\u0e30\u0e1a\u0e1a",
+  "date": "2026-06-04T05:34:45Z",
   "branch": "main"
 }
