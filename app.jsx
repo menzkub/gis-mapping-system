@@ -4020,9 +4020,9 @@ function App() {
                   </div>
                 )}
 
-                {/* User-settings sub-nav — shows when on user-settings route */}
-                {it.id === "user-settings" && route === "user-settings" && (
-                  <div className="sidebar-nav-label" style={{ marginLeft: 10, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,0.10)", display: "flex", flexDirection: "column", gap: 1 }}>
+                {/* User-settings sub-nav — hidden on mobile via adm-subnav class */}
+                {it.id === "user-settings" && (route === "user-settings" || sidebarExpanded) && (
+                  <div className="adm-subnav sidebar-nav-label" style={{ marginLeft: 10, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,0.10)", display: "flex", flexDirection: "column", gap: 1 }}>
                     {USER_SETTINGS_SUBNAV.map(sub => (
                       <button key={sub.id} onClick={() => setUserSettingsTab(sub.id)} style={{
                         display: "flex", alignItems: "center", gap: 9,
