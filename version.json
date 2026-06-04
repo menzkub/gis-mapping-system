@@ -1,7 +1,7 @@
 {
-  "commit": "e84fca210651cb97cc1b7f0a851647b1f25570a2",
-  "shortCommit": "e84fca2",
-  "message": "Admin mobile: add settings section label; rename \u0e15\u0e31\u0e49\u0e07\u0e04\u0e48\u0e32\u2192\u0e15\u0e31\u0e49\u0e07\u0e04\u0e48\u0e32\u0e23\u0e30\u0e1a\u0e1a",
-  "date": "2026-06-04T05:34:45Z",
+  "commit": "72f5a62ba210fd17be393607355786e3b4f3395c",
+  "shortCommit": "72f5a62",
+  "message": "Fix user-settings sub-nav showing twice on mobile",
+  "date": "2026-06-04T05:44:28Z",
   "branch": "main"
 }
