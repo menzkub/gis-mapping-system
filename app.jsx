@@ -1816,6 +1816,9 @@ function ChangelogView() {
             {t("clFooter")}
           </span>
         </div>
+        <div style={{ marginTop: 12, textAlign: "center", fontSize: 11, color: "var(--ink-mute)", opacity: 0.7 }}>
+          พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569
+        </div>
       </div>
     </div>
   );
@@ -2390,6 +2393,11 @@ function UserGuide({ role, privacyPolicy }) {
             </div>
           </div>
         </UGSection>
+
+        {/* Copyright footer */}
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center", fontSize: 11, color: "var(--ink-mute)", opacity: 0.7 }}>
+          พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569
+        </div>
 
       </div>
     </div>
@@ -3272,7 +3280,7 @@ function App() {
         stack:      settingsMap["dev_stack"]      || "React 18 (UMD) · Babel Standalone · Leaflet.js 1.9 · Service Worker (PWA) · GitHub Pages · Plus Jakarta Sans · Noto Sans Thai",
         systems:    settingsMap["dev_systems"]    || "GIS Mapping · 2FA/MFA · Push Notifications · GitHub Actions CI/CD · Google Fonts API · Supabase Auth",
         version:    CHANGELOG[0].version, // always auto-derive from latest changelog entry
-        footer:     settingsMap["dev_footer"]     || "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
+        footer:     settingsMap["dev_footer"]     || "พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569",
         showBtn:    settingsMap["dev_show_btn"]   === "true",
       });
       // Privacy Policy
