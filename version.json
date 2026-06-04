@@ -1,7 +1,7 @@
 {
-  "commit": "fdd0c6dddcd82e6827f070dc87d7a377758765e6",
-  "shortCommit": "fdd0c6d",
-  "message": "v3.7: error handling for exports + fix admin login (cache bust)",
-  "date": "2026-06-04T07:07:56Z",
+  "commit": "a7c28cd3e61bcbd5b69e2a56ad2379536e018fb0",
+  "shortCommit": "a7c28cd",
+  "message": "fix: JSX syntax error causing blank app (Can't find variable SearchView)",
+  "date": "2026-06-04T07:15:11Z",
   "branch": "main"
 }
