@@ -821,13 +821,22 @@ function ResultCard({ item: p, kind, selected, onClick, onNavigate, index, copyC
 
     const el = document.createElement("div");
     el.innerHTML = html;
+    el.style.cssText = "position:fixed;left:0;top:0;width:600px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#ffffff;";
     document.body.appendChild(el);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "visible";
     window.html2pdf().set({
       margin: 8,
       filename: `pea-${isMeter ? "meter" : "tr"}-${p.TAG}.pdf`,
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", windowWidth: 600 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    }).from(el).save().then(() => document.body.removeChild(el));
+    }).from(el).save().then(() => {
+      try { document.body.removeChild(el); } catch {}
+      document.body.style.overflow = prevOverflow;
+    }).catch(() => {
+      try { document.body.removeChild(el); } catch {}
+      document.body.style.overflow = prevOverflow;
+    });
   };
 
   return (

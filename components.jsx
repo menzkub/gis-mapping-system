@@ -300,16 +300,22 @@ function downloadPDF(filename, rows, title) {
       </div>`;
       const el = document.createElement("div");
       el.innerHTML = html;
-      el.style.cssText = "position:fixed;left:-9999px;top:0;width:1200px;";
+      el.style.cssText = "position:fixed;left:0;top:0;width:1200px;opacity:0;pointer-events:none;z-index:2147483647;overflow:visible;background:#ffffff;";
       document.body.appendChild(el);
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "visible";
+      const cleanup = () => {
+        try { document.body.removeChild(el); } catch {}
+        document.body.style.overflow = prevOverflow;
+      };
       window.html2pdf().set({
         margin: 6,
         filename,
-        html2canvas: { scale: 1.5, useCORS: true },
+        html2canvas: { scale: 1.5, useCORS: true, logging: false, backgroundColor: "#ffffff", windowWidth: 1200 },
         jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
       }).from(el).save()
-        .then(() => { try { document.body.removeChild(el); } catch {} resolve(); })
-        .catch(err => { try { document.body.removeChild(el); } catch {} reject(new Error(err?.message || "PDF export ล้มเหลว")); });
+        .then(() => { cleanup(); resolve(); })
+        .catch(err => { cleanup(); reject(new Error(err?.message || "PDF export ล้มเหลว")); });
     } catch (err) {
       reject(new Error(err?.message || "PDF export ล้มเหลว"));
     }
