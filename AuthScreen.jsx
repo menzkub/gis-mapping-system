@@ -801,7 +801,7 @@ function AuthScreen({ initialError }) {
           display: grid;
           grid-template-columns: 1.1fr 1fr;
           overflow: hidden;
-          background: radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #6b2c91 35%, #321148 75%, #1b0926 100%);
+          background: var(--bg);
         }
         .auth-brand {
           position: relative;
