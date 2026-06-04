@@ -526,11 +526,11 @@ function AuthScreen({ initialError }) {
           ) : (
             /* ── Login / Signup tabs ───────────────────────── */
             <>
-              <div className="tabs" style={{ marginBottom: 28 }}>
-                <button className={"tab " + (mode === "login" ? "active" : "")} onClick={() => { setMode("login"); setErr(null); }}>
+              <div className="tabs" style={{ marginBottom: 28, width: "100%", display: "flex" }}>
+                <button className={"tab " + (mode === "login" ? "active" : "")} onClick={() => { setMode("login"); setErr(null); }} style={{ flex: 1, justifyContent: "center" }}>
                   <Icon name="user" size={15} /> {t("authTabLogin")}
                 </button>
-                <button className={"tab " + (mode === "signup" ? "active" : "")} onClick={() => { setMode("signup"); setErr(null); setSignupDone(false); }}>
+                <button className={"tab " + (mode === "signup" ? "active" : "")} onClick={() => { setMode("signup"); setErr(null); setSignupDone(false); }} style={{ flex: 1, justifyContent: "center" }}>
                   <Icon name="plus" size={15} /> {t("authTabSignup")}
                 </button>
               </div>
