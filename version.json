@@ -1,7 +1,7 @@
 {
-  "commit": "6c4d08c867f843f04a0970b4d69ddd1eb4711034",
-  "shortCommit": "6c4d08c",
-  "message": "style: round left edge of login form panel like Xcho design",
-  "date": "2026-06-04T04:27:27Z",
+  "commit": "22c91d99ca91bb7593a55df6bced7c720422ae0c",
+  "shortCommit": "22c91d9",
+  "message": "style: move TH/EN toggle inline with login tabs row",
+  "date": "2026-06-04T04:37:56Z",
   "branch": "main"
 }
