@@ -1,7 +1,7 @@
 {
-  "commit": "981b2494d741c2bbc80e2556fba03f05bd626b03",
-  "shortCommit": "981b249",
-  "message": "fix(HIGH): replace alert() with toast, add coordinate validation",
-  "date": "2026-06-04T07:40:28Z",
+  "commit": "3f53097131118263b7580c87d8ec9d1e922e424d",
+  "shortCommit": "3f53097",
+  "message": "v3.8: UX polish \u2014 i18n, KVA guard, GPS fix, tooltips, success timer",
+  "date": "2026-06-04T07:44:41Z",
   "branch": "main"
 }
