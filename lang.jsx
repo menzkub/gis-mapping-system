@@ -82,7 +82,7 @@ const TRANSLATIONS = {
     clLatest: "ล่าสุด",
     clFooter: "ประวัตินี้บันทึกการพัฒนาโดย Claude AI — หากพบปัญหาหรือต้องการปรับปรุงเพิ่มเติม กรุณาติดต่อนักพัฒนาระบบ",
     catNew: "ใหม่", catFix: "แก้ไข", catPerf: "ประสิทธิภาพ",
-    devBy: "พัฒนาโดย", devFooter: "พัฒนาเพื่อใช้งานภายใน การไฟฟ้าส่วนภูมิภาค (PEA)",
+    devBy: "พัฒนาโดย IT · PEA FANG Smartflow", devFooter: "พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569",
 
     // ── Notification panel ─────────────────────────────────
     pendingApproval: "บัญชีรอการอนุมัติ", recentActivity: "กิจกรรมล่าสุด",
@@ -235,7 +235,7 @@ const TRANSLATIONS = {
     authBrandTag: "ระบบค้นหา · กฟอ.ฝาง",
     authBrandTitle1: "ค้นหา", authBrandTitle2: "มิเตอร์ & หม้อแปลง", authBrandTitle3: "ครบในที่เดียว",
     authBrandDesc: "ค้นหารหัสเครื่องวัด หรือรหัสหม้อแปลง\nดูแผนที่ — Cluster · Heatmap · นำทาง",
-    authCopyright: "© 2026 ระบบสารสนเทศภูมิศาสตร์ · กฟอ.ฝาง",
+    authCopyright: "พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569",
   },
 
   en: {
@@ -307,7 +307,7 @@ const TRANSLATIONS = {
     clLatest: "Latest",
     clFooter: "This history is maintained by Claude AI — for issues or improvements, contact the system developer",
     catNew: "New", catFix: "Fix", catPerf: "Performance",
-    devBy: "Developed by", devFooter: "Built for internal use — Provincial Electricity Authority (PEA)",
+    devBy: "Developed by IT · PEA FANG Smartflow", devFooter: "Developed by IT · PEA FANG Smartflow · Copyright © 2026",
 
     // ── Notification panel ─────────────────────────────────
     pendingApproval: "accounts pending approval", recentActivity: "Recent Activity",
@@ -460,7 +460,7 @@ const TRANSLATIONS = {
     authBrandTag: "Search System · PEA Fang",
     authBrandTitle1: "Search", authBrandTitle2: "Meter & Transformer", authBrandTitle3: "All in one place",
     authBrandDesc: "Search meter or transformer codes\nMap view — Cluster · Heatmap · Navigate",
-    authCopyright: "© 2026 GIS Information System · PEA Fang",
+    authCopyright: "Developed by IT · PEA FANG Smartflow · Copyright © 2026",
   },
 };
 
