@@ -1,7 +1,7 @@
 {
-  "commit": "0682218ce34fa0c375415bdc65d37da4a6f965f1",
-  "shortCommit": "0682218",
-  "message": "refactor(admin): replace mobile bottom tab bar with hamburger drawer",
-  "date": "2026-06-04T16:30:08Z",
+  "commit": "2da17086cef5ec10079c12d681989f098b1d36ea",
+  "shortCommit": "2da1708",
+  "message": "fix(auth): move lang toggle to right side of AppInfoModal header",
+  "date": "2026-06-04T16:51:55Z",
   "branch": "main"
 }
