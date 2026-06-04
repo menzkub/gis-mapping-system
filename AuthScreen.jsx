@@ -845,6 +845,10 @@ function AuthScreen({ initialError }) {
           padding: 40px;
           overflow-y: auto;
           background: var(--bg);
+          border-radius: 28px 0 0 28px;
+          box-shadow: -12px 0 48px rgba(0,0,0,0.25);
+          position: relative;
+          z-index: 1;
         }
         .auth-hero { display: none; }
         .auth-card {
