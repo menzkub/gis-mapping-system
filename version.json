@@ -1,7 +1,7 @@
 {
-  "commit": "abacfecc689c2369c4a0a3523c5b6eba261e9818",
-  "shortCommit": "abacfec",
-  "message": "Add Architecture tab to desktop admin sidebar nav",
-  "date": "2026-06-04T14:58:19Z",
+  "commit": "e087f6a6ab00401dbab52c69d42190b55ee8d929",
+  "shortCommit": "e087f6a",
+  "message": "Fix biometric login broken after logout",
+  "date": "2026-06-04T15:04:37Z",
   "branch": "main"
 }
