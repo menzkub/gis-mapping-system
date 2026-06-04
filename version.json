@@ -1,7 +1,7 @@
 {
-  "commit": "ff1bb6ceda89d8069cc1efc202b8a62f1241892a",
-  "shortCommit": "ff1bb6c",
-  "message": "chore: add CLAUDE.md and .claude/settings.json for Claude Code / Pixel Agents",
-  "date": "2026-06-04T08:31:32Z",
+  "commit": "ff49722a7380df1a57879d5cd78e1f9c3ea3677f",
+  "shortCommit": "ff49722",
+  "message": "fix: center modal overlay on full viewport instead of content area",
+  "date": "2026-06-04T14:18:35Z",
   "branch": "main"
 }
