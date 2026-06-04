@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e *)",
+      "Bash(node --eval *)",
+      "Bash(python3 -m http.server *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git pull *)",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(wc -l *)",
+      "Bash(ls *)"
+    ]
+  }
+}
