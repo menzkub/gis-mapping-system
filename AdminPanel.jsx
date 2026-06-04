@@ -8,7 +8,7 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly, onPasswordChanged }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewVer, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly, onPasswordChanged }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
@@ -139,6 +139,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
             <Icon name="grid" size={16} />
             เพิ่มเติม
             {activeInMore && <span style={{ position:"absolute", top:3, right:5, width:7, height:7, borderRadius:"50%", background:"var(--pea-orange-500)" }} />}
+            {!activeInMore && hasNewVer && <span style={{ position:"absolute", top:3, right:5, width:7, height:7, borderRadius:"50%", background:"#ef4444", boxShadow:"0 0 0 2px rgba(239,68,68,0.3)" }} />}
           </button>
           {showMoreTabs && (
             <>
@@ -169,6 +170,9 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
                   <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
                     <span className="adm-more-icon"><Icon name={n.icon} size={15} /></span>
                     {n.label}
+                    {n.id === "guide" && hasNewVer && (
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", marginLeft: "auto", flexShrink: 0, boxShadow: "0 0 0 2px rgba(239,68,68,0.3)" }} />
+                    )}
                   </button>
                 ))}
               </div>

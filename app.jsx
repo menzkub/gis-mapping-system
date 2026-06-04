@@ -3388,6 +3388,9 @@ function App() {
   const [maintDismissed, setMaintDismissed] = useStateApp(() => sessionStorage.getItem("pea_maint_dismissed") === "true");
   const [adminTab, setAdminTab] = useStateApp("dashboard");
   const [userSettingsTab, setUserSettingsTab] = useStateApp("account");
+  const [hasNewVer, setHasNewVer] = useStateApp(() => {
+    try { return localStorage.getItem("pea_seen_version") !== CHANGELOG[0].version; } catch { return false; }
+  });
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
   const [devInfo, setDevInfo] = useStateApp({
     name: "", position: "", department: "", location: "",
@@ -3420,6 +3423,16 @@ function App() {
       window.removeEventListener("offline", goOffline);
     };
   }, []);
+
+  // ── Mark changelog as seen when guide tab is opened ─────────────────────
+  useEffectApp(() => {
+    const guideOpen = (route === "admin" && adminTab === "guide") ||
+                      (route === "user-settings" && userSettingsTab === "guide");
+    if (guideOpen && hasNewVer) {
+      setHasNewVer(false);
+      try { localStorage.setItem("pea_seen_version", CHANGELOG[0].version); } catch {}
+    }
+  }, [adminTab, userSettingsTab, route, hasNewVer]);
 
   // ── Load app data after auth ─────────────────────────────────────────────
   const loadAppData = useCallbackApp(async (supabaseUser, logLogin = false) => {
@@ -4059,6 +4072,9 @@ function App() {
                 >
                   <Icon name={it.icon} size={20} />
                   <span className="sidebar-nav-label">{it.label}</span>
+                  {hasNewVer && (it.id === "admin" || it.id === "user-settings") && (
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", marginLeft: "auto", flexShrink: 0, boxShadow: "0 0 0 2px rgba(239,68,68,0.35)" }} />
+                  )}
                 </button>
 
                 {/* Admin sub-nav — shows when on admin route OR when sidebar is expanded */}
@@ -4097,6 +4113,9 @@ function App() {
                       }}>
                         <Icon name={sub.icon} size={15} />
                         {sub.label}
+                        {sub.id === "guide" && hasNewVer && (
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", marginLeft: "auto", flexShrink: 0, boxShadow: "0 0 0 2px rgba(239,68,68,0.3)" }} />
+                        )}
                       </button>
                     ))}
                   </div>
@@ -4118,6 +4137,9 @@ function App() {
                         {sub.label}
                         {sub.id === "notifications" && pushPermission === "granted" && (
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", marginLeft: "auto", flexShrink: 0 }} />
+                        )}
+                        {sub.id === "guide" && hasNewVer && (
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", marginLeft: "auto", flexShrink: 0, boxShadow: "0 0 0 2px rgba(239,68,68,0.3)" }} />
                         )}
                       </button>
                     ))}
@@ -4700,7 +4722,7 @@ function App() {
           )}
           {route === "admin" && currentUser.role === "admin" && (
             <AdminPanel data={data} setData={setData} currentUser={currentUser} addAudit={addAudit}
-              tab={adminTab} setTab={setAdminTab}
+              tab={adminTab} setTab={setAdminTab} hasNewVer={hasNewVer}
               maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
               maintenanceMessage={maintenanceMessage} setMaintenanceMessage={setMaintenanceMessage}
               maintenanceUntil={maintenanceUntil} setMaintenanceUntil={setMaintenanceUntil}
