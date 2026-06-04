@@ -3872,8 +3872,33 @@ function App() {
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>@{currentUser.username} · {currentUser.role}</div>
               </div>
             </div>
+            {pushPermission !== "unsupported" && (
+              <button disabled={pushPermission === "denied"} onClick={async () => {
+                if (pushPermission === "granted") await unsubscribePush();
+                else await subscribePush();
+              }} style={{
+                marginTop: 8, width: "100%", padding: "7px 12px", borderRadius: 10,
+                background: pushPermission === "granted" ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${pushPermission === "granted" ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.1)"}`,
+                color: pushPermission === "granted" ? "#6ee7b7" : "rgba(255,255,255,0.7)",
+                fontSize: 12, fontWeight: 600, cursor: pushPermission === "denied" ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                opacity: pushPermission === "denied" ? 0.45 : 1, transition: "all 180ms",
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
+                  background: pushPermission === "granted" ? "#10b981" : "rgba(255,255,255,0.35)" }} />
+                <Icon name="bell" size={13} />
+                <span className="sidebar-logout-text">
+                  {pushPermission === "granted"
+                    ? (lang === "th" ? "แจ้งเตือน: เปิด" : "Notif: On")
+                    : pushPermission === "denied"
+                    ? (lang === "th" ? "แจ้งเตือน: ถูกบล็อก" : "Notif: Blocked")
+                    : (lang === "th" ? "เปิดการแจ้งเตือน" : "Enable Notif")}
+                </span>
+              </button>
+            )}
             <button className="sidebar-logout-btn" onClick={() => setShowLogoutConfirm(true)} style={{
-              marginTop: 10, width: "100%", padding: "8px 12px", borderRadius: 10,
+              marginTop: 6, width: "100%", padding: "8px 12px", borderRadius: 10,
               background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: 600,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}>
@@ -4235,6 +4260,37 @@ function App() {
                     </span>
                     <span>{refreshing ? t("refreshing") : t("refreshData")}</span>
                   </button>
+
+                  {/* Notifications */}
+                  {pushPermission !== "unsupported" && (
+                    <button disabled={pushPermission === "denied"} onClick={async () => {
+                      setShowMobileUserMenu(false);
+                      if (pushPermission === "granted") await unsubscribePush();
+                      else await subscribePush();
+                    }} style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
+                      background: "transparent", border: "none", cursor: pushPermission === "denied" ? "not-allowed" : "pointer",
+                      color: "var(--text)", fontSize: 14, fontWeight: 600, textAlign: "left", width: "100%",
+                      opacity: pushPermission === "denied" ? 0.45 : 1,
+                    }}
+                      onMouseEnter={e => { if (pushPermission !== "denied") e.currentTarget.style.background = "var(--hover)"; }}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <span style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: "grid", placeItems: "center",
+                        background: pushPermission === "granted" ? "rgba(16,185,129,0.15)" : "rgba(139,63,196,0.12)" }}>
+                        <Icon name="bell" size={15} style={{ color: pushPermission === "granted" ? "#10b981" : "var(--pea-purple-600)" }} />
+                      </span>
+                      <span style={{ flex: 1 }}>
+                        {pushPermission === "granted"
+                          ? (lang === "th" ? "ปิดการแจ้งเตือน" : "Disable Notifications")
+                          : pushPermission === "denied"
+                          ? (lang === "th" ? "การแจ้งเตือนถูกบล็อก" : "Notifications Blocked")
+                          : (lang === "th" ? "เปิดการแจ้งเตือน" : "Enable Notifications")}
+                      </span>
+                      {pushPermission === "granted" && (
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", flexShrink: 0 }} />
+                      )}
+                    </button>
+                  )}
 
                   <div style={{ height: 1, background: "var(--line)", margin: "2px 8px" }} />
 
