@@ -827,7 +827,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
 }
 
 /* ---------- Guide ---------- */
-const GUIDE_VERSION = { version: "v3.3", date: "3 มิ.ย. 2569" };
+const GUIDE_VERSION = window.PEA_META || { version: "v3.3", date: "3 มิ.ย. 2569", tag: "Privacy & Fixes" };
 
 function GuideSection({ icon, title, badge, children, expandSignal }) {
   const [open, setOpen] = useStateAd(false);
@@ -1186,7 +1186,7 @@ function AdminGuide() {
       {/* ─── SECTION: ประวัติ UX/UI ─── */}
       <GuideSection icon="bolt" title={s("ประวัติการปรับปรุง UX/UI", "UX/UI Changelog")} badge="admin only" expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>v3.3 — 3 มิ.ย. 2569 {s("(ล่าสุด)", "(latest)")}</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{GUIDE_VERSION.version} — {GUIDE_VERSION.date} {s("(ล่าสุด)", "(latest)")}</div>
           <GuideTable rows={[
             [s("รายการ", "Feature"), s("รายละเอียด", "Details")],
             [s("Privacy Consent", "Privacy Consent"), s("Modal บังหน้าจอ ต้องเลื่อนอ่านก่อนกด รับทราบ — บันทึก timestamp ใน DB", "Full-screen modal, scroll-to-bottom required before accepting — saves timestamp in DB")],
@@ -1937,7 +1937,7 @@ addAudit({
       </GuideSection>
 
       {/* ─── SECTION: Recent UX/UI Changes ─── */}
-      <GuideSection icon="bolt" title={s("การอัปเดต UX/UI ล่าสุด (v3.3)","Recent UX/UI Updates (v3.3)")} expandSignal={expandSig}>
+      <GuideSection icon="bolt" title={s(`การอัปเดต UX/UI ล่าสุด (${GUIDE_VERSION.version})`,`Recent UX/UI Updates (${GUIDE_VERSION.version})`)} expandSignal={expandSig}>
         <div style={{ marginTop: 12 }}>
 
           <div style={{ fontWeight: 700, marginBottom: 8 }}>FitText — Auto-Resize Dashboard Numbers <DevBadge color="purple">components.jsx</DevBadge></div>
@@ -2032,7 +2032,7 @@ const CACHE = "gis-meter-v14";  // ← bump ทุกครั้ง
 // activate event: ลบ cache เก่าทิ้ง
 // ⚠ ถ้าลืม bump → user ยังได้ไฟล์เก่าอยู่`}</CodeBlock>
 
-          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Privacy Policy Consent System (v3.3) <DevBadge color="green">app.jsx</DevBadge><DevBadge color="blue">Supabase</DevBadge></div>
+          <div style={{ fontWeight: 700, margin: "18px 0 8px" }}>Privacy Policy Consent System ({GUIDE_VERSION.version}) <DevBadge color="green">app.jsx</DevBadge><DevBadge color="blue">Supabase</DevBadge></div>
           <GuideTable rows={[
             ["Component / Field", "คำอธิบาย"],
             ["profiles.privacy_accepted_at", "TIMESTAMPTZ — เวลาที่ผู้ใช้กด 'รับทราบ' ล่าสุด"],
@@ -6409,8 +6409,8 @@ function UserQuickGuideCard() {
           <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#a78bfa", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>v3.3 · Active</span>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 3 มิ.ย. 2569</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontWeight: 700 }}>{GUIDE_VERSION.version} · Active</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · {GUIDE_VERSION.date}</span>
           </div>
         </div>
       </div>
@@ -6550,8 +6550,8 @@ function AdminQuickGuideCard() {
           <div style={{ fontSize: 10, color: "rgba(243,238,250,0.45)", marginBottom: 3 }}>สแกน QR หรือเข้าที่</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#ffba7a", fontFamily: "monospace", wordBreak: "break-all" }}>menzkub.github.io/gis-mapping-system</div>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference · v3.3</span>
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · 3 มิ.ย. 2569</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(244,123,32,0.15)", border: "1px solid rgba(244,123,32,0.35)", color: "#ffba7a", fontWeight: 700 }}>Admin Reference · {GUIDE_VERSION.version}</span>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(243,238,250,0.6)", fontWeight: 600 }}>PEA GIS · {GUIDE_VERSION.date}</span>
           </div>
         </div>
       </div>
