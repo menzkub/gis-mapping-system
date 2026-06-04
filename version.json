@@ -1,7 +1,7 @@
 {
-  "commit": "bed0bd0f5efe32cb190ebb122dcf4402219bafcd",
-  "shortCommit": "bed0bd0",
-  "message": "Thai translations + v3.4 changelog",
-  "date": "2026-06-04T06:22:34Z",
+  "commit": "0deaf55b6adec6d92b50bf87cbff44c9d4c8c472",
+  "shortCommit": "0deaf55",
+  "message": "v3.5: offline cache, meter history, PDF export, mobile UX fixes",
+  "date": "2026-06-04T06:31:49Z",
   "branch": "main"
 }
