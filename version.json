@@ -1,7 +1,7 @@
 {
-  "commit": "54282df9907741ebee8ec80e285afa4dc102e64e",
-  "shortCommit": "54282df",
-  "message": "refactor: AppInfoModal layout \u2014 centered card with sidebar + left-border active state",
-  "date": "2026-06-04T03:04:14Z",
+  "commit": "81bbea523f6c8b6c8a3b03bbbfa8506c35c59981",
+  "shortCommit": "81bbea5",
+  "message": "AppInfoModal: collapse version history, fix copyright text",
+  "date": "2026-06-04T03:13:06Z",
   "branch": "main"
 }
