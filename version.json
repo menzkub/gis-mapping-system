@@ -1,7 +1,7 @@
 {
-  "commit": "72f5a62ba210fd17be393607355786e3b4f3395c",
-  "shortCommit": "72f5a62",
-  "message": "Fix user-settings sub-nav showing twice on mobile",
-  "date": "2026-06-04T05:44:28Z",
+  "commit": "217de0c58c8995409251dc167631050f998ddc56",
+  "shortCommit": "217de0c",
+  "message": "Admin: redesign mobile tabs to underline style; add \u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e09\u0e31\u0e19 tab",
+  "date": "2026-06-04T05:52:28Z",
   "branch": "main"
 }
