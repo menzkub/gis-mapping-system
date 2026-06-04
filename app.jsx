@@ -4138,6 +4138,7 @@ function App() {
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
     { id: "powered",   icon: "bolt",      label: t("admPowered")   },
+    { id: "arch",      icon: "layers",    label: t("admMobArch")   },
     ...(isAdmin ? [{ id: "dev", icon: "code", label: t("admDev") }] : []),
   ];
   const ADMIN_NAV = [...ADMIN_NAV_MAIN, ...ADMIN_NAV_SETTINGS];
