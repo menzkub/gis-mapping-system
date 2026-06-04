@@ -79,17 +79,40 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
             font-size: 9px; font-weight: 800; padding: 0 4px; flex-shrink: 0;
           }
           .adm-more-panel {
-            position: absolute; top: calc(100% + 4px); right: 0; z-index: 600;
+            position: absolute; top: calc(100% + 6px); right: 0; z-index: 600;
             background: var(--surface); border: 1px solid var(--line);
-            border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,0.18);
-            padding: 6px; display: flex; flex-direction: column; gap: 2px; min-width: 170px;
+            border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.06);
+            padding: 8px; min-width: 252px;
+            display: flex; flex-direction: column; gap: 4px;
           }
+          .adm-grid-item {
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            padding: 13px 8px; border-radius: 14px; flex-shrink: 0;
+            font-size: 12px; font-weight: 700; line-height: 1.2;
+            color: var(--ink-mute); background: var(--soft);
+            border: 1.5px solid transparent;
+            cursor: pointer; text-align: center; transition: all 140ms;
+          }
+          .adm-grid-item.on { background: rgba(244,123,32,0.08); border-color: rgba(244,123,32,0.28); color: var(--pea-orange-500); }
+          .adm-grid-icon {
+            width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+            background: rgba(139,63,196,0.08); color: var(--ink-mute);
+          }
+          .adm-grid-item.on .adm-grid-icon { background: rgba(244,123,32,0.12); color: var(--pea-orange-500); }
+          .adm-more-sep { display: flex; align-items: center; gap: 8px; padding: 2px 6px; }
+          .adm-more-sep-line { flex: 1; height: 1px; background: var(--line); }
+          .adm-more-sep-label { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase; color: var(--pea-purple-500); white-space: nowrap; }
           .adm-more-item {
-            display: flex; align-items: center; gap: 10; padding: 10px 14px; border-radius: 10px;
-            background: transparent; border: none; cursor: pointer; color: var(--text);
-            font-size: 13px; font-weight: 600; text-align: left; width: 100%;
+            display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px;
+            background: transparent; border: none; cursor: pointer; color: var(--ink);
+            font-size: 13px; font-weight: 600; text-align: left; width: 100%; transition: background 140ms;
           }
-          .adm-more-item.on { background: rgba(139,63,196,0.1); color: var(--pea-purple-600); font-weight: 700; }
+          .adm-more-item.on { background: rgba(139,63,196,0.10); color: var(--pea-purple-600); font-weight: 700; }
+          .adm-more-icon {
+            width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+            background: var(--soft); color: var(--ink-mute); flex-shrink: 0;
+          }
+          .adm-more-item.on .adm-more-icon { background: rgba(139,63,196,0.12); color: var(--pea-purple-600); }
         }
       `}</style>
 
@@ -121,18 +144,30 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, mainten
             <>
               <div style={{ position:"fixed", inset:0, zIndex:599 }} onClick={() => setShowMoreTabs(false)} />
               <div className="adm-more-panel">
-                {MOB_MORE_MAIN.map(n => (
-                  <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
-                    <Icon name={n.icon} size={15} style={{ flexShrink:0 }} />
-                    {n.label}
-                  </button>
-                ))}
-                <div style={{ margin: "6px 8px 4px", fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", color: "var(--ink-mute)", textTransform: "uppercase" }}>
-                  {t("navSettings")}
+                {/* Main actions — 2×2 grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: "2px 2px 0" }}>
+                  {MOB_MORE_MAIN.map(n => (
+                    <button key={n.id} className={"adm-grid-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
+                      <span className="adm-grid-icon"><Icon name={n.icon} size={18} /></span>
+                      {n.label}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Section divider */}
+                <div className="adm-more-sep">
+                  <span className="adm-more-sep-line" />
+                  <span className="adm-more-sep-label">
+                    <Icon name="settings" size={10} />
+                    {t("navSettings")}
+                  </span>
+                  <span className="adm-more-sep-line" />
+                </div>
+
+                {/* Settings list */}
                 {MOB_MORE_SETTINGS.map(n => (
                   <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
-                    <Icon name={n.icon} size={15} style={{ flexShrink:0 }} />
+                    <span className="adm-more-icon"><Icon name={n.icon} size={15} /></span>
                     {n.label}
                   </button>
                 ))}
