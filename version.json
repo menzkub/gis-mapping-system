@@ -1,7 +1,7 @@
 {
-  "commit": "0a9fd934b306071fabde9144ca3fe7a5b440fb0e",
-  "shortCommit": "0a9fd93",
-  "message": "fix: set auth-root bg to white so brand panel rounded corners are visible",
-  "date": "2026-06-04T04:45:09Z",
+  "commit": "c05140e7267800a0f648840f2987a74fe81d1d5e",
+  "shortCommit": "c05140e",
+  "message": "content: add copyright footer to Changelog, UserGuide, and DevInfo",
+  "date": "2026-06-04T04:47:59Z",
   "branch": "main"
 }
