@@ -8,7 +8,7 @@
 จัดการข้อมูล **มิเตอร์ไฟฟ้า** และ **หม้อแปลงไฟฟ้า** พร้อมแผนที่ Real-time
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-menzkub.github.io-8b3fc4?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
-[![Version](https://img.shields.io/badge/Version-v3.3-059669?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
+[![Version](https://img.shields.io/badge/Version-v3.6-059669?style=for-the-badge)](https://menzkub.github.io/gis-mapping-system/)
 [![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=for-the-badge&logo=github)](https://github.com/menzkub/gis-mapping-system)
 [![Supabase](https://img.shields.io/badge/Backend-Supabase-3ecf8e?style=for-the-badge&logo=supabase)](https://supabase.com)
 
@@ -19,20 +19,23 @@
 ## ภาพรวมระบบ
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│               GIS Meter & Transformer System                │
-├────────────────────────┬────────────────────────────────────┤
-│   👤 ผู้ใช้ทั่วไป       │   🛡️ Admin                         │
-│  ─────────────────     │  ──────────────────────────────    │
-│  ค้นหา Meter / TR      │  Dashboard + Donut + KVA Stats     │
-│  ดูแผนที่ + นำทาง GPS  │  Privacy Consent Dashboard         │
-│  ถ่ายภาพ Meter / TR    │  แผนที่ภาพรวม (55,000+ จุด)       │
-│  Export CSV            │  จัดการผู้ใช้ / Meter / TR         │
-│  แจ้งแก้ไขพิกัด        │  Import CSV, Audit Log             │
-│  รับ Push Notification │  อนุมัติคำขอแก้ไขพิกัด             │
-│  โปรไฟล์ + 2FA         │  Maintenance Mode, Dev Guide       │
-│  รับทราบ Privacy Policy│  ตั้งค่า Privacy Policy            │
-└────────────────────────┴────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                  GIS Meter & Transformer System                  │
+├─────────────────────────┬────────────────────────────────────────┤
+│   👤 ผู้ใช้ทั่วไป        │   🛡️ Admin                             │
+│  ──────────────────     │  ─────────────────────────────────     │
+│  ค้นหา Meter / TR       │  Dashboard + Donut + KVA Stats         │
+│  ดูแผนที่ + นำทาง GPS   │  Privacy Consent Dashboard             │
+│  ถ่ายภาพ + GPS Geotag   │  แผนที่ภาพรวม (55,000+ จุด)           │
+│  Export CSV / Excel / PDF│  จัดการผู้ใช้ / Meter / TR            │
+│  PDF รายบุคคล           │  Import CSV, Audit Log                 │
+│  แจ้งแก้ไขพิกัด         │  อนุมัติคำขอแก้ไขพิกัด                │
+│  รับ Push Notification  │  Maintenance Mode, Dev Guide           │
+│  โปรไฟล์ + 2FA          │  ตั้งค่า Privacy Policy               │
+│  รับทราบ Privacy Policy │  สถาปัตยกรรมระบบ (Architecture)       │
+│  **Remember Me**        │                                        │
+│  **Face ID / Fingerprint│                                        │
+└─────────────────────────┴────────────────────────────────────────┘
 ```
 
 ---
@@ -45,13 +48,22 @@
 | ฟีเจอร์ | รายละเอียด |
 |--------|-----------|
 | สมัครสมาชิก | Email + Password พร้อม Password Strength Meter |
-| เข้าสู่ระบบ | Email + Password พร้อม Remember me |
+| เข้าสู่ระบบ | Email หรือ Username + Password |
 | ลืมรหัสผ่าน | Reset link ทาง Email (Supabase Auth) |
+| **Remember Me** | จำ session ข้ามการปิด browser — ถ้าปิดใช้งาน session จะหมดเมื่อปิด tab |
+| **Face ID / ลายนิ้วมือ** | WebAuthn platform authenticator — iOS Face ID, Android fingerprint, Windows Hello |
 | **2FA / MFA** | TOTP — Google Authenticator, Authy + รหัสสำรอง 12 หลัก |
-| 2FA paste iOS | รองรับ paste OTP จาก iMessage / SMS บน iOS Safari (`onPaste` + `type="tel"`) |
+| 2FA paste iOS | รองรับ paste OTP จาก iMessage / SMS บน iOS Safari |
 | Auto-logout | ออกอัตโนมัติหลังไม่ใช้งาน 30 นาที |
 | สถานะบัญชี | `pending` → `active` → `banned` |
 | **Privacy Policy** | Modal เต็มจอ — ต้องเลื่อนอ่านครบก่อนกด "รับทราบ" ทุก role รวม Admin |
+
+**วิธีใช้ Biometric Login:**
+1. Login ด้วย Password ครั้งแรก
+2. แบนเนอร์ "เปิดใช้ Face ID / ลายนิ้วมือ?" โผล่ขึ้นหลัง login
+3. กด "เปิดใช้งาน" → ยืนยันด้วย biometric ของอุปกรณ์
+4. ครั้งถัดไป: กดปุ่ม 🔐 บนหน้า Login ได้เลย
+5. จัดการได้ที่: **ตั้งค่า → บัญชีของฉัน → Face ID / ลายนิ้วมือ**
 
 **Role:** `user` — ค้นหา + แผนที่ | `admin` — จัดการข้อมูล + ตั้งค่าระบบ
 
@@ -65,9 +77,23 @@
 - **PEA หม้อแปลง** — ค้นหาจาก TAG, PEANO, สถานที่, Feeder  
   ตัวกรอง: Feeder, เจ้าของ, ระบบเฟส, แรงดัน (22/33 kV), kVA range
 - Server-side search, debounce 450ms, แสดงสูงสุด 500 รายการ
-- **ถ่ายภาพ Meter / TR** — บันทึกลง localStorage พร้อม timestamp เวลาไทย
-- **Export CSV** พร้อม Dialog ยืนยันก่อนดาวน์โหลด
-- Search History — จำ keyword ล่าสุด 6 รายการ
+- **IndexedDB Offline Cache** — ผลค้นหาเก็บไว้ 24 ชม. ใช้ได้แม้ไม่มีอินเทอร์เน็ต
+- **Search History** — จำ keyword ล่าสุด 6 รายการ
+- **ประวัติการแก้ไข** — กดปุ่ม "ประวัติ" บนการ์ดผลลัพธ์เพื่อดู audit log รายอุปกรณ์
+
+</details>
+
+<details>
+<summary><b>📤 Export ข้อมูล</b></summary>
+
+| รูปแบบ | รายละเอียด |
+|-------|-----------|
+| **CSV** | Export ผลค้นหาทั้งหมดเป็น `.csv` |
+| **Excel (.xlsx)** | Export เป็น spreadsheet พร้อม header row |
+| **PDF (Bulk)** | Export ทุกรายการเป็นตาราง A4 Landscape |
+| **PDF รายบุคคล** | กดปุ่ม PDF บนการ์ดผลลัพธ์ — ใบสรุปข้อมูล A4 Portrait |
+
+> ทุก Export มี Dialog ยืนยันก่อนดาวน์โหลด · รองรับทั้งหน้าค้นหา + Admin Panel
 
 </details>
 
@@ -77,11 +103,11 @@
 | ฟีเจอร์ | รายละเอียด |
 |--------|-----------|
 | ถ่ายหรือเลือกภาพ | กด "ถ่ายรูป / เลือกภาพ" เปิดกล้องหรือ Gallery |
-| ประมวลผลอัตโนมัติ | ลดขนาดสูงสุด 900px · ลด quality อัตโนมัติถ้า storage เต็ม (0.72→0.55→0.40) |
+| **GPS Geotag อัตโนมัติ** | ประทับ `GPS: lat, lng` ที่มุมล่างขวาของภาพก่อนบันทึก |
+| GPS Status Badge | แสดง `📍 กำลังรับ GPS…` / `📍 GPS แนบแล้ว` / `📍 ไม่ได้รับ GPS` |
+| ประมวลผลอัตโนมัติ | ลดขนาดสูงสุด 900px · ลด quality ถ้า storage เต็ม |
 | เก็บในอุปกรณ์ | `localStorage` key: `pea_photos_{meter/tr}_{OBJECTID}` |
-| แจ้งเตือน storage เต็ม | แสดง toast error ถ้าบันทึกไม่ได้ (QuotaExceededError) |
-| ลบภาพ | บันทึก audit log ลง Supabase (fallback localStorage) |
-| สถิติใน Dashboard | จำนวนภาพมิเตอร์ / หม้อแปลง + พื้นที่ใช้ (อัปเดต realtime) |
+| สถิติใน Dashboard | จำนวนภาพ + พื้นที่ใช้ (อัปเดต realtime) |
 
 > **หมายเหตุ:** ภาพเก็บใน localStorage ของอุปกรณ์แต่ละเครื่อง ไม่ซิงค์ข้ามอุปกรณ์
 
@@ -97,7 +123,7 @@
 | Cluster | จัดกลุ่ม markers อัตโนมัติ |
 | Heatmap | แสดงความหนาแน่น |
 | Split View | ตาราง + แผนที่ side-by-side เต็มความสูง |
-| แจ้งแก้ไขพิกัด | popup header แสดง "PEA Meter: {PEANO}" / "PEA TR: {PEANO_TR}" |
+| แจ้งแก้ไขพิกัด | popup แสดง PEANO พร้อมขอแก้ไขพิกัด GPS |
 
 **แผนที่ภาพรวม Admin**
 | ฟีเจอร์ | รายละเอียด |
@@ -118,9 +144,8 @@
 <summary><b>📊 Dashboard (Admin)</b></summary>
 
 - **Stat Cards** — มิเตอร์, หม้อแปลง, KVA รวม (แยก PEA / Customer)
-  - `FitText` — ตัวเลขปรับขนาดอัตโนมัติ
 - **Donut chart** — สัดส่วน PEA / Customer Meter + TR (interactive hover/tap)
-- **Feeder chart** — Top Feeders (มิเตอร์ต่อ Feeder)
+- **Feeder chart** — Top Feeders (มิเตอร์ต่อ Feeder) + ชิปกรอง Feeder
 - **Privacy Consent Card** — จำนวนผู้รับทราบ/ยังไม่รับทราบ + progress bar + รายชื่อ
 - **DB Usage card** — ขนาดข้อมูลแต่ละตาราง + สถิติรูปภาพ (localStorage อุปกรณ์ปัจจุบัน)
 
@@ -129,8 +154,8 @@
 <details>
 <summary><b>🔔 Web Push Notification</b></summary>
 
-- เปิดรับ notification ได้ใน Settings
-- Admin broadcast ได้จาก Admin Panel
+- เปิดรับ notification ได้ใน Settings (User & Admin)
+- Admin broadcast ได้จาก Admin Panel → Settings
 - รองรับ background push ผ่าน Service Worker (PWA)
 - ใช้ VAPID key + Supabase Edge Function (Deno)
 
@@ -141,13 +166,15 @@
 
 | เครื่องมือ | รายละเอียด |
 |-----------|-----------|
-| จัดการผู้ใช้ | อนุมัติ / ระงับ / เปลี่ยน Role / บังคับ 2FA — auto-refresh ทุกครั้งที่เปิดแท็บ |
+| จัดการผู้ใช้ | อนุมัติ / ระงับ / เปลี่ยน Role / บังคับ 2FA |
 | Import CSV | Batch 500 rows, Preview 10 แถวก่อน Confirm |
-| Audit Log | ทุก action + กรอง + Export CSV |
+| Audit Log | ทุก action + กรอง + Export CSV/Excel |
+| Security Score | คะแนนความปลอดภัย (0–100) + ตรวจจับกิจกรรมต้องสงสัย |
 | Maintenance Mode | เปิด/ปิด + ข้อความ + วันที่กลับมา |
 | Privacy Policy Editor | แก้ไขเนื้อหา + บันทึกลง settings table |
 | Changelog ⚡ | Timeline ทุก version + Deploy Status dot |
 | Dev Guide | เอกสาร Architecture + Code examples + Export PDF |
+| **สถาปัตยกรรมระบบ** | แผนภาพ Navigation Flow + File Map + Data Flow พร้อม animation |
 
 </details>
 
@@ -165,7 +192,6 @@
 
 **ต้องรัน SQL:**
 ```bash
-# Supabase SQL Editor
 supabase/add_privacy_consent.sql
 ```
 
@@ -189,10 +215,12 @@ supabase/add_privacy_consent.sql
 |-------|-----------|---------|
 | **Frontend** | React 18 + Babel Standalone | ไม่มี build step |
 | **Database** | Supabase (PostgreSQL + RLS) | Free tier |
-| **Auth** | Supabase Auth | Email/Password + TOTP MFA |
+| **Auth** | Supabase Auth + WebAuthn | Email/Password · TOTP MFA · Face ID/Fingerprint |
 | **Maps** | Leaflet.js 1.9.4 | CDN |
 | **Push** | Web Push API + VAPID | Supabase Edge Function (Deno) |
-| **Photos** | Canvas API + localStorage | ไม่ใช้ Supabase Storage |
+| **Photos** | Canvas API + localStorage | GPS Geotag watermark |
+| **Export** | XLSX.js + html2pdf.js | CSV · Excel · PDF |
+| **Offline** | IndexedDB (PeaDB) + Service Worker | Cache-first, TTL 24h |
 | **Fonts** | Plus Jakarta Sans, Noto Sans Thai, IBM Plex Mono | Google Fonts |
 | **Hosting** | GitHub Pages | Static, ไม่มี server |
 
@@ -207,13 +235,14 @@ gis-mapping-system/
 ├── index.html              ← entry point, โหลด CDN ตามลำดับ
 ├── config.js               ← Supabase URL + anon key + mappers + VAPID_PUBLIC_KEY + utcToThai()
 ├── styles.css              ← CSS variables, dark/light theme, responsive components
-├── lang.jsx                ← i18n ไทย / อังกฤษ
-├── components.jsx          ← Icon, StatCard, FitText, Modal, Toast, Confirm, PeaSelect
+├── lang.jsx                ← i18n ไทย / อังกฤษ (ครอบคลุม 200+ keys)
+├── components.jsx          ← Icon, StatCard, Modal, Toast, Confirm, PeaSelect, PeaDB
 ├── MapView.jsx             ← Leaflet map, cluster, heatmap, GPS
-├── AuthScreen.jsx          ← Login, Signup, Forgot password
-├── SearchView.jsx          ← ค้นหา + NavigationPanel + แผนที่ + PhotoModal
-├── AdminPanel.jsx          ← Dashboard, Users, Map, Import, Audit, Settings, DevGuide
-├── app.jsx                 ← App root, routing, auth, ProfileView, ChangelogView, PrivacyConsentModal
+├── AuthScreen.jsx          ← Login (+ Face ID button), Signup, Forgot password
+├── SearchView.jsx          ← ค้นหา + NavigationPanel + แผนที่ + PhotoModal + PDF export
+├── AdminPanel.jsx          ← Dashboard, Users, Map, Import, Audit, Settings, Architecture
+├── app.jsx                 ← App root, routing, auth, ProfileView (+ biometric settings),
+│                              ChangelogView, PrivacyConsentModal, Remember Me logic
 ├── service-worker.js       ← Offline cache (cache-first) + Web Push handler
 ├── manifest.json           ← PWA manifest
 ├── version.json            ← Commit hash สำหรับ Deploy Status dot
@@ -289,6 +318,7 @@ const VAPID_PUBLIC_KEY  = "YOUR_VAPID_PUBLIC_KEY";
 | `mfa_backup_codes` | รหัสสำรอง 2FA (hashed) |
 | `push_subscriptions` | Web Push endpoints |
 | `notifications` | การแจ้งเตือนในแอป |
+| `password_history` | ประวัติการเปลี่ยนรหัสผ่าน |
 
 ### RPC Functions
 
@@ -297,14 +327,16 @@ const VAPID_PUBLIC_KEY  = "YOUR_VAPID_PUBLIC_KEY";
 | `get_feeders()` | รายชื่อ Feeder ที่ไม่ซ้ำ |
 | `get_dashboard_stats()` | meter_count, tr_count, total_kva, pea_kva, cust_kva, pea_tr, cust_tr, top_feeders |
 
-### Photo Storage
+### Local Storage Keys
 
-ภาพถ่ายเก็บใน **localStorage** ของอุปกรณ์แต่ละเครื่อง:
-```
-localStorage key: pea_photos_{meter|tr}_{OBJECTID}
-value: JSON array ของ { id, dataUrl (base64 JPEG), at, addedBy }
-```
-> ไม่ใช้ Supabase Storage — ไม่นับ quota — แต่ไม่ซิงค์ข้ามอุปกรณ์
+| Key | เนื้อหา |
+|-----|--------|
+| `pea_photos_{meter\|tr}_{OBJECTID}` | ภาพถ่าย (base64 JPEG array) |
+| `pea_rm` | Remember Me preference (`"1"` / `"0"`) |
+| `pea_bio_cred` | WebAuthn credential ID (base64) |
+| `pea_bio_session` | Supabase access + refresh tokens สำหรับ biometric |
+| `pea_theme` | `"light"` / `"dark"` |
+| `pea_base` | `"satellite"` / `"street"` |
 
 ---
 
@@ -312,11 +344,14 @@ value: JSON array ของ { id, dataUrl (base64 JPEG), at, addedBy }
 
 | Version | วันที่ | เนื้อหา |
 |---------|-------|--------|
-| **v3.3** | 3 มิ.ย. 2569 | Privacy Consent modal, Consent Dashboard, photo save error handling, UTC→Thai time fix, modal maxHeight fix, 2FA iOS paste fix |
-| v3.2 | 2 มิ.ย. 2569 | UX Overhaul: Skeleton loading, donut interactive, column sort, search history |
-| v3.1 | 2 มิ.ย. 2569 | FitText, KVA split, mobile tab group |
-| v3.0 | 1 มิ.ย. 2569 | Security & Map: Deploy status dot, Changelog view |
-| v2.9 | 31 พ.ค. 2569 | 2FA & UI improvements |
+| **v3.6** | 4 มิ.ย. 2569 | GPS Geotag อัตโนมัติบนภาพ, Bulk PDF export, Remember Me, **Face ID / ลายนิ้วมือ (WebAuthn)**, Architecture tab, แก้ PDF blank page |
+| v3.5 | 4 มิ.ย. 2569 | IndexedDB offline cache, ประวัติการแก้ไขรายอุปกรณ์, PDF รายบุคคล, Touch target 44px, iOS auto-zoom fix |
+| v3.4 | 4 มิ.ย. 2569 | Export Excel (.xlsx), Dark mode อัตโนมัติ, Offline banner, Dashboard Feeder filter |
+| v3.3 | 3 มิ.ย. 2569 | Privacy Consent modal, Consent Dashboard, สถิติรูปภาพ, UTC→Thai time, 2FA iOS paste fix |
+| v3.2 | 2 มิ.ย. 2569 | UX Overhaul: Skeleton loading, Donut interactive, Column sort, Search history |
+| v3.1 | 2 มิ.ย. 2569 | FitText, KVA split, iOS zoom fix, Map full height |
+| v3.0 | 1 มิ.ย. 2569 | แจ้งแก้ไขพิกัด, Security score, PWA, Web Push, Admin overview map |
+| v2.9 | 31 พ.ค. 2569 | 2FA QR Canvas, bilingual 2FA, iPad layout fixes |
 | v2.0 | 1 เม.ย. 2569 | เปิดตัว |
 
 ---
@@ -330,15 +365,9 @@ git push origin main
 # รอ ~30 วินาที → GitHub Pages อัปเดตอัตโนมัติ
 ```
 
-**อัปเดต version.json** หลังทุก push:
-```json
-{ "commit": "abc1234def", "shortCommit": "abc1234", "message": "feat: ...", "date": "2026-06-03" }
-```
-
-**Service Worker** — bump version ทุกครั้งที่ deploy:
+**bump service-worker.js** ทุกครั้งที่ deploy:
 ```js
-// service-worker.js
-const CACHE = "gis-meter-v14";  // เพิ่มเลขทุกครั้ง
+const CACHE = "gis-meter-vXX"; // เพิ่มเลขทุกครั้ง
 ```
 
 ---
@@ -350,9 +379,9 @@ const CACHE = "gis-meter-v14";  // เพิ่มเลขทุกครั้
 | `last_login` แสดง "—" | รัน `supabase/fix_last_login.sql` ใน SQL Editor |
 | Privacy Consent ไม่บันทึก | รัน `supabase/add_privacy_consent.sql` + `fix_last_login.sql` |
 | ภาพถ่ายหายหลัง reload | Storage เต็ม — กด "ลบภาพเก่า" ในโมดัลภาพ แล้วถ่ายใหม่ |
-| Dashboard ภาพ 0 รูป | กด Refresh ใน Database Usage card |
+| Face ID "Session หมดอายุ" | ออกจากระบบแล้วยังใช้ biometric ได้ *(แก้แล้วใน v3.6)* |
+| PDF ออกมาหน้าว่างขาว | อัปเดตเป็น v3.6+ *(แก้ html2canvas off-screen rendering แล้ว)* |
 | 2FA paste ไม่ได้บน iOS | อัปเดตเป็น v3.3+ (มี `onPaste` handler แล้ว) |
-| Modal ถูกตัด | อัปเดตเป็น v3.3+ (แก้ `maxHeight` แล้ว) |
 
 ---
 
@@ -361,8 +390,9 @@ const CACHE = "gis-meter-v14";  // เพิ่มเลขทุกครั้
 **🔒 Security Note**
 
 ระบบใช้ `anon key` + PostgreSQL **Row Level Security (RLS)**  
-`service_role key` ไม่ถูก expose ฝั่ง client เด็ดขาด
+`service_role key` ไม่ถูก expose ฝั่ง client เด็ดขาด  
+Biometric ใช้ **WebAuthn** — private key อยู่ใน Secure Enclave ของอุปกรณ์เท่านั้น
 
-**v3.3** · พัฒนาโดย กฟภ. สาขาฝาง จ.เชียงใหม่
+**v3.6** · พัฒนาโดย กฟภ. สาขาฝาง จ.เชียงใหม่
 
 </div>
