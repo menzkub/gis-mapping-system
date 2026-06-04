@@ -1,7 +1,7 @@
 {
-  "commit": "02efa3b1502c5415b13a6cf3ed8e73b07a49fc8b",
-  "shortCommit": "02efa3b",
-  "message": "feat: add notification toggle for regular users",
-  "date": "2026-06-04T04:59:01Z",
+  "commit": "16b330ddaadb964cb16a413f6225cff8fec4ef34",
+  "shortCommit": "16b330d",
+  "message": "feat: add Settings & Help tab for regular users",
+  "date": "2026-06-04T05:04:13Z",
   "branch": "main"
 }
