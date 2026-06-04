@@ -1,7 +1,7 @@
 {
-  "commit": "2da17086cef5ec10079c12d681989f098b1d36ea",
-  "shortCommit": "2da1708",
-  "message": "fix(auth): move lang toggle to right side of AppInfoModal header",
-  "date": "2026-06-04T16:51:55Z",
+  "commit": "73f8d781cd95aae22ed563826fefa9b36a98295b",
+  "shortCommit": "73f8d78",
+  "message": "feat(v3.7): hamburger nav docs, Face ID dashboard card, changelog update",
+  "date": "2026-06-04T16:57:01Z",
   "branch": "main"
 }
