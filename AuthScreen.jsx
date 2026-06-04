@@ -1057,74 +1057,110 @@ function AppInfoModal({ onClose }) {
   };
 
   return ReactDOM.createPortal(
-    <div style={{ position: "fixed", inset: 0, zIndex: 9500, display: "flex", flexDirection: "column", background: "var(--bg)" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--line)", flexShrink: 0, background: "var(--surface)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="logo.svg" alt="PEA" style={{ width: 32, height: 32, borderRadius: 9 }} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ink)", lineHeight: 1 }}>PEA GIS Meter & TR</div>
-            <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{meta.version} · {meta.tag}</div>
-          </div>
-        </div>
-        <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, background: "var(--soft)", border: "1px solid var(--line)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-          <Icon name="close" size={18} />
-        </button>
-      </div>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }} onClick={onClose}>
 
-      {/* Body */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar (desktop) / Top scroll (mobile) */}
-        <div className="app-info-sidebar">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`app-info-tab ${tab === t.id ? "active" : ""}`}>
-              <span style={{ fontSize: 18 }}>{t.icon}</span>
-              <span>{t.label}</span>
-            </button>
-          ))}
+      {/* Centered card */}
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 900, height: "min(88vh, 680px)",
+        background: "var(--bg)", borderRadius: 20,
+        boxShadow: "0 32px 80px rgba(0,0,0,0.35)", border: "1px solid var(--line)",
+        display: "flex", flexDirection: "column", overflow: "hidden",
+      }}>
+
+        {/* ── Title header ── */}
+        <div style={{ textAlign: "center", padding: "28px 48px 20px", borderBottom: "1px solid var(--line)", flexShrink: 0, position: "relative" }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+            ข้อกำหนดและนโยบายการใช้งาน
+          </div>
+          <div style={{ fontSize: 13, color: "var(--ink-mute)", marginTop: 4 }}>
+            ระบบ PEA GIS Meter & TR · การไฟฟ้าส่วนภูมิภาค
+          </div>
+          <button onClick={onClose} style={{
+            position: "absolute", top: 20, right: 20,
+            width: 34, height: 34, borderRadius: 9, border: "1px solid var(--line)",
+            background: "var(--soft)", cursor: "pointer", display: "grid", placeItems: "center",
+          }}>
+            <Icon name="close" size={16} />
+          </button>
         </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
-          <div style={{ fontWeight: 800, fontSize: 18, color: "var(--ink)", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 22 }}>{TABS.find(t => t.id === tab)?.icon}</span>
-            {TABS.find(t => t.id === tab)?.label}
+        {/* ── Two-column body ── */}
+        <div className="app-info-body">
+
+          {/* Sidebar */}
+          <div className="app-info-sidebar">
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} className={`app-info-tab${tab === t.id ? " active" : ""}`}>
+                <span className="app-info-tab-icon">{t.icon}</span>
+                <span className="app-info-tab-label">{t.label}</span>
+              </button>
+            ))}
           </div>
-          {content[tab]}
+
+          {/* Content */}
+          <div className="app-info-content">
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <span style={{ fontSize: 26 }}>{TABS.find(t => t.id === tab)?.icon}</span>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "var(--ink)" }}>
+                {TABS.find(t => t.id === tab)?.label}
+              </h2>
+            </div>
+            {content[tab]}
+          </div>
         </div>
       </div>
 
       <style>{`
+        .app-info-body {
+          display: flex;
+          flex: 1;
+          overflow: hidden;
+        }
         .app-info-sidebar {
-          width: 220px;
+          width: 240px;
           flex-shrink: 0;
           border-right: 1px solid var(--line);
-          padding: 12px 8px;
+          padding: 16px 12px;
           display: flex;
           flex-direction: column;
           gap: 2px;
-          background: var(--surface);
           overflow-y: auto;
         }
         .app-info-tab {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           width: 100%;
-          padding: 10px 12px;
+          padding: 11px 14px;
           border-radius: 10px;
           border: none;
           background: transparent;
           cursor: pointer;
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--ink-mute);
           text-align: left;
           transition: all 160ms;
+          position: relative;
         }
-        .app-info-tab:hover { background: var(--soft); color: var(--ink); }
-        .app-info-tab.active { background: rgba(107,44,145,0.1); color: #6b2c91; font-weight: 700; }
+        .app-info-tab-icon { font-size: 17px; flex-shrink: 0; }
+        .app-info-tab-label { font-size: 13px; font-weight: 600; color: var(--ink-mute); }
+        .app-info-tab:hover .app-info-tab-label { color: var(--ink); }
+        .app-info-tab:hover { background: var(--soft); }
+        .app-info-tab.active { background: rgba(107,44,145,0.09); }
+        .app-info-tab.active::before {
+          content: "";
+          position: absolute;
+          left: 0; top: 6px; bottom: 6px;
+          width: 3px;
+          border-radius: 2px;
+          background: #6b2c91;
+        }
+        .app-info-tab.active .app-info-tab-label { color: #6b2c91; font-weight: 700; }
+        .app-info-content {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px 28px;
+        }
         @media (max-width: 640px) {
+          .app-info-body { flex-direction: column; }
           .app-info-sidebar {
             width: 100%;
             flex-direction: row;
@@ -1133,10 +1169,21 @@ function AppInfoModal({ onClose }) {
             flex-shrink: 0;
             border-right: none;
             border-bottom: 1px solid var(--line);
-            padding: 6px 8px;
+            padding: 8px 10px;
             gap: 4px;
           }
-          .app-info-tab { white-space: nowrap; flex-shrink: 0; }
+          .app-info-tab {
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 10px;
+            flex-shrink: 0;
+            border-radius: 10px;
+          }
+          .app-info-tab::before { display: none !important; }
+          .app-info-tab.active { background: rgba(107,44,145,0.1); }
+          .app-info-tab-icon { font-size: 18px; }
+          .app-info-tab-label { font-size: 10px; white-space: nowrap; }
+          .app-info-content { padding: 20px 16px; }
         }
       `}</style>
     </div>,
