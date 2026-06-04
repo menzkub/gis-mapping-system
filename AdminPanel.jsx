@@ -8075,31 +8075,46 @@ function ArchTab() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <style>{`
+        /* ── Keyframes ─────────────────────────────────────── */
+        @keyframes archFadeUp   { from { opacity:0; transform:translateY(22px) } to { opacity:1; transform:none } }
+        @keyframes archSlideIn  { from { opacity:0; transform:translateX(-18px) } to { opacity:1; transform:none } }
+        @keyframes archOrbFloat { 0%,100% { transform:translate(0,0) scale(1) } 40% { transform:translate(14px,-10px) scale(1.08) } 70% { transform:translate(-8px,12px) scale(0.95) } }
+        @keyframes archIconPop  { 0% { transform:scale(0.55) rotate(-14deg); opacity:0 } 70% { transform:scale(1.15) rotate(4deg); opacity:1 } 100% { transform:scale(1) rotate(0deg) } }
+        @keyframes archPulseArrow { 0%,100% { transform:translateX(0); opacity:0.4 } 50% { transform:translateX(6px); opacity:1 } }
+        @keyframes archBadgeIn  { from { opacity:0; transform:scale(0.7) translateY(6px) } to { opacity:1; transform:none } }
+        @keyframes archDotDown  { 0% { top:0%; opacity:0 } 8% { opacity:1 } 85% { opacity:1 } 100% { top:100%; opacity:0 } }
+        @keyframes archStepGlow { 0%,100% { box-shadow:none } 50% { box-shadow:0 0 0 3px var(--arch-glow,rgba(139,63,196,0.35)) } }
+        @keyframes archLinePulse { 0%,100% { opacity:0.25 } 50% { opacity:0.7 } }
+        @keyframes archHeroBadge { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
+
+        /* ── Layout ─────────────────────────────────────────── */
         .arch-section-title {
           display: flex; align-items: center; gap: 10px;
           font-size: 16px; font-weight: 800; letter-spacing: -0.01em;
           margin-bottom: 4px;
+          animation: archFadeUp 500ms ease both;
         }
         .arch-section-sub {
           font-size: 12px; color: var(--ink-mute); margin-bottom: 14px;
+          animation: archFadeUp 500ms 60ms ease both;
         }
         .arch-file-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
+          display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
         }
+
+        /* ── File cards ─────────────────────────────────────── */
         .arch-file-card {
           border-radius: 14px; padding: 16px;
           display: flex; flex-direction: column; gap: 10px;
+          transition: transform 200ms cubic-bezier(.22,1,.36,1), box-shadow 200ms, border-color 200ms;
+          cursor: default;
+        }
+        .arch-file-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 32px rgba(0,0,0,0.15);
         }
         .arch-file-name {
-          font-family: monospace; font-size: 13px; font-weight: 800;
-          letter-spacing: -0.01em;
-        }
-        .arch-badge {
-          display: inline-block; padding: 2px 8px; border-radius: 6px;
-          font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
-          text-transform: uppercase;
+          font-family: monospace; font-size: 13px; font-weight: 800; letter-spacing: -0.01em;
         }
         .arch-row { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
         .arch-row-key { flex-shrink: 0; width: 68px; font-weight: 700; color: var(--ink-mute); padding-top: 1px; }
@@ -8108,44 +8123,71 @@ function ArchTab() {
           border-radius: 8px; padding: 8px 12px;
           font-size: 11px; font-weight: 600; line-height: 1.5;
           border: 1px solid rgba(239,68,68,0.25);
-          background: rgba(239,68,68,0.06);
-          color: #ef4444;
+          background: rgba(239,68,68,0.06); color: #ef4444;
         }
+
+        /* ── Flow boxes ─────────────────────────────────────── */
         .arch-flow-box {
           border-radius: 14px; padding: 14px 16px;
-          display: flex; flex-direction: column; gap: 10px;
-          border: 1.5px solid;
+          display: flex; flex-direction: column; gap: 10px; border: 1.5px solid;
+          transition: transform 200ms cubic-bezier(.22,1,.36,1), box-shadow 200ms;
         }
+        .arch-flow-box:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.13); }
         .arch-flow-name { font-size: 14px; font-weight: 800; }
         .arch-flow-file { font-family: monospace; font-size: 10px; opacity: 0.7; }
         .arch-arrow-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-        .arch-arrow { color: var(--ink-mute); }
-        .arch-data-step {
-          display: flex; align-items: flex-start; gap: 14px;
-          padding: 14px 16px; border-radius: 12px;
-          background: var(--surface); border: 1px solid var(--line);
+        .arch-pulse-arrow {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 20px; height: 20px; border-radius: 6px;
+          background: rgba(255,255,255,0.08); flex-shrink: 0;
+          animation: archPulseArrow 1.6s ease-in-out infinite;
+          font-size: 13px; font-weight: 800;
         }
+
+        /* ── Data flow ───────────────────────────────────────── */
+        .arch-data-step {
+          display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px;
+          border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
+          transition: transform 180ms ease, box-shadow 180ms;
+        }
+        .arch-data-step:hover { transform: translateX(4px); box-shadow: 0 4px 18px rgba(0,0,0,0.1); }
         .arch-data-icon {
           width: 36px; height: 36px; border-radius: 10px;
           display: grid; place-items: center; flex-shrink: 0;
+          transition: transform 200ms;
         }
+        .arch-data-step:hover .arch-data-icon { transform: scale(1.12); }
         .arch-data-label { font-size: 13px; font-weight: 800; font-family: monospace; }
         .arch-data-desc  { font-size: 12px; color: var(--ink-mute); line-height: 1.5; margin-top: 2px; }
-        .arch-data-connector {
-          display: flex; align-items: center; justify-content: center;
-          padding: 2px 0; color: var(--ink-mute);
+
+        /* ── Data connector line ────────────────────────────── */
+        .arch-connector {
+          display: flex; justify-content: center; align-items: center;
+          height: 32px; position: relative;
         }
-        .arch-admin-tabs {
-          display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+        .arch-connector-line {
+          width: 2px; height: 100%; border-radius: 1px;
+          animation: archLinePulse 2s ease-in-out infinite;
         }
+        .arch-connector-dot {
+          position: absolute; width: 7px; height: 7px; border-radius: 50%;
+          left: 50%; transform: translateX(-50%);
+          animation: archDotDown 1.4s ease-in-out infinite;
+        }
+
+        /* ── Admin tabs ─────────────────────────────────────── */
+        .arch-admin-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
         .arch-admin-tab {
           padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
           background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-mute);
+          animation: archBadgeIn 400ms ease both;
+          transition: transform 140ms, background 140ms, color 140ms;
         }
+        .arch-admin-tab:hover { transform: translateY(-2px); background: var(--surface); }
         .arch-admin-tab.current {
-          background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3);
-          color: #ef4444;
+          background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444;
         }
+
         @media (max-width: 640px) {
           .arch-file-grid { grid-template-columns: 1fr; }
           .arch-row-key { width: 56px; font-size: 11px; }
@@ -8158,10 +8200,28 @@ function ArchTab() {
         background: "linear-gradient(135deg,#1a1045 0%,#2d1668 45%,#4a1f8a 100%)",
         color: "white", position: "relative", overflow: "hidden",
         border: "1px solid rgba(139,63,196,0.3)",
+        animation: "archFadeUp 600ms ease both",
       }}>
-        <div style={{ position: "absolute", right: -50, top: -50, width: 220, height: 220, borderRadius: "50%", background: "rgba(139,63,196,0.1)", pointerEvents: "none" }} />
+        {/* Floating orb 1 */}
+        <div style={{
+          position: "absolute", right: -50, top: -50, width: 220, height: 220,
+          borderRadius: "50%", background: "rgba(139,63,196,0.12)", pointerEvents: "none",
+          animation: "archOrbFloat 7s ease-in-out infinite",
+        }} />
+        {/* Floating orb 2 */}
+        <div style={{
+          position: "absolute", left: -30, bottom: -40, width: 160, height: 160,
+          borderRadius: "50%", background: "rgba(244,123,32,0.07)", pointerEvents: "none",
+          animation: "archOrbFloat 9s 1.5s ease-in-out infinite",
+        }} />
+
         <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
-          <div style={{ width: 50, height: 50, borderRadius: 14, background: "rgba(139,63,196,0.3)", border: "1px solid rgba(139,63,196,0.5)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <div style={{
+            width: 50, height: 50, borderRadius: 14,
+            background: "rgba(139,63,196,0.3)", border: "1px solid rgba(139,63,196,0.5)",
+            display: "grid", placeItems: "center", flexShrink: 0,
+            animation: "archIconPop 700ms 100ms cubic-bezier(.22,1,.36,1) both",
+          }}>
             <Icon name="layers" size={26} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -8176,11 +8236,13 @@ function ArchTab() {
             </div>
           </div>
         </div>
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16, position: "relative" }}>
-          {["React 18 UMD","Babel Standalone","Supabase","Leaflet 1.9","GitHub Pages","PWA"].map(label => (
+          {["React 18 UMD","Babel Standalone","Supabase","Leaflet 1.9","GitHub Pages","PWA"].map((label, i) => (
             <span key={label} style={{
               padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-              background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)"
+              background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)",
+              animation: `archHeroBadge 400ms ${300 + i * 60}ms ease both`,
             }}>{label}</span>
           ))}
         </div>
@@ -8188,26 +8250,30 @@ function ArchTab() {
 
       {/* ── Navigation Flow ──────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
-        <div className="arch-section-title">
+        <div className="arch-section-title" style={{ animationDelay: "100ms" }}>
           <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", border: "1px solid rgba(139,63,196,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
             <Icon name="navigation" size={15} />
           </span>
           {t("archNavFlow")}
         </div>
-        <div className="arch-section-sub">{t("archNavFlowDesc")}</div>
+        <div className="arch-section-sub" style={{ animationDelay: "160ms" }}>{t("archNavFlowDesc")}</div>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
-          {FLOW_SCREENS.map(scr => (
-            <div key={scr.id} className="arch-flow-box" style={{ background: scr.bg, borderColor: scr.border, flex: "1 1 160px", minWidth: 160 }}>
+          {FLOW_SCREENS.map((scr, i) => (
+            <div key={scr.id} className="arch-flow-box"
+              style={{
+                background: scr.bg, borderColor: scr.border, flex: "1 1 160px", minWidth: 160,
+                animation: `archSlideIn 450ms ${180 + i * 90}ms cubic-bezier(.22,1,.36,1) both`,
+              }}>
               <div>
                 <div className="arch-flow-name" style={{ color: scr.color }}>{scr.label}</div>
                 <div className="arch-flow-file">{scr.file}</div>
               </div>
-              {scr.actions.map((a, i) => (
-                <div key={i} className="arch-arrow-row">
-                  <span className="arch-arrow">→</span>
-                  <span style={{ color: "var(--ink-mute)" }}>{a.label}</span>
-                  <span style={{ marginLeft: "auto", padding: "1px 7px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: "var(--surface-2)", border: "1px solid var(--line)", color: "var(--ink)", whiteSpace: "nowrap" }}>
+              {scr.actions.map((a, ai) => (
+                <div key={ai} className="arch-arrow-row">
+                  <span className="arch-pulse-arrow" style={{ color: scr.color, animationDelay: `${ai * 300}ms` }}>→</span>
+                  <span style={{ color: "var(--ink-mute)", flex: 1 }}>{a.label}</span>
+                  <span style={{ marginLeft: 4, padding: "1px 7px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: "var(--surface-2)", border: "1px solid var(--line)", color: "var(--ink)", whiteSpace: "nowrap" }}>
                     {a.to}
                   </span>
                 </div>
@@ -8217,13 +8283,19 @@ function ArchTab() {
         </div>
 
         {/* AdminPanel sub-tabs */}
-        <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 14, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+        <div style={{
+          marginTop: 14, padding: "14px 16px", borderRadius: 14,
+          background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+          animation: "archFadeUp 450ms 550ms ease both",
+        }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#ef4444", marginBottom: 6 }}>
             AdminPanel → {s("แท็บย่อย", "sub-tabs")}
           </div>
           <div className="arch-admin-tabs">
-            {ADMIN_TABS.map(tab => (
-              <span key={tab.id} className={"arch-admin-tab" + (tab.id === "arch" ? " current" : "")}>
+            {ADMIN_TABS.map((tab, i) => (
+              <span key={tab.id}
+                className={"arch-admin-tab" + (tab.id === "arch" ? " current" : "")}
+                style={{ animationDelay: `${600 + i * 18}ms` }}>
                 {tab.id === "arch" ? `★ ${tab.label}` : tab.label}
               </span>
             ))}
@@ -8239,19 +8311,31 @@ function ArchTab() {
 
       {/* ── File Map ─────────────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
-        <div className="arch-section-title">
+        <div className="arch-section-title" style={{ animationDelay: "180ms" }}>
           <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
             <Icon name="code" size={15} />
           </span>
           {t("archFileMap")}
         </div>
-        <div className="arch-section-sub">{t("archFileMapDesc")}</div>
+        <div className="arch-section-sub" style={{ animationDelay: "240ms" }}>{t("archFileMapDesc")}</div>
 
         <div className="arch-file-grid">
-          {FILES.map(f => (
-            <div key={f.name} className="arch-file-card" style={{ background: f.bg, border: `1px solid ${f.border}` }}>
+          {FILES.map((f, i) => (
+            <div key={f.name} className="arch-file-card"
+              style={{
+                background: f.bg, border: `1px solid ${f.border}`,
+                animation: `archFadeUp 500ms ${260 + i * 45}ms cubic-bezier(.22,1,.36,1) both`,
+              }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: f.bg, border: `1.5px solid ${f.border}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: 9,
+                  background: f.bg, border: `1.5px solid ${f.border}`,
+                  display: "grid", placeItems: "center", flexShrink: 0,
+                  transition: "transform 200ms, box-shadow 200ms",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.18) rotate(-6deg)"; e.currentTarget.style.boxShadow = `0 0 14px ${f.accent}66`; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                >
                   <Icon name={f.icon} size={17} style={{ color: f.accent }} />
                 </div>
                 <div className="arch-file-name" style={{ color: f.accent }}>{f.name}</div>
@@ -8282,19 +8366,21 @@ function ArchTab() {
 
       {/* ── Data Flow ────────────────────────────────────────── */}
       <div style={{ marginBottom: 8 }}>
-        <div className="arch-section-title">
+        <div className="arch-section-title" style={{ animationDelay: "200ms" }}>
           <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
             <Icon name="database" size={15} />
           </span>
           {t("archDataFlow")}
         </div>
-        <div className="arch-section-sub">{t("archDataFlowDesc")}</div>
+        <div className="arch-section-sub" style={{ animationDelay: "260ms" }}>{t("archDataFlowDesc")}</div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {DATA_STEPS.map((step, i) => (
             <React.Fragment key={step.label}>
-              <div className="arch-data-step">
-                <div className="arch-data-icon" style={{ background: `${step.color}18`, border: `1.5px solid ${step.color}40` }}>
+              <div className="arch-data-step"
+                style={{ animation: `archSlideIn 450ms ${280 + i * 100}ms cubic-bezier(.22,1,.36,1) both` }}>
+                <div className="arch-data-icon"
+                  style={{ background: `${step.color}18`, border: `1.5px solid ${step.color}40` }}>
                   <Icon name={step.icon} size={18} style={{ color: step.color }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -8305,17 +8391,22 @@ function ArchTab() {
                   {i + 1}
                 </span>
               </div>
+
               {i < DATA_STEPS.length - 1 && (
-                <div className="arch-data-connector">
-                  <Icon name="chevDown" size={16} />
+                <div className="arch-connector"
+                  style={{ animation: `archFadeUp 300ms ${380 + i * 100}ms ease both` }}>
+                  <div className="arch-connector-line"
+                    style={{ background: step.color, animationDelay: `${i * 280}ms` }} />
+                  <div className="arch-connector-dot"
+                    style={{ background: step.color, animationDelay: `${i * 280}ms` }} />
                 </div>
               )}
             </React.Fragment>
           ))}
         </div>
 
-        {/* Tip box */}
-        <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(139,63,196,0.06)", border: "1px solid rgba(139,63,196,0.2)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+        {/* Tip boxes */}
+        <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(139,63,196,0.06)", border: "1px solid rgba(139,63,196,0.2)", display: "flex", gap: 12, alignItems: "flex-start", animation: "archFadeUp 450ms 780ms ease both" }}>
           <Icon name="tip" size={18} style={{ color: "#8b3fc4", flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.6 }}>
             <span style={{ fontWeight: 800, color: "#8b3fc4" }}>
@@ -8328,8 +8419,7 @@ function ArchTab() {
           </div>
         </div>
 
-        {/* Cache tip */}
-        <div style={{ marginTop: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(100,116,139,0.06)", border: "1px solid rgba(100,116,139,0.2)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ marginTop: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(100,116,139,0.06)", border: "1px solid rgba(100,116,139,0.2)", display: "flex", gap: 12, alignItems: "flex-start", animation: "archFadeUp 450ms 860ms ease both" }}>
           <Icon name="refresh" size={18} style={{ color: "#64748b", flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.6 }}>
             <span style={{ fontWeight: 800, color: "#64748b" }}>
