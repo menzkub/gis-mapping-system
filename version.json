@@ -1,7 +1,7 @@
 {
-  "commit": "7f5b683be7f5f73cc84a08aba5b342b5e7a84483",
-  "shortCommit": "7f5b683",
-  "message": "feat: add Architecture tab to Admin panel",
-  "date": "2026-06-04T07:54:46Z",
+  "commit": "63db4272a976d3bd2b5245066ae64103c891862e",
+  "shortCommit": "63db427",
+  "message": "feat: animate Architecture tab \u2014 entrance stagger, orbs, dots, hover glow",
+  "date": "2026-06-04T08:07:27Z",
   "branch": "main"
 }
