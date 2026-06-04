@@ -3943,7 +3943,8 @@ function App() {
           detail:   "ออกจากระบบอัตโนมัติ (ไม่มีการใช้งาน 30 นาที)",
           ip:       "",
         });
-        await _supabase.auth.signOut();
+        const hasBio = !!localStorage.getItem("pea_bio_cred");
+        await _supabase.auth.signOut(hasBio ? { scope: "local" } : undefined);
       }, TIMEOUT);
     };
 
@@ -3988,8 +3989,11 @@ function App() {
   const doLogout = useCallbackApp(async () => {
     setShowLogoutConfirm(false);
     try { await addAudit({ user: currentUser.username, action: "logout", target: "—", detail: "ออกจากระบบ" }); } catch (_) {}
-    try { await _supabase.auth.signOut(); } catch (_) {}
-    // Force clear regardless of signOut result (handles expired-session 403)
+    const hasBio = !!localStorage.getItem("pea_bio_cred");
+    // If biometric is registered, use local-scope signout only — the server session stays
+    // alive so the stored refresh token in pea_bio_session remains valid for biometric re-login.
+    // Full global signout would invalidate the refresh token and break biometric.
+    try { await _supabase.auth.signOut(hasBio ? { scope: "local" } : undefined); } catch (_) {}
     setCurrentUser(null);
     setAppState("unauthed");
   }, [currentUser, addAudit]);
