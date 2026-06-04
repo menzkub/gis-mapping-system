@@ -1,7 +1,7 @@
 {
-  "commit": "e087f6a6ab00401dbab52c69d42190b55ee8d929",
-  "shortCommit": "e087f6a",
-  "message": "Fix biometric login broken after logout",
-  "date": "2026-06-04T15:04:37Z",
+  "commit": "098a5c39b045855c8541f5ce27987d11ea3bd601",
+  "shortCommit": "098a5c3",
+  "message": "Update README to v3.6 \u2014 document all new features",
+  "date": "2026-06-04T15:08:32Z",
   "branch": "main"
 }
