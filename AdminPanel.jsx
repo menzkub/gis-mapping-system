@@ -6092,6 +6092,23 @@ function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage
         )}
       </div>
 
+      {/* ── Contact Info Editor ── */}
+      <div className="card card-elev" style={{ padding: 0, overflow: "hidden" }}>
+        <button onClick={() => toggleSection("contact")} style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📞</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>ช่องทางติดต่อ</div>
+              <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>แก้ไขข้อมูลที่แสดงในแท็บ "ช่องทางติดต่อ" หน้า Login</div>
+            </div>
+          </div>
+          <span style={{ color: "var(--ink-mute)", fontSize: 12 }}>{openSection === "contact" ? "▲" : "▼"}</span>
+        </button>
+        {openSection === "contact" && (
+          <ContactInfoEditor currentUser={currentUser} addAudit={addAudit} toast={toast} />
+        )}
+      </div>
+
       {/* ── Document Downloads ── */}
       <DocDownloadSection isOpen={openSection === "docs"} onToggle={() => toggleSection("docs")} />
 
@@ -6155,6 +6172,65 @@ function PrivacyPolicyEditor({ sections, onSave }) {
       >
         {saving ? "⏳ กำลังบันทึก…" : "💾 บันทึก"}
       </button>
+    </div>
+  );
+}
+
+const DEFAULT_CONTACT_ITEMS = [
+  { icon: "🏢", title: "หน่วยงาน", body: "แผนกไอที · การไฟฟ้าส่วนภูมิภาค (PEA)" },
+  { icon: "👤", title: "Admin ระบบ", body: "ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล" },
+  { icon: "🐛", title: "แจ้งปัญหา / Bug Report", body: "พบปัญหาในระบบ กรุณาแจ้ง Admin พร้อมแนบ screenshot และรายละเอียดขั้นตอนที่พบปัญหา" },
+  { icon: "🔄", title: "ขอฟีเจอร์ใหม่", body: "ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น" },
+];
+
+function ContactInfoEditor({ currentUser, addAudit, toast }) {
+  const [items, setItems] = useStateAd(null);
+  const [saving, setSaving] = useStateAd(false);
+
+  useEffectAd(() => {
+    _supabase.from("settings").select("value").eq("key", "contact_info").maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) { try { setItems(JSON.parse(data.value)); return; } catch {} }
+        setItems(DEFAULT_CONTACT_ITEMS.map(x => ({ ...x })));
+      });
+  }, []);
+
+  const update = (i, field, val) => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { error } = await _supabase.from("settings")
+      .upsert({ key: "contact_info", value: JSON.stringify(items), updated_at: new Date().toISOString(), updated_by: currentUser.username }, { onConflict: "key" });
+    setSaving(false);
+    if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    addAudit({ user: currentUser.username, action: "update_contact_info", target: "system", detail: "อัปเดตข้อมูลช่องทางติดต่อ" });
+    toast?.("บันทึกข้อมูลช่องทางติดต่อสำเร็จ", "success");
+  };
+
+  if (!items) return <div style={{ padding: "12px 18px 18px", color: "var(--ink-mute)", fontSize: 13 }}>⏳ กำลังโหลด…</div>;
+
+  return (
+    <div style={{ padding: "0 18px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ border: "1px solid var(--line)", borderRadius: 10, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={item.icon} onChange={e => update(i, "icon", e.target.value)}
+              style={{ width: 44, textAlign: "center", borderRadius: 8, border: "1px solid var(--line)", padding: "4px 6px", fontSize: 18, background: "var(--soft)" }} />
+            <input value={item.title} onChange={e => update(i, "title", e.target.value)}
+              style={{ flex: 1, borderRadius: 8, border: "1px solid var(--line)", padding: "4px 10px", fontSize: 13, fontWeight: 700, background: "var(--surface)" }} placeholder="หัวข้อ" />
+            <button onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))}
+              style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.06)", cursor: "pointer", color: "#ef4444", fontWeight: 700, flexShrink: 0 }}>✕</button>
+          </div>
+          <textarea value={item.body} onChange={e => update(i, "body", e.target.value)} rows={2}
+            style={{ width: "100%", borderRadius: 8, border: "1px solid var(--line)", padding: "6px 10px", fontSize: 12, background: "var(--surface)", resize: "vertical", boxSizing: "border-box", color: "var(--ink)" }} placeholder="รายละเอียด" />
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={() => setItems(prev => [...prev, { icon: "📌", title: "", body: "" }])} className="btn" style={{ fontSize: 12 }}>+ เพิ่มรายการ</button>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary" style={{ marginLeft: "auto", minWidth: 120 }}>
+          {saving ? "⏳ กำลังบันทึก…" : "💾 บันทึก"}
+        </button>
+      </div>
     </div>
   );
 }

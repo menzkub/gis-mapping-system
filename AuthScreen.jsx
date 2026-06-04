@@ -897,36 +897,68 @@ function AuthScreen({ initialError }) {
 function AppInfoModal({ onClose }) {
   const [tab, setTab] = useStateA("about");
   const [expandedVersion, setExpandedVersion] = useStateA(0);
+  const { lang, setLang } = useLang();
+  const [fetchedPrivacy, setFetchedPrivacy] = useStateA(null);
+  const [fetchedContact, setFetchedContact] = useStateA(null);
   const meta = window.PEA_META || { version: "v3.3", tag: "Privacy & Fixes", date: "3 มิ.ย. 2569", changelog: [] };
+  const s = (th, en) => lang === "en" ? en : th;
+
+  useEffectA(() => {
+    Promise.all([
+      _supabase.from("settings").select("value").eq("key", "privacy_policy").maybeSingle(),
+      _supabase.from("settings").select("value").eq("key", "contact_info").maybeSingle(),
+    ]).then(([privRes, contRes]) => {
+      if (!privRes.error && privRes.data?.value) { try { setFetchedPrivacy(JSON.parse(privRes.data.value)); } catch {} }
+      if (!contRes.error && contRes.data?.value) { try { setFetchedContact(JSON.parse(contRes.data.value)); } catch {} }
+    });
+  }, []);
 
   const TABS = [
-    { id: "about",    icon: "⚡", label: "เกี่ยวกับแอป" },
-    { id: "privacy",  icon: "🔒", label: "นโยบายความเป็นส่วนตัว" },
-    { id: "terms",    icon: "📋", label: "ข้อตกลงการใช้งาน" },
-    { id: "updates",  icon: "🕐", label: "ประวัติเวอร์ชัน" },
-    { id: "contact",  icon: "📞", label: "ช่องทางติดต่อ" },
+    { id: "about",   icon: "⚡", label: s("เกี่ยวกับแอป","About App") },
+    { id: "privacy", icon: "🔒", label: s("นโยบายความเป็นส่วนตัว","Privacy Policy") },
+    { id: "terms",   icon: "📋", label: s("ข้อตกลงการใช้งาน","Terms of Use") },
+    { id: "updates", icon: "🕐", label: s("ประวัติเวอร์ชัน","Version History") },
+    { id: "contact", icon: "📞", label: s("ช่องทางติดต่อ","Contact") },
   ];
 
-  const PRIVACY = [
-    { icon: "🏢", title: "ผู้ควบคุมข้อมูลส่วนบุคคล", body: "การไฟฟ้าส่วนภูมิภาค (PEA) — ระบบ PEA GIS Meter & TR ใช้สำหรับงานภายในองค์กรเท่านั้น" },
-    { icon: "📋", title: "ข้อมูลที่เก็บรวบรวม", body: "ตำแหน่ง GPS ที่ใช้แก้ไขพิกัด, ภาพถ่าย Meter/TR (เก็บบน Supabase Storage), ประวัติการค้นหา (เก็บบนอุปกรณ์), บันทึกการใช้งานระบบ (Audit Log)" },
-    { icon: "🎯", title: "วัตถุประสงค์การใช้ข้อมูล", body: "เพื่อปรับปรุงความถูกต้องของพิกัดมิเตอร์และหม้อแปลงในระบบ GIS และเพื่อการตรวจสอบการใช้งานระบบ" },
-    { icon: "🔒", title: "การเปิดเผยข้อมูล", body: "ข้อมูลไม่ถูกเปิดเผยแก่บุคคลภายนอก — เข้าถึงได้เฉพาะพนักงาน PEA ที่ได้รับอนุญาต" },
-    { icon: "⏱", title: "ระยะเวลาเก็บรักษาข้อมูล", body: "ข้อมูล Audit Log เก็บไว้ตราบเท่าที่จำเป็น — ภาพถ่ายเก็บจนกว่า Admin จะลบออก" },
-    { icon: "✅", title: "สิทธิ์ของเจ้าของข้อมูล (PDPA)", body: "ท่านมีสิทธิ์ขอเข้าถึง แก้ไข หรือลบข้อมูลส่วนตัว โดยติดต่อผ่าน Admin ของระบบ" },
+  const DEFAULT_PRIVACY = [
+    { icon: "🏢", title: s("ผู้ควบคุมข้อมูลส่วนบุคคล","Data Controller"), body: s("การไฟฟ้าส่วนภูมิภาค (PEA) — ระบบ PEA GIS Meter & TR ใช้สำหรับงานภายในองค์กรเท่านั้น","Provincial Electricity Authority (PEA) — The PEA GIS Meter & TR system is for internal organizational use only.") },
+    { icon: "📋", title: s("ข้อมูลที่เก็บรวบรวม","Data Collected"), body: s("ตำแหน่ง GPS ที่ใช้แก้ไขพิกัด, ภาพถ่าย Meter/TR (เก็บบน Supabase Storage), ประวัติการค้นหา (เก็บบนอุปกรณ์), บันทึกการใช้งานระบบ (Audit Log)","GPS coordinates for location corrections, Meter/TR photos (stored on Supabase Storage), search history (on-device), and system audit logs.") },
+    { icon: "🎯", title: s("วัตถุประสงค์การใช้ข้อมูล","Purpose of Use"), body: s("เพื่อปรับปรุงความถูกต้องของพิกัดมิเตอร์และหม้อแปลงในระบบ GIS และเพื่อการตรวจสอบการใช้งานระบบ","To improve the accuracy of meter and transformer coordinates in the GIS system and to audit system usage.") },
+    { icon: "🔒", title: s("การเปิดเผยข้อมูล","Data Disclosure"), body: s("ข้อมูลไม่ถูกเปิดเผยแก่บุคคลภายนอก — เข้าถึงได้เฉพาะพนักงาน PEA ที่ได้รับอนุญาต","Data is not disclosed to third parties — accessible only to authorized PEA personnel.") },
+    { icon: "⏱", title: s("ระยะเวลาเก็บรักษาข้อมูล","Retention Period"), body: s("ข้อมูล Audit Log เก็บไว้ตราบเท่าที่จำเป็น — ภาพถ่ายเก็บจนกว่า Admin จะลบออก","Audit logs are retained as long as necessary — photos are kept until removed by an Admin.") },
+    { icon: "✅", title: s("สิทธิ์ของเจ้าของข้อมูล (PDPA)","Data Subject Rights (PDPA)"), body: s("ท่านมีสิทธิ์ขอเข้าถึง แก้ไข หรือลบข้อมูลส่วนตัว โดยติดต่อผ่าน Admin ของระบบ","You have the right to access, correct, or delete your personal data by contacting the system Admin.") },
   ];
+  const PRIVACY = fetchedPrivacy || DEFAULT_PRIVACY;
 
   const TERMS = [
-    { icon: "🏛", title: "ขอบเขตการใช้งาน", body: "ระบบนี้จัดทำขึ้นสำหรับพนักงานการไฟฟ้าส่วนภูมิภาค (PEA) เท่านั้น ห้ามบุคคลภายนอกใช้งาน" },
-    { icon: "🔑", title: "ความรับผิดชอบบัญชีผู้ใช้", body: "ผู้ใช้ต้องรักษาข้อมูลรหัสผ่านเป็นความลับ และรับผิดชอบต่อการกระทำทั้งหมดที่เกิดจากบัญชีของตน" },
-    { icon: "📵", title: "การใช้งานต้องห้าม", body: "ห้ามนำข้อมูลในระบบไปเปิดเผย แก้ไข หรือใช้เพื่อวัตถุประสงค์อื่นนอกจากงาน PEA" },
-    { icon: "📷", title: "ภาพถ่ายในระบบ", body: "ภาพถ่ายมิเตอร์และหม้อแปลงที่อัพโหลดถือเป็นทรัพย์สินของ PEA — ใช้เพื่อเอกสารภาคสนามเท่านั้น" },
-    { icon: "⚖️", title: "กฎหมายที่ใช้บังคับ", body: "ข้อตกลงนี้อยู่ภายใต้กฎหมายไทย รวมถึง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)" },
-    { icon: "🔄", title: "การปรับปรุงข้อตกลง", body: "PEA ขอสงวนสิทธิ์ในการแก้ไขข้อตกลงได้ตลอดเวลา — การใช้งานต่อเนื่องถือว่ายอมรับข้อตกลงใหม่" },
+    { icon: "🏛", title: s("ขอบเขตการใช้งาน","Scope of Use"), body: s("ระบบนี้จัดทำขึ้นสำหรับพนักงานการไฟฟ้าส่วนภูมิภาค (PEA) เท่านั้น ห้ามบุคคลภายนอกใช้งาน","This system is for PEA employees only. Unauthorized access by external parties is prohibited.") },
+    { icon: "🔑", title: s("ความรับผิดชอบบัญชีผู้ใช้","Account Responsibility"), body: s("ผู้ใช้ต้องรักษาข้อมูลรหัสผ่านเป็นความลับ และรับผิดชอบต่อการกระทำทั้งหมดที่เกิดจากบัญชีของตน","Users must keep their passwords confidential and are responsible for all actions taken from their account.") },
+    { icon: "📵", title: s("การใช้งานต้องห้าม","Prohibited Use"), body: s("ห้ามนำข้อมูลในระบบไปเปิดเผย แก้ไข หรือใช้เพื่อวัตถุประสงค์อื่นนอกจากงาน PEA","Disclosing, modifying, or using system data for any purpose other than PEA work is prohibited.") },
+    { icon: "📷", title: s("ภาพถ่ายในระบบ","Photos in System"), body: s("ภาพถ่ายมิเตอร์และหม้อแปลงที่อัพโหลดถือเป็นทรัพย์สินของ PEA — ใช้เพื่อเอกสารภาคสนามเท่านั้น","Uploaded meter and transformer photos are PEA property — for field documentation purposes only.") },
+    { icon: "⚖️", title: s("กฎหมายที่ใช้บังคับ","Governing Law"), body: s("ข้อตกลงนี้อยู่ภายใต้กฎหมายไทย รวมถึง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)","This agreement is governed by Thai law, including the Personal Data Protection Act B.E. 2562 (PDPA).") },
+    { icon: "🔄", title: s("การปรับปรุงข้อตกลง","Agreement Updates"), body: s("PEA ขอสงวนสิทธิ์ในการแก้ไขข้อตกลงได้ตลอดเวลา — การใช้งานต่อเนื่องถือว่ายอมรับข้อตกลงใหม่","PEA reserves the right to update this agreement at any time — continued use constitutes acceptance of new terms.") },
+  ];
+
+  const DEFAULT_CONTACT = [
+    { icon: "🏢", title: s("หน่วยงาน","Department"), body: s("แผนกไอที · การไฟฟ้าส่วนภูมิภาค (PEA)","IT Department · Provincial Electricity Authority (PEA)") },
+    { icon: "👤", title: s("Admin ระบบ","System Admin"), body: s("ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล","Contact the system Admin for access requests, password resets, or data corrections.") },
+    { icon: "🐛", title: s("แจ้งปัญหา / Bug Report","Report Issues / Bug Report"), body: s("พบปัญหาในระบบ กรุณาแจ้ง Admin พร้อมแนบ screenshot และรายละเอียดขั้นตอนที่พบปัญหา","If you encounter a problem, notify the Admin with a screenshot and step-by-step description.") },
+    { icon: "🔄", title: s("ขอฟีเจอร์ใหม่","Feature Requests"), body: s("ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น","Have feature requests or suggestions? We welcome your feedback to improve the system.") },
+  ];
+  const CONTACT = fetchedContact || DEFAULT_CONTACT;
+
+  const FEATURES = [
+    { icon: "🔍", t: s("ค้นหาข้อมูล","Search"), d: "Meter / Transformer" },
+    { icon: "🗺️", t: s("แผนที่ GIS","GIS Map"), d: "Street & Satellite" },
+    { icon: "📷", t: s("ถ่ายรูปอุปกรณ์","Device Photos"), d: "Cloud Storage" },
+    { icon: "📍", t: s("นำทาง GPS","GPS Navigation"), d: "Google / Apple Maps" },
+    { icon: "📝", t: s("แก้ไขพิกัด","Edit Coords"), d: s("ส่งคำขอ → Admin อนุมัติ","Request → Admin Approve") },
+    { icon: "🔔", t: "Push Notification", d: s("แจ้งเตือนทุกอุปกรณ์","All-device alerts") },
   ];
 
   const CAT_COLOR = { new: "#059669", fix: "#3b82f6", ux: "#8b5cf6", perf: "#f59e0b", sec: "#ef4444" };
-  const CAT_LABEL = { new: "ใหม่", fix: "แก้ไข", ux: "UX", perf: "ประสิทธิภาพ", sec: "ความปลอดภัย" };
+  const CAT_LABEL = { new: s("ใหม่","New"), fix: s("แก้ไข","Fix"), ux: "UX", perf: s("ประสิทธิภาพ","Perf"), sec: s("ความปลอดภัย","Security") };
 
   const content = {
     about: (
@@ -944,17 +976,13 @@ function AppInfoModal({ onClose }) {
           </div>
         </div>
         <div style={{ fontSize: 14, color: "var(--ink-mute)", lineHeight: 1.8, marginBottom: 20 }}>
-          ระบบสารสนเทศภูมิศาสตร์ (GIS) สำหรับค้นหา ติดตาม และจัดการ <b style={{ color: "var(--ink)" }}>มิเตอร์ไฟฟ้า</b> และ <b style={{ color: "var(--ink)" }}>หม้อแปลงไฟฟ้า</b> ของการไฟฟ้าส่วนภูมิภาค ครอบคลุมทุกพื้นที่บริการ
+          {s(
+            <span>ระบบสารสนเทศภูมิศาสตร์ (GIS) สำหรับค้นหา ติดตาม และจัดการ <b style={{ color: "var(--ink)" }}>มิเตอร์ไฟฟ้า</b> และ <b style={{ color: "var(--ink)" }}>หม้อแปลงไฟฟ้า</b> ของการไฟฟ้าส่วนภูมิภาค ครอบคลุมทุกพื้นที่บริการ</span>,
+            <span>A Geographic Information System (GIS) for searching, tracking, and managing <b style={{ color: "var(--ink)" }}>electricity meters</b> and <b style={{ color: "var(--ink)" }}>transformers</b> across all PEA service areas.</span>
+          )}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {[
-            { icon: "🔍", t: "ค้นหาข้อมูล", d: "Meter / Transformer" },
-            { icon: "🗺️", t: "แผนที่ GIS", d: "Street & Satellite" },
-            { icon: "📷", t: "ถ่ายรูปอุปกรณ์", d: "Cloud Storage" },
-            { icon: "📍", t: "นำทาง GPS", d: "Google / Apple Maps" },
-            { icon: "📝", t: "แก้ไขพิกัด", d: "ส่งคำขอ → Admin อนุมัติ" },
-            { icon: "🔔", t: "Push Notification", d: "แจ้งเตือนทุกอุปกรณ์" },
-          ].map((f, i) => (
+          {FEATURES.map((f, i) => (
             <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
               <div>
@@ -965,14 +993,17 @@ function AppInfoModal({ onClose }) {
           ))}
         </div>
         <div style={{ marginTop: 20, padding: "12px 16px", borderRadius: 12, background: "rgba(244,123,32,0.06)", border: "1px solid rgba(244,123,32,0.2)", fontSize: 12, color: "var(--ink-mute)", textAlign: "center" }}>
-          พัฒนาโดย <b style={{ color: "var(--ink)" }}>IT · PEA FANG Smartflow</b> · ลิขสิทธิ์ © 2569
+          {s(
+            <span>พัฒนาโดย <b style={{ color: "var(--ink)" }}>IT · PEA FANG Smartflow</b> · ลิขสิทธิ์ © 2569</span>,
+            <span>Developed by <b style={{ color: "var(--ink)" }}>IT · PEA FANG Smartflow</b> · Copyright © 2026</span>
+          )}
         </div>
       </div>
     ),
     privacy: (
       <div>
         <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.25)", fontSize: 12, color: "#047857", fontWeight: 600 }}>
-          🔒 อ้างอิง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) · ปรับปรุงล่าสุด: มิถุนายน 2568
+          {s("🔒 อ้างอิง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) · ปรับปรุงล่าสุด: มิถุนายน 2568","🔒 Reference: Personal Data Protection Act B.E. 2562 (PDPA) · Last updated: June 2025")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {PRIVACY.map((p, i) => (
@@ -989,7 +1020,7 @@ function AppInfoModal({ onClose }) {
     terms: (
       <div>
         <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(107,44,145,0.07)", border: "1px solid rgba(107,44,145,0.2)", fontSize: 12, color: "#6b2c91", fontWeight: 600 }}>
-          📋 ข้อตกลงนี้มีผลบังคับใช้เมื่อท่านเข้าสู่ระบบ PEA GIS Meter & TR
+          {s("📋 ข้อตกลงนี้มีผลบังคับใช้เมื่อท่านเข้าสู่ระบบ PEA GIS Meter & TR","📋 This agreement takes effect when you log in to the PEA GIS Meter & TR system.")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {TERMS.map((t, i) => (
@@ -1015,7 +1046,7 @@ function AppInfoModal({ onClose }) {
                 background: "transparent", border: "none", cursor: "pointer", textAlign: "left",
               }}>
                 <span style={{ fontWeight: 900, fontSize: 14, color: isLatest ? "#6b2c91" : "var(--ink)" }}>{v.version}</span>
-                {isLatest && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(107,44,145,0.12)", color: "#6b2c91", border: "1px solid rgba(107,44,145,0.25)" }}>ล่าสุด</span>}
+                {isLatest && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(107,44,145,0.12)", color: "#6b2c91", border: "1px solid rgba(107,44,145,0.25)" }}>{s("ล่าสุด","Latest")}</span>}
                 <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: v.tagColor ? `${v.tagColor}18` : "var(--surface)", color: v.tagColor || "var(--ink-mute)", border: `1px solid ${v.tagColor ? `${v.tagColor}30` : "var(--line)"}` }}>{v.tag}</span>
                 <span style={{ fontSize: 11, color: "var(--ink-mute)", marginLeft: "auto", flexShrink: 0 }}>{v.date}</span>
                 <span style={{ fontSize: 13, color: "var(--ink-mute)", flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms" }}>▾</span>
@@ -1028,12 +1059,12 @@ function AppInfoModal({ onClose }) {
                         {CAT_LABEL[item.cat] || item.cat}
                       </span>
                       <span style={{ color: "var(--ink-mute)", lineHeight: 1.6 }}>
-                        {typeof item.text === "object" ? item.text.th : item.text}
+                        {typeof item.text === "object" ? (lang === "en" ? (item.text.en || item.text.th) : item.text.th) : item.text}
                       </span>
                     </div>
                   ))}
                   {(v.items || []).length > 5 && (
-                    <div style={{ fontSize: 11, color: "var(--ink-mute)", paddingLeft: 4 }}>+{v.items.length - 5} รายการ</div>
+                    <div style={{ fontSize: 11, color: "var(--ink-mute)", paddingLeft: 4 }}>+{v.items.length - 5} {s("รายการ","items")}</div>
                   )}
                 </div>
               )}
@@ -1045,12 +1076,7 @@ function AppInfoModal({ onClose }) {
     contact: (
       <div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {[
-            { icon: "🏢", title: "หน่วยงาน", body: "แผนกไอที · การไฟฟ้าส่วนภูมิภาค (PEA)" },
-            { icon: "👤", title: "Admin ระบบ", body: "ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล" },
-            { icon: "🐛", title: "แจ้งปัญหา / Bug Report", body: "พบปัญหาในระบบ กรุณาแจ้ง Admin พร้อมแนบ screenshot และรายละเอียดขั้นตอนที่พบปัญหา" },
-            { icon: "🔄", title: "ขอฟีเจอร์ใหม่", body: "ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น" },
-          ].map((c, i) => (
+          {CONTACT.map((c, i) => (
             <div key={i} style={{ padding: "14px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
                 <span>{c.icon}</span> {c.title}
@@ -1060,7 +1086,7 @@ function AppInfoModal({ onClose }) {
           ))}
         </div>
         <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(107,44,145,0.06)", border: "1px solid rgba(107,44,145,0.18)", textAlign: "center" }}>
-          <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>เวอร์ชันปัจจุบัน</div>
+          <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{s("เวอร์ชันปัจจุบัน","Current Version")}</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: "var(--pea-purple-500)", marginTop: 2 }}>{meta.version}</div>
           <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{meta.tag} · {meta.date}</div>
         </div>
@@ -1080,19 +1106,39 @@ function AppInfoModal({ onClose }) {
       }}>
 
         {/* ── Title header ── */}
-        <div style={{ textAlign: "center", padding: "28px 48px 20px", borderBottom: "1px solid var(--line)", flexShrink: 0, position: "relative" }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: "var(--ink)", letterSpacing: "-0.02em" }}>
-            ข้อกำหนดและนโยบายการใช้งาน
+        <div style={{ textAlign: "center", padding: "22px 64px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0, position: "relative" }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+            {s("ข้อกำหนดและนโยบายการใช้งาน","Terms & Policy")}
           </div>
-          <div style={{ fontSize: 13, color: "var(--ink-mute)", marginTop: 4 }}>
-            ระบบ PEA GIS Meter & TR · การไฟฟ้าส่วนภูมิภาค
+          <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 3 }}>
+            {s("ระบบ PEA GIS Meter & TR · การไฟฟ้าส่วนภูมิภาค","PEA GIS Meter & TR System · Provincial Electricity Authority")}
           </div>
+
+          {/* Language toggle */}
+          <div style={{ position: "absolute", top: 16, left: 16, display: "flex", background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 999, padding: 3, gap: 2 }}>
+            {["th","en"].map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{
+                padding: "4px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+                fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", transition: "all 180ms",
+                background: lang === l ? "linear-gradient(135deg,#6b2c91,#8b3fc4)" : "transparent",
+                color: lang === l ? "white" : "var(--ink-mute)",
+                boxShadow: lang === l ? "0 2px 6px rgba(107,44,145,0.3)" : "none",
+              }}>{l.toUpperCase()}</button>
+            ))}
+          </div>
+
+          {/* Close button — prominent */}
           <button onClick={onClose} style={{
-            position: "absolute", top: 20, right: 20,
-            width: 34, height: 34, borderRadius: 9, border: "1px solid var(--line)",
-            background: "var(--soft)", cursor: "pointer", display: "grid", placeItems: "center",
-          }}>
-            <Icon name="close" size={16} />
+            position: "absolute", top: 14, right: 14,
+            width: 40, height: 40, borderRadius: 10,
+            border: "1.5px solid var(--line)", background: "var(--soft)",
+            cursor: "pointer", display: "grid", placeItems: "center",
+            transition: "all 160ms", color: "var(--ink)",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.45)"; e.currentTarget.style.color = "#ef4444"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--soft)"; e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = "var(--ink)"; }}
+          >
+            <Icon name="close" size={18} />
           </button>
         </div>
 
