@@ -1,4 +1,4 @@
-/* global React, Icon, _supabase, useLang */
+/* global React, ReactDOM, Icon, _supabase, useLang */
 const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
 
 /* ── Animated power poles canvas ────────────────────────────────────────── */
@@ -310,6 +310,8 @@ function AuthScreen({ initialError }) {
   const [signupDone, setSignupDone] = useStateA(false);
   const [forgotEmail, setForgotEmail] = useStateA("");
   const [forgotDone, setForgotDone] = useStateA(false);
+
+  const [showInfo, setShowInfo] = useStateA(false);
 
   const goForgot = () => { setMode("forgot"); setErr(null); setForgotDone(false); setForgotEmail(email); };
   const goLogin  = () => { setMode("login");  setErr(null); };
@@ -770,7 +772,30 @@ function AuthScreen({ initialError }) {
             </>
           )}
         </div>
+
+        {/* Version badge */}
+        <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
+          <button onClick={() => setShowInfo(true)} style={{
+            background: "transparent", border: "1px solid transparent", cursor: "pointer",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontSize: 12, fontWeight: 600, color: "var(--ink-mute)",
+            padding: "6px 16px", borderRadius: 999, transition: "all 180ms",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--soft)"; e.currentTarget.style.borderColor = "var(--line)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
+          >
+            ⚡ เวอร์ชัน:&nbsp;
+            <span style={{ color: "var(--pea-purple-500)", fontWeight: 800 }}>
+              {(window.PEA_META?.version) || "v3.3"}
+            </span>
+            &nbsp;·&nbsp;
+            <span style={{ color: "var(--ink-mute)" }}>{window.PEA_META?.tag || "Privacy & Fixes"}</span>
+          </button>
+        </div>
+
       </div>
+
+      {showInfo && <AppInfoModal onClose={() => setShowInfo(false)} />}
 
       <style>{`
         /* ── Desktop ───────────────────────────────────── */
@@ -865,6 +890,257 @@ function AuthScreen({ initialError }) {
         }
       `}</style>
     </div>
+  );
+}
+
+/* ── AppInfoModal — version badge popup ──────────────────────────────────── */
+function AppInfoModal({ onClose }) {
+  const [tab, setTab] = useStateA("about");
+  const meta = window.PEA_META || { version: "v3.3", tag: "Privacy & Fixes", date: "3 มิ.ย. 2569", changelog: [] };
+
+  const TABS = [
+    { id: "about",    icon: "⚡", label: "เกี่ยวกับแอป" },
+    { id: "privacy",  icon: "🔒", label: "นโยบายความเป็นส่วนตัว" },
+    { id: "terms",    icon: "📋", label: "ข้อตกลงการใช้งาน" },
+    { id: "updates",  icon: "🕐", label: "ประวัติเวอร์ชัน" },
+    { id: "contact",  icon: "📞", label: "ช่องทางติดต่อ" },
+  ];
+
+  const PRIVACY = [
+    { icon: "🏢", title: "ผู้ควบคุมข้อมูลส่วนบุคคล", body: "การไฟฟ้าส่วนภูมิภาค (PEA) — ระบบ PEA GIS Meter & TR ใช้สำหรับงานภายในองค์กรเท่านั้น" },
+    { icon: "📋", title: "ข้อมูลที่เก็บรวบรวม", body: "ตำแหน่ง GPS ที่ใช้แก้ไขพิกัด, ภาพถ่าย Meter/TR (เก็บบน Supabase Storage), ประวัติการค้นหา (เก็บบนอุปกรณ์), บันทึกการใช้งานระบบ (Audit Log)" },
+    { icon: "🎯", title: "วัตถุประสงค์การใช้ข้อมูล", body: "เพื่อปรับปรุงความถูกต้องของพิกัดมิเตอร์และหม้อแปลงในระบบ GIS และเพื่อการตรวจสอบการใช้งานระบบ" },
+    { icon: "🔒", title: "การเปิดเผยข้อมูล", body: "ข้อมูลไม่ถูกเปิดเผยแก่บุคคลภายนอก — เข้าถึงได้เฉพาะพนักงาน PEA ที่ได้รับอนุญาต" },
+    { icon: "⏱", title: "ระยะเวลาเก็บรักษาข้อมูล", body: "ข้อมูล Audit Log เก็บไว้ตราบเท่าที่จำเป็น — ภาพถ่ายเก็บจนกว่า Admin จะลบออก" },
+    { icon: "✅", title: "สิทธิ์ของเจ้าของข้อมูล (PDPA)", body: "ท่านมีสิทธิ์ขอเข้าถึง แก้ไข หรือลบข้อมูลส่วนตัว โดยติดต่อผ่าน Admin ของระบบ" },
+  ];
+
+  const TERMS = [
+    { icon: "🏛", title: "ขอบเขตการใช้งาน", body: "ระบบนี้จัดทำขึ้นสำหรับพนักงานการไฟฟ้าส่วนภูมิภาค (PEA) เท่านั้น ห้ามบุคคลภายนอกใช้งาน" },
+    { icon: "🔑", title: "ความรับผิดชอบบัญชีผู้ใช้", body: "ผู้ใช้ต้องรักษาข้อมูลรหัสผ่านเป็นความลับ และรับผิดชอบต่อการกระทำทั้งหมดที่เกิดจากบัญชีของตน" },
+    { icon: "📵", title: "การใช้งานต้องห้าม", body: "ห้ามนำข้อมูลในระบบไปเปิดเผย แก้ไข หรือใช้เพื่อวัตถุประสงค์อื่นนอกจากงาน PEA" },
+    { icon: "📷", title: "ภาพถ่ายในระบบ", body: "ภาพถ่ายมิเตอร์และหม้อแปลงที่อัพโหลดถือเป็นทรัพย์สินของ PEA — ใช้เพื่อเอกสารภาคสนามเท่านั้น" },
+    { icon: "⚖️", title: "กฎหมายที่ใช้บังคับ", body: "ข้อตกลงนี้อยู่ภายใต้กฎหมายไทย รวมถึง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)" },
+    { icon: "🔄", title: "การปรับปรุงข้อตกลง", body: "PEA ขอสงวนสิทธิ์ในการแก้ไขข้อตกลงได้ตลอดเวลา — การใช้งานต่อเนื่องถือว่ายอมรับข้อตกลงใหม่" },
+  ];
+
+  const CAT_COLOR = { new: "#059669", fix: "#3b82f6", ux: "#8b5cf6", perf: "#f59e0b", sec: "#ef4444" };
+  const CAT_LABEL = { new: "ใหม่", fix: "แก้ไข", ux: "UX", perf: "ประสิทธิภาพ", sec: "ความปลอดภัย" };
+
+  const content = {
+    about: (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, padding: "20px", borderRadius: 16, background: "linear-gradient(135deg,rgba(107,44,145,0.08),rgba(244,123,32,0.06))", border: "1px solid rgba(107,44,145,0.15)" }}>
+          <img src="logo.svg" alt="PEA" style={{ width: 64, height: 64, borderRadius: 18, boxShadow: "0 8px 24px rgba(107,44,145,0.3)", flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "#f47b20", textTransform: "uppercase", marginBottom: 2 }}>การไฟฟ้าส่วนภูมิภาค · PEA</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "var(--ink)", lineHeight: 1.2 }}>GIS Meter & TR</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: "rgba(107,44,145,0.1)", color: "#6b2c91", border: "1px solid rgba(107,44,145,0.25)" }}>{meta.version}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 999, background: "var(--soft)", color: "var(--ink-mute)", border: "1px solid var(--line)" }}>{meta.tag}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 999, background: "var(--soft)", color: "var(--ink-mute)", border: "1px solid var(--line)" }}>{meta.date}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: 14, color: "var(--ink-mute)", lineHeight: 1.8, marginBottom: 20 }}>
+          ระบบสารสนเทศภูมิศาสตร์ (GIS) สำหรับค้นหา ติดตาม และจัดการ <b style={{ color: "var(--ink)" }}>มิเตอร์ไฟฟ้า</b> และ <b style={{ color: "var(--ink)" }}>หม้อแปลงไฟฟ้า</b> ของการไฟฟ้าส่วนภูมิภาค ครอบคลุมทุกพื้นที่บริการ
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {[
+            { icon: "🔍", t: "ค้นหาข้อมูล", d: "Meter / Transformer" },
+            { icon: "🗺️", t: "แผนที่ GIS", d: "Street & Satellite" },
+            { icon: "📷", t: "ถ่ายรูปอุปกรณ์", d: "Cloud Storage" },
+            { icon: "📍", t: "นำทาง GPS", d: "Google / Apple Maps" },
+            { icon: "📝", t: "แก้ไขพิกัด", d: "ส่งคำขอ → Admin อนุมัติ" },
+            { icon: "🔔", t: "Push Notification", d: "แจ้งเตือนทุกอุปกรณ์" },
+          ].map((f, i) => (
+            <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>{f.t}</div>
+                <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{f.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 20, padding: "12px 16px", borderRadius: 12, background: "rgba(244,123,32,0.06)", border: "1px solid rgba(244,123,32,0.2)", fontSize: 12, color: "var(--ink-mute)", textAlign: "center" }}>
+          พัฒนาโดย <b style={{ color: "var(--ink)" }}>IT · การไฟฟ้าส่วนภูมิภาค (PEA)</b> · ลิขสิทธิ์ © 2569
+        </div>
+      </div>
+    ),
+    privacy: (
+      <div>
+        <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.25)", fontSize: 12, color: "#047857", fontWeight: 600 }}>
+          🔒 อ้างอิง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) · ปรับปรุงล่าสุด: มิถุนายน 2568
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {PRIVACY.map((p, i) => (
+            <div key={i} style={{ padding: "14px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>{p.icon}</span> {p.title}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.7 }}>{p.body}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    terms: (
+      <div>
+        <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(107,44,145,0.07)", border: "1px solid rgba(107,44,145,0.2)", fontSize: 12, color: "#6b2c91", fontWeight: 600 }}>
+          📋 ข้อตกลงนี้มีผลบังคับใช้เมื่อท่านเข้าสู่ระบบ PEA GIS Meter & TR
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {TERMS.map((t, i) => (
+            <div key={i} style={{ padding: "14px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>{t.icon}</span> {t.title}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.7 }}>{t.body}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    updates: (
+      <div>
+        {(meta.changelog || []).slice(0, 4).map((v, vi) => (
+          <div key={vi} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: vi < 3 ? "1px solid var(--line)" : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontWeight: 900, fontSize: 15, color: "var(--ink)" }}>{v.version}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: v.tagColor ? `${v.tagColor}18` : "var(--soft)", color: v.tagColor || "var(--ink-mute)", border: `1px solid ${v.tagColor ? `${v.tagColor}30` : "var(--line)"}` }}>{v.tag}</span>
+              <span style={{ fontSize: 11, color: "var(--ink-mute)", marginLeft: "auto" }}>{v.date}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {(v.items || []).slice(0, 5).map((item, ii) => (
+                <div key={ii} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: `${CAT_COLOR[item.cat] || "#6b7280"}18`, color: CAT_COLOR[item.cat] || "#6b7280", border: `1px solid ${CAT_COLOR[item.cat] || "#6b7280"}30`, flexShrink: 0, marginTop: 1 }}>
+                    {CAT_LABEL[item.cat] || item.cat}
+                  </span>
+                  <span style={{ color: "var(--ink-mute)", lineHeight: 1.6 }}>
+                    {typeof item.text === "object" ? item.text.th : item.text}
+                  </span>
+                </div>
+              ))}
+              {(v.items || []).length > 5 && (
+                <div style={{ fontSize: 11, color: "var(--ink-mute)", paddingLeft: 4 }}>+{v.items.length - 5} รายการ</div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+    contact: (
+      <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[
+            { icon: "🏢", title: "หน่วยงาน", body: "แผนกไอที · การไฟฟ้าส่วนภูมิภาค (PEA)" },
+            { icon: "👤", title: "Admin ระบบ", body: "ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล" },
+            { icon: "🐛", title: "แจ้งปัญหา / Bug Report", body: "พบปัญหาในระบบ กรุณาแจ้ง Admin พร้อมแนบ screenshot และรายละเอียดขั้นตอนที่พบปัญหา" },
+            { icon: "🔄", title: "ขอฟีเจอร์ใหม่", body: "ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น" },
+          ].map((c, i) => (
+            <div key={i} style={{ padding: "14px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>{c.icon}</span> {c.title}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.7 }}>{c.body}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(107,44,145,0.06)", border: "1px solid rgba(107,44,145,0.18)", textAlign: "center" }}>
+          <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>เวอร์ชันปัจจุบัน</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "var(--pea-purple-500)", marginTop: 2 }}>{meta.version}</div>
+          <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{meta.tag} · {meta.date}</div>
+        </div>
+      </div>
+    ),
+  };
+
+  return ReactDOM.createPortal(
+    <div style={{ position: "fixed", inset: 0, zIndex: 9500, display: "flex", flexDirection: "column", background: "var(--bg)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--line)", flexShrink: 0, background: "var(--surface)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="logo.svg" alt="PEA" style={{ width: 32, height: 32, borderRadius: 9 }} />
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ink)", lineHeight: 1 }}>PEA GIS Meter & TR</div>
+            <div style={{ fontSize: 11, color: "var(--ink-mute)" }}>{meta.version} · {meta.tag}</div>
+          </div>
+        </div>
+        <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, background: "var(--soft)", border: "1px solid var(--line)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+          <Icon name="close" size={18} />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* Sidebar (desktop) / Top scroll (mobile) */}
+        <div className="app-info-sidebar">
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} className={`app-info-tab ${tab === t.id ? "active" : ""}`}>
+              <span style={{ fontSize: 18 }}>{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
+          <div style={{ fontWeight: 800, fontSize: 18, color: "var(--ink)", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 22 }}>{TABS.find(t => t.id === tab)?.icon}</span>
+            {TABS.find(t => t.id === tab)?.label}
+          </div>
+          {content[tab]}
+        </div>
+      </div>
+
+      <style>{`
+        .app-info-sidebar {
+          width: 220px;
+          flex-shrink: 0;
+          border-right: 1px solid var(--line);
+          padding: 12px 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          background: var(--surface);
+          overflow-y: auto;
+        }
+        .app-info-tab {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--ink-mute);
+          text-align: left;
+          transition: all 160ms;
+        }
+        .app-info-tab:hover { background: var(--soft); color: var(--ink); }
+        .app-info-tab.active { background: rgba(107,44,145,0.1); color: #6b2c91; font-weight: 700; }
+        @media (max-width: 640px) {
+          .app-info-sidebar {
+            width: 100%;
+            flex-direction: row;
+            overflow-x: auto;
+            overflow-y: hidden;
+            flex-shrink: 0;
+            border-right: none;
+            border-bottom: 1px solid var(--line);
+            padding: 6px 8px;
+            gap: 4px;
+          }
+          .app-info-tab { white-space: nowrap; flex-shrink: 0; }
+        }
+      `}</style>
+    </div>,
+    document.body
   );
 }
 

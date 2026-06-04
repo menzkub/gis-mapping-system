@@ -1365,6 +1365,7 @@ const CHANGELOG = [
     ],
   },
 ];
+window.PEA_META = { version: CHANGELOG[0].version, tag: CHANGELOG[0].tag, date: CHANGELOG[0].date, changelog: CHANGELOG };
 
 const CAT_META = {
   new:  { label: { th: "ใหม่",         en: "New" },         bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#047857" },
