@@ -812,7 +812,7 @@ function AuthScreen({ initialError }) {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          border-radius: 0 32px 32px 0;
+          border-radius: 0 20px 20px 0;
         }
         .auth-brand-blob {
           position: absolute;
@@ -844,8 +844,6 @@ function AuthScreen({ initialError }) {
           padding: 40px;
           overflow-y: auto;
           background: var(--bg);
-          border-radius: 32px 0 0 32px;
-          box-shadow: -16px 0 56px rgba(0,0,0,0.3);
           position: relative;
           z-index: 1;
         }
