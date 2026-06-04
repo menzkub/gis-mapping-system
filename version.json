@@ -1,7 +1,7 @@
 {
-  "commit": "b6bf5f9686fbbc0db4138d3019c28604730867e2",
-  "shortCommit": "b6bf5f9",
-  "message": "v3.6: GPS geotag on photos + bulk PDF export",
-  "date": "2026-06-04T06:41:14Z",
+  "commit": "0da222316f54c886989c540cdf5545fd3f0bc351",
+  "shortCommit": "0da2223",
+  "message": "New version indicator + version.json update to v3.6",
+  "date": "2026-06-04T06:50:11Z",
   "branch": "main"
 }
