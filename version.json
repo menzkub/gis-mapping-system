@@ -1,7 +1,7 @@
 {
-  "commit": "a7c28cd3e61bcbd5b69e2a56ad2379536e018fb0",
-  "shortCommit": "a7c28cd",
-  "message": "fix: JSX syntax error causing blank app (Can't find variable SearchView)",
-  "date": "2026-06-04T07:15:11Z",
+  "commit": "1defeb2e286a0526a8a1f0da4783adb445855d5d",
+  "shortCommit": "1defeb2",
+  "message": "v3.7: UX polish \u2014 empty state, tooltips, MIME check, form hardening",
+  "date": "2026-06-04T07:33:39Z",
   "branch": "main"
 }
