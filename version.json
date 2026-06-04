@@ -1,7 +1,7 @@
 {
-  "commit": "461fcccc837d6b860c322800f55c180be7420bef",
-  "shortCommit": "461fccc",
-  "message": "Fix biometric banner layout; add Face ID settings to account profile",
-  "date": "2026-06-04T14:51:56Z",
+  "commit": "abacfecc689c2369c4a0a3523c5b6eba261e9818",
+  "shortCommit": "abacfec",
+  "message": "Add Architecture tab to desktop admin sidebar nav",
+  "date": "2026-06-04T14:58:19Z",
   "branch": "main"
 }
