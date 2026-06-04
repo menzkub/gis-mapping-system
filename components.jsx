@@ -114,7 +114,7 @@ function Modal({ open, onClose, title, children, footer, width = 520 }) {
   if (!open) return null;
   return ReactDOM.createPortal(
     <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
-      <div className="fade-up" onClick={e => e.stopPropagation()} style={{
+      <div className="pea-modal-in" onClick={e => e.stopPropagation()} style={{
         background: "var(--surface)", borderRadius: 20, width: "100%", maxWidth: width,
         maxHeight: "min(92vh, calc(100dvh - 180px))", display: "flex", flexDirection: "column",
         boxShadow: "var(--shadow-lg)", border: "1px solid var(--line)", overflow: "hidden",
@@ -377,7 +377,7 @@ function ConfirmProvider({ children }) {
       {children}
       {state && (
         <div className="fade-in pea-modal-overlay" onClick={() => close(false)}>
-          <div className="fade-up" onClick={e => e.stopPropagation()} style={{
+          <div className="pea-modal-in" onClick={e => e.stopPropagation()} style={{
             background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 460,
             boxShadow: "var(--shadow-lg)", border: "1px solid var(--line)", overflow: "hidden",
           }}>

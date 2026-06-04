@@ -222,6 +222,21 @@ function fmtStat(n) {
 function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing }) {
   const { t } = useLang();
   const [filterFeeder, setFilterFeeder] = useStateAd("all");
+  const [feederMeters, setFeederMeters] = useStateAd(null); // null = show total
+  const [feederTrs,    setFeederTrs]    = useStateAd(null);
+  const [feederLoading, setFeederLoading] = useStateAd(false);
+  useEffectAd(() => {
+    if (filterFeeder === "all") { setFeederMeters(null); setFeederTrs(null); return; }
+    setFeederLoading(true);
+    Promise.all([
+      _supabase.from("meters").select("objectid", { count: "exact", head: true }).eq("feederid", filterFeeder),
+      _supabase.from("transformers").select("objectid", { count: "exact", head: true }).eq("feeder1", filterFeeder),
+    ]).then(([mRes, tRes]) => {
+      setFeederMeters(mRes.count ?? 0);
+      setFeederTrs(tRes.count ?? 0);
+      setFeederLoading(false);
+    }).catch(() => setFeederLoading(false));
+  }, [filterFeeder]);
   const s = data.dashStats || {};
   const meterCount = +(s.meter_count  || 0);
   const trCount    = +(s.tr_count     || 0);
@@ -238,10 +253,8 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
   const otherTr     = Math.max(0, trCount - peaTr - custTr);
 
   const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
-  const filteredMeters = filterFeeder === "all" ? null : (data.meters || []).filter(m => m.FEEDERID === filterFeeder);
-  const filteredTrs    = filterFeeder === "all" ? null : (data.trs    || []).filter(t => t.FEEDER1  === filterFeeder);
-  const displayMeterCount = filteredMeters ? filteredMeters.length : meterCount;
-  const displayTrCount    = filteredTrs    ? filteredTrs.length    : trCount;
+  const displayMeterCount = feederMeters !== null ? feederMeters : meterCount;
+  const displayTrCount    = feederTrs    !== null ? feederTrs    : trCount;
   const grandTotal = meterCount + trCount;
   const isLoading = meterCount === 0 && trCount === 0 && totalKva === 0;
   const donutSegs = [
@@ -327,8 +340,8 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
           </>
         ) : (
           <>
-            <StatCard label={t("dbMeters")} value={fmtStat(displayMeterCount)} delta={4} icon="meter-m" accent="purple" />
-            <StatCard label={t("dbTrs")}    value={fmtStat(displayTrCount)}    delta={2} icon="tr-tri" accent="orange" />
+            <StatCard label={t("dbMeters")} value={feederLoading ? "…" : fmtStat(displayMeterCount)} delta={4} icon="meter-m" accent="purple" />
+            <StatCard label={t("dbTrs")}    value={feederLoading ? "…" : fmtStat(displayTrCount)}    delta={2} icon="tr-tri" accent="orange" />
             <div className="db-kva-span">
               <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
                 breakdown={[
@@ -422,6 +435,55 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
 
       <PrivacyConsentCard users={data.users || []} privacyPolicyUpdatedAt={privacyPolicyUpdatedAt} />
       <DbUsageCard />
+
+      {/* System section */}
+      <div className="db-mid-grid" style={{ marginTop: 4 }}>
+        {/* Supabase DB card */}
+        <div className="card card-elev">
+          <div className="t-eyebrow" style={{ marginBottom: 6 }}>ฐานข้อมูล</div>
+          <div className="text-lg fw-7" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block", flexShrink: 0, boxShadow: "0 0 0 3px rgba(16,185,129,0.2)" }} />
+            Supabase
+          </div>
+          {[
+            ["โปรเจกต์", "yohlqjoogvuslemuwjij"],
+            ["มิเตอร์", meterCount.toLocaleString() + " รายการ"],
+            ["หม้อแปลง", trCount.toLocaleString() + " รายการ"],
+            ["ผู้ใช้งาน", (data.users?.length || 0).toLocaleString() + " บัญชี"],
+            ["กำลังรวม", totalKva.toLocaleString() + " kVA"],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
+              <span className="t-mute fw-6" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</span>
+              <span className="mono fw-7" style={{ fontSize: 12 }}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* App / Biometric card */}
+        <div className="card card-elev">
+          <div className="t-eyebrow" style={{ marginBottom: 6 }}>อุปกรณ์ & แอป</div>
+          <div className="text-lg fw-7" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="lock" size={16} style={{ color: "var(--pea-purple-500)" }} />
+            ความปลอดภัย
+          </div>
+          {[
+            ["Biometric", (() => {
+              const hasCred = !!localStorage.getItem("pea_bio_cred");
+              const avail = !!window.PublicKeyCredential;
+              if (!avail) return "ไม่รองรับ";
+              return hasCred ? "เปิดใช้งาน ✓" : "ยังไม่เปิดใช้";
+            })()],
+            ["รุ่นแอป", "v3.6"],
+            ["Service Worker", "navigator" in window && "serviceWorker" in navigator ? "พร้อมใช้ ✓" : "ไม่รองรับ"],
+            ["ล็อกอินล่าสุด", data.auditLog?.find(l => l.action === "login" && l.user === (data.users?.find(u => u.role === "admin")?.username))?.at?.slice?.(0,16)?.replace("T"," ") || "—"],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
+              <span className="t-mute fw-6" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</span>
+              <span className="mono fw-7" style={{ fontSize: 12, color: v.includes("✓") ? "#10b981" : "inherit" }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3395,24 +3457,6 @@ function AdminMeters({ addAudit, currentUser }) {
         @media (max-width: 680px) {
           .adm-tb { flex-wrap: wrap; width: 100%; }
           .adm-tb .input { flex: 1 1 0; min-width: 0; width: auto !important; }
-        }
-        .adm-meter-table-wrap { overflow: auto; max-height: 60vh; }
-        .adm-meter-cards { display: none; flex-direction: column; gap: 10px; }
-        .adm-tr-table-wrap { overflow: auto; max-height: 60vh; }
-        .adm-tr-cards { display: none; flex-direction: column; gap: 10px; }
-        .adm-audit-table-wrap { overflow: auto; max-height: 52vh; }
-        .adm-audit-cards { display: none; flex-direction: column; gap: 10px; }
-        .adm-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        @media (max-width: 640px) {
-          .adm-meter-table-wrap { display: none; }
-          .adm-meter-cards { display: flex; }
-          .adm-tr-table-wrap { display: none; }
-          .adm-tr-cards { display: flex; }
-          .adm-audit-table-wrap { display: none; }
-          .adm-audit-cards { display: flex; }
-          .adm-edit-grid { grid-template-columns: 1fr; }
-          .btn-icon { min-width: 40px; min-height: 40px; }
-          .row-action .btn-icon { min-width: 40px; min-height: 40px; }
         }
       `}</style>
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
