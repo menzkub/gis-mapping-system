@@ -6199,10 +6199,19 @@ function ContactInfoEditor({ currentUser, addAudit, toast }) {
 
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await _supabase.from("settings")
-      .upsert({ key: "contact_info", value: JSON.stringify(items), updated_at: new Date().toISOString(), updated_by: currentUser.username }, { onConflict: "key" });
+    const { data: updated, error } = await _supabase.from("settings")
+      .update({ value: JSON.stringify(items), updated_at: new Date().toISOString(), updated_by: currentUser.username })
+      .eq("key", "contact_info")
+      .select("key");
     setSaving(false);
     if (error) { toast?.("เกิดข้อผิดพลาด: " + error.message, "error"); return; }
+    if (!updated || updated.length === 0) {
+      toast?.(
+        "ยังไม่มีแถว contact_info ในตาราง settings\nรัน SQL ใน Supabase SQL Editor:\nINSERT INTO settings (key,value) VALUES ('contact_info','[]');",
+        "error"
+      );
+      return;
+    }
     addAudit({ user: currentUser.username, action: "update_contact_info", target: "system", detail: "อัปเดตข้อมูลช่องทางติดต่อ" });
     toast?.("บันทึกข้อมูลช่องทางติดต่อสำเร็จ", "success");
   };
