@@ -1,4 +1,4 @@
-/* global React, Icon, StatCard, Modal, downloadCSV, downloadXLSX, useToast, useConfirm, formatThaiDate,
+/* global React, Icon, StatCard, Modal, downloadCSV, downloadXLSX, downloadPDF, useToast, useConfirm, formatThaiDate,
    _supabase, fromMeter, fromTransformer, fromProfilePatch, toMeter, toTransformer, toProfile, useLang */
 const {
   useState:  useStateAd,
@@ -862,7 +862,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
   const { t } = useLang();
   const [fmt, setFmt] = useStateAd("csv");
   if (!open) return null;
-  const baseName = filename.replace(/\.(csv|xlsx)$/, "");
+  const baseName = filename.replace(/\.(csv|xlsx|pdf)$/, "");
   const finalFile = `${baseName}.${fmt}`;
   return (
     <div className="fade-in pea-modal-overlay" style={{ zIndex: 9000 }} onClick={onClose}>
@@ -884,8 +884,8 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
           </div>
           <div style={{ marginBottom: 14 }}>
             <div className="t-mute" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>{t("exportFormatLabel")}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {[{ id: "csv", label: "CSV", icon: "📄", hint: ".csv" }, { id: "xlsx", label: "Excel", icon: "📊", hint: ".xlsx" }].map(f => (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              {[{ id: "csv", label: "CSV", icon: "📄", hint: ".csv" }, { id: "xlsx", label: "Excel", icon: "📊", hint: ".xlsx" }, { id: "pdf", label: "PDF", icon: "📋", hint: ".pdf" }].map(f => (
                 <button key={f.id} onClick={() => setFmt(f.id)} style={{
                   padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
                   borderColor: fmt === f.id ? "var(--pea-purple-500)" : "var(--line)",
@@ -900,7 +900,7 @@ function ExportDialog({ open, onClose, onConfirm, count, filename, label }) {
               ))}
             </div>
             <div className="t-mute" style={{ fontSize: 12, marginTop: 8 }}>
-              {fmt === "xlsx" ? t("exportAsXLSX") : t("exportAsCSV")} · <span className="mono" style={{ fontSize: 11 }}>{finalFile}</span>
+              {fmt === "xlsx" ? t("exportAsXLSX") : fmt === "pdf" ? t("exportAsPDF") : t("exportAsCSV")} · <span className="mono" style={{ fontSize: 11 }}>{finalFile}</span>
             </div>
           </div>
           {count >= 500 && (
@@ -3495,7 +3495,7 @@ function AdminMeters({ addAudit, currentUser }) {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : downloadCSV)(`pea-meter-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
+        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : fmt === "pdf" ? (f, r) => downloadPDF(f, r, "PEA Meter") : downloadCSV)(`pea-meter-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Meter", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
         count={list.length}
         filename="pea-meter-export.csv"
         label="PEA Meter"
@@ -3722,7 +3722,7 @@ function AdminTrs({ addAudit, currentUser }) {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : downloadCSV)(`pea-tr-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
+        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : fmt === "pdf" ? (f, r) => downloadPDF(f, r, "PEA Transformer") : downloadCSV)(`pea-tr-export.${fmt}`, list); addAudit({ user: currentUser.username, action: "export_csv", target: "PEA Transformer", detail: `ส่งออก ${list.length} รายการ (${fmt.toUpperCase()})` }); setShowExport(false); }}
         count={list.length}
         filename="pea-tr-export.csv"
         label="PEA Transformer"
@@ -5555,7 +5555,7 @@ function AdminAudit() {
       <ExportDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : downloadCSV)(`audit-log.${fmt}`, logs); setShowExport(false); }}
+        onConfirm={(fmt) => { (fmt === "xlsx" ? downloadXLSX : fmt === "pdf" ? (f, r) => downloadPDF(f, r, "Audit Log") : downloadCSV)(`audit-log.${fmt}`, logs); setShowExport(false); }}
         count={logs.length}
         filename="audit-log.csv"
         label="Audit Log"

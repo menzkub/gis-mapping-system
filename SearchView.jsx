@@ -166,9 +166,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   };
 
   const doExport = () => {
-    const fname = `pea-${tab}-${Date.now()}.${exportFormat}`;
+    const fname = `pea-${tab}-${Date.now()}.${exportFormat === "pdf" ? "pdf" : exportFormat}`;
     if (exportFormat === "xlsx") {
       downloadXLSX(fname, results);
+    } else if (exportFormat === "pdf") {
+      downloadPDF(fname, results, tab === "meter" ? "PEA มิเตอร์" : "PEA หม้อแปลง");
     } else {
       downloadCSV(fname, results);
     }
@@ -573,8 +575,8 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               </div>
               <div style={{ marginBottom: 14 }}>
                 <div className="t-mute" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>{t("exportFormatLabel")}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {[{ id: "csv", label: "CSV", icon: "📄", hint: ".csv" }, { id: "xlsx", label: "Excel", icon: "📊", hint: ".xlsx" }].map(fmt => (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  {[{ id: "csv", label: "CSV", icon: "📄", hint: ".csv" }, { id: "xlsx", label: "Excel", icon: "📊", hint: ".xlsx" }, { id: "pdf", label: "PDF", icon: "📋", hint: ".pdf" }].map(fmt => (
                     <button key={fmt.id} onClick={() => setExportFormat(fmt.id)} style={{
                       padding: "10px 14px", borderRadius: 12, border: "1.5px solid",
                       borderColor: exportFormat === fmt.id ? "var(--pea-purple-500)" : "var(--line)",
@@ -589,7 +591,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                   ))}
                 </div>
                 <div className="t-mute" style={{ fontSize: 12, marginTop: 8 }}>
-                  {exportFormat === "xlsx" ? t("exportAsXLSX") : t("exportAsCSV")} · <span className="mono" style={{ fontSize: 11 }}>pea-{tab}-export.{exportFormat}</span>
+                  {exportFormat === "xlsx" ? t("exportAsXLSX") : exportFormat === "pdf" ? t("exportAsPDF") : t("exportAsCSV")} · <span className="mono" style={{ fontSize: 11 }}>pea-{tab}-export.{exportFormat}</span>
                 </div>
               </div>
               {results.length >= 500 && (
@@ -1318,6 +1320,7 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
   const [uploading, setUploading]     = useStateS(false);
   const [preview, setPreview]         = useStateS(null);
   const [confirmId, setConfirmId]     = useStateS(null);
+  const [gpsStatus, setGpsStatus]     = useStateS(null);
   const label   = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
   const isAdmin = currentUser?.role === "admin";
   const toast   = useToast();
@@ -1355,6 +1358,7 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
     if (!file) return;
     e.target.value = "";
     setUploading(true);
+    setGpsStatus("getting");
     const reader = new FileReader();
     reader.onerror = () => { setUploading(false); toast?.("อ่านไฟล์ไม่สำเร็จ", "error"); };
     reader.onload = (ev) => {
@@ -1368,6 +1372,43 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
           canvas.width  = Math.round(img.width  * scale);
           canvas.height = Math.round(img.height * scale);
           canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          // Get GPS (non-blocking — if denied/timeout, skip gracefully)
+          let gpsText = null;
+          try {
+            const pos = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 5000, maximumAge: 30000, enableHighAccuracy: false,
+              });
+            });
+            const lat = pos.coords.latitude.toFixed(5);
+            const lng = pos.coords.longitude.toFixed(5);
+            gpsText = `GPS: ${lat}, ${lng}`;
+          } catch { /* GPS denied or unavailable — skip silently */ }
+
+          // Stamp GPS watermark on canvas if available
+          if (gpsText) {
+            const ctx = canvas.getContext("2d");
+            const fontSize = Math.max(12, Math.round(canvas.width * 0.028));
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            const padding = 8;
+            const textW = ctx.measureText(gpsText).width;
+            const boxH  = fontSize + padding * 2;
+            const boxW  = textW + padding * 2;
+            const x = canvas.width  - boxW  - 8;
+            const y = canvas.height - boxH  - 8;
+            // Semi-transparent dark background
+            ctx.fillStyle = "rgba(0,0,0,0.55)";
+            ctx.beginPath();
+            try { ctx.roundRect(x, y, boxW, boxH, 4); } catch { ctx.rect(x, y, boxW, boxH); }
+            ctx.fill();
+            // White text
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(gpsText, x + padding, y + padding + fontSize - 2);
+            setGpsStatus("ok");
+          } else {
+            setGpsStatus("denied");
+          }
 
           let blob = null;
           for (const q of [0.82, 0.65, 0.50]) {
@@ -1434,6 +1475,11 @@ function PhotoModal({ target, kind, currentUser, onClose }) {
             {uploading ? <>⏳ กำลังบันทึก...</> : <>📷 ถ่ายรูป / เลือกภาพ</>}
           </div>
         </label>
+        <div style={{ textAlign: "center", marginTop: -10, marginBottom: 10, minHeight: 18 }}>
+          {gpsStatus === "getting" && <span style={{ fontSize: 11, color: "var(--ink-mute)" }}>📍 กำลังรับ GPS…</span>}
+          {gpsStatus === "ok"      && <span style={{ fontSize: 11, color: "#16a34a" }}>📍 GPS แนบแล้ว</span>}
+          {gpsStatus === "denied"  && <span style={{ fontSize: 11, color: "var(--ink-mute)" }}>📍 ไม่ได้รับ GPS</span>}
+        </div>
 
         {loadingPhotos ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: "var(--ink-mute)", fontSize: 13 }}>

@@ -268,6 +268,40 @@ function downloadXLSX(filename, rows) {
   window.XLSX.writeFile(wb, filename);
 }
 
+function downloadPDF(filename, rows, title) {
+  if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  const headerCells = cols.map(c =>
+    `<th style="padding:5px 8px;background:#6b2c91;color:white;font-size:9px;font-weight:700;text-align:left;white-space:nowrap;">${c}</th>`
+  ).join("");
+  const bodyRows = rows.map((r, i) =>
+    `<tr style="background:${i % 2 === 0 ? "#ffffff" : "#f6efff"};">` +
+    cols.map(c => `<td style="padding:4px 8px;font-size:9px;border-bottom:1px solid #ece6f4;">${r[c] ?? "—"}</td>`).join("") +
+    `</tr>`
+  ).join("");
+  const html = `<div style="font-family:Arial,sans-serif;padding:16px;">
+    <div style="background:linear-gradient(135deg,#6b2c91,#f47b20);color:white;padding:14px 18px;border-radius:8px;margin-bottom:14px;">
+      <div style="font-weight:800;font-size:16px;">${title || "PEA Export"}</div>
+      <div style="font-size:10px;opacity:0.8;margin-top:4px;">${rows.length.toLocaleString()} รายการ · ${new Date().toLocaleString("th-TH", {timeZone:"Asia/Bangkok"})}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    <div style="margin-top:12px;font-size:8px;color:#6b6685;text-align:center;">พิมพ์จากระบบ GIS PEA · Meter &amp; Transformer Mapping System</div>
+  </div>`;
+  const el = document.createElement("div");
+  el.innerHTML = html;
+  el.style.cssText = "position:fixed;left:-9999px;top:0;width:1200px;";
+  document.body.appendChild(el);
+  window.html2pdf().set({
+    margin: 6,
+    filename,
+    html2canvas: { scale: 1.5, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+  }).from(el).save().then(() => document.body.removeChild(el));
+}
+
 function formatThaiDate(d = new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -550,7 +584,7 @@ const PeaDB = (() => {
 })();
 
 /* expose */
-Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, formatThaiDate, PeaSelect, PeaDB });
+Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, downloadPDF, formatThaiDate, PeaSelect, PeaDB });
 
 /* ── SkeletonCard ───────────────────────────────────────────── */
 function SkeletonCard({ height = 120, style = {} }) {

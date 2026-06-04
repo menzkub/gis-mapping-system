@@ -1325,6 +1325,15 @@ function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, pri
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.6", date: "4 มิ.ย. 2569", tag: "GPS & PDF",
+    tagColor: "#059669", items: [
+      { cat: "new",  text: { th: "GPS Geotag อัตโนมัติ: เมื่ออัปโหลดรูปภาพ ระบบขอตำแหน่ง GPS และประทับ 'GPS: lat, lng' ที่มุมล่างขวาของภาพก่อนบันทึก — ไม่ต้องเปลี่ยน schema ใดๆ", en: "Auto GPS geotag: when uploading a photo the app requests GPS and stamps 'GPS: lat, lng' watermark in the bottom-right corner before saving — no schema changes required" } },
+      { cat: "ux",   text: { th: "GPS status badge ในหน้าอัปโหลดรูป: แสดง '📍 กำลังรับ GPS…' / '📍 GPS แนบแล้ว' / '📍 ไม่ได้รับ GPS' ขณะอัปโหลด", en: "GPS status badge during photo upload: shows '📍 Getting GPS…' / '📍 GPS attached' / '📍 GPS unavailable'" } },
+      { cat: "new",  text: { th: "Bulk PDF export: ในทุก dialog Export เพิ่มตัวเลือก 📋 PDF — ส่งออกผลค้นหาทั้งหมดเป็น PDF ตาราง A4 landscape", en: "Bulk PDF export: all Export dialogs now include 📋 PDF option — exports full search results as an A4 landscape table PDF" } },
+      { cat: "ux",   text: { th: "Export dialog: ตัวเลือกรูปแบบขยายเป็น 3 ช่อง — CSV · Excel · PDF พร้อม icon และ extension hint", en: "Export dialog: format picker expanded to 3 options — CSV · Excel · PDF with icons and extension hints" } },
+    ],
+  },
+  {
     version: "v3.5", date: "4 มิ.ย. 2569", tag: "Offline & History",
     tagColor: "#3b82f6", items: [
       { cat: "new",  text: { th: "ประวัติการแก้ไขต่อ meter/TR: กดปุ่ม 'ประวัติการแก้ไข' ในการ์ดผลลัพธ์เพื่อดู audit log ของอุปกรณ์นั้นๆ โดยตรง", en: "Per-meter/TR edit history: tap 'History' in any result card to see its full audit log without leaving the search view" } },
