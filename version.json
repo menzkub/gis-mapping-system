@@ -1,7 +1,7 @@
 {
-  "commit": "c01b4f7fdda38f46ef8d4c19a9c6882ed2889c55",
-  "shortCommit": "c01b4f7",
-  "message": "fix(biometric): preserve refresh token across logout",
-  "date": "2026-06-04T15:52:25Z",
+  "commit": "74757378ee776a34449b341468d17cc9d73d403d",
+  "shortCommit": "7475737",
+  "message": "fix(admin): card views, feeder filter, dropdown alignment + system dashboard",
+  "date": "2026-06-04T16:08:16Z",
   "branch": "main"
 }
