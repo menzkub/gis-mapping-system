@@ -3501,6 +3501,7 @@ function AdminMeters({ addAudit, currentUser }) {
   };
 
   return (
+    <>
     <div className="card card-elev fade-up">
       <style>{`
         .adm-tb { display: flex; gap: 8px; align-items: center; }
@@ -3605,8 +3606,9 @@ function AdminMeters({ addAudit, currentUser }) {
           </div>
         )}
       </div>
+    </div>
 
-      <Modal open={!!detail} onClose={() => setDetail(null)} title={s("รายละเอียดมิเตอร์","Meter Detail")} width={520}
+    <Modal open={!!detail} onClose={() => setDetail(null)} title={s("รายละเอียดมิเตอร์","Meter Detail")} width={520}
         footer={<><button className="btn btn-outline" onClick={() => setDetail(null)}>{s("ปิด","Close")}</button><button className="btn btn-primary" onClick={() => { setEdit(detail); setDetail(null); }}><Icon name="edit" size={14} /> {s("แก้ไข","Edit")}</button></>}>
         {detail && (
           <div>
@@ -3655,7 +3657,7 @@ function AdminMeters({ addAudit, currentUser }) {
         filename="pea-meter-export.csv"
         label="PEA Meter"
       />
-    </div>
+  </>
   );
 }
 
@@ -3769,6 +3771,7 @@ function AdminTrs({ addAudit, currentUser }) {
   };
 
   return (
+    <>
     <div className="card card-elev fade-up">
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
@@ -3868,8 +3871,9 @@ function AdminTrs({ addAudit, currentUser }) {
           </div>
         )}
       </div>
+    </div>
 
-      <Modal open={!!detail} onClose={() => setDetail(null)} title={s("รายละเอียดหม้อแปลง","Transformer Detail")} width={520}
+    <Modal open={!!detail} onClose={() => setDetail(null)} title={s("รายละเอียดหม้อแปลง","Transformer Detail")} width={520}
         footer={<><button className="btn btn-outline" onClick={() => setDetail(null)}>{s("ปิด","Close")}</button><button className="btn btn-primary" onClick={() => { setEdit(detail); setDetail(null); }}><Icon name="edit" size={14} /> {s("แก้ไข","Edit")}</button></>}>
         {detail && (
           <div>
@@ -3920,7 +3924,7 @@ function AdminTrs({ addAudit, currentUser }) {
         filename="pea-tr-export.csv"
         label="PEA Transformer"
       />
-    </div>
+  </>
   );
 }
 
