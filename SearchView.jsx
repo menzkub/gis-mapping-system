@@ -1120,6 +1120,7 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
   const [done, setDone] = useStateS(false);
   const [locating, setLocating] = useStateS(false);
   const [gpsError, setGpsError] = useStateS("");
+  const [coordErr, setCoordErr] = useStateS("");
 
   const useGPS = () => {
     if (!navigator.geolocation) { setGpsError("อุปกรณ์ไม่รองรับ GPS"); return; }
@@ -1130,6 +1131,7 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
         setNewLat(pos.coords.latitude.toFixed(8));
         setNewLng(pos.coords.longitude.toFixed(8));
         setLocating(false);
+        setCoordErr("");
       },
       err => {
         setGpsError(err.code === 1 ? "ไม่ได้รับอนุญาตเข้าถึง GPS" : "ไม่สามารถระบุตำแหน่งได้");
@@ -1141,9 +1143,21 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
 
   const submit = async () => {
     if (submitting) return;
+    const lat = +newLat;
+    const lng = +newLng;
+    if (!newLat || !newLng || isNaN(lat) || isNaN(lng)) {
+      setCoordErr("กรุณากรอก Latitude และ Longitude"); return;
+    }
+    if (lat < -90 || lat > 90) {
+      setCoordErr("Latitude ต้องอยู่ระหว่าง -90 ถึง 90"); return;
+    }
+    if (lng < -180 || lng > 180) {
+      setCoordErr("Longitude ต้องอยู่ระหว่าง -180 ถึง 180"); return;
+    }
+    setCoordErr("");
     setSubmitting(true);
     try {
-      await onSubmit(+newLat, +newLng, note);
+      await onSubmit(lat, lng, note);
       setDone(true);
       setTimeout(onClose, 1800);
     } catch (err) {
@@ -1192,16 +1206,21 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
             </button>
             {gpsError && <div style={{ fontSize: 11, color: "#dc2626", marginBottom: 10, textAlign: "center" }}>{gpsError}</div>}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: coordErr ? 6 : 12 }}>
               <div className="field" style={{ margin: 0 }}>
                 <label className="field-label">Latitude ใหม่</label>
-                <input className="input" type="number" step="0.00000001" value={newLat} onChange={e => setNewLat(e.target.value)} style={{ height: 38, fontFamily: "monospace" }} />
+                <input className="input" type="number" step="0.00000001" min="-90" max="90"
+                  value={newLat} onChange={e => { setNewLat(e.target.value); setCoordErr(""); }}
+                  style={{ height: 38, fontFamily: "monospace", borderColor: coordErr ? "#dc2626" : undefined }} />
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label className="field-label">Longitude ใหม่</label>
-                <input className="input" type="number" step="0.00000001" value={newLng} onChange={e => setNewLng(e.target.value)} style={{ height: 38, fontFamily: "monospace" }} />
+                <input className="input" type="number" step="0.00000001" min="-180" max="180"
+                  value={newLng} onChange={e => { setNewLng(e.target.value); setCoordErr(""); }}
+                  style={{ height: 38, fontFamily: "monospace", borderColor: coordErr ? "#dc2626" : undefined }} />
               </div>
             </div>
+            {coordErr && <div style={{ fontSize: 11, color: "#dc2626", marginBottom: 10, textAlign: "center" }}>{coordErr}</div>}
             <div className="field" style={{ marginBottom: 14 }}>
               <label className="field-label">หมายเหตุ (ไม่บังคับ)</label>
               <textarea className="input" rows={2} value={note} onChange={e => setNote(e.target.value)} style={{ resize: "none", fontFamily: "inherit" }} />
@@ -1222,6 +1241,7 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
 /* ── QR Code Modal ─────────────────────────────────────────── */
 function QrModal({ target, kind, onClose }) {
   const divRef = useRefS(null);
+  const toast  = useToast();
   const label = kind === "meter" ? (target.PEANO || target.TAG) : (target.PEANO_TR || target.TAG);
   const mapsUrl = `https://www.google.com/maps?q=${target.LATITUDE},${target.LONGITUDE}`;
 
@@ -1311,7 +1331,7 @@ function QrModal({ target, kind, onClose }) {
       } else {
         const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = filename; a.click(); URL.revokeObjectURL(u);
       }
-    } catch (err) { console.error("QR save error", err); alert("ไม่สามารถบันทึกภาพได้"); }
+    } catch (err) { console.error("QR save error", err); toast?.("ไม่สามารถบันทึกภาพได้", "error"); }
     finally { setSaving(false); }
   };
 
