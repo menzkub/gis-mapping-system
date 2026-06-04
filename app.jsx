@@ -3354,6 +3354,7 @@ function App() {
   const [appState, setAppState] = useStateApp("checking");
   const [currentUser, setCurrentUser] = useStateApp(null);
   const [pendingUser, setPendingUser] = useStateApp(null);
+  const [showBioBanner, setShowBioBanner] = useStateApp(false);
   const [data, setData] = useStateApp({
     meters: [], transformers: [],
     users: [], auditLog: [], feeders: [],
@@ -3645,6 +3646,11 @@ function App() {
         return;
       }
       if (session?.user) {
+        // Remember Me OFF + browser was closed (sessionStorage cleared) → sign out
+        if (localStorage.getItem("pea_rm") === "0" && !sessionStorage.getItem("pea_active")) {
+          _supabase.auth.signOut();
+          return; // SIGNED_OUT event will setAppState("unauthed")
+        }
         loadAppData(session.user, false); // session restore — ไม่ log login ซ้ำ
       } else {
         setAppState("unauthed");
@@ -3668,12 +3674,34 @@ function App() {
           setAppState("pw_reset");
           return;
         }
+        // Remember Me OFF → mark session as active (cleared when browser closes)
+        if (localStorage.getItem("pea_rm") === "0") {
+          sessionStorage.setItem("pea_active", "1");
+        }
+        // Keep biometric session fresh on each login
+        if (localStorage.getItem("pea_bio_cred") && session.access_token) {
+          localStorage.setItem("pea_bio_session", JSON.stringify({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }));
+        }
         loadAppData(session.user, true); // normal login — log it
         return;
+      }
+      if (event === "TOKEN_REFRESHED" && session?.access_token) {
+        // Keep stored biometric session up-to-date with refreshed tokens
+        if (localStorage.getItem("pea_bio_cred")) {
+          localStorage.setItem("pea_bio_session", JSON.stringify({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }));
+        }
       }
       if (event === "SIGNED_OUT") {
         inRecoveryRef.current = false;
         sessionStorage.removeItem("pea_recovery");
+        sessionStorage.removeItem("pea_active");
+        setShowBioBanner(false);
         setCurrentUser(null);
         setData({ meters: [], transformers: [], users: [], auditLog: [], feeders: [], dashStats: {} });
         window.__peaAuthErr = null;
@@ -3683,6 +3711,54 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, [loadAppData]);
+
+  // ── Biometric registration banner — show once after login if device supports it ──
+  useEffectApp(() => {
+    if (appState !== "ready") return;
+    if (localStorage.getItem("pea_bio_cred")) return;       // already registered
+    if (sessionStorage.getItem("pea_bio_prompted")) return;  // already asked this session
+    if (!window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) return;
+    sessionStorage.setItem("pea_bio_prompted", "1");
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      .then(ok => { if (ok) setTimeout(() => setShowBioBanner(true), 1800); })
+      .catch(() => {});
+  }, [appState]);
+
+  const registerBiometric = useCallbackApp(async () => {
+    const toast = window.__peaToast;
+    try {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) return;
+      const uid = new TextEncoder().encode(session.user.id.replace(/-/g, "").slice(0, 16));
+      const challenge = window.crypto.getRandomValues(new Uint8Array(32));
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: { id: window.location.hostname, name: "GIS Meter" },
+          user: { id: uid, name: session.user.email, displayName: currentUser?.name || session.user.email },
+          pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "preferred" },
+          timeout: 60000,
+          attestation: "none",
+        },
+      });
+      if (!credential) return;
+      const rawId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      localStorage.setItem("pea_bio_cred", rawId);
+      localStorage.setItem("pea_bio_session", JSON.stringify({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      }));
+      setShowBioBanner(false);
+      toast?.(lang === "en" ? "Face ID / Fingerprint enabled" : "เปิดใช้ Face ID / ลายนิ้วมือแล้ว", "success");
+    } catch (e) {
+      setShowBioBanner(false);
+      if (e.name !== "NotAllowedError") {
+        const toast = window.__peaToast;
+        toast?.(lang === "en" ? "Could not register biometric" : "ลงทะเบียน Biometric ไม่สำเร็จ", "error");
+      }
+    }
+  }, [currentUser, lang]);
 
   // ── Push Notification subscription ───────────────────────────────────────
   const subscribePush = React.useCallback(async () => {
@@ -3980,6 +4056,40 @@ function App() {
   return (
     <ToastProvider><ConfirmProvider>
       <div className={"app-root" + (sidebarExpanded ? " sidebar-expanded" : "") + (sidebarCollapsed ? " sidebar-dt-collapsed" : "")}>
+
+        {/* ── Biometric registration banner ── */}
+        {showBioBanner && (
+          <div className="fade-up" style={{
+            position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)",
+            zIndex: 9800, width: "min(92vw, 400px)",
+            background: "var(--surface)", border: "1px solid var(--line)",
+            borderRadius: 18, padding: "16px 18px",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
+            display: "flex", flexDirection: "column", gap: 12,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ fontSize: 30, flexShrink: 0 }}>🔐</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>
+                  {lang === "en" ? "Enable Face ID / Fingerprint?" : "เปิดใช้ Face ID / ลายนิ้วมือ?"}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 2, lineHeight: 1.4 }}>
+                  {lang === "en" ? "Sign in faster next time without typing your password" : "เข้าสู่ระบบได้เร็วขึ้นโดยไม่ต้องพิมพ์รหัสผ่านใหม่"}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowBioBanner(false)}
+                style={{ flex: 1, padding: "9px", borderRadius: 10, border: "1px solid var(--line)", background: "var(--surface-2)", fontWeight: 600, fontSize: 13, cursor: "pointer", color: "var(--ink-mute)" }}>
+                {lang === "en" ? "Not now" : "ไม่ต้องการ"}
+              </button>
+              <button onClick={registerBiometric}
+                style={{ flex: 1, padding: "9px", borderRadius: 10, background: "var(--pea-purple-500)", color: "white", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                {lang === "en" ? "Enable" : "เปิดใช้งาน"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Offline indicator banner ── */}
         {!isOnline && (

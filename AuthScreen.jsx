@@ -312,6 +312,56 @@ function AuthScreen({ initialError }) {
   const [forgotDone, setForgotDone] = useStateA(false);
 
   const [showInfo, setShowInfo] = useStateA(false);
+  const [rememberMe, setRememberMe] = useStateA(() => localStorage.getItem("pea_rm") !== "0");
+  const [bioAvail, setBioAvail] = useStateA(false);
+  const [bioLoading, setBioLoading] = useStateA(false);
+
+  useEffectA(() => {
+    if (!localStorage.getItem("pea_bio_cred") || !window.PublicKeyCredential) return;
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.()
+      .then(ok => setBioAvail(ok))
+      .catch(() => {});
+  }, []);
+
+  const loginWithBiometric = async () => {
+    setBioLoading(true);
+    setErr(null);
+    try {
+      const rawB64 = localStorage.getItem("pea_bio_cred");
+      if (!rawB64) { setBioAvail(false); return; }
+      const credId = Uint8Array.from(atob(rawB64), c => c.charCodeAt(0));
+      const challenge = window.crypto.getRandomValues(new Uint8Array(32));
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          rpId: window.location.hostname,
+          allowCredentials: [{ id: credId, type: "public-key" }],
+          userVerification: "required",
+          timeout: 60000,
+        },
+      });
+      if (!assertion) throw new Error("no-assertion");
+      const stored = JSON.parse(localStorage.getItem("pea_bio_session") || "null");
+      if (!stored?.refresh_token) {
+        localStorage.removeItem("pea_bio_cred");
+        localStorage.removeItem("pea_bio_session");
+        setBioAvail(false);
+        setErr(t("bioExpired"));
+        return;
+      }
+      const { error } = await _supabase.auth.setSession(stored);
+      if (error) {
+        localStorage.removeItem("pea_bio_cred");
+        localStorage.removeItem("pea_bio_session");
+        setBioAvail(false);
+        setErr(t("bioExpired"));
+      }
+    } catch (e) {
+      if (e.name !== "NotAllowedError") setErr(t("bioFailed"));
+    } finally {
+      setBioLoading(false);
+    }
+  };
 
   const goForgot = () => { setMode("forgot"); setErr(null); setForgotDone(false); setForgotEmail(email); };
   const goLogin  = () => { setMode("login");  setErr(null); };
@@ -345,6 +395,7 @@ function AuthScreen({ initialError }) {
           loginEmail = resolved;
         }
 
+        localStorage.setItem("pea_rm", rememberMe ? "1" : "0");
         const { error } = await _supabase.auth.signInWithPassword({
           email:    loginEmail,
           password: password,
@@ -630,6 +681,34 @@ function AuthScreen({ initialError }) {
 
                   {mode === "login" ? (
                     <div className="f-col f-gap-4">
+
+                      {/* ── Biometric quick-login ── */}
+                      {bioAvail && (
+                        <button type="button" onClick={loginWithBiometric} disabled={bioLoading}
+                          className="fade-up"
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+                            padding: "14px 20px", borderRadius: 14, cursor: bioLoading ? "default" : "pointer",
+                            background: "linear-gradient(135deg,rgba(139,63,196,0.12),rgba(244,123,32,0.08))",
+                            border: "1.5px solid rgba(139,63,196,0.35)",
+                            color: "var(--ink)", fontWeight: 700, fontSize: 14,
+                            transition: "opacity 180ms, transform 180ms",
+                            opacity: bioLoading ? 0.6 : 1,
+                          }}
+                          onMouseEnter={e => { if (!bioLoading) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = ""; }}>
+                          <span style={{ fontSize: 22 }}>{bioLoading ? "⏳" : "🔐"}</span>
+                          <span>{bioLoading ? "…" : t("authBiometric")}</span>
+                        </button>
+                      )}
+                      {bioAvail && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ink-mute)" }}>
+                          <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                          <span style={{ fontSize: 11, fontWeight: 600 }}>{lang === "en" ? "or sign in with password" : "หรือใช้รหัสผ่าน"}</span>
+                          <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                        </div>
+                      )}
+
                       <div className="field">
                         <label className="field-label">{t("authEmailOrUsername")}</label>
                         <div style={{ position: "relative" }}>
@@ -662,6 +741,21 @@ function AuthScreen({ initialError }) {
                           </button>
                         </div>
                       </div>
+                      {/* ── Remember Me ── */}
+                      <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", marginTop: 2 }}>
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                          border: `2px solid ${rememberMe ? "var(--pea-purple-500)" : "var(--line)"}`,
+                          background: rememberMe ? "var(--pea-purple-500)" : "transparent",
+                          display: "grid", placeItems: "center",
+                          transition: "all 150ms",
+                        }}>
+                          {rememberMe && <Icon name="check" size={12} style={{ color: "white" }} />}
+                        </div>
+                        <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ display: "none" }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-mute)" }}>{t("authRememberMe")}</span>
+                      </label>
+
                       {err && (
                         <div className="badge badge-red" style={{ alignSelf: "flex-start", padding: "8px 12px" }}>
                           <Icon name="close" size={14} />{err}

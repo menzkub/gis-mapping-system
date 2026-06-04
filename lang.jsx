@@ -252,6 +252,17 @@ const TRANSLATIONS = {
     authBrandDesc: "ค้นหารหัสเครื่องวัด หรือรหัสหม้อแปลง\nดูแผนที่ — Cluster · Heatmap · นำทาง",
     authCopyright: "พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569",
 
+    // ── Remember Me + Biometric ────────────────────────────
+    authRememberMe: "จำฉันไว้",
+    authBiometric: "Face ID / ลายนิ้วมือ",
+    authBiometricHint: "กดเพื่อใช้ Face ID หรือลายนิ้วมือแทนรหัสผ่าน",
+    bioSetupTitle: "เปิดใช้ Face ID / ลายนิ้วมือ?",
+    bioSetupDesc: "เข้าสู่ระบบได้เร็วขึ้นครั้งถัดไป โดยไม่ต้องพิมพ์รหัสผ่านใหม่",
+    bioSetupYes: "เปิดใช้งาน", bioSetupNo: "ไม่ต้องการ",
+    bioExpired: "Session หมดอายุ กรุณาเข้าสู่ระบบด้วยรหัสผ่าน",
+    bioFailed: "ยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่",
+    bioDisable: "ปิดใช้งาน Biometric",
+
     // ── Architecture tab ───────────────────────────────────
     admArch: "สถาปัตยกรรม",
     admMobArch: "โครงสร้าง",
@@ -507,6 +518,17 @@ const TRANSLATIONS = {
     authBrandTitle1: "Search", authBrandTitle2: "Meter & Transformer", authBrandTitle3: "All in one place",
     authBrandDesc: "Search meter or transformer codes\nMap view — Cluster · Heatmap · Navigate",
     authCopyright: "Developed by IT · PEA FANG Smartflow · Copyright © 2026",
+
+    // ── Remember Me + Biometric ────────────────────────────
+    authRememberMe: "Remember me",
+    authBiometric: "Face ID / Fingerprint",
+    authBiometricHint: "Tap to sign in with Face ID or fingerprint",
+    bioSetupTitle: "Enable Face ID / Fingerprint?",
+    bioSetupDesc: "Sign in faster next time without typing your password",
+    bioSetupYes: "Enable", bioSetupNo: "Not now",
+    bioExpired: "Session expired. Please sign in with your password",
+    bioFailed: "Verification failed. Please try again",
+    bioDisable: "Disable Biometric",
 
     // ── Architecture tab ───────────────────────────────────
     admArch: "Architecture",
