@@ -1189,9 +1189,8 @@ function formatUntil(until) {
    UserSettingsPanel — ตั้งค่าและช่วยเหลือสำหรับผู้ใช้งาน
    Sub-tabs: บัญชีของฉัน | คู่มือการใช้งาน | การแจ้งเตือน
    ============================================================ */
-function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, privacyPolicy, pushPermission, subscribePush, unsubscribePush }) {
+function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, privacyPolicy, pushPermission, subscribePush, unsubscribePush, subTab, setSubTab }) {
   const { t, lang } = useLang();
-  const [subTab, setSubTab] = useStateApp("account");
   const [notifLoading, setNotifLoading] = useStateApp(false);
 
   const SUB_TABS = [
@@ -1211,28 +1210,23 @@ function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, pri
   };
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
-      {/* ── Left sidebar ── */}
-      <div style={{
-        width: 220, flexShrink: 0, borderRight: "1px solid var(--line)",
-        background: "var(--surface)", display: "flex", flexDirection: "column",
-        padding: "24px 12px",
-      }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 8px", marginBottom: 10 }}>
-          {t("navSettings")}
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      <style>{`
+        .usr-mob-tabs-wrap { display: none; }
+        @media (max-width: 640px) {
+          .usr-mob-tabs-wrap { display: flex; border-bottom: 1px solid var(--line); padding: 0 12px; gap: 4px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+          .usr-mob-tabs-wrap::-webkit-scrollbar { display: none; }
+          .usr-mob-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 0; font-size: 13px; font-weight: 600; white-space: nowrap; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--ink-mute); background: transparent; transition: all 140ms; flex-shrink: 0; }
+          .usr-mob-tab.active { color: var(--pea-purple-600); border-bottom-color: var(--pea-purple-500); }
+        }
+      `}</style>
+
+      {/* Mobile tab bar — hidden on desktop where sidebar sub-nav is used */}
+      <div className="usr-mob-tabs-wrap">
         {SUB_TABS.map(tab => (
-          <button key={tab.id} onClick={() => setSubTab(tab.id)} style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: subTab === tab.id ? "linear-gradient(135deg,rgba(107,44,145,0.12),rgba(244,123,32,0.08))" : "transparent",
-            color: subTab === tab.id ? "var(--pea-purple-600)" : "var(--ink-mute)",
-            fontSize: 13, fontWeight: subTab === tab.id ? 700 : 500,
-            textAlign: "left", width: "100%", transition: "all 160ms",
-            borderLeft: subTab === tab.id ? "3px solid var(--pea-purple-500)" : "3px solid transparent",
-          }}>
-            <Icon name={tab.icon} size={16} />
-            <span style={{ flex: 1 }}>{tab.label}</span>
+          <button key={tab.id} onClick={() => setSubTab(tab.id)} className={"usr-mob-tab" + (subTab === tab.id ? " active" : "")}>
+            <Icon name={tab.icon} size={14} />
+            {tab.label}
             {tab.id === "notifications" && pushPermission === "granted" && (
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", flexShrink: 0 }} />
             )}
@@ -3355,6 +3349,7 @@ function App() {
   const [showMobileUserMenu, setShowMobileUserMenu] = useStateApp(false);
   const [maintDismissed, setMaintDismissed] = useStateApp(() => sessionStorage.getItem("pea_maint_dismissed") === "true");
   const [adminTab, setAdminTab] = useStateApp("dashboard");
+  const [userSettingsTab, setUserSettingsTab] = useStateApp("account");
   const [showLogoutConfirm, setShowLogoutConfirm] = useStateApp(false);
   const [devInfo, setDevInfo] = useStateApp({
     name: "", position: "", department: "", location: "",
@@ -3878,7 +3873,7 @@ function App() {
       { id: "admin",     icon: "settings", label: t("navAdmin")     },
     ] : []),
   ];
-  const ADMIN_NAV = [
+  const ADMIN_NAV_MAIN = [
     { id: "dashboard", icon: "dashboard", label: t("admDashboard") },
     { id: "users",     icon: "users",     label: t("admUsers")     },
     { id: "meters",    icon: "meter",     label: t("admMeters")    },
@@ -3888,10 +3883,18 @@ function App() {
     { id: "payments",  icon: "wallet",    label: t("admPayments")  },
     { id: "audit",     icon: "history",   label: t("admAudit")     },
     { id: "security",  icon: "lock",      label: t("admSecurity")  },
+  ];
+  const ADMIN_NAV_SETTINGS = [
     { id: "settings",  icon: "settings",  label: t("admSettings")  },
     { id: "guide",     icon: "book",      label: t("admGuide")     },
     { id: "powered",   icon: "bolt",      label: t("admPowered")   },
     ...(isAdmin ? [{ id: "dev", icon: "code", label: t("admDev") }] : []),
+  ];
+  const ADMIN_NAV = [...ADMIN_NAV_MAIN, ...ADMIN_NAV_SETTINGS];
+  const USER_SETTINGS_SUBNAV = [
+    { id: "account",       icon: "user", label: t("usrTabAccount") },
+    { id: "guide",         icon: "book", label: t("usrTabGuide")   },
+    { id: "notifications", icon: "bell", label: t("usrTabNotif")   },
   ];
   const pendingCount = data.users.filter(u => u.status === "pending").length;
 
@@ -3979,7 +3982,7 @@ function App() {
                 {/* Admin sub-nav — shows when on admin route OR when sidebar is expanded */}
                 {it.id === "admin" && (route === "admin" || sidebarExpanded) && (
                   <div className="adm-subnav sidebar-nav-label" style={{ marginLeft: 10, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,0.10)", display: "flex", flexDirection: "column", gap: 1 }}>
-                    {ADMIN_NAV.map(sub => (
+                    {ADMIN_NAV_MAIN.map(sub => (
                       <button key={sub.id} onClick={() => { setRoute("admin"); setAdminTab(sub.id); setSidebarExpanded(false); }} style={{
                         display: "flex", alignItems: "center", gap: 9,
                         padding: "8px 12px", borderRadius: 9, fontSize: 14, fontWeight: 600,
@@ -3995,6 +3998,44 @@ function App() {
                           <span style={{ background: "var(--pea-orange-500)", color: "white", borderRadius: 999, minWidth: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, padding: "0 4px", marginLeft: "auto" }}>
                             {pendingCount}
                           </span>
+                        )}
+                      </button>
+                    ))}
+                    <div style={{ margin: "6px 8px 4px", fontSize: 9, fontWeight: 800, letterSpacing: "0.14em", color: "rgba(255,255,255,0.28)", textTransform: "uppercase" }}>
+                      {t("navSettings")}
+                    </div>
+                    {ADMIN_NAV_SETTINGS.map(sub => (
+                      <button key={sub.id} onClick={() => { setRoute("admin"); setAdminTab(sub.id); setSidebarExpanded(false); }} style={{
+                        display: "flex", alignItems: "center", gap: 9,
+                        padding: "8px 12px", borderRadius: 9, fontSize: 14, fontWeight: 600,
+                        color: adminTab === sub.id ? "white" : "rgba(255,255,255,0.58)",
+                        background: adminTab === sub.id ? "rgba(244,123,32,0.20)" : "transparent",
+                        border: adminTab === sub.id ? "1px solid rgba(244,123,32,0.32)" : "1px solid transparent",
+                        cursor: "pointer", textAlign: "left", transition: "all 140ms",
+                      }}>
+                        <Icon name={sub.icon} size={15} />
+                        {sub.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* User-settings sub-nav — shows when on user-settings route */}
+                {it.id === "user-settings" && route === "user-settings" && (
+                  <div className="sidebar-nav-label" style={{ marginLeft: 10, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,0.10)", display: "flex", flexDirection: "column", gap: 1 }}>
+                    {USER_SETTINGS_SUBNAV.map(sub => (
+                      <button key={sub.id} onClick={() => setUserSettingsTab(sub.id)} style={{
+                        display: "flex", alignItems: "center", gap: 9,
+                        padding: "8px 12px", borderRadius: 9, fontSize: 14, fontWeight: 600,
+                        color: userSettingsTab === sub.id ? "white" : "rgba(255,255,255,0.58)",
+                        background: userSettingsTab === sub.id ? "rgba(107,44,145,0.30)" : "transparent",
+                        border: userSettingsTab === sub.id ? "1px solid rgba(139,63,196,0.45)" : "1px solid transparent",
+                        cursor: "pointer", textAlign: "left", transition: "all 140ms",
+                      }}>
+                        <Icon name={sub.icon} size={15} />
+                        {sub.label}
+                        {sub.id === "notifications" && pushPermission === "granted" && (
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", marginLeft: "auto", flexShrink: 0 }} />
                         )}
                       </button>
                     ))}
@@ -4562,6 +4603,8 @@ function App() {
               pushPermission={pushPermission}
               subscribePush={subscribePush}
               unsubscribePush={unsubscribePush}
+              subTab={userSettingsTab}
+              setSubTab={setUserSettingsTab}
             />
           )}
           {route === "payment" && isTeamLeader && (

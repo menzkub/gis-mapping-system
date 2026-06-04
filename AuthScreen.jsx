@@ -950,7 +950,9 @@ function AppInfoModal({ onClose }) {
     { icon: "👤", title: s("Admin ระบบ","System Admin"), body: s("ติดต่อผู้ดูแลระบบ (Admin) เพื่อขอสิทธิ์, รีเซ็ตรหัสผ่าน, หรือแก้ไขข้อมูล","Contact the system Admin for access requests, password resets, or data corrections.") },
     { icon: "🔄", title: s("ขอฟีเจอร์ใหม่","Feature Requests"), body: s("ต้องการฟีเจอร์เพิ่มเติม หรือมีข้อเสนอแนะ ยินดีรับฟังเพื่อพัฒนาระบบให้ดียิ่งขึ้น","Have feature requests or suggestions? We welcome your feedback to improve the system.") },
   ];
-  const CONTACT = (fetchedContact && fetchedContact.length > 0) ? fetchedContact : DEFAULT_CONTACT;
+  // Use fetched data only if it has bilingual fields; otherwise fall back to DEFAULT_CONTACT which is always language-aware
+  const hasBilingualContact = fetchedContact?.length > 0 && fetchedContact[0].title_th;
+  const CONTACT = hasBilingualContact ? fetchedContact : DEFAULT_CONTACT;
 
   const FEATURES = [
     { icon: "🔍", t: s("ค้นหาข้อมูล","Search"), d: "Meter / Transformer" },
@@ -1080,14 +1082,18 @@ function AppInfoModal({ onClose }) {
     contact: (
       <div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {CONTACT.map((c, i) => (
+          {CONTACT.map((c, i) => {
+            const displayTitle = c.title_th ? (lang === "en" ? (c.title_en || c.title_th) : c.title_th) : c.title;
+            const displayBody  = c.body_th  ? (lang === "en" ? (c.body_en  || c.body_th)  : c.body_th)  : c.body;
+            return (
             <div key={i} style={{ padding: "14px 16px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)" }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
-                <span>{c.icon}</span> {c.title}
+                <span>{c.icon}</span> {displayTitle}
               </div>
-              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.8, whiteSpace: "pre-line" }}>{c.body}</div>
+              <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.8, whiteSpace: "pre-line" }}>{displayBody}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Report Problem — highlighted card */}
