@@ -1,7 +1,7 @@
 {
-  "commit": "b53c89ffe641c243e602a24a3cd3a1f5ece317f0",
-  "shortCommit": "b53c89f",
-  "message": "Fix contact_info save: use update instead of upsert (RLS blocks INSERT)",
-  "date": "2026-06-04T03:51:18Z",
+  "commit": "6314037fd6269b6c6d3882459763b60639b20c24",
+  "shortCommit": "6314037",
+  "message": "Contact tab: PEA FANG real info, report-problem card, multiline support",
+  "date": "2026-06-04T03:55:34Z",
   "branch": "main"
 }
