@@ -1,7 +1,7 @@
 {
-  "commit": "c05140e7267800a0f648840f2987a74fe81d1d5e",
-  "shortCommit": "c05140e",
-  "message": "content: add copyright footer to Changelog, UserGuide, and DevInfo",
-  "date": "2026-06-04T04:47:59Z",
+  "commit": "9f069867f70abb6c2aa46330829e65697c4117ec",
+  "shortCommit": "9f06986",
+  "message": "fix: reduce brand panel radius to 20px, remove form panel shadow",
+  "date": "2026-06-04T04:50:32Z",
   "branch": "main"
 }
