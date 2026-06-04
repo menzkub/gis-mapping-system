@@ -1,7 +1,7 @@
 {
-  "commit": "5af6fd2ac2a1f3f926b4e6459eda7c694221a791",
-  "shortCommit": "5af6fd2",
-  "message": "AppInfoModal: TH/EN toggle, Supabase-linked content, admin contact editor",
-  "date": "2026-06-04T03:31:26Z",
+  "commit": "b53c89ffe641c243e602a24a3cd3a1f5ece317f0",
+  "shortCommit": "b53c89f",
+  "message": "Fix contact_info save: use update instead of upsert (RLS blocks INSERT)",
+  "date": "2026-06-04T03:51:18Z",
   "branch": "main"
 }
