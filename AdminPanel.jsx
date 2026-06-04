@@ -39,6 +39,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
     { id:"guide",    icon:"book",     label:t("admMobGuide")  },
     { id:"powered",  icon:"bolt",     label:t("admMobPowered")},
     { id:"dev",      icon:"code",     label:t("admMobDev")    },
+    { id:"arch",     icon:"layers",   label:t("admMobArch")   },
   ];
   const MOB_MORE = [...MOB_MORE_MAIN, ...MOB_MORE_SETTINGS];
   const activeInMore = MOB_MORE.some(n => n.id === tab);
@@ -204,6 +205,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
         {tab === "guide"     && <AdminGuide />}
         {tab === "powered"   && <PoweredByTab />}
         {tab === "dev"       && currentUser.role === "admin" && <AdminDevGuide />}
+        {tab === "arch"      && <ArchTab />}
       </div>
     </div>
   );
@@ -7770,6 +7772,576 @@ function AdminPayments({ currentUser, addAudit }) {
       </Modal>
         </>)}
       </div>{/* end Payment Slips card */}
+    </div>
+  );
+}
+
+/* ============================================================
+   ArchTab — System Architecture overview
+   ============================================================ */
+function ArchTab() {
+  const { lang } = useLang();
+  const s = (th, en) => lang === "en" ? en : th;
+  const t = (key) => {
+    const map = {
+      archHeroSub:      s("โครงสร้างระบบ",                         "System Structure"),
+      archHeroTitle:    s("สถาปัตยกรรมแอป",                        "App Architecture"),
+      archHeroDesc:     s("แผนผังไฟล์, การนำทาง, ข้อมูลไหล และจุดแก้ไขเมื่อมีปัญหา", "File map, navigation flow, data flow and where to fix when broken"),
+      archNavFlow:      s("การไหลของการนำทาง",                     "Navigation Flow"),
+      archNavFlowDesc:  s("กดอะไร → ไปที่หน้าไหน",                "What you click → where it goes"),
+      archFileMap:      s("แผนผังไฟล์",                            "File Map"),
+      archFileMapDesc:  s("หน้าที่ของแต่ละไฟล์และจุดแก้ไขเมื่อมีปัญหา", "Each file's role and where to fix when broken"),
+      archDataFlow:     s("การไหลของข้อมูล",                       "Data Flow"),
+      archDataFlowDesc: s("ข้อมูลเดินทางจาก Supabase ถึง UI อย่างไร", "How data travels from Supabase to the UI"),
+      archRole:         s("หน้าที่",                               "Role"),
+      archExports:      s("Export หลัก",                           "Key Exports"),
+      archFixHere:      s("มีปัญหา → แก้ที่นี่",                  "Broken? → Fix here"),
+    };
+    return map[key] || key;
+  };
+
+  const FILES = [
+    {
+      name: "index.html",
+      icon: "code",
+      accent: "#e11d48",
+      bg: "rgba(225,29,72,0.08)",
+      border: "rgba(225,29,72,0.2)",
+      role: s(
+        "Entry point — โหลด React 18, Babel Standalone, Leaflet, XLSX, html2pdf จาก CDN · ลงทะเบียน Service Worker",
+        "Entry point — loads React 18, Babel Standalone, Leaflet, XLSX, html2pdf from CDN · registers Service Worker"
+      ),
+      exports: s("ไม่มี (HTML)", "None (HTML)"),
+      depends: s("CDN ทั้งหมด + ทุกไฟล์ JSX", "All CDNs + every JSX file"),
+      fix: s(
+        "หน้าขาว / ไม่มีอะไรแสดง, script error ใน console, ไลบรารี CDN โหลดไม่ขึ้น, หรือ Service Worker ไม่ลงทะเบียน",
+        "White screen / nothing renders, console script errors, CDN library fails to load, or Service Worker not registering"
+      ),
+    },
+    {
+      name: "config.js",
+      icon: "key",
+      accent: "#f59e0b",
+      bg: "rgba(245,158,11,0.08)",
+      border: "rgba(245,158,11,0.2)",
+      role: s(
+        "การกำหนดค่า Supabase (URL + anon key) · row-mapper functions ที่แปลงข้อมูล DB → object ใน app",
+        "Supabase config (URL + anon key) · row-mapper functions that convert DB rows → app objects"
+      ),
+      exports: "fromMeter, fromTransformer, fromProfilePatch, toMeter, toTransformer, toProfile, _supabase",
+      depends: "Supabase JS SDK (CDN)",
+      fix: s(
+        "ข้อมูลไม่โหลด / null fields / cannot read property, หรือ Supabase auth ล้มเหลว",
+        "Data not loading / null fields / cannot read property, or Supabase auth fails"
+      ),
+    },
+    {
+      name: "lang.jsx",
+      icon: "globe",
+      accent: "#8b5cf6",
+      bg: "rgba(139,92,246,0.08)",
+      border: "rgba(139,92,246,0.2)",
+      role: s(
+        "ระบบภาษา TH/EN · context useLang() → { lang, setLang, t } · TRANSLATIONS object ที่มีทุก string ในแอป",
+        "TH/EN i18n · context useLang() → { lang, setLang, t } · TRANSLATIONS object holding all app strings"
+      ),
+      exports: "LanguageProvider, useLang",
+      depends: "React context",
+      fix: s(
+        "ข้อความแสดงเป็น key เช่น 'navSearch' แทนที่จะเป็น 'ค้นหา', หรือภาษาไม่เปลี่ยนเมื่อสลับ",
+        "Text shows raw keys like 'navSearch' instead of 'Search', or language doesn't switch"
+      ),
+    },
+    {
+      name: "components.jsx",
+      icon: "layers",
+      accent: "#06b6d4",
+      bg: "rgba(6,182,212,0.08)",
+      border: "rgba(6,182,212,0.2)",
+      role: s(
+        "Shared UI ที่ใช้ทุกที่ · Icon SVG set · StatCard · Modal / ConfirmModal · Toast system · Export helpers (CSV, XLSX, PDF)",
+        "Shared UI used everywhere · Icon SVG set · StatCard · Modal / ConfirmModal · Toast system · Export helpers (CSV, XLSX, PDF)"
+      ),
+      exports: "Icon, StatCard, Modal, useToast, useConfirm, downloadCSV, downloadXLSX, downloadPDF, formatThaiDate",
+      depends: "React, SheetJS (XLSX), html2pdf (CDN)",
+      fix: s(
+        "ไอคอนหาย, Modal ไม่เปิด, Toast ไม่แสดง, export ล้มเหลว, หรือ 'Can\\'t find variable: Icon'",
+        "Icons missing, Modal won't open, Toast not showing, export fails, or 'Can\\'t find variable: Icon'"
+      ),
+    },
+    {
+      name: "AuthScreen.jsx",
+      icon: "lock",
+      accent: "#10b981",
+      bg: "rgba(16,185,129,0.08)",
+      border: "rgba(16,185,129,0.2)",
+      role: s(
+        "หน้า Login / สมัครสมาชิก / Reset Password · ใช้ Supabase Auth · ตรวจ profile status (pending/active/suspended)",
+        "Login / Register / Reset Password · uses Supabase Auth · checks profile status (pending/active/suspended)"
+      ),
+      exports: "AuthScreen",
+      depends: "_supabase (config.js), useLang, useToast",
+      fix: s(
+        "Login ไม่ได้, ฟอร์มไม่ submit, reset email ไม่ส่ง, หรือผู้ใช้ถูก redirect วนซ้ำ",
+        "Can't log in, form won't submit, reset email not sending, or user gets redirect loop"
+      ),
+    },
+    {
+      name: "MapView.jsx",
+      icon: "map",
+      accent: "#f47b20",
+      bg: "rgba(244,123,32,0.08)",
+      border: "rgba(244,123,32,0.2)",
+      role: s(
+        "Leaflet map · Cluster / Heatmap / GPS · marker popup · การแก้ไขพิกัด (drag pin + modal) · base map switch (street/satellite)",
+        "Leaflet map · Cluster / Heatmap / GPS · marker popup · coordinate correction (drag pin + modal) · base map switch"
+      ),
+      exports: "MapView",
+      depends: "Leaflet (CDN), _supabase, useLang, useToast, Icon",
+      fix: s(
+        "แผนที่ไม่แสดง / กระเบื้องหาย, marker ไม่โหลด, GPS error, หรือ correction modal ไม่บันทึก",
+        "Map not showing / tiles missing, markers not loading, GPS error, or correction modal not saving"
+      ),
+    },
+    {
+      name: "SearchView.jsx",
+      icon: "search",
+      accent: "#8b3fc4",
+      bg: "rgba(139,63,196,0.08)",
+      border: "rgba(139,63,196,0.2)",
+      role: s(
+        "ช่องค้นหา + filter panel (ประเภท, KVA, feeder) · ResultList · QrModal · CorrSearchModal · Export (CSV/XLSX/PDF) · IndexedDB cache",
+        "Search box + filter panel (type, KVA, feeder) · ResultList · QrModal · CorrSearchModal · Export (CSV/XLSX/PDF) · IndexedDB cache"
+      ),
+      exports: "SearchView",
+      depends: "useLang, useToast, Icon, downloadCSV, downloadXLSX, downloadPDF, _supabase",
+      fix: s(
+        "ค้นหาไม่ขึ้นผลลัพธ์, export ล้มเหลว, QR ไม่แสดง, แก้ไขพิกัดจากผลการค้นหาไม่ได้, หรือ 'Can\\'t find variable: SearchView'",
+        "Search returns no results, export fails, QR not showing, coordinate correction from results broken, or 'Can\\'t find variable: SearchView'"
+      ),
+    },
+    {
+      name: "AdminPanel.jsx",
+      icon: "dashboard",
+      accent: "#ef4444",
+      bg: "rgba(239,68,68,0.08)",
+      border: "rgba(239,68,68,0.2)",
+      role: s(
+        "แท็บ admin ทั้งหมด: Dashboard · Users · Meters · Transformers · Map · Import · Payments · Audit · Security · Settings · Profile · Guide · Dev · Architecture (ไฟล์นี้)",
+        "All admin tabs: Dashboard · Users · Meters · Transformers · Map · Import · Payments · Audit · Security · Settings · Profile · Guide · Dev · Architecture (this file)"
+      ),
+      exports: "AdminPanel",
+      depends: "useLang, useToast, useConfirm, Icon, StatCard, Modal, downloadCSV, downloadXLSX, downloadPDF, _supabase",
+      fix: s(
+        "แท็บ admin หาย → ตรวจ MOB_MORE_SETTINGS + tab render (~บรรทัด 204), ปุ่มไม่ทำงาน, CRUD error, หรือ dashboard ข้อมูลไม่ถูก",
+        "Admin tab missing → check MOB_MORE_SETTINGS + tab render (~line 204), buttons not working, CRUD errors, or dashboard data wrong"
+      ),
+    },
+    {
+      name: "app.jsx",
+      icon: "cpu",
+      accent: "#3b82f6",
+      bg: "rgba(59,130,246,0.08)",
+      border: "rgba(59,130,246,0.2)",
+      role: s(
+        "Root component · Auth state (session, currentUser) · loadAppData() ดึงข้อมูลทั้งหมดจาก Supabase · view routing (auth/search/map/admin) · maintenance mode · push notifications",
+        "Root component · auth state (session, currentUser) · loadAppData() fetches all data from Supabase · view routing (auth/search/map/admin) · maintenance mode · push notifications"
+      ),
+      exports: s("ไม่มี (mount ตรง DOM)", "None (mounts directly to DOM)"),
+      depends: s("ทุกไฟล์ JSX ทั้งหมด", "All JSX files"),
+      fix: s(
+        "แอปค้างที่หน้า Loading, auth loop, ข้อมูลไม่ refresh, view ไม่สลับ, หรือ window.PEA_META ไม่มีค่า",
+        "App stuck on loading screen, auth loop, data not refreshing, view not switching, or window.PEA_META missing"
+      ),
+    },
+    {
+      name: "service-worker.js",
+      icon: "refresh",
+      accent: "#64748b",
+      bg: "rgba(100,116,139,0.08)",
+      border: "rgba(100,116,139,0.2)",
+      role: s(
+        "PWA · cache-first strategy สำหรับไฟล์แอป · network-only สำหรับ Supabase/CDN · Push notification handler",
+        "PWA · cache-first strategy for app files · network-only for Supabase/CDN · Push notification handler"
+      ),
+      exports: s("ไม่มี (Service Worker)", "None (Service Worker)"),
+      depends: s("Cache API + Push API (browser)", "Cache API + Push API (browser)"),
+      fix: s(
+        "แอปใช้ไฟล์เก่าหลังอัปเดต → bump CACHE version string (gis-meter-vXX), push notification ไม่มา → ตรวจ push event handler",
+        "App uses stale files after update → bump CACHE version string (gis-meter-vXX), push not arriving → check push event handler"
+      ),
+    },
+  ];
+
+  const FLOW_SCREENS = [
+    {
+      id: "auth",
+      label: "AuthScreen",
+      file: "AuthScreen.jsx",
+      color: "#10b981",
+      bg: "rgba(16,185,129,0.12)",
+      border: "rgba(16,185,129,0.4)",
+      actions: [
+        { label: s("Login สำเร็จ", "Login success"), to: "search" },
+      ],
+    },
+    {
+      id: "search",
+      label: "SearchView",
+      file: "SearchView.jsx",
+      color: "#8b3fc4",
+      bg: "rgba(139,63,196,0.12)",
+      border: "rgba(139,63,196,0.4)",
+      actions: [
+        { label: s("กดไอคอนแผนที่", "Tap map icon"), to: "map" },
+        { label: s("กด Admin (role=admin)", "Tap Admin (role=admin)"), to: "admin" },
+      ],
+    },
+    {
+      id: "map",
+      label: "MapView",
+      file: "MapView.jsx",
+      color: "#f47b20",
+      bg: "rgba(244,123,32,0.12)",
+      border: "rgba(244,123,32,0.4)",
+      actions: [
+        { label: s("กด ← กลับ", "Tap ← Back"), to: "search" },
+      ],
+    },
+    {
+      id: "admin",
+      label: "AdminPanel",
+      file: "AdminPanel.jsx",
+      color: "#ef4444",
+      bg: "rgba(239,68,68,0.12)",
+      border: "rgba(239,68,68,0.4)",
+      actions: [
+        { label: s("กด ← กลับ", "Tap ← Back"), to: "search" },
+      ],
+    },
+  ];
+
+  const ADMIN_TABS = [
+    { id: "dashboard",  label: s("Dashboard",    "Dashboard")   },
+    { id: "users",      label: s("ผู้ใช้",       "Users")       },
+    { id: "meters",     label: s("มิเตอร์",      "Meters")      },
+    { id: "trs",        label: s("หม้อแปลง",     "Transformers") },
+    { id: "map",        label: s("แผนที่",        "Map")         },
+    { id: "import",     label: s("นำเข้า",       "Import")      },
+    { id: "payments",   label: s("ชำระเงิน",     "Payments")    },
+    { id: "audit",      label: "Audit"                          },
+    { id: "security",   label: s("ความปลอดภัย",  "Security")    },
+    { id: "settings",   label: s("ตั้งค่า",      "Settings")    },
+    { id: "profile",    label: s("โปรไฟล์",      "Profile")     },
+    { id: "guide",      label: s("คู่มือ",       "Guide")       },
+    { id: "powered",    label: "Powered By"                     },
+    { id: "dev",        label: s("Dev Guide",    "Dev Guide")   },
+    { id: "arch",       label: s("สถาปัตยกรรม", "Architecture") },
+  ];
+
+  const DATA_STEPS = [
+    {
+      icon: "database",
+      color: "#3ecf8e",
+      label: "Supabase DB",
+      desc: s("ตาราง: meters, trs, profiles, coordinate_corrections, audit_logs, payment_records", "Tables: meters, trs, profiles, coordinate_corrections, audit_logs, payment_records"),
+    },
+    {
+      icon: "key",
+      color: "#f59e0b",
+      label: "config.js",
+      desc: s("fromMeter() / fromTransformer() แปลง snake_case DB row → camelCase object", "fromMeter() / fromTransformer() map snake_case DB rows → camelCase objects"),
+    },
+    {
+      icon: "cpu",
+      color: "#3b82f6",
+      label: "app.jsx · loadAppData()",
+      desc: s("ดึงข้อมูลทั้งหมด → เก็บใน state: data.meters, data.trs, data.users, data.dashStats", "Fetches all data → stores in state: data.meters, data.trs, data.users, data.dashStats"),
+    },
+    {
+      icon: "arrowRight",
+      color: "#8b5cf6",
+      label: s("Props ลงไปยัง Components", "Props down to Components"),
+      desc: "data → SearchView / AdminPanel / MapView",
+    },
+    {
+      icon: "layers",
+      color: "#8b3fc4",
+      label: "SearchView / AdminPanel / MapView",
+      desc: s("render ข้อมูล + รับ user action → เรียก Supabase โดยตรงสำหรับ write operations", "Renders data + handles user actions → calls Supabase directly for write operations"),
+    },
+  ];
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <style>{`
+        .arch-section-title {
+          display: flex; align-items: center; gap: 10px;
+          font-size: 16px; font-weight: 800; letter-spacing: -0.01em;
+          margin-bottom: 4px;
+        }
+        .arch-section-sub {
+          font-size: 12px; color: var(--ink-mute); margin-bottom: 14px;
+        }
+        .arch-file-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        .arch-file-card {
+          border-radius: 14px; padding: 16px;
+          display: flex; flex-direction: column; gap: 10px;
+        }
+        .arch-file-name {
+          font-family: monospace; font-size: 13px; font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+        .arch-badge {
+          display: inline-block; padding: 2px 8px; border-radius: 6px;
+          font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+        .arch-row { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
+        .arch-row-key { flex-shrink: 0; width: 68px; font-weight: 700; color: var(--ink-mute); padding-top: 1px; }
+        .arch-row-val { flex: 1; line-height: 1.5; color: var(--ink); }
+        .arch-fix-box {
+          border-radius: 8px; padding: 8px 12px;
+          font-size: 11px; font-weight: 600; line-height: 1.5;
+          border: 1px solid rgba(239,68,68,0.25);
+          background: rgba(239,68,68,0.06);
+          color: #ef4444;
+        }
+        .arch-flow-box {
+          border-radius: 14px; padding: 14px 16px;
+          display: flex; flex-direction: column; gap: 10px;
+          border: 1.5px solid;
+        }
+        .arch-flow-name { font-size: 14px; font-weight: 800; }
+        .arch-flow-file { font-family: monospace; font-size: 10px; opacity: 0.7; }
+        .arch-arrow-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .arch-arrow { color: var(--ink-mute); }
+        .arch-data-step {
+          display: flex; align-items: flex-start; gap: 14px;
+          padding: 14px 16px; border-radius: 12px;
+          background: var(--surface); border: 1px solid var(--line);
+        }
+        .arch-data-icon {
+          width: 36px; height: 36px; border-radius: 10px;
+          display: grid; place-items: center; flex-shrink: 0;
+        }
+        .arch-data-label { font-size: 13px; font-weight: 800; font-family: monospace; }
+        .arch-data-desc  { font-size: 12px; color: var(--ink-mute); line-height: 1.5; margin-top: 2px; }
+        .arch-data-connector {
+          display: flex; align-items: center; justify-content: center;
+          padding: 2px 0; color: var(--ink-mute);
+        }
+        .arch-admin-tabs {
+          display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+        }
+        .arch-admin-tab {
+          padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
+          background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-mute);
+        }
+        .arch-admin-tab.current {
+          background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3);
+          color: #ef4444;
+        }
+        @media (max-width: 640px) {
+          .arch-file-grid { grid-template-columns: 1fr; }
+          .arch-row-key { width: 56px; font-size: 11px; }
+        }
+      `}</style>
+
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <div style={{
+        borderRadius: 18, padding: "22px 24px 20px", marginBottom: 24,
+        background: "linear-gradient(135deg,#1a1045 0%,#2d1668 45%,#4a1f8a 100%)",
+        color: "white", position: "relative", overflow: "hidden",
+        border: "1px solid rgba(139,63,196,0.3)",
+      }}>
+        <div style={{ position: "absolute", right: -50, top: -50, width: 220, height: 220, borderRadius: "50%", background: "rgba(139,63,196,0.1)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+          <div style={{ width: 50, height: 50, borderRadius: 14, background: "rgba(139,63,196,0.3)", border: "1px solid rgba(139,63,196,0.5)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="layers" size={26} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>
+              {t("archHeroSub")}
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.2 }}>
+              {t("archHeroTitle")}
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 4, lineHeight: 1.5 }}>
+              {t("archHeroDesc")}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16, position: "relative" }}>
+          {["React 18 UMD","Babel Standalone","Supabase","Leaflet 1.9","GitHub Pages","PWA"].map(label => (
+            <span key={label} style={{
+              padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+              background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.85)"
+            }}>{label}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Navigation Flow ──────────────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div className="arch-section-title">
+          <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,63,196,0.12)", border: "1px solid rgba(139,63,196,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="navigation" size={15} />
+          </span>
+          {t("archNavFlow")}
+        </div>
+        <div className="arch-section-sub">{t("archNavFlowDesc")}</div>
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+          {FLOW_SCREENS.map(scr => (
+            <div key={scr.id} className="arch-flow-box" style={{ background: scr.bg, borderColor: scr.border, flex: "1 1 160px", minWidth: 160 }}>
+              <div>
+                <div className="arch-flow-name" style={{ color: scr.color }}>{scr.label}</div>
+                <div className="arch-flow-file">{scr.file}</div>
+              </div>
+              {scr.actions.map((a, i) => (
+                <div key={i} className="arch-arrow-row">
+                  <span className="arch-arrow">→</span>
+                  <span style={{ color: "var(--ink-mute)" }}>{a.label}</span>
+                  <span style={{ marginLeft: "auto", padding: "1px 7px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: "var(--surface-2)", border: "1px solid var(--line)", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                    {a.to}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* AdminPanel sub-tabs */}
+        <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 14, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#ef4444", marginBottom: 6 }}>
+            AdminPanel → {s("แท็บย่อย", "sub-tabs")}
+          </div>
+          <div className="arch-admin-tabs">
+            {ADMIN_TABS.map(tab => (
+              <span key={tab.id} className={"arch-admin-tab" + (tab.id === "arch" ? " current" : "")}>
+                {tab.id === "arch" ? `★ ${tab.label}` : tab.label}
+              </span>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 8 }}>
+            {s(
+              "state adminTab อยู่ใน app.jsx · ส่งเป็น prop tab={adminTab} เข้า AdminPanel · แท็บที่เน้นสีคือหน้าปัจจุบัน",
+              "adminTab state lives in app.jsx · passed as prop tab={adminTab} to AdminPanel · highlighted tab is the current page"
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── File Map ─────────────────────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div className="arch-section-title">
+          <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="code" size={15} />
+          </span>
+          {t("archFileMap")}
+        </div>
+        <div className="arch-section-sub">{t("archFileMapDesc")}</div>
+
+        <div className="arch-file-grid">
+          {FILES.map(f => (
+            <div key={f.name} className="arch-file-card" style={{ background: f.bg, border: `1px solid ${f.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: f.bg, border: `1.5px solid ${f.border}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <Icon name={f.icon} size={17} style={{ color: f.accent }} />
+                </div>
+                <div className="arch-file-name" style={{ color: f.accent }}>{f.name}</div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="arch-row">
+                  <span className="arch-row-key">{t("archRole")}</span>
+                  <span className="arch-row-val">{f.role}</span>
+                </div>
+                <div className="arch-row">
+                  <span className="arch-row-key">{t("archExports")}</span>
+                  <span className="arch-row-val" style={{ fontFamily: "monospace", fontSize: 11 }}>{f.exports}</span>
+                </div>
+                <div className="arch-row">
+                  <span className="arch-row-key">{s("ขึ้นกับ", "Depends")}</span>
+                  <span className="arch-row-val" style={{ fontFamily: "monospace", fontSize: 11 }}>{f.depends}</span>
+                </div>
+              </div>
+
+              <div className="arch-fix-box">
+                <span style={{ fontWeight: 800 }}>{t("archFixHere")}:</span>{" "}{f.fix}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Data Flow ────────────────────────────────────────── */}
+      <div style={{ marginBottom: 8 }}>
+        <div className="arch-section-title">
+          <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="database" size={15} />
+          </span>
+          {t("archDataFlow")}
+        </div>
+        <div className="arch-section-sub">{t("archDataFlowDesc")}</div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {DATA_STEPS.map((step, i) => (
+            <React.Fragment key={step.label}>
+              <div className="arch-data-step">
+                <div className="arch-data-icon" style={{ background: `${step.color}18`, border: `1.5px solid ${step.color}40` }}>
+                  <Icon name={step.icon} size={18} style={{ color: step.color }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="arch-data-label">{step.label}</div>
+                  <div className="arch-data-desc">{step.desc}</div>
+                </div>
+                <span style={{ flexShrink: 0, padding: "2px 8px", borderRadius: 6, background: "var(--surface-2)", border: "1px solid var(--line)", fontSize: 10, fontWeight: 800, color: "var(--ink-mute)" }}>
+                  {i + 1}
+                </span>
+              </div>
+              {i < DATA_STEPS.length - 1 && (
+                <div className="arch-data-connector">
+                  <Icon name="chevDown" size={16} />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Tip box */}
+        <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(139,63,196,0.06)", border: "1px solid rgba(139,63,196,0.2)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <Icon name="tip" size={18} style={{ color: "#8b3fc4", flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 800, color: "#8b3fc4" }}>
+              {s("เคล็ดลับดีบัก: ", "Debug tip: ")}
+            </span>
+            {s(
+              'หากแอปล้มเหลวด้วย "Can\'t find variable: X" หมายความว่า Babel compile ไฟล์นั้นไม่สำเร็จ → เปิด Developer Tools → Console → ดู error message · วิธีทดสอบ: node -e "require(\'@babel/core\').transformSync(fs.readFileSync(\'X.jsx\',\'utf8\'), {presets:[\'@babel/preset-react\',\'@babel/preset-env\']})"',
+              'If the app fails with "Can\'t find variable: X" it means Babel failed to compile that file → open Developer Tools → Console → read the error · Test locally: node -e "require(\'@babel/core\').transformSync(fs.readFileSync(\'X.jsx\',\'utf8\'), {presets:[\'@babel/preset-react\',\'@babel/preset-env\']})"'
+            )}
+          </div>
+        </div>
+
+        {/* Cache tip */}
+        <div style={{ marginTop: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(100,116,139,0.06)", border: "1px solid rgba(100,116,139,0.2)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <Icon name="refresh" size={18} style={{ color: "#64748b", flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 800, color: "#64748b" }}>
+              {s("Service Worker Cache: ", "Service Worker Cache: ")}
+            </span>
+            {s(
+              'หลังอัปเดตไฟล์แล้วผู้ใช้ยังเห็นของเก่า → แก้ CACHE version ใน service-worker.js เป็น "gis-meter-vXX" (ตัวเลขใหม่) แล้ว commit + push',
+              'After updating files users still see old version → bump CACHE version in service-worker.js to "gis-meter-vXX" (new number) then commit + push'
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

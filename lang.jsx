@@ -251,6 +251,22 @@ const TRANSLATIONS = {
     authBrandTitle1: "ค้นหา", authBrandTitle2: "มิเตอร์ & หม้อแปลง", authBrandTitle3: "ครบในที่เดียว",
     authBrandDesc: "ค้นหารหัสเครื่องวัด หรือรหัสหม้อแปลง\nดูแผนที่ — Cluster · Heatmap · นำทาง",
     authCopyright: "พัฒนาโดย IT · PEA FANG Smartflow · ลิขสิทธิ์ © 2569",
+
+    // ── Architecture tab ───────────────────────────────────
+    admArch: "สถาปัตยกรรม",
+    admMobArch: "โครงสร้าง",
+    archHeroSub: "โครงสร้างระบบ",
+    archHeroTitle: "สถาปัตยกรรมแอป",
+    archHeroDesc: "แผนผังไฟล์, การนำทาง, ข้อมูลไหล และจุดแก้ไขเมื่อมีปัญหา",
+    archNavFlow: "การไหลของการนำทาง",
+    archNavFlowDesc: "กดอะไร → ไปที่หน้าไหน",
+    archFileMap: "แผนผังไฟล์",
+    archFileMapDesc: "หน้าที่ของแต่ละไฟล์และจุดแก้ไขเมื่อมีปัญหา",
+    archDataFlow: "การไหลของข้อมูล",
+    archDataFlowDesc: "ข้อมูลเดินทางจาก Supabase ถึง UI อย่างไร",
+    archRole: "หน้าที่",
+    archExports: "Export หลัก",
+    archFixHere: "มีปัญหา → แก้ที่นี่",
   },
 
   en: {
@@ -491,6 +507,22 @@ const TRANSLATIONS = {
     authBrandTitle1: "Search", authBrandTitle2: "Meter & Transformer", authBrandTitle3: "All in one place",
     authBrandDesc: "Search meter or transformer codes\nMap view — Cluster · Heatmap · Navigate",
     authCopyright: "Developed by IT · PEA FANG Smartflow · Copyright © 2026",
+
+    // ── Architecture tab ───────────────────────────────────
+    admArch: "Architecture",
+    admMobArch: "Structure",
+    archHeroSub: "System Structure",
+    archHeroTitle: "App Architecture",
+    archHeroDesc: "File map, navigation flow, data flow, and where to fix when broken",
+    archNavFlow: "Navigation Flow",
+    archNavFlowDesc: "What you click → where it goes",
+    archFileMap: "File Map",
+    archFileMapDesc: "Each file's role and where to fix when broken",
+    archDataFlow: "Data Flow",
+    archDataFlowDesc: "How data travels from Supabase to the UI",
+    archRole: "Role",
+    archExports: "Key Exports",
+    archFixHere: "Broken? → Fix here",
   },
 };
 
