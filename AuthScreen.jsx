@@ -801,7 +801,7 @@ function AuthScreen({ initialError }) {
           display: grid;
           grid-template-columns: 1.1fr 1fr;
           overflow: hidden;
-          background: var(--bg);
+          background: radial-gradient(120% 100% at 0% 0%, #8b3fc4 0%, #6b2c91 35%, #321148 75%, #1b0926 100%);
         }
         .auth-brand {
           position: relative;
@@ -812,6 +812,7 @@ function AuthScreen({ initialError }) {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          border-radius: 0 32px 32px 0;
         }
         .auth-brand-blob {
           position: absolute;
@@ -843,8 +844,8 @@ function AuthScreen({ initialError }) {
           padding: 40px;
           overflow-y: auto;
           background: var(--bg);
-          border-radius: 28px 0 0 28px;
-          box-shadow: -12px 0 48px rgba(0,0,0,0.25);
+          border-radius: 32px 0 0 32px;
+          box-shadow: -16px 0 56px rgba(0,0,0,0.3);
           position: relative;
           z-index: 1;
         }
