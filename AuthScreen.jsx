@@ -771,26 +771,25 @@ function AuthScreen({ initialError }) {
               )}
             </>
           )}
-        </div>
-
-        {/* Version badge */}
-        <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
-          <button onClick={() => setShowInfo(true)} style={{
-            background: "transparent", border: "1px solid transparent", cursor: "pointer",
-            display: "inline-flex", alignItems: "center", gap: 6,
-            fontSize: 12, fontWeight: 600, color: "var(--ink-mute)",
-            padding: "6px 16px", borderRadius: 999, transition: "all 180ms",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--soft)"; e.currentTarget.style.borderColor = "var(--line)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
-          >
-            ⚡ เวอร์ชัน:&nbsp;
-            <span style={{ color: "var(--pea-purple-500)", fontWeight: 800 }}>
-              {(window.PEA_META?.version) || "v3.3"}
-            </span>
-            &nbsp;·&nbsp;
-            <span style={{ color: "var(--ink-mute)" }}>{window.PEA_META?.tag || "Privacy & Fixes"}</span>
-          </button>
+          {/* Version badge */}
+          <div style={{ textAlign: "center", padding: "16px 0 4px", marginTop: "auto" }}>
+            <button onClick={() => setShowInfo(true)} style={{
+              background: "transparent", border: "1px solid transparent", cursor: "pointer",
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: 12, fontWeight: 600, color: "var(--ink-mute)",
+              padding: "6px 16px", borderRadius: 999, transition: "all 180ms",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--soft)"; e.currentTarget.style.borderColor = "var(--line)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
+            >
+              ⚡ เวอร์ชัน:&nbsp;
+              <span style={{ color: "var(--pea-purple-500)", fontWeight: 800 }}>
+                {(window.PEA_META?.version) || "v3.3"}
+              </span>
+              &nbsp;·&nbsp;
+              <span style={{ color: "var(--ink-mute)" }}>{window.PEA_META?.tag || "Privacy & Fixes"}</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -877,9 +876,11 @@ function AuthScreen({ initialError }) {
           .auth-card {
             background: var(--surface);
             border-radius: 28px 28px 0 0;
-            padding: 32px 24px 64px;
+            padding: 32px 24px 32px;
             max-width: 100%;
             flex: 1;
+            display: flex;
+            flex-direction: column;
             box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
             min-height: calc(100vh - 220px);
           }
