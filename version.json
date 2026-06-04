@@ -1,7 +1,7 @@
 {
-  "commit": "6314037fd6269b6c6d3882459763b60639b20c24",
-  "shortCommit": "6314037",
-  "message": "Contact tab: PEA FANG real info, report-problem card, multiline support",
-  "date": "2026-06-04T03:55:34Z",
+  "commit": "48a5c6a88f330729e63ae0d47c556f5c6b54b509",
+  "shortCommit": "48a5c6a",
+  "message": "fix: move version badge inside auth-card so it's visible on mobile",
+  "date": "2026-06-04T04:11:59Z",
   "branch": "main"
 }
