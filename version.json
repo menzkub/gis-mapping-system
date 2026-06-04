@@ -1,7 +1,7 @@
 {
-  "commit": "74757378ee776a34449b341468d17cc9d73d403d",
-  "shortCommit": "7475737",
-  "message": "fix(admin): card views, feeder filter, dropdown alignment + system dashboard",
-  "date": "2026-06-04T16:08:16Z",
+  "commit": "0682218ce34fa0c375415bdc65d37da4a6f965f1",
+  "shortCommit": "0682218",
+  "message": "refactor(admin): replace mobile bottom tab bar with hamburger drawer",
+  "date": "2026-06-04T16:30:08Z",
   "branch": "main"
 }
