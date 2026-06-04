@@ -1,7 +1,7 @@
 {
-  "commit": "3f53097131118263b7580c87d8ec9d1e922e424d",
-  "shortCommit": "3f53097",
-  "message": "v3.8: UX polish \u2014 i18n, KVA guard, GPS fix, tooltips, success timer",
-  "date": "2026-06-04T07:44:41Z",
+  "commit": "7f5b683be7f5f73cc84a08aba5b342b5e7a84483",
+  "shortCommit": "7f5b683",
+  "message": "feat: add Architecture tab to Admin panel",
+  "date": "2026-06-04T07:54:46Z",
   "branch": "main"
 }
