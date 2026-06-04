@@ -19,30 +19,40 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
     dev: t("admDev"),
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
-  const [showMoreTabs, setShowMoreTabs] = useStateAd(false);
-  const MOB_PRIMARY = [
-    { id:"dashboard", icon:"dashboard", label:t("admDashboard")  },
-    { id:"users",     icon:"users",     label:t("admUsers")      },
-    { id:"meters",    icon:"meter",     label:t("admMobMeters")  },
-    { id:"trs",       icon:"tr",        label:t("admMobTrs")     },
-    { id:"map",       icon:"map",       label:t("admMobMap")     },
+  const [showDrawer, setShowDrawer] = useStateAd(false);
+
+  const DRAWER_SECTIONS = [
+    {
+      label: t("drawerSecMain"),
+      items: [
+        { id:"dashboard", icon:"dashboard", label:t("admDashboard")   },
+        { id:"users",     icon:"users",     label:t("admUsers")       },
+        { id:"meters",    icon:"meter",     label:t("admMobMeters")   },
+        { id:"trs",       icon:"tr",        label:t("admMobTrs")      },
+        { id:"map",       icon:"map",       label:t("admMobMap")      },
+      ],
+    },
+    {
+      label: t("drawerSecTools"),
+      items: [
+        { id:"import",   icon:"upload",  label:t("admMobImport")   },
+        { id:"payments", icon:"wallet",  label:t("admPayments")    },
+        { id:"audit",    icon:"history", label:t("admMobAudit")    },
+        { id:"security", icon:"lock",    label:t("admMobSecurity") },
+      ],
+    },
+    {
+      label: t("drawerSecSettings"),
+      items: [
+        { id:"profile",  icon:"user",     label:t("admMobProfile")  },
+        { id:"settings", icon:"settings", label:t("admSettings")    },
+        { id:"guide",    icon:"book",     label:t("admMobGuide")    },
+        { id:"powered",  icon:"bolt",     label:t("admMobPowered")  },
+        { id:"dev",      icon:"code",     label:t("admMobDev")      },
+        { id:"arch",     icon:"layers",   label:t("admMobArch")     },
+      ],
+    },
   ];
-  const MOB_MORE_MAIN = [
-    { id:"import",   icon:"upload",  label:t("admMobImport")  },
-    { id:"payments", icon:"wallet",  label:t("admPayments")   },
-    { id:"audit",    icon:"history", label:t("admMobAudit")   },
-    { id:"security", icon:"lock",    label:t("admMobSecurity")},
-  ];
-  const MOB_MORE_SETTINGS = [
-    { id:"profile",  icon:"user",     label:t("admMobProfile")},
-    { id:"settings", icon:"settings", label:t("admSettings")  },
-    { id:"guide",    icon:"book",     label:t("admMobGuide")  },
-    { id:"powered",  icon:"bolt",     label:t("admMobPowered")},
-    { id:"dev",      icon:"code",     label:t("admMobDev")    },
-    { id:"arch",     icon:"layers",   label:t("admMobArch")   },
-  ];
-  const MOB_MORE = [...MOB_MORE_MAIN, ...MOB_MORE_SETTINGS];
-  const activeInMore = MOB_MORE.some(n => n.id === tab);
 
   return (
     <div className="f-col" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
@@ -51,134 +61,125 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
         .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
         @keyframes adm-spin { to { transform: rotate(360deg); } }
         .adm-spin { animation: adm-spin 1.2s linear infinite; }
-        .adm-mob-tabs-wrap { display: none; }
+        .adm-hamburger { display: none; }
+        .adm-drawer-overlay { display: none; }
+        .adm-drawer { display: none; }
         @media (max-width: 640px) {
           .adm-body { padding: 10px 12px 20px; }
-          .adm-mob-tabs-wrap {
-            display: flex; align-items: stretch;
-            border-bottom: 1px solid var(--line); flex-shrink: 0;
+          .adm-hamburger {
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+            width: 42px; height: 42px; border-radius: 12px; border: none;
+            background: var(--soft); cursor: pointer; flex-shrink: 0; position: relative; margin-top: 2px;
           }
-          .adm-mob-tabs {
-            display: flex; gap: 0; align-items: stretch;
-            padding: 0 0 0 4px;
-            scrollbar-width: none; flex: 1; overflow-x: auto;
+          .adm-hamburger-line {
+            display: block; width: 18px; height: 2px; border-radius: 2px; background: var(--ink);
           }
-          .adm-mob-tabs::-webkit-scrollbar { display: none; }
-          .adm-mob-tab {
-            display: flex; flex-direction: row; align-items: center; gap: 6px;
-            padding: 10px 14px; border-radius: 0; flex-shrink: 0;
-            font-size: 13px; font-weight: 600;
-            color: var(--ink-mute); background: transparent;
-            border: none; border-bottom: 2px solid transparent;
-            cursor: pointer; white-space: nowrap; position: relative; transition: all 140ms;
+          .adm-hamburger-dot {
+            position: absolute; top: 7px; right: 7px; width: 8px; height: 8px;
+            border-radius: 50%; background: var(--pea-orange-500); border: 2px solid var(--surface);
           }
-          .adm-mob-tab.on { color: var(--ink); border-bottom-color: var(--pea-orange-500); }
-          .adm-mob-badge {
-            display: inline-flex; align-items: center; justify-content: center;
+          .adm-hamburger-dot.red { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.25); }
+          .adm-drawer-overlay {
+            display: block; position: fixed; inset: 0; z-index: 700;
+            background: rgba(0,0,0,0.45); backdrop-filter: blur(2px);
+            opacity: 0; pointer-events: none; transition: opacity 260ms;
+          }
+          .adm-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+          .adm-drawer {
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 701;
+            width: 280px; max-width: 85vw;
+            background: var(--surface);
+            transform: translateX(-100%);
+            transition: transform 280ms cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 4px 0 32px rgba(0,0,0,0.18);
+          }
+          .adm-drawer.open { transform: translateX(0); }
+          .adm-drawer-head {
+            padding: 52px 16px 14px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+          }
+          .adm-drawer-close {
+            width: 36px; height: 36px; border-radius: 10px; border: none;
+            background: var(--soft); cursor: pointer; display: grid; place-items: center; color: var(--ink-mute);
+          }
+          .adm-drawer-scroll { flex: 1; overflow-y: auto; padding: 8px 8px 32px; }
+          .adm-drawer-section { margin-bottom: 6px; }
+          .adm-drawer-sec-label {
+            padding: 10px 10px 4px;
+            font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--pea-purple-500);
+          }
+          .adm-drawer-item {
+            display: flex; align-items: center; gap: 12px;
+            width: 100%; padding: 10px 12px; border-radius: 12px;
+            border: none; background: transparent; cursor: pointer;
+            color: var(--ink); font-size: 14px; font-weight: 600; text-align: left;
+            transition: background 140ms;
+          }
+          .adm-drawer-item.on { background: rgba(244,123,32,0.09); color: var(--pea-orange-500); }
+          .adm-drawer-icon {
+            width: 34px; height: 34px; border-radius: 10px;
+            display: grid; place-items: center; flex-shrink: 0;
+            background: var(--soft); color: var(--ink-mute);
+          }
+          .adm-drawer-item.on .adm-drawer-icon { background: rgba(244,123,32,0.12); color: var(--pea-orange-500); }
+          .adm-drawer-badge {
+            margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
             background: var(--pea-orange-500); color: white;
-            border-radius: 99px; min-width: 16px; height: 16px;
-            font-size: 9px; font-weight: 800; padding: 0 4px; flex-shrink: 0;
+            border-radius: 99px; min-width: 18px; height: 18px;
+            font-size: 10px; font-weight: 800; padding: 0 5px; flex-shrink: 0;
           }
-          .adm-more-panel {
-            position: absolute; top: calc(100% + 6px); right: 0; z-index: 600;
-            background: var(--surface); border: 1px solid var(--line);
-            border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.06);
-            padding: 8px; min-width: 252px;
-            display: flex; flex-direction: column; gap: 4px;
+          .adm-drawer-dot {
+            margin-left: auto; width: 8px; height: 8px; border-radius: 50%;
+            background: #ef4444; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(239,68,68,0.3);
           }
-          .adm-grid-item {
-            display: flex; flex-direction: column; align-items: center; gap: 7px;
-            padding: 13px 8px; border-radius: 14px; flex-shrink: 0;
-            font-size: 12px; font-weight: 700; line-height: 1.2;
-            color: var(--ink-mute); background: var(--soft);
-            border: 1.5px solid transparent;
-            cursor: pointer; text-align: center; transition: all 140ms;
-          }
-          .adm-grid-item.on { background: rgba(244,123,32,0.08); border-color: rgba(244,123,32,0.28); color: var(--pea-orange-500); }
-          .adm-grid-icon {
-            width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
-            background: rgba(139,63,196,0.08); color: var(--ink-mute);
-          }
-          .adm-grid-item.on .adm-grid-icon { background: rgba(244,123,32,0.12); color: var(--pea-orange-500); }
-          .adm-more-sep { display: flex; align-items: center; gap: 8px; padding: 2px 6px; }
-          .adm-more-sep-line { flex: 1; height: 1px; background: var(--line); }
-          .adm-more-sep-label { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase; color: var(--pea-purple-500); white-space: nowrap; }
-          .adm-more-item {
-            display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px;
-            background: transparent; border: none; cursor: pointer; color: var(--ink);
-            font-size: 13px; font-weight: 600; text-align: left; width: 100%; transition: background 140ms;
-          }
-          .adm-more-item.on { background: rgba(139,63,196,0.10); color: var(--pea-purple-600); font-weight: 700; }
-          .adm-more-icon {
-            width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
-            background: var(--soft); color: var(--ink-mute); flex-shrink: 0;
-          }
-          .adm-more-item.on .adm-more-icon { background: rgba(139,63,196,0.12); color: var(--pea-purple-600); }
         }
       `}</style>
 
-      {/* Header */}
-      <div style={{ padding: "14px 20px 0", flexShrink: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--pea-orange-500)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{t("adminEyebrow")}</div>
-        <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{NAV_LABELS[tab] || t("adminDefault")}</div>
-      </div>
-
-      {/* Mobile-only tab bar — scrollable primary tabs + More button outside overflow */}
-      <div className="adm-mob-tabs-wrap">
-        <div className="adm-mob-tabs">
-          {MOB_PRIMARY.map(n => (
-            <button key={n.id} className={"adm-mob-tab" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
-              <Icon name={n.icon} size={16} />
-              {n.label}
-              {n.id === "users" && pendingCount > 0 && <span className="adm-mob-badge">{pendingCount}</span>}
+      {/* Hamburger Drawer — always in DOM for CSS transition; hidden on desktop via CSS */}
+      <div className={"adm-drawer-overlay" + (showDrawer ? " open" : "")} onClick={() => setShowDrawer(false)} />
+      <div className={"adm-drawer" + (showDrawer ? " open" : "")}>
+        <div className="adm-drawer-head">
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:"var(--pea-orange-500)", letterSpacing:"0.14em", textTransform:"uppercase" }}>{t("adminEyebrow")}</div>
+              <div style={{ fontSize:18, fontWeight:800 }}>{t("adminDefault")}</div>
+            </div>
+            <button className="adm-drawer-close" onClick={() => setShowDrawer(false)} aria-label="ปิด">
+              <Icon name="x" size={18} />
             </button>
+          </div>
+        </div>
+        <div className="adm-drawer-scroll">
+          {DRAWER_SECTIONS.map((sec, si) => (
+            <div key={si} className="adm-drawer-section">
+              <div className="adm-drawer-sec-label">{sec.label}</div>
+              {sec.items.map(n => (
+                <button key={n.id} className={"adm-drawer-item" + (tab === n.id ? " on" : "")}
+                  onClick={() => { setTab(n.id); setShowDrawer(false); }}>
+                  <span className="adm-drawer-icon"><Icon name={n.icon} size={17} /></span>
+                  <span style={{ flex:1 }}>{n.label}</span>
+                  {n.id === "users" && pendingCount > 0 && <span className="adm-drawer-badge">{pendingCount}</span>}
+                  {n.id === "guide" && hasNewVer && <span className="adm-drawer-dot" />}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
-        {/* More button is a sibling of the overflow container so its dropdown is never clipped */}
-        <div style={{ flexShrink: 0, position: "relative", padding: "8px 12px 8px 4px" }}>
-          <button className={"adm-mob-tab" + (activeInMore || showMoreTabs ? " on" : "")} onClick={() => setShowMoreTabs(s => !s)}>
-            <Icon name="grid" size={16} />
-            เพิ่มเติม
-            {activeInMore && <span style={{ position:"absolute", top:3, right:5, width:7, height:7, borderRadius:"50%", background:"var(--pea-orange-500)" }} />}
-            {!activeInMore && hasNewVer && <span style={{ position:"absolute", top:3, right:5, width:7, height:7, borderRadius:"50%", background:"#ef4444", boxShadow:"0 0 0 2px rgba(239,68,68,0.3)" }} />}
-          </button>
-          {showMoreTabs && (
-            <>
-              <div style={{ position:"fixed", inset:0, zIndex:599 }} onClick={() => setShowMoreTabs(false)} />
-              <div className="adm-more-panel">
-                {/* Main actions — 2×2 grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: "2px 2px 0" }}>
-                  {MOB_MORE_MAIN.map(n => (
-                    <button key={n.id} className={"adm-grid-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
-                      <span className="adm-grid-icon"><Icon name={n.icon} size={18} /></span>
-                      {n.label}
-                    </button>
-                  ))}
-                </div>
+      </div>
 
-                {/* Section divider */}
-                <div className="adm-more-sep">
-                  <span className="adm-more-sep-line" />
-                  <span className="adm-more-sep-label">
-                    <Icon name="settings" size={10} />
-                    {t("navSettings")}
-                  </span>
-                  <span className="adm-more-sep-line" />
-                </div>
-
-                {/* Settings list */}
-                {MOB_MORE_SETTINGS.map(n => (
-                  <button key={n.id} className={"adm-more-item" + (tab === n.id ? " on" : "")} onClick={() => { setTab(n.id); setShowMoreTabs(false); }}>
-                    <span className="adm-more-icon"><Icon name={n.icon} size={15} /></span>
-                    {n.label}
-                    {n.id === "guide" && hasNewVer && (
-                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", marginLeft: "auto", flexShrink: 0, boxShadow: "0 0 0 2px rgba(239,68,68,0.3)" }} />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+      {/* Header */}
+      <div style={{ padding: "14px 20px 12px", flexShrink: 0, display:"flex", alignItems:"flex-start", gap:10 }}>
+        <button className="adm-hamburger" onClick={() => setShowDrawer(true)} aria-label="เมนู">
+          <span className="adm-hamburger-line" />
+          <span className="adm-hamburger-line" />
+          <span className="adm-hamburger-line" />
+          {pendingCount > 0 && <span className="adm-hamburger-dot" />}
+          {pendingCount === 0 && hasNewVer && <span className="adm-hamburger-dot red" />}
+        </button>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--pea-orange-500)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{t("adminEyebrow")}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{NAV_LABELS[tab] || t("adminDefault")}</div>
         </div>
       </div>
 
