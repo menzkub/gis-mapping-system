@@ -1,7 +1,7 @@
 {
-  "commit": "73f8d781cd95aae22ed563826fefa9b36a98295b",
-  "shortCommit": "73f8d78",
-  "message": "feat(v3.7): hamburger nav docs, Face ID dashboard card, changelog update",
-  "date": "2026-06-04T16:57:01Z",
+  "commit": "ffba2b84b7a8b7253388299be2acce9848391c86",
+  "shortCommit": "ffba2b8",
+  "message": "fix: move modals outside fade-up card in AdminMeters and AdminTrs",
+  "date": "2026-06-04T17:07:05Z",
   "branch": "main"
 }
