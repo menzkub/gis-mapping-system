@@ -300,17 +300,17 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
           <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-mute)" }}>Feeder:</span>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <button onClick={() => setFilterFeeder("all")} style={{
-              padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              padding: "8px 16px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              minHeight: 36, border: "none", transition: "all 140ms",
               background: filterFeeder === "all" ? "var(--pea-orange-500)" : "var(--soft)",
               color: filterFeeder === "all" ? "white" : "var(--ink-mute)",
-              border: "none", transition: "all 140ms",
             }}>ทั้งหมด</button>
             {(data.dashStats?.top_feeders || []).slice(0, 8).map(f => (
               <button key={f.feeder} onClick={() => setFilterFeeder(f.feeder)} style={{
-                padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                padding: "8px 16px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                minHeight: 36, border: "none", transition: "all 140ms",
                 background: filterFeeder === f.feeder ? "var(--pea-orange-500)" : "var(--soft)",
                 color: filterFeeder === f.feeder ? "white" : "var(--ink-mute)",
-                border: "none", transition: "all 140ms",
               }}>{f.feeder}</button>
             ))}
           </div>
@@ -3396,6 +3396,24 @@ function AdminMeters({ addAudit, currentUser }) {
           .adm-tb { flex-wrap: wrap; width: 100%; }
           .adm-tb .input { flex: 1 1 0; min-width: 0; width: auto !important; }
         }
+        .adm-meter-table-wrap { overflow: auto; max-height: 60vh; }
+        .adm-meter-cards { display: none; flex-direction: column; gap: 10px; }
+        .adm-tr-table-wrap { overflow: auto; max-height: 60vh; }
+        .adm-tr-cards { display: none; flex-direction: column; gap: 10px; }
+        .adm-audit-table-wrap { overflow: auto; max-height: 52vh; }
+        .adm-audit-cards { display: none; flex-direction: column; gap: 10px; }
+        .adm-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 640px) {
+          .adm-meter-table-wrap { display: none; }
+          .adm-meter-cards { display: flex; }
+          .adm-tr-table-wrap { display: none; }
+          .adm-tr-cards { display: flex; }
+          .adm-audit-table-wrap { display: none; }
+          .adm-audit-cards { display: flex; }
+          .adm-edit-grid { grid-template-columns: 1fr; }
+          .btn-icon { min-width: 40px; min-height: 40px; }
+          .row-action .btn-icon { min-width: 40px; min-height: 40px; }
+        }
       `}</style>
       <div className="f-between f-gap-3 f-wrap" style={{ marginBottom: 16 }}>
         <div>
@@ -3410,7 +3428,8 @@ function AdminMeters({ addAudit, currentUser }) {
           </button>
         </div>
       </div>
-      <div style={{ overflow: "auto", maxHeight: "60vh" }}>
+      {/* Desktop table */}
+      <div className="adm-meter-table-wrap">
         <table className="table">
           <thead><tr>
             <SortTh col="OBJECTID" label="OBJECTID" />
@@ -3442,7 +3461,7 @@ function AdminMeters({ addAudit, currentUser }) {
               </tr>
             ))}
             {sortedList.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: "48px 20px", color: "var(--ink-mute)" }}>
+              <tr><td colSpan={9} style={{ textAlign: "center", padding: "48px 20px", color: "var(--ink-mute)" }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
                 <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>ไม่พบข้อมูล</div>
                 <div style={{ fontSize: 13 }}>ลองค้นหาด้วยคำอื่น หรือล้างตัวกรอง</div>
@@ -3453,6 +3472,42 @@ function AdminMeters({ addAudit, currentUser }) {
         {list.length >= 100 && (
           <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>
             {s(`แสดง ${list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์`, `Showing ${list.length} records — type to narrow results`)}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile card view */}
+      <div className="adm-meter-cards">
+        {sortedList.map(m => (
+          <div key={m.OBJECTID} onClick={() => setDetail(m)} style={{
+            background: "var(--soft)", borderRadius: 14, padding: "13px 14px",
+            border: "1px solid var(--line)", cursor: "pointer",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "monospace", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.TAG}</span>
+              <span className="badge badge-purple" style={{ flexShrink: 0 }}>{m.FEEDERID || "—"}</span>
+              <span className={"badge " + (m.OWNER === "Customer" ? "badge-orange" : "badge-purple")} style={{ flexShrink: 0 }}>{m.OWNER || "—"}</span>
+              <button className="btn-icon" title="แก้ไข" style={{ width: 40, height: 40, flexShrink: 0 }} onClick={e => { e.stopPropagation(); setEdit(m); }}><Icon name="edit" size={15} /></button>
+              <button className="btn-icon" title="ลบ" style={{ width: 40, height: 40, flexShrink: 0, color: "var(--red)" }} onClick={e => { e.stopPropagation(); remove(m); }}><Icon name="trash" size={15} /></button>
+            </div>
+            <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--ink)", marginBottom: 4, flexWrap: "wrap" }}>
+              <span><span className="t-mute">PEANO: </span><span className="mono">{m.PEANO || "—"}</span></span>
+              <span><span className="t-mute">ROUTE: </span><span>{m.ROUTE || "—"}</span></span>
+              <span><span className="t-mute">CODE: </span><span>{m.CODE || "—"}</span></span>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--ink-mute)", fontFamily: "monospace" }}>{m.LATITUDE.toFixed(5)}, {m.LONGITUDE.toFixed(5)}</div>
+          </div>
+        ))}
+        {sortedList.length === 0 && (
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ink-mute)" }}>
+            <div style={{ fontSize: 30, marginBottom: 8 }}>🔍</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>ไม่พบข้อมูล</div>
+            <div style={{ fontSize: 13 }}>ลองค้นหาด้วยคำอื่น</div>
+          </div>
+        )}
+        {list.length >= 100 && (
+          <div className="t-mute text-sm" style={{ padding: 8, textAlign: "center" }}>
+            {s(`แสดง ${list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์`, `Showing ${list.length} — type to narrow`)}
           </div>
         )}
       </div>
@@ -3484,7 +3539,7 @@ function AdminMeters({ addAudit, currentUser }) {
       <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? s("แก้ไขมิเตอร์","Edit Meter") : s("เพิ่มมิเตอร์","Add Meter")} width={640}
         footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>{s("ยกเลิก","Cancel")}</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}</button></>}>
         {edit && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="adm-edit-grid">
             <Field label="TAG"        v={edit.TAG}        onC={v => setEdit({ ...edit, TAG: v })} />
             <MinSelect label="CODE" value={edit.CODE} options={["AFAG","ACPK"]} onChange={v => setEdit({ ...edit, CODE: v })} />
             <Field label="ROUTE"      v={edit.ROUTE}      onC={v => setEdit({ ...edit, ROUTE: v })} />
@@ -3634,7 +3689,8 @@ function AdminTrs({ addAudit, currentUser }) {
           </button>
         </div>
       </div>
-      <div style={{ overflow: "auto", maxHeight: "60vh" }}>
+      {/* Desktop table */}
+      <div className="adm-tr-table-wrap">
         <table className="table">
           <thead><tr>
             <SortTh col="TAG" label="TAG" />
@@ -3667,7 +3723,7 @@ function AdminTrs({ addAudit, currentUser }) {
               </tr>
             ))}
             {sortedList.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: "48px 20px", color: "var(--ink-mute)" }}>
+              <tr><td colSpan={9} style={{ textAlign: "center", padding: "48px 20px", color: "var(--ink-mute)" }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
                 <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>ไม่พบข้อมูล</div>
                 <div style={{ fontSize: 13 }}>ลองค้นหาด้วยคำอื่น หรือล้างตัวกรอง</div>
@@ -3678,6 +3734,43 @@ function AdminTrs({ addAudit, currentUser }) {
         {list.length >= 100 && (
           <div className="t-mute text-sm" style={{ padding: 12, textAlign: "center" }}>
             {s(`แสดง ${list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์`, `Showing ${list.length} records — type to narrow results`)}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile card view */}
+      <div className="adm-tr-cards">
+        {sortedList.map(t => (
+          <div key={t.OBJECTID} onClick={() => setDetail(t)} style={{
+            background: "var(--soft)", borderRadius: 14, padding: "13px 14px",
+            border: "1px solid var(--line)", cursor: "pointer",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "monospace", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.TAG}</span>
+              <span style={{ fontWeight: 800, color: "var(--pea-orange-600)", fontSize: 14, flexShrink: 0 }}>{t.KVA} kVA</span>
+              <span className={"badge " + (t.OWNER_TR === "Customer" ? "badge-orange" : "badge-purple")} style={{ flexShrink: 0 }}>{t.OWNER_TR}</span>
+              <button className="btn-icon" title="แก้ไข" style={{ width: 40, height: 40, flexShrink: 0 }} onClick={e => { e.stopPropagation(); setEdit(t); }}><Icon name="edit" size={15} /></button>
+              <button className="btn-icon" title="ลบ" style={{ width: 40, height: 40, flexShrink: 0, color: "var(--red)" }} onClick={e => { e.stopPropagation(); remove(t); }}><Icon name="trash" size={15} /></button>
+            </div>
+            <div style={{ display: "flex", gap: 10, fontSize: 12, marginBottom: 4, flexWrap: "wrap" }}>
+              <span><span className="t-mute">เฟส: </span><span>{t.PHASE.replace("หม้อแปลง ","")}</span></span>
+              <span><span className="t-mute">kV: </span><span>{t.VOLTAGE}</span></span>
+              {t.FEEDER1 && <span className="badge" style={{ fontSize: 11 }}>{t.FEEDER1}</span>}
+              {t.PEANO_TR && <span><span className="t-mute">PEANO: </span><span className="mono">{t.PEANO_TR}</span></span>}
+            </div>
+            {t.LOCATION && <div style={{ fontSize: 12, color: "var(--ink-mute)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.LOCATION}</div>}
+          </div>
+        ))}
+        {sortedList.length === 0 && (
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ink-mute)" }}>
+            <div style={{ fontSize: 30, marginBottom: 8 }}>🔍</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>ไม่พบข้อมูล</div>
+            <div style={{ fontSize: 13 }}>ลองค้นหาด้วยคำอื่น</div>
+          </div>
+        )}
+        {list.length >= 100 && (
+          <div className="t-mute text-sm" style={{ padding: 8, textAlign: "center" }}>
+            {s(`แสดง ${list.length} รายการ — พิมพ์คำค้นหาเพื่อจำกัดผลลัพธ์`, `Showing ${list.length} — type to narrow`)}
           </div>
         )}
       </div>
@@ -3709,7 +3802,7 @@ function AdminTrs({ addAudit, currentUser }) {
       <Modal open={!!edit} onClose={() => setEdit(null)} title={edit && !isNew(edit) ? s("แก้ไขหม้อแปลง","Edit Transformer") : s("เพิ่มหม้อแปลง","Add Transformer")} width={680}
         footer={<><button className="btn btn-outline" onClick={() => setEdit(null)}>{s("ยกเลิก","Cancel")}</button><button className="btn btn-primary" onClick={() => save(edit)} disabled={saving}><Icon name="check" size={14} /> {saving ? s("กำลังบันทึก…","Saving…") : s("บันทึก","Save")}</button></>}>
         {edit && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="adm-edit-grid">
             <Field label="TAG"              v={edit.TAG}          onC={v => setEdit({ ...edit, TAG: v })} />
             <Field label="PEANO หม้อแปลง"  v={edit.PEANO_TR}     onC={v => setEdit({ ...edit, PEANO_TR: v })} />
             <MinSelect label="ระบบเฟส" value={edit.PHASE} options={["หม้อแปลง 1 Phase","หม้อแปลง 3 Phase"]} onChange={v => setEdit({ ...edit, PHASE: v })} />
@@ -5498,8 +5591,8 @@ function AdminAudit() {
         </div>
       </div>
 
-      {/* Table */}
-      <div style={{ overflow: "auto", maxHeight: "52vh" }}>
+      {/* Desktop table */}
+      <div className="adm-audit-table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -5540,6 +5633,38 @@ function AdminAudit() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card view */}
+      <div className="adm-audit-cards">
+        {loading && logs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 32, color: "var(--ink-mute)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid var(--line)", borderTopColor: "var(--pea-purple-500)", animation: "pea-spin 0.8s linear infinite" }} />
+            กำลังโหลด…
+          </div>
+        ) : logs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 32, color: "var(--ink-mute)" }}>ไม่พบข้อมูล</div>
+        ) : logs.map(r => (
+          <div key={r.id} style={{ background: "var(--soft)", borderRadius: 14, padding: "12px 14px", border: "1px solid var(--line)" }}>
+            {/* Row 1: Action + user + time */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7, flexWrap: "wrap" }}>
+              <span className={"badge " + actionBadge(r.action)} style={{ flexShrink: 0 }}>{actionLabel(r.action)}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: avatarBg(r.user || "x"), color: "white", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 10, flexShrink: 0 }}>
+                  {(r.user[0] || "?").toUpperCase()}
+                </div>
+                <span className="mono text-sm fw-6">{r.user}</span>
+              </div>
+              <span className="mono text-xs t-mute" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>{r.at ? r.at.slice(0, 16).replace("T", " ") : "—"}</span>
+            </div>
+            {/* Row 2: Target */}
+            {r.target && <div className="mono text-xs t-mute" style={{ marginBottom: 4 }}>→ {r.target}</div>}
+            {/* Row 3: Detail */}
+            {r.detail && <div style={{ fontSize: 12 }}>{r.detail}</div>}
+            {/* Row 4: Device */}
+            {r.ip && <div className="text-xs t-mute" style={{ marginTop: 6 }}>{parseDeviceAd(r.ip)}</div>}
+          </div>
+        ))}
       </div>
 
       {/* Pagination */}
