@@ -1,7 +1,7 @@
 {
-  "commit": "63db4272a976d3bd2b5245066ae64103c891862e",
-  "shortCommit": "63db427",
-  "message": "feat: animate Architecture tab \u2014 entrance stagger, orbs, dots, hover glow",
-  "date": "2026-06-04T08:07:27Z",
+  "commit": "ff1bb6ceda89d8069cc1efc202b8a62f1241892a",
+  "shortCommit": "ff1bb6c",
+  "message": "chore: add CLAUDE.md and .claude/settings.json for Claude Code / Pixel Agents",
+  "date": "2026-06-04T08:31:32Z",
   "branch": "main"
 }
