@@ -501,8 +501,56 @@ function PeaSelect({ value, onChange, children, className = "", style = {}, disa
   );
 }
 
+/* ── PeaDB — IndexedDB search result cache ─────────────────── */
+const PeaDB = (() => {
+  const DB_NAME = "pea_search_cache";
+  const DB_VER  = 1;
+  const STORE   = "results";
+  const TTL_MS  = 24 * 60 * 60 * 1000; // 24 hours
+
+  let _db = null;
+  const open = () => new Promise((res, rej) => {
+    if (_db) return res(_db);
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE, { keyPath: "cacheKey" });
+    };
+    req.onsuccess = e => { _db = e.target.result; res(_db); };
+    req.onerror   = e => rej(e.target.error);
+  });
+
+  return {
+    async get(key) {
+      try {
+        const db = await open();
+        return new Promise((res) => {
+          const tx  = db.transaction(STORE, "readonly");
+          const req = tx.objectStore(STORE).get(key);
+          req.onsuccess = () => {
+            const r = req.result;
+            if (!r || Date.now() - r.ts > TTL_MS) return res(null);
+            res(r.data);
+          };
+          req.onerror = () => res(null);
+        });
+      } catch { return null; }
+    },
+    async set(key, data) {
+      try {
+        const db = await open();
+        return new Promise((res) => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).put({ cacheKey: key, data, ts: Date.now() });
+          tx.oncomplete = () => res();
+          tx.onerror    = () => res();
+        });
+      } catch {}
+    },
+  };
+})();
+
 /* expose */
-Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, formatThaiDate, PeaSelect });
+Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, formatThaiDate, PeaSelect, PeaDB });
 
 /* ── SkeletonCard ───────────────────────────────────────────── */
 function SkeletonCard({ height = 120, style = {} }) {

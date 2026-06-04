@@ -1,5 +1,5 @@
 /* global React, Icon, MapView, downloadCSV, downloadXLSX, EmptyState, useToast, formatThaiDate,
-   _supabase, toMeter, toTransformer, useLang */
+   _supabase, toMeter, toTransformer, useLang, PeaDB */
 const {
   useState:  useStateS,
   useEffect: useEffectS,
@@ -27,6 +27,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
   const [svBaseMap, setSvBaseMap]   = useStateS(baseMap || "street");
   const [showBaseMenu, setShowBaseMenu] = useStateS(false);
   const [searchFlash, setSearchFlash] = useStateS(null); // null | "ok" | "empty"
+  const [fromCache, setFromCache]     = useStateS(false);
   const baseMapBtnRef = useRefS(null);
   const [copied, setCopied]         = useStateS(null);
   const [navTarget, setNavTarget]   = useStateS(null);
@@ -67,9 +68,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       return;
     }
     let cancelled = false;
+    const cacheKey = `${tab}::${query.trim()}::${JSON.stringify(filters)}`;
     const t = setTimeout(async () => {
       setSearching(true);
       setHasSearched(true);
+      setFromCache(false);
       try {
         const safe = query.trim().replace(/%/g, "\\%").replace(/_/g, "\\_");
         const isNum = /^\d+$/.test(safe);
@@ -110,12 +113,19 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
           if (error) {
             console.error("Search error:", error);
             toast?.(`ค้นหาผิดพลาด: ${error.message}`, "error");
-            setResults([]);
+            const cached = await PeaDB.get(cacheKey);
+            if (cached && cached.length > 0) {
+              setResults(cached);
+              setFromCache(true);
+            } else {
+              setResults([]);
+            }
           } else {
             const mapped = (rows || []).map(tab === "meter" ? toMeter : toTransformer);
             setResults(mapped);
             setSearchFlash(mapped.length > 0 ? "ok" : "empty");
             setTimeout(() => setSearchFlash(null), 1800);
+            await PeaDB.set(cacheKey, mapped);
             if (query.trim()) {
               saveHistory(query.trim());
               onLogSearchRef.current?.({
@@ -127,6 +137,15 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 ip: (navigator.userAgent || "").substring(0, 200),
               });
             }
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Search fetch error:", err);
+          const cached = await PeaDB.get(cacheKey);
+          if (cached && cached.length > 0) {
+            setResults(cached);
+            setFromCache(true);
           }
         }
       } finally {
@@ -244,6 +263,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                   <span style={{ fontWeight: 800 }}>{results.length.toLocaleString()}{results.length >= 500 ? "+" : ""}</span>
                   <span style={{ fontWeight: 500, opacity: 0.7 }}>/ {totalCount.toLocaleString()} {t("foundItems")}</span>
                 </span>
+                {fromCache && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.35)", color: "#92400e" }}>
+                    📦 cache
+                  </span>
+                )}
               ) : (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 999, fontSize: 13, fontWeight: 700, background: "rgba(139,63,196,0.1)", border: "1px solid rgba(139,63,196,0.2)", color: "var(--pea-purple-600)" }}>
                   <span style={{ fontWeight: 800, fontSize: 15 }}>{totalCount.toLocaleString()}</span>
@@ -660,9 +684,126 @@ function CappedNote({ count }) {
   );
 }
 
+function HistorySection({ objectId, isMeter }) {
+  const { lang } = useLang();
+  const [open, setOpen] = useStateS(false);
+  const [logs, setLogs] = useStateS(null); // null=not fetched, []=empty
+  const [loading, setLoading] = useStateS(false);
+
+  const load = async () => {
+    if (logs !== null) { setOpen(o => !o); return; }
+    setOpen(true);
+    setLoading(true);
+    try {
+      const { data } = await _supabase
+        .from("audit_log")
+        .select("username, action, detail, created_at")
+        .eq("target", `OBJECTID ${objectId}`)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setLogs(data || []);
+    } catch { setLogs([]); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); load(); }}
+        className="btn btn-outline btn-sm"
+        style={{ fontSize: 11, height: 28, padding: "0 10px", gap: 5 }}
+      >
+        <Icon name="history" size={11} />
+        {lang === "en" ? "History" : "ประวัติการแก้ไข"}
+        {logs && logs.length > 0 && (
+          <span style={{ background: "var(--line)", borderRadius: 99, padding: "1px 6px", fontSize: 10, fontWeight: 800 }}>
+            {logs.length}
+          </span>
+        )}
+        <Icon name={open ? "chevUp" : "chevDown"} size={10} />
+      </button>
+      {open && (
+        <div style={{ marginTop: 8, borderRadius: 10, border: "1px solid var(--line)", overflow: "hidden", background: "var(--soft)" }}>
+          {loading ? (
+            <div style={{ padding: "12px 14px", fontSize: 12, color: "var(--ink-mute)" }}>กำลังโหลด…</div>
+          ) : logs && logs.length === 0 ? (
+            <div style={{ padding: "12px 14px", fontSize: 12, color: "var(--ink-mute)", textAlign: "center" }}>
+              {lang === "en" ? "No edit history" : "ยังไม่มีประวัติการแก้ไข"}
+            </div>
+          ) : (
+            logs && logs.map((r, i) => (
+              <div key={i} style={{
+                display: "flex", gap: 10, padding: "8px 12px", fontSize: 11,
+                borderBottom: i < logs.length - 1 ? "1px solid var(--line)" : "none",
+                alignItems: "flex-start",
+              }}>
+                <div style={{ color: "var(--ink-mute)", whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>
+                  {formatThaiDate(new Date(r.created_at))}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontWeight: 700, color: "var(--pea-purple-600)", marginRight: 6 }}>{r.username}</span>
+                  <span style={{ color: "var(--ink-mute)" }}>{r.detail || r.action}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ResultCard({ item: p, kind, selected, onClick, onNavigate, index, copyCoords, copied }) {
   const { t } = useLang();
   const isMeter = kind === "meter";
+
+  const handlePdf = (e) => {
+    e.stopPropagation();
+    const now = formatThaiDate(new Date());
+    const rows = isMeter ? [
+      ["TAG", p.TAG], ["PEANO", p.PEANO], ["CODE", p.CODE],
+      ["ROUTE", p.ROUTE], ["ACCOUNTNUM", p.ACCOUNTNUM],
+      ["FEEDER", p.FEEDERID || "—"], ["OWNER", p.OWNER],
+      ["LAT/LNG", `${p.LATITUDE?.toFixed(6)}, ${p.LONGITUDE?.toFixed(6)}`],
+    ] : [
+      ["TAG", p.TAG], ["PEANO", p.PEANO_TR], ["LOCATION", p.LOCATION],
+      ["FEEDER", p.FEEDER1], ["KVA", p.KVA], ["VOLTAGE", p.VOLTAGE],
+      ["PHASE", p.PHASE], ["OWNER", p.OWNER_TR],
+      ["LAT/LNG", `${p.LATITUDE?.toFixed(6)}, ${p.LONGITUDE?.toFixed(6)}`],
+    ];
+
+    const tableRows = rows.map(([k,v]) => `
+      <tr>
+        <td style="padding:7px 12px;border-bottom:1px solid #ece6f4;font-weight:700;color:#6b2c91;font-size:12px;width:120px;">${k}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #ece6f4;font-family:monospace;font-size:12px;">${v ?? "—"}</td>
+      </tr>`).join("");
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;padding:28px;max-width:560px;margin:0 auto;">
+        <div style="background:linear-gradient(135deg,#6b2c91,#f47b20);padding:18px 22px;border-radius:12px;color:white;margin-bottom:20px;">
+          <div style="font-size:11px;opacity:0.8;margin-bottom:4px;">PEA Meter &amp; TR · \u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c</div>
+          <div style="font-size:22px;font-weight:800;font-family:monospace;">${p.TAG}</div>
+          <div style="font-size:11px;opacity:0.7;margin-top:6px;">${isMeter ? "PEA \u0e21\u0e34\u0e40\u0e15\u0e2d\u0e23\u0e4c" : "PEA \u0e2b\u0e21\u0e49\u0e2d\u0e41\u0e1b\u0e25\u0e07"}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #ece6f4;border-radius:10px;overflow:hidden;">
+          ${tableRows}
+        </table>
+        <div style="margin-top:16px;font-size:10px;color:#6b6685;text-align:center;">
+          \u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e08\u0e32\u0e01\u0e23\u0e30\u0e1a\u0e1a GIS PEA · ${now}
+        </div>
+      </div>`;
+
+    const el = document.createElement("div");
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    window.html2pdf().set({
+      margin: 8,
+      filename: `pea-${isMeter ? "meter" : "tr"}-${p.TAG}.pdf`,
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    }).from(el).save().then(() => document.body.removeChild(el));
+  };
+
   return (
     <button
       onClick={onClick}
@@ -724,7 +865,14 @@ function ResultCard({ item: p, kind, selected, onClick, onNavigate, index, copyC
               <Icon name={copied === p.OBJECTID ? "check" : "copy"} size={12} />
               {copied === p.OBJECTID ? t("copiedCoords") : `${p.LATITUDE.toFixed(5)}, ${p.LONGITUDE.toFixed(5)}`}
             </button>
+            <button className="btn btn-outline btn-sm" onClick={handlePdf}>
+              <Icon name="download" size={12} /> PDF
+            </button>
           </div>
+        )}
+        {/* History section */}
+        {selected && (
+          <HistorySection objectId={p.OBJECTID} isMeter={isMeter} />
         )}
       </div>
     </button>

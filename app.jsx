@@ -1325,6 +1325,17 @@ function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, pri
    ============================================================ */
 const CHANGELOG = [
   {
+    version: "v3.5", date: "4 มิ.ย. 2569", tag: "Offline & History",
+    tagColor: "#3b82f6", items: [
+      { cat: "new",  text: { th: "ประวัติการแก้ไขต่อ meter/TR: กดปุ่ม 'ประวัติการแก้ไข' ในการ์ดผลลัพธ์เพื่อดู audit log ของอุปกรณ์นั้นๆ โดยตรง", en: "Per-meter/TR edit history: tap 'History' in any result card to see its full audit log without leaving the search view" } },
+      { cat: "new",  text: { th: "IndexedDB offline cache: ผลการค้นหาถูกบันทึกใน IndexedDB (TTL 24 ชม.) — เมื่อ Supabase ล้มเหลว ระบบดึงข้อมูลเดิมให้อัตโนมัติพร้อมแสดง badge '📦 cache'", en: "IndexedDB search cache: results saved with 24h TTL — on Supabase failure the app serves cached results automatically with a '📦 cache' badge" } },
+      { cat: "new",  text: { th: "Export PDF รายบุคคล: กดปุ่ม PDF ในการ์ดผลลัพธ์เพื่อดาวน์โหลดใบสรุปข้อมูล meter/TR เป็น PDF (ใช้ html2pdf)", en: "Individual PDF export: tap PDF button in any result card to download a formatted A4 info sheet for that meter/TR" } },
+      { cat: "ux",   text: { th: "Touch target 44px: ปุ่มทุกขนาดบนมือถือมี min-height 44px ตาม Apple HIG — ลดการกดผิด", en: "44px touch targets: all buttons on mobile now meet Apple HIG 44px minimum — fewer mis-taps" } },
+      { cat: "fix",  text: { th: "iOS auto-zoom: input/select/textarea มี font-size ≥16px บน mobile ป้องกัน Safari ซูมหน้าจอเมื่อกดช่องกรอกข้อมูล", en: "iOS auto-zoom fix: inputs use font-size ≥16px on mobile, preventing Safari from zooming the viewport on focus" } },
+      { cat: "ux",   text: { th: "Bottom nav icon-only บน phone <360px: ซ่อน label เพื่อประหยัดพื้นที่บนหน้าจอเล็กมาก", en: "Icon-only bottom nav on phones <360px wide: labels hidden to save space on very small screens" } },
+    ],
+  },
+  {
     version: "v3.4", date: "4 มิ.ย. 2569", tag: "UX & Export",
     tagColor: "#f47b20", items: [
       { cat: "new",  text: { th: "Export Excel (.xlsx): เพิ่มปุ่มเลือกรูปแบบไฟล์ CSV หรือ Excel ในทุก dialog Export (ค้นหา, Admin มิเตอร์/หม้อแปลง, Audit Log)", en: "Excel export: format picker (CSV or Excel .xlsx) added to all Export dialogs — Search, Admin Meters/Transformers, Audit Log" } },

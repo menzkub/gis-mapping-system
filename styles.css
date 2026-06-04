@@ -152,7 +152,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 42px;
+  height: 44px;
   padding: 0 18px;
   border-radius: var(--r-md);
   font-weight: 600;
@@ -560,6 +560,21 @@ a { color: inherit; text-decoration: none; }
 
   /* Password stat grid: collapse to 1 column on mobile */
   .pv-stat-grid { grid-template-columns: 1fr !important; }
+
+  /* Touch target: ensure small buttons meet 44px minimum */
+  .btn-sm { min-height: 44px; }
+
+  /* iOS font-size ≥16px prevents auto-zoom on input focus */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Bottom nav: hide text labels on very small phones (<360px) */
+@media (max-width: 359px) {
+  .sidebar-nav-label { display: none !important; }
 }
 
 /* ============================================================
