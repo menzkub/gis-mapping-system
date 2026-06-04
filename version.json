@@ -1,7 +1,7 @@
 {
-  "commit": "ffdeb156e931cb29e26363b3a34f6417f33e2537",
-  "shortCommit": "ffdeb15",
-  "message": "Add Remember Me and Biometric login (WebAuthn Face ID / Fingerprint)",
-  "date": "2026-06-04T14:32:46Z",
+  "commit": "c371ef30b68f7fe3a45e62856e5d10e8998fa9a2",
+  "shortCommit": "c371ef3",
+  "message": "Fix PDF export rendering blank white pages",
+  "date": "2026-06-04T14:35:00Z",
   "branch": "main"
 }
