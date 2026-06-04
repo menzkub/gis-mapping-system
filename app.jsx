@@ -1186,6 +1186,147 @@ function formatUntil(until) {
 }
 
 /* ============================================================
+   UserSettingsPanel — ตั้งค่าและช่วยเหลือสำหรับผู้ใช้งาน
+   Sub-tabs: บัญชีของฉัน | คู่มือการใช้งาน | การแจ้งเตือน
+   ============================================================ */
+function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, privacyPolicy, pushPermission, subscribePush, unsubscribePush }) {
+  const { t, lang } = useLang();
+  const [subTab, setSubTab] = useStateApp("account");
+  const [notifLoading, setNotifLoading] = useStateApp(false);
+
+  const SUB_TABS = [
+    { id: "account",       icon: "user",     label: t("usrTabAccount") },
+    { id: "guide",         icon: "book",     label: t("usrTabGuide")   },
+    { id: "notifications", icon: "bell",     label: t("usrTabNotif")   },
+  ];
+
+  const handleNotifToggle = async () => {
+    setNotifLoading(true);
+    try {
+      if (pushPermission === "granted") await unsubscribePush();
+      else await subscribePush();
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
+      {/* ── Left sidebar ── */}
+      <div style={{
+        width: 220, flexShrink: 0, borderRight: "1px solid var(--line)",
+        background: "var(--surface)", display: "flex", flexDirection: "column",
+        padding: "24px 12px",
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-mute)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 8px", marginBottom: 10 }}>
+          {t("navSettings")}
+        </div>
+        {SUB_TABS.map(tab => (
+          <button key={tab.id} onClick={() => setSubTab(tab.id)} style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: subTab === tab.id ? "linear-gradient(135deg,rgba(107,44,145,0.12),rgba(244,123,32,0.08))" : "transparent",
+            color: subTab === tab.id ? "var(--pea-purple-600)" : "var(--ink-mute)",
+            fontSize: 13, fontWeight: subTab === tab.id ? 700 : 500,
+            textAlign: "left", width: "100%", transition: "all 160ms",
+            borderLeft: subTab === tab.id ? "3px solid var(--pea-purple-500)" : "3px solid transparent",
+          }}>
+            <Icon name={tab.icon} size={16} />
+            <span style={{ flex: 1 }}>{tab.label}</span>
+            {tab.id === "notifications" && pushPermission === "granted" && (
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", flexShrink: 0 }} />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Content area ── */}
+      <div style={{ flex: 1, overflow: "auto" }}>
+        {/* บัญชีของฉัน */}
+        {subTab === "account" && (
+          <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} onPasswordChanged={onPasswordChanged} />
+        )}
+
+        {/* คู่มือการใช้งาน */}
+        {subTab === "guide" && (
+          <UserGuide role={currentUser.role} privacyPolicy={privacyPolicy} />
+        )}
+
+        {/* การแจ้งเตือน */}
+        {subTab === "notifications" && (
+          <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px" }}>
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--ink)", marginBottom: 6 }}>{t("usrTabNotif")}</div>
+              <div style={{ fontSize: 14, color: "var(--ink-mute)", lineHeight: 1.7 }}>{t("usrNotifDesc")}</div>
+            </div>
+
+            {/* Status card */}
+            <div style={{
+              padding: "20px 22px", borderRadius: 16,
+              background: pushPermission === "granted"
+                ? "linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.04))"
+                : pushPermission === "denied"
+                ? "rgba(239,68,68,0.06)"
+                : "var(--soft)",
+              border: `1px solid ${pushPermission === "granted" ? "rgba(16,185,129,0.25)" : pushPermission === "denied" ? "rgba(239,68,68,0.2)" : "var(--line)"}`,
+              marginBottom: 20,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: pushPermission === "denied" ? 10 : 0 }}>
+                <span style={{
+                  width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", flexShrink: 0,
+                  background: pushPermission === "granted" ? "rgba(16,185,129,0.15)" : pushPermission === "denied" ? "rgba(239,68,68,0.12)" : "rgba(139,63,196,0.1)",
+                }}>
+                  <Icon name="bell" size={20} style={{ color: pushPermission === "granted" ? "#10b981" : pushPermission === "denied" ? "#ef4444" : "var(--pea-purple-500)" }} />
+                </span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "var(--ink)" }}>
+                    {pushPermission === "granted" ? t("usrNotifOn") : pushPermission === "denied" ? t("usrNotifBlocked") : t("usrNotifOff")}
+                  </div>
+                  {pushPermission === "granted" && (
+                    <div style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>
+                      {lang === "th" ? "กำลังรับการแจ้งเตือนจากระบบ" : "Receiving system notifications"}
+                    </div>
+                  )}
+                </div>
+                {pushPermission === "granted" && (
+                  <span style={{ marginLeft: "auto", width: 10, height: 10, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 0 3px rgba(16,185,129,0.2)", flexShrink: 0 }} />
+                )}
+              </div>
+              {pushPermission === "denied" && (
+                <div style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.6, marginTop: 4 }}>
+                  {t("usrNotifBlockedHint")}
+                </div>
+              )}
+            </div>
+
+            {/* Toggle button */}
+            {pushPermission !== "unsupported" && pushPermission !== "denied" && (
+              <button onClick={handleNotifToggle} disabled={notifLoading} className="btn btn-primary" style={{
+                height: 48, width: "100%", fontSize: 14,
+                background: pushPermission === "granted"
+                  ? "linear-gradient(135deg,#ef4444,#dc2626)"
+                  : "linear-gradient(135deg,var(--pea-purple-600),var(--pea-purple-500))",
+                opacity: notifLoading ? 0.7 : 1,
+              }}>
+                <Icon name="bell" size={16} />
+                {notifLoading
+                  ? (lang === "th" ? "กำลังดำเนินการ…" : "Processing…")
+                  : pushPermission === "granted" ? t("usrNotifDisableBtn") : t("usrNotifEnableBtn")}
+              </button>
+            )}
+            {pushPermission === "unsupported" && (
+              <div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--soft)", border: "1px solid var(--line)", fontSize: 13, color: "var(--ink-mute)", textAlign: "center" }}>
+                {lang === "th" ? "Browser นี้ไม่รองรับ Push Notification" : "Push notifications are not supported in this browser"}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    ChangelogView — UX/UI improvement history
    ============================================================ */
 const CHANGELOG = [
@@ -3720,8 +3861,6 @@ function App() {
   const isTeamLeader = currentUser.role === "team_leader";
   const navItems = [
     { id: "search",    icon: "search",   label: t("navSearch")    },
-    { id: "profile",   icon: "user",     label: t("navProfile")   },
-    { id: "guide",     icon: "book",     label: t("navGuide")     },
     ...(hasPermission(currentUser, "view_overview_map") && !isAdmin ? [
       { id: "overview",  icon: "map",      label: t("admMap")       },
     ] : []),
@@ -3730,6 +3869,9 @@ function App() {
     ] : []),
     ...(isTeamLeader ? [
       { id: "payment",   icon: "wallet",   label: t("navPayment")   },
+    ] : []),
+    ...(!isAdmin ? [
+      { id: "user-settings", icon: "settings", label: t("navSettings") },
     ] : []),
     ...(isAdmin ? [
       { id: "changelog", icon: "bolt",     label: t("navChangelog") },
@@ -4338,7 +4480,7 @@ function App() {
               กรุณาเปลี่ยนรหัสผ่านก่อนหมดอายุ มิฉะนั้นจะไม่สามารถเข้าสู่ระบบได้
             </span>
             <button
-              onClick={() => setRoute("profile")}
+              onClick={() => setRoute("user-settings")}
               style={{
                 padding: "5px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.5)",
                 background: "rgba(255,255,255,0.15)", color: "white",
@@ -4412,12 +4554,15 @@ function App() {
               }}
             />
           )}
-          {route === "profile" && (
-            <ProfileView currentUser={currentUser} data={data} addAudit={addAudit}
-              onPasswordChanged={() => setDaysUntilExpiry(45)} />
-          )}
-          {route === "guide" && (
-            <UserGuide role={currentUser.role} privacyPolicy={privacyPolicy} />
+          {route === "user-settings" && (
+            <UserSettingsPanel
+              currentUser={currentUser} data={data} addAudit={addAudit}
+              onPasswordChanged={() => setDaysUntilExpiry(45)}
+              privacyPolicy={privacyPolicy}
+              pushPermission={pushPermission}
+              subscribePush={subscribePush}
+              unsubscribePush={unsubscribePush}
+            />
           )}
           {route === "payment" && isTeamLeader && (
             <PaymentView currentUser={currentUser} addAudit={addAudit} />

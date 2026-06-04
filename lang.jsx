@@ -20,7 +20,12 @@ const TRANSLATIONS = {
     caution: "ระวัง", allUsers: "ทุก user",
 
     // ── Navigation ─────────────────────────────────────────
-    navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin", navGuide: "คู่มือการใช้งาน", navChangelog: "อัปเดต",
+    navSearch: "ค้นหา", navProfile: "บัญชีฉัน", navAdmin: "Admin", navGuide: "คู่มือการใช้งาน", navChangelog: "อัปเดต", navSettings: "ตั้งค่าและช่วยเหลือ",
+    usrTabAccount: "บัญชีของฉัน", usrTabGuide: "คู่มือการใช้งาน", usrTabNotif: "การแจ้งเตือน",
+    usrNotifOn: "แจ้งเตือน: เปิดอยู่", usrNotifOff: "ยังไม่ได้เปิด", usrNotifBlocked: "ถูกบล็อก",
+    usrNotifEnableBtn: "เปิดรับการแจ้งเตือน", usrNotifDisableBtn: "ปิดการแจ้งเตือน",
+    usrNotifBlockedHint: "การแจ้งเตือนถูกบล็อกโดย Browser กรุณาไปที่ การตั้งค่า Browser → อนุญาตการแจ้งเตือน สำหรับเว็บนี้",
+    usrNotifDesc: "รับการแจ้งเตือนจากระบบ เช่น การอนุมัติคำขอ ประกาศสำคัญ และการอัปเดตระบบ",
     navPayment: "ชำระเงิน",
     baseMapStreet: "ถนน", baseMapSatellite: "ดาวเทียม",
 
@@ -245,7 +250,12 @@ const TRANSLATIONS = {
     caution: "Caution", allUsers: "All users",
 
     // ── Navigation ─────────────────────────────────────────
-    navSearch: "Search", navProfile: "My Account", navAdmin: "Admin", navGuide: "User Manual", navChangelog: "Updates",
+    navSearch: "Search", navProfile: "My Account", navAdmin: "Admin", navGuide: "User Manual", navChangelog: "Updates", navSettings: "Settings & Help",
+    usrTabAccount: "My Account", usrTabGuide: "User Manual", usrTabNotif: "Notifications",
+    usrNotifOn: "Notifications: On", usrNotifOff: "Not enabled yet", usrNotifBlocked: "Blocked",
+    usrNotifEnableBtn: "Enable Notifications", usrNotifDisableBtn: "Disable Notifications",
+    usrNotifBlockedHint: "Notifications are blocked by your browser. Go to Browser Settings → Allow notifications for this site.",
+    usrNotifDesc: "Receive system notifications such as request approvals, announcements, and system updates.",
     navPayment: "Payment",
     baseMapStreet: "Street", baseMapSatellite: "Satellite",
 
