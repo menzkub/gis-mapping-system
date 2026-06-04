@@ -67,6 +67,10 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
       setHasSearched(false);
       return;
     }
+    if (filters.minKva && filters.maxKva && +filters.minKva > +filters.maxKva) {
+      toast?.("KVA ต่ำสุดต้องน้อยกว่าหรือเท่ากับ KVA สูงสุด", "error");
+      return;
+    }
     let cancelled = false;
     const cacheKey = `${tab}::${query.trim()}::${JSON.stringify(filters)}`;
     const t = setTimeout(async () => {
@@ -377,7 +381,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               </button>
 
               {(allowExport || currentUser?.role === "admin") ? (
-                <button className="search-export-btn btn btn-outline" style={{ height: 44, borderRadius: 14, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0}>
+                <button className="search-export-btn btn btn-outline" style={{ height: 44, borderRadius: 14, flexShrink: 0 }} onClick={handleExport} disabled={results.length === 0} title={results.length === 0 ? t("exportNeedSearch") : undefined}>
                   <Icon name="download" size={15} /> {t("exportLabel")}
                 </button>
               ) : (
@@ -444,11 +448,11 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                   <FilterSelect label={t("fVoltage")} value={filters.voltage} options={["22 kV", "33 kV"]} onChange={v => setFilters(f => ({ ...f, voltage: v }))} t={t} />
                   <div className="field">
                     <label className="field-label">{t("fMinKva")}</label>
-                    <input className="input" style={{ height: 40 }} type="number" value={filters.minKva} onChange={e => setFilters(f => ({ ...f, minKva: e.target.value }))} placeholder="0" />
+                    <input className="input" style={{ height: 40 }} type="number" min="0" value={filters.minKva} onChange={e => setFilters(f => ({ ...f, minKva: e.target.value }))} placeholder="0" />
                   </div>
                   <div className="field">
                     <label className="field-label">{t("fMaxKva")}</label>
-                    <input className="input" style={{ height: 40 }} type="number" value={filters.maxKva} onChange={e => setFilters(f => ({ ...f, maxKva: e.target.value }))} placeholder="∞" />
+                    <input className="input" style={{ height: 40 }} type="number" min="0" value={filters.maxKva} onChange={e => setFilters(f => ({ ...f, maxKva: e.target.value }))} placeholder="∞" />
                   </div>
                 </>
               )}
@@ -503,7 +507,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                     <div style={{ width: 28, height: 28, borderRadius: 9, background: "linear-gradient(135deg,#6b2c91,#8b3fc4)", display: "grid", placeItems: "center", flexShrink: 0 }}>
                       <Icon name="search" size={13} style={{ color: "white" }} />
                     </div>
-                    พิมพ์คำค้นหาเพื่อดูตำแหน่งบนแผนที่
+                    {t("mapSearchHint")}
                   </div>
                 </div>
               )}
@@ -662,6 +666,7 @@ function FilterSelect({ label, value, options, onChange, t }) {
    ResultList — left rail / fullscreen table
    ============================================================ */
 function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, copyCoords, copied, searchQuery }) {
+  const { t } = useLang();
   return (
     <div className="surface" style={{ overflow: "auto", height: "100%" }}>
       {items.length === 0 && !searchQuery && (
@@ -671,10 +676,10 @@ function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, cop
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: "var(--ink)" }}>
-              {kind === "meter" ? "ค้นหา PEA มิเตอร์" : "ค้นหา PEA หม้อแปลง"}
+              {kind === "meter" ? t("searchPeaMeter") : t("searchPeaTr")}
             </div>
             <div style={{ fontSize: 13, marginTop: 5, lineHeight: 1.6, maxWidth: 240 }}>
-              พิมพ์ TAG, PEANO, หรือหมายเลขผู้ใช้<br />ในช่องค้นหาด้านบน
+              {t("searchHintDesc")}
             </div>
           </div>
         </div>
@@ -682,10 +687,9 @@ function ResultList({ kind, items, selectedId, onSelect, onNavigate, capped, cop
       {items.length === 0 && searchQuery && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: 12, color: "var(--ink-mute)" }}>
           <div style={{ fontSize: 48, lineHeight: 1 }}>🔍</div>
-          <div style={{ fontWeight: 800, fontSize: 17, color: "var(--ink)" }}>ไม่พบผลลัพธ์</div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: "var(--ink)" }}>{t("notFound")}</div>
           <div style={{ fontSize: 14, textAlign: "center", maxWidth: 280, lineHeight: 1.6 }}>
-            ไม่พบ{kind === "meter" ? "มิเตอร์" : "หม้อแปลง"} ที่ตรงกับ "{searchQuery}"<br />
-            ลองค้นหาด้วย TAG, PEANO, หรือหมายเลขผู้ใช้
+            {t("notFoundHint")}
           </div>
         </div>
       )}
@@ -1113,6 +1117,7 @@ function NavigationPanel({ target, kind, onClose }) {
 
 function CorrSearchModal({ target, onClose, onSubmit }) {
   const { p } = target;
+  const { t } = useLang();
   const [newLat, setNewLat] = useStateS(p.LATITUDE);
   const [newLng, setNewLng] = useStateS(p.LONGITUDE);
   const [note, setNote] = useStateS("");
@@ -1132,6 +1137,7 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
         setNewLng(pos.coords.longitude.toFixed(8));
         setLocating(false);
         setCoordErr("");
+        setGpsError("");
       },
       err => {
         setGpsError(err.code === 1 ? "ไม่ได้รับอนุญาตเข้าถึง GPS" : "ไม่สามารถระบุตำแหน่งได้");
@@ -1159,7 +1165,7 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
     try {
       await onSubmit(lat, lng, note);
       setDone(true);
-      setTimeout(onClose, 1800);
+      setTimeout(onClose, 3000);
     } catch (err) {
       setSubmitting(false);
     }
@@ -1170,7 +1176,7 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 22, width: "100%", maxWidth: 440, boxShadow: "0 28px 72px rgba(0,0,0,0.55)", overflow: "hidden" }}>
         <div style={{ background: "linear-gradient(135deg,#1b0926,#d96512)", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>แจ้งแก้ไขพิกัด</div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "white" }}>{t("corrTitle")}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontFamily: "monospace" }}>
               {target.isMeter
                 ? `PEA Meter: ${p.PEANO || p.TAG}`
@@ -1208,21 +1214,21 @@ function CorrSearchModal({ target, onClose, onSubmit }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: coordErr ? 6 : 12 }}>
               <div className="field" style={{ margin: 0 }}>
-                <label className="field-label">Latitude ใหม่</label>
+                <label className="field-label">{t("corrLatNew")}</label>
                 <input className="input" type="number" step="0.00000001" min="-90" max="90"
-                  value={newLat} onChange={e => { setNewLat(e.target.value); setCoordErr(""); }}
+                  value={newLat} onChange={e => { setNewLat(e.target.value); setCoordErr(""); setGpsError(""); }}
                   style={{ height: 38, fontFamily: "monospace", borderColor: coordErr ? "#dc2626" : undefined }} />
               </div>
               <div className="field" style={{ margin: 0 }}>
-                <label className="field-label">Longitude ใหม่</label>
+                <label className="field-label">{t("corrLngNew")}</label>
                 <input className="input" type="number" step="0.00000001" min="-180" max="180"
-                  value={newLng} onChange={e => { setNewLng(e.target.value); setCoordErr(""); }}
+                  value={newLng} onChange={e => { setNewLng(e.target.value); setCoordErr(""); setGpsError(""); }}
                   style={{ height: 38, fontFamily: "monospace", borderColor: coordErr ? "#dc2626" : undefined }} />
               </div>
             </div>
             {coordErr && <div style={{ fontSize: 11, color: "#dc2626", marginBottom: 10, textAlign: "center" }}>{coordErr}</div>}
             <div className="field" style={{ marginBottom: 14 }}>
-              <label className="field-label">หมายเหตุ (ไม่บังคับ)</label>
+              <label className="field-label">{t("corrNote")}</label>
               <textarea className="input" rows={2} value={note} onChange={e => setNote(e.target.value)} style={{ resize: "none", fontFamily: "inherit" }} />
             </div>
             <div style={{ display: "flex", gap: 10 }}>
