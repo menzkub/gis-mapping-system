@@ -1,7 +1,7 @@
 {
-  "commit": "098a5c39b045855c8541f5ce27987d11ea3bd601",
-  "shortCommit": "098a5c3",
-  "message": "Update README to v3.6 \u2014 document all new features",
-  "date": "2026-06-04T15:08:32Z",
+  "commit": "674fcdd70e82e6c38fc21f73d3ea5612743eece5",
+  "shortCommit": "674fcdd",
+  "message": "feat(mobile): card views for Meter/TR/Audit tables + touch-friendly controls",
+  "date": "2026-06-04T15:20:26Z",
   "branch": "main"
 }
