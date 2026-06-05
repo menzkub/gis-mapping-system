@@ -4295,7 +4295,7 @@ function App() {
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 4, fontWeight: 500 }}>GIS Mapping System</div>
               </div>
             </div>
-            <div style={{ height: 1, margin: "14px -6px 14px", background: "linear-gradient(90deg, transparent 0%, rgba(244,123,32,0.60) 35%, rgba(139,63,196,0.60) 65%, transparent 100%)" }} />
+            <div className="sidebar-brand-sep" style={{ height: 1, margin: "14px -6px 14px", background: "linear-gradient(90deg, transparent 0%, rgba(244,123,32,0.60) 35%, rgba(139,63,196,0.60) 65%, transparent 100%)" }} />
           </div>
           <nav className="sidebar-nav f-col f-gap-2 sidebar-nav-scroll">
             {navItems.map(it => (
@@ -4399,7 +4399,7 @@ function App() {
 
           <div className="sidebar-user" style={{ marginTop: "auto", flexShrink: 0, padding: 14, background: "linear-gradient(135deg, rgba(244,123,32,0.11) 0%, rgba(107,44,145,0.18) 100%)", borderRadius: 14, border: "1px solid rgba(244,123,32,0.24)", boxShadow: "0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)" }}>
             <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
+              <div className="sidebar-user-avatar" style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
                 {currentUser.name?.[0] || currentUser.username[0]}
               </div>
               <div className="sidebar-user-info" style={{ flex: 1, minWidth: 0 }}>
@@ -4408,7 +4408,7 @@ function App() {
               </div>
             </div>
             {pushPermission !== "unsupported" && (
-              <button disabled={pushPermission === "denied"} onClick={async () => {
+              <button className="sidebar-notify-btn" disabled={pushPermission === "denied"} onClick={async () => {
                 if (pushPermission === "granted") await unsubscribePush();
                 else await subscribePush();
               }} style={{
