@@ -1,7 +1,7 @@
 {
-  "commit": "31a47f11ddc51255d317457122e3942a8d748eef",
-  "shortCommit": "31a47f1",
-  "message": "ux: fix collapsed sidebar \u2014 professional icon-rail layout",
-  "date": "2026-06-05T14:46:59Z",
+  "commit": "f425d09ddbcdf7b9e010d7f2fdc7e122a4e47f88",
+  "shortCommit": "f425d09",
+  "message": "ux: hamburger \u2630\u2192\u2715 animation + remove search autoFocus",
+  "date": "2026-06-05T14:52:04Z",
   "branch": "main"
 }
