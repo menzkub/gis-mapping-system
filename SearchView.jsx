@@ -338,7 +338,6 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
                 onFocus={() => setShowHistory(true)}
                 onBlur={() => setTimeout(() => setShowHistory(false), 180)}
                 inputMode={tab === "meter" ? "numeric" : "text"}
-                autoFocus
               />
               {query && (
                 <button className="btn-icon" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 34, height: 34 }} onClick={() => setQuery("")}>

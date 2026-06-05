@@ -70,10 +70,18 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
             display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
             width: 42px; height: 42px; border-radius: 12px; border: none;
             background: var(--soft); cursor: pointer; flex-shrink: 0; position: relative; margin-top: 2px;
+            transition: background 160ms;
           }
+          .adm-hamburger:active { transform: scale(0.90); }
           .adm-hamburger-line {
             display: block; width: 18px; height: 2px; border-radius: 2px; background: var(--ink);
+            transition: transform 270ms cubic-bezier(0.4,0,0.2,1), opacity 220ms, width 200ms;
+            transform-origin: center;
           }
+          .adm-hamburger.is-open { background: rgba(244,123,32,0.10); }
+          .adm-hamburger.is-open .adm-hamburger-line:nth-child(1) { transform: translateY(7px) rotate(45deg); background: var(--pea-orange-500); }
+          .adm-hamburger.is-open .adm-hamburger-line:nth-child(2) { opacity: 0; width: 0; }
+          .adm-hamburger.is-open .adm-hamburger-line:nth-child(3) { transform: translateY(-7px) rotate(-45deg); background: var(--pea-orange-500); }
           .adm-hamburger-dot {
             position: absolute; top: 7px; right: 7px; width: 8px; height: 8px;
             border-radius: 50%; background: var(--pea-orange-500); border: 2px solid var(--surface);
@@ -170,7 +178,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
 
       {/* Header */}
       <div style={{ padding: "14px 20px 12px", flexShrink: 0, display:"flex", alignItems:"flex-start", gap:10 }}>
-        <button className="adm-hamburger" onClick={() => setShowDrawer(true)} aria-label="เมนู">
+        <button className={"adm-hamburger" + (showDrawer ? " is-open" : "")} onClick={() => setShowDrawer(d => !d)} aria-label="เมนู">
           <span className="adm-hamburger-line" />
           <span className="adm-hamburger-line" />
           <span className="adm-hamburger-line" />
