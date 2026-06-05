@@ -278,12 +278,14 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
   const displayKvaPct     = (v) => displayTotalKva > 0 ? Math.round(v / displayTotalKva * 100) : 0;
   const grandTotal = meterCount + trCount;
   const isLoading = meterCount === 0 && trCount === 0 && totalKva === 0;
-  const donutSegs = [
+  const meterSegs = [
     { v: peaMeters,  color: "#8b3fc4", label: t("peaMeter"),  glow: "rgba(139,63,196,0.6)" },
     { v: custMeters, color: "#c084fc", label: t("custMeter"), glow: "rgba(192,132,252,0.4)" },
     ...(otherMeters > 0 ? [{ v: otherMeters, color: "#94a3b8", label: t("unknownM"), glow: "rgba(148,163,184,0.4)" }] : []),
-    { v: peaTr,      color: "#f47b20", label: t("peaTr"),     glow: "rgba(244,123,32,0.6)" },
-    { v: custTr,     color: "#fbbf24", label: t("custTr"),    glow: "rgba(251,191,36,0.4)" },
+  ];
+  const trSegs = [
+    { v: peaTr,  color: "#f47b20", label: t("peaTr"),  glow: "rgba(244,123,32,0.6)" },
+    { v: custTr, color: "#fbbf24", label: t("custTr"), glow: "rgba(251,191,36,0.4)" },
     ...(otherTr > 0 ? [{ v: otherTr, color: "#cbd5e1", label: t("unknownTr"), glow: "rgba(203,213,225,0.3)" }] : []),
   ];
 
@@ -292,8 +294,9 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
       <style>{`
         .db-stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
         .db-mid-grid  { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
-        .db-donut-wrap { display: flex; align-items: center; gap: 24px; }
-        .db-donut-svg  { width: 140px; height: 140px; }
+        .db-donut-col { display: flex; flex-direction: column; gap: 12px; }
+        .db-donut-wrap { display: flex; align-items: center; gap: 16px; }
+        .db-donut-svg  { width: 110px; height: 110px; flex-shrink: 0; }
         @keyframes dbLegBar { from { width: 0 } }
         @keyframes dbSegIn  { from { opacity:0; transform:scale(0.92) } to { opacity:1; transform:none } }
         @keyframes dbNumUp  { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
@@ -301,15 +304,15 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
         @media (min-width: 641px) and (max-width: 1024px) {
           .db-stat-grid { grid-template-columns: repeat(3,1fr); gap: 12px; }
           .db-mid-grid  { grid-template-columns: 1fr 1fr; gap: 14px; }
-          .db-donut-wrap { flex-direction: column; align-items: center; gap: 16px; }
-          .db-donut-svg  { width: 180px; height: 180px; }
+          .db-donut-wrap { flex-direction: row; align-items: center; gap: 12px; }
+          .db-donut-svg  { width: 100px; height: 100px; }
         }
         @media (max-width: 640px) {
           .db-stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
           .db-kva-span  { grid-column: 1 / -1; }
           .db-mid-grid  { grid-template-columns: 1fr; }
-          .db-donut-wrap { flex-direction: row; align-items: center; gap: 16px; }
-          .db-donut-svg  { width: 130px; height: 130px; flex-shrink: 0; }
+          .db-donut-wrap { flex-direction: row; align-items: center; gap: 12px; }
+          .db-donut-svg  { width: 90px; height: 90px; flex-shrink: 0; }
         }
       `}</style>
 
@@ -437,18 +440,34 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
           )}
         </div>
 
-        {/* Premium Donut card */}
-        <div className="card card-elev" style={{ background: "linear-gradient(145deg, var(--surface) 0%, var(--soft) 100%)" }}>
-          <div style={{ marginBottom: 18 }}>
-            <div className="t-eyebrow" style={{ marginBottom: 2 }}>สัดส่วนตามประเภท</div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>{grandTotal.toLocaleString()} <span className="t-mute" style={{ fontSize: 13, fontWeight: 500 }}>รายการ</span></div>
+        {/* Two donut cards stacked */}
+        <div className="db-donut-col">
+          <div className="card card-elev" style={{ background: "linear-gradient(145deg, var(--surface) 0%, var(--soft) 100%)" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div className="t-eyebrow" style={{ marginBottom: 2 }}>สัดส่วนตามประเภท</div>
+              <div style={{ fontSize: 15, fontWeight: 800 }}>{t("dbMeters")} <span className="t-mute" style={{ fontSize: 12, fontWeight: 500 }}>{meterCount.toLocaleString()} {t("dbItems")}</span></div>
+            </div>
+            <div className="db-donut-wrap">
+              <PremiumDonut segs={meterSegs} grandTotal={meterCount} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                {meterSegs.map((seg, i) => (
+                  <DonutLegendRow key={seg.label} seg={seg} total={meterCount} delay={i * 80} />
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="db-donut-wrap">
-            <PremiumDonut segs={donutSegs} grandTotal={grandTotal} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-              {donutSegs.map((seg, i) => (
-                <DonutLegendRow key={seg.label} seg={seg} total={grandTotal} delay={i * 80} />
-              ))}
+          <div className="card card-elev" style={{ background: "linear-gradient(145deg, var(--surface) 0%, var(--soft) 100%)" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div className="t-eyebrow" style={{ marginBottom: 2 }}>สัดส่วนตามประเภท</div>
+              <div style={{ fontSize: 15, fontWeight: 800 }}>{t("dbTrs")} <span className="t-mute" style={{ fontSize: 12, fontWeight: 500 }}>{trCount.toLocaleString()} {t("dbItems")}</span></div>
+            </div>
+            <div className="db-donut-wrap">
+              <PremiumDonut segs={trSegs} grandTotal={trCount} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                {trSegs.map((seg, i) => (
+                  <DonutLegendRow key={seg.label} seg={seg} total={trCount} delay={i * 80} />
+                ))}
+              </div>
             </div>
           </div>
         </div>

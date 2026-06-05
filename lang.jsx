@@ -105,13 +105,13 @@ const TRANSLATIONS = {
 
     // ── Search view ────────────────────────────────────────
     searchDataLabel: "ค้นหาข้อมูล",
-    peaMeter: "PEA มิเตอร์", peaTr: "PEA หม้อแปลง",
+    peaMeter: "มิเตอร์ของ PEA", peaTr: "หม้อแปลงของ PEA",
     searchPeaMeter: "ค้นหา PEA มิเตอร์", searchPeaTr: "ค้นหา PEA หม้อแปลง",
     totalItems: "รายการทั้งหมด", foundItems: "รายการ",
     searching: "กำลังค้นหา…", filterLabel: "ตัวกรอง", clearFilter: "ล้างตัวกรอง",
     splitView: "Split", mapView: "แผนที่", exportLabel: "Export",
     heatmapBtn: "แผนที่ความร้อน", clusterBtn: "จัดกลุ่ม",
-    custMeter: "มิเตอร์ราษฎร์", custTr: "หม้อแปลงราษฎร์", custLabel: "ราษฎร์",
+    custMeter: "มิเตอร์ของผู้ใช้ไฟ", custTr: "หม้อแปลงของผู้ใช้ไฟ", custLabel: "ผู้ใช้ไฟ",
     exportDisabled: "ขณะนี้ระบบปิดการ Export ข้อมูลชั่วคราว — หากต้องการข้อมูล กรุณาติดต่อ Admin",
     phMeter: "ค้นหา PEA Meter…",
     phTr: "ค้นหา PEA TR, สถานที่ใช้ไฟ…",
@@ -373,13 +373,13 @@ const TRANSLATIONS = {
 
     // ── Search view ────────────────────────────────────────
     searchDataLabel: "Search",
-    peaMeter: "PEA Meter", peaTr: "PEA Transformer",
+    peaMeter: "PEA Meters", peaTr: "PEA Transformers",
     searchPeaMeter: "Search PEA Meter", searchPeaTr: "Search PEA TR",
     totalItems: "total items", foundItems: "items",
     searching: "Searching…", filterLabel: "Filter", clearFilter: "Clear filter",
     splitView: "Split", mapView: "Map", exportLabel: "Export",
     heatmapBtn: "Heatmap", clusterBtn: "Cluster",
-    custMeter: "Cust. Meter", custTr: "Cust. TR", custLabel: "Customer",
+    custMeter: "Customer Meters", custTr: "Customer Transformers", custLabel: "Customer",
     exportDisabled: "Data export is currently disabled — please contact an Admin if you need the data",
     phMeter: "Search PEA Meter…",
     phTr: "Search PEA TR, Location…",
