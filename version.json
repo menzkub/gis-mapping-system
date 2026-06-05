@@ -1,7 +1,7 @@
 {
-  "commit": "03963ac4d7373f6ee1cf3c83272ce66ef9c23d91",
-  "shortCommit": "03963ac",
-  "message": "Mobile UX: safe area, tap highlight, swipe-to-close drawer, empty state gap",
-  "date": "2026-06-05T15:12:35Z",
+  "commit": "8d3f399fb8b1ea99842cd2578893a47eae40ea01",
+  "shortCommit": "8d3f399",
+  "message": "Desktop UX + mobile login + drawer animations",
+  "date": "2026-06-05T15:41:21Z",
   "branch": "main"
 }
