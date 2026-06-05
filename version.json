@@ -1,7 +1,7 @@
 {
-  "commit": "ffba2b84b7a8b7253388299be2acce9848391c86",
-  "shortCommit": "ffba2b8",
-  "message": "fix: move modals outside fade-up card in AdminMeters and AdminTrs",
-  "date": "2026-06-04T17:07:05Z",
+  "commit": "d7f2fa46ee9d52ee0fc48345372411ea99ce375a",
+  "shortCommit": "d7f2fa4",
+  "message": "fix: filter kVA stat by selected feeder in Dashboard",
+  "date": "2026-06-05T14:17:11Z",
   "branch": "main"
 }
