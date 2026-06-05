@@ -1,7 +1,7 @@
 {
-  "commit": "d7f2fa46ee9d52ee0fc48345372411ea99ce375a",
-  "shortCommit": "d7f2fa4",
-  "message": "fix: filter kVA stat by selected feeder in Dashboard",
-  "date": "2026-06-05T14:17:11Z",
+  "commit": "1853b91e352dd6cd07a05c7443ee63f601203505",
+  "shortCommit": "1853b91",
+  "message": "feat: split donut chart into Meter and TR, rename labels TH/EN",
+  "date": "2026-06-05T14:24:17Z",
   "branch": "main"
 }
