@@ -62,6 +62,18 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
         .adm-body { flex: 1; overflow: auto; padding: 16px 20px 28px; min-height: 0; }
         .adm-body.adm-map-body { padding: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
         @keyframes adm-spin { to { transform: rotate(360deg); } }
+        @keyframes adm-drawer-item-in {
+          from { opacity: 0; transform: translateX(-20px) scale(0.97); }
+          to   { opacity: 1; transform: none; }
+        }
+        @keyframes adm-drawer-sec-in {
+          from { opacity: 0; transform: translateX(-12px); }
+          to   { opacity: 1; transform: none; }
+        }
+        @keyframes adm-drawer-head-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to   { opacity: 1; transform: none; }
+        }
         .adm-spin { animation: adm-spin 1.2s linear infinite; }
         .adm-hamburger { display: none; }
         .adm-drawer-overlay { display: none; }
@@ -167,7 +179,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
           drawerTouchStartX.current = null;
         }}
       >
-        <div className="adm-drawer-head">
+        <div className="adm-drawer-head" style={{ animation: showDrawer ? "adm-drawer-head-in 240ms var(--ease-out) both" : "none" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div>
               <div style={{ fontSize:10, fontWeight:800, color:"var(--pea-orange-500)", letterSpacing:"0.14em", textTransform:"uppercase" }}>{t("adminEyebrow")}</div>
@@ -179,20 +191,30 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
           </div>
         </div>
         <div className="adm-drawer-scroll">
-          {DRAWER_SECTIONS.map((sec, si) => (
-            <div key={si} className="adm-drawer-section">
-              <div className="adm-drawer-sec-label">{sec.label}</div>
-              {sec.items.map(n => (
-                <button key={n.id} className={"adm-drawer-item" + (tab === n.id ? " on" : "")}
-                  onClick={() => { setTab(n.id); setShowDrawer(false); }}>
-                  <span className="adm-drawer-icon"><Icon name={n.icon} size={17} /></span>
-                  <span style={{ flex:1 }}>{n.label}</span>
-                  {n.id === "users" && pendingCount > 0 && <span className="adm-drawer-badge">{pendingCount}</span>}
-                  {n.id === "guide" && hasNewVer && <span className="adm-drawer-dot" />}
-                </button>
-              ))}
-            </div>
-          ))}
+          {(() => {
+            let globalIdx = 0;
+            return DRAWER_SECTIONS.map((sec, si) => (
+              <div key={si} className="adm-drawer-section">
+                <div className="adm-drawer-sec-label"
+                  style={{ animation: showDrawer ? `adm-drawer-sec-in 240ms ${50 + si * 60}ms var(--ease-out) both` : "none" }}>
+                  {sec.label}
+                </div>
+                {sec.items.map(n => {
+                  const delay = 80 + globalIdx++ * 38;
+                  return (
+                    <button key={n.id} className={"adm-drawer-item" + (tab === n.id ? " on" : "")}
+                      style={{ animation: showDrawer ? `adm-drawer-item-in 280ms ${delay}ms var(--ease-out) both` : "none" }}
+                      onClick={() => { setTab(n.id); setShowDrawer(false); }}>
+                      <span className="adm-drawer-icon"><Icon name={n.icon} size={17} /></span>
+                      <span style={{ flex:1 }}>{n.label}</span>
+                      {n.id === "users" && pendingCount > 0 && <span className="adm-drawer-badge">{pendingCount}</span>}
+                      {n.id === "guide" && hasNewVer && <span className="adm-drawer-dot" />}
+                    </button>
+                  );
+                })}
+              </div>
+            ));
+          })()}
         </div>
       </div>
 

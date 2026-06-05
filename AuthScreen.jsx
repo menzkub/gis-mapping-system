@@ -489,23 +489,38 @@ function AuthScreen({ initialError }) {
       {/* ── Right: form panel ─────────────────────────────── */}
       <div className="auth-form-panel">
 
+        {/* Mobile animated background orbs */}
+        <div className="auth-mob-bg" aria-hidden="true">
+          <div className="auth-orb auth-orb--1" />
+          <div className="auth-orb auth-orb--2" />
+          <div className="auth-orb auth-orb--3" />
+          <div className="auth-sparks">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="auth-spark" style={{ left: `${8 + i * 7.5}%`, animationDelay: `${i * 0.4}s`, animationDuration: `${3 + (i % 4) * 0.7}s` }} />
+            ))}
+          </div>
+        </div>
+
         {/* Mobile-only hero header */}
         <div className="auth-hero">
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <img src="logo.svg" alt="PEA" style={{ width: 50, height: 50, borderRadius: 14, boxShadow: "0 8px 24px rgba(139,63,196,0.45)", flexShrink: 0, animation: "authLogoFloat 5s ease-in-out infinite" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, animation: "authHeroIn 600ms 80ms var(--ease-out) both" }}>
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <div style={{ position: "absolute", inset: -6, borderRadius: 20, background: "radial-gradient(circle, rgba(244,123,32,0.5), transparent 70%)", animation: "authLogoGlow 2.8s ease-in-out infinite" }} />
+              <img src="logo.svg" alt="PEA" style={{ width: 52, height: 52, borderRadius: 14, boxShadow: "0 8px 28px rgba(139,63,196,0.55)", position: "relative", animation: "authLogoFloat 5s ease-in-out infinite" }} />
+            </div>
             <div>
               <div style={{ fontSize: 10, letterSpacing: "0.2em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA FANG</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>Meter &amp; TR Search</div>
             </div>
           </div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1.25, marginBottom: 4 }}>
-            {t("authBrandTitle1")} <span style={{ color: "#ffba7a" }}>{t("authBrandTitle2")}</span>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1.25, marginBottom: 4, animation: "authHeroIn 600ms 160ms var(--ease-out) both" }}>
+            {t("authBrandTitle1")} <span style={{ background: "linear-gradient(120deg,#ffba7a,#f47b20)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t("authBrandTitle2")}</span>
           </div>
-          <div style={{ fontSize: 13, color: "#c4b5fd" }}>{t("authBrandTitle3")} · {t("authBrandTag")}</div>
+          <div style={{ fontSize: 13, color: "#c4b5fd", animation: "authHeroIn 600ms 240ms var(--ease-out) both" }}>{t("authBrandTitle3")} · {t("authBrandTag")}</div>
         </div>
 
         {/* Form card */}
-        <div className="auth-card">
+        <div className="auth-card" style={{ animation: "authCardUp 500ms 300ms var(--ease-out) both" }}>
 
           {/* ── Forgot password ───────────────────────────── */}
           {mode === "forgot" ? (
@@ -946,9 +961,48 @@ function AuthScreen({ initialError }) {
           z-index: 1;
         }
         .auth-hero { display: none; }
+        .auth-mob-bg { display: none; }
         .auth-card {
           width: 100%;
           max-width: 420px;
+        }
+
+        /* ── Mobile login keyframes ───────────────────── */
+        @keyframes authHeroIn {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: none; }
+        }
+        @keyframes authCardUp {
+          from { opacity: 0; transform: translateY(32px); }
+          to   { opacity: 1; transform: none; }
+        }
+        @keyframes authLogoGlow {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.18); }
+        }
+        @keyframes authOrbFloat1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%       { transform: translate(18px, -24px) scale(1.08); }
+          66%       { transform: translate(-12px, 14px) scale(0.95); }
+        }
+        @keyframes authOrbFloat2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          40%       { transform: translate(-20px, 20px) scale(1.12); }
+          70%       { transform: translate(14px, -10px) scale(0.92); }
+        }
+        @keyframes authOrbFloat3 {
+          0%, 100% { transform: translate(0, 0); }
+          50%       { transform: translate(10px, -18px) scale(1.06); }
+        }
+        @keyframes authSparkRise {
+          0%   { transform: translateY(0) scale(1);    opacity: 0; }
+          15%  { opacity: 0.9; }
+          80%  { opacity: 0.5; }
+          100% { transform: translateY(-90px) scale(0.4); opacity: 0; }
+        }
+        @keyframes authBtnShimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
         }
 
         /* ── Mobile ────────────────────────────────────── */
@@ -967,10 +1021,58 @@ function AuthScreen({ initialError }) {
             align-items: stretch;
             background: transparent;
             min-height: 100vh;
+            position: relative;
+          }
+          .auth-mob-bg {
+            display: block;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+          }
+          .auth-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+          }
+          .auth-orb--1 {
+            width: 240px; height: 240px;
+            top: -60px; right: -60px;
+            background: radial-gradient(circle, rgba(244,123,32,0.35) 0%, transparent 70%);
+            animation: authOrbFloat1 9s ease-in-out infinite;
+          }
+          .auth-orb--2 {
+            width: 300px; height: 300px;
+            top: 40px; left: -100px;
+            background: radial-gradient(circle, rgba(139,63,196,0.45) 0%, transparent 70%);
+            animation: authOrbFloat2 11s ease-in-out infinite;
+          }
+          .auth-orb--3 {
+            width: 180px; height: 180px;
+            top: 160px; right: 20px;
+            background: radial-gradient(circle, rgba(107,44,145,0.30) 0%, transparent 70%);
+            animation: authOrbFloat3 7s ease-in-out infinite;
+          }
+          .auth-sparks {
+            position: absolute;
+            bottom: 240px; left: 0; right: 0;
+            height: 100px;
+          }
+          .auth-spark {
+            position: absolute;
+            bottom: 0;
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: rgba(255,186,122,0.75);
+            box-shadow: 0 0 6px rgba(244,123,32,0.8);
+            animation: authSparkRise linear infinite;
           }
           .auth-hero {
             display: block;
             padding: 48px 24px 28px;
+            position: relative;
+            z-index: 1;
           }
           .auth-card {
             background: var(--surface);
@@ -980,8 +1082,21 @@ function AuthScreen({ initialError }) {
             flex: 1;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+            box-shadow: 0 -12px 48px rgba(0,0,0,0.35), 0 -1px 0 rgba(244,123,32,0.15);
             min-height: calc(100vh - 220px);
+            position: relative;
+            z-index: 1;
+          }
+          /* Input focus glow */
+          .auth-card .input:focus {
+            box-shadow: 0 0 0 3px rgba(139,63,196,0.25), 0 0 16px rgba(139,63,196,0.18) !important;
+            border-color: var(--pea-purple-500) !important;
+          }
+          /* Submit button shimmer */
+          .auth-card .btn-primary {
+            background-size: 200% auto !important;
+            background-image: linear-gradient(120deg, #6b2c91 0%, #8b3fc4 30%, #f47b20 50%, #8b3fc4 70%, #6b2c91 100%) !important;
+            animation: authBtnShimmer 3.5s linear infinite !important;
           }
         }
         @media (max-width: 480px) {

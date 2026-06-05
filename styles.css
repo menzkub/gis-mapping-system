@@ -807,6 +807,46 @@ a { color: inherit; text-decoration: none; }
 }
 .route-view { animation: routeIn 300ms var(--ease-out) both; }
 
+/* ── CSS Tooltips ───────────────────────────────────────── */
+@media (min-width: 641px) {
+  [data-tooltip] { position: relative; }
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--ink);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 140ms, transform 140ms;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  [data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ink);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 140ms;
+    z-index: 9999;
+  }
+  [data-tooltip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+  [data-tooltip]:hover::before { opacity: 1; }
+}
+
 @keyframes resultStagger {
   from { opacity: 0; transform: translateX(-8px); }
   to   { opacity: 1; transform: none; }

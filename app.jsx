@@ -3527,6 +3527,29 @@ function App() {
     };
   }, []);
 
+  // ── Global keyboard shortcuts ────────────────────────────────────────────
+  useEffectApp(() => {
+    const handler = (e) => {
+      if (appState !== "ready") return;
+      const tag = document.activeElement?.tagName;
+      const editable = tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable;
+      // Ctrl/Cmd+K → jump to search
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setRoute("search");
+        return;
+      }
+      // Number keys (no modifier, not in input)
+      if (!editable && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        if (e.key === "1") { setRoute("search"); }
+        if (e.key === "2") { setRoute("map"); }
+        if (e.key === "3" && currentUser?.role === "admin") { setRoute("admin"); }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [appState, currentUser]);
+
   // ── Mark changelog as seen when guide tab is opened ─────────────────────
   useEffectApp(() => {
     const guideOpen = (route === "admin" && adminTab === "guide") ||
