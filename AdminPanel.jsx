@@ -1,5 +1,6 @@
 /* global React, Icon, StatCard, Modal, downloadCSV, downloadXLSX, downloadPDF, useToast, useConfirm, formatThaiDate,
-   _supabase, fromMeter, fromTransformer, fromProfilePatch, toMeter, toTransformer, toProfile, useLang */
+   _supabase, fromMeter, fromTransformer, fromProfilePatch, toMeter, toTransformer, toProfile, useLang,
+   BrandLogoIcon, BRAND_PRESETS */
 const {
   useState:  useStateAd,
   useEffect: useEffectAd,
@@ -8,12 +9,13 @@ const {
 /* ============================================================
    AdminPanel — dashboard, users, meters, transformers, import, audit
    ============================================================ */
-function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewVer, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly, onPasswordChanged }) {
+function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewVer, maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, privacyPolicyUpdatedAt, pushPermission, subscribePush, unsubscribePush, onRefresh, refreshing, refreshUsersOnly, onPasswordChanged, brand, setBrand }) {
   const { t } = useLang();
   const NAV_LABELS = {
     dashboard: t("admDashboard"), users: t("admUsers"), meters: t("admMeters"),
     trs: t("admTrs"), map: t("admMap"),
     import: t("admImport"), audit: t("admAudit"), settings: t("admSettings"),
+    brand: t("admBrand"),
     guide: t("admGuide"), security: t("admSecurity"),
     profile: t("admProfile"),
     dev: t("admDev"),
@@ -47,6 +49,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
       label: t("drawerSecSettings"),
       items: [
         { id:"profile",  icon:"user",     label:t("admMobProfile")  },
+        { id:"brand",    icon:"star",     label:t("admBrand")       },
         { id:"settings", icon:"settings", label:t("admSettings")    },
         { id:"guide",    icon:"book",     label:t("admMobGuide")    },
         { id:"powered",  icon:"bolt",     label:t("admMobPowered")  },
@@ -252,6 +255,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
           allowExport={allowExport} setAllowExport={setAllowExport}
           privacyPolicy={privacyPolicy} setPrivacyPolicy={setPrivacyPolicy}
           pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush} />}
+        {tab === "brand"     && <AdminBrand brand={brand} setBrand={setBrand} currentUser={currentUser} addAudit={addAudit} />}
         {tab === "profile"   && <ProfileView currentUser={currentUser} data={data} addAudit={addAudit} onPasswordChanged={onPasswordChanged} />}
         {tab === "guide"     && <AdminGuide />}
         {tab === "powered"   && <PoweredByTab />}
@@ -6139,6 +6143,182 @@ function DateTimePicker({ value, onChange }) {
 }
 
 /* ---------- Settings ---------- */
+const DEFAULT_BRAND = { name: "PEA Meter & TR", tagline: "GIS มิเตอร์ · v3.7", org: "PEA FANG", preset: "pea", logo: null };
+
+/* ---------- Brand Settings ---------- */
+function AdminBrand({ brand, setBrand, currentUser, addAudit }) {
+  const toast = useToast();
+  const fileRef = React.useRef(null);
+  const [local, setLocal] = useStateAd(() => ({ ...DEFAULT_BRAND, ...(brand || {}) }));
+  const [saving, setSaving] = useStateAd(false);
+
+  useEffectAd(() => { setLocal({ ...DEFAULT_BRAND, ...(brand || {}) }); }, [brand]);
+
+  const upd = (key, val) => setLocal(b => ({ ...b, [key]: val }));
+  const isDirty = JSON.stringify(local) !== JSON.stringify({ ...DEFAULT_BRAND, ...(brand || {}) });
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast?.("รูปภาพต้องไม่เกิน 2 MB", "error"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => upd("logo", ev.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const save = async () => {
+    setSaving(true);
+    const rows = [
+      { key: "brand_name",    value: local.name    || DEFAULT_BRAND.name },
+      { key: "brand_tagline", value: local.tagline || DEFAULT_BRAND.tagline },
+      { key: "brand_org",     value: local.org     || DEFAULT_BRAND.org },
+      { key: "brand_preset",  value: local.preset  || "pea" },
+      { key: "brand_logo",    value: local.logo    || "" },
+    ];
+    const { error } = await _supabase.from("settings").upsert(rows, { onConflict: "key" });
+    setSaving(false);
+    if (error) { toast?.(error.message, "error"); return; }
+    setBrand({ ...local });
+    addAudit({ user: currentUser.username, action: "update_settings", target: "brand", detail: "อัปเดตแบรนด์ระบบ" });
+    toast?.("บันทึกแบรนด์ระบบแล้ว ✓", "success");
+  };
+
+  const reset = async () => {
+    setLocal({ ...DEFAULT_BRAND });
+  };
+
+  return (
+    <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Header card */}
+      <div className="card card-elev" style={{ overflow: "hidden", position: "relative" }}>
+        <div style={{ position:"absolute", top:-40, right:-40, width:180, height:180, borderRadius:"50%", background:"radial-gradient(circle,rgba(139,63,196,0.15),transparent 65%)", pointerEvents:"none" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width:48, height:48, borderRadius:14, background:"linear-gradient(135deg,#7c3aed,#6d28d9)", display:"grid", placeItems:"center", flexShrink:0 }}>
+            <Icon name="star" size={24} style={{ color:"white" }} />
+          </div>
+          <div>
+            <div style={{ fontWeight:900, fontSize:20 }}>แบรนด์ระบบ</div>
+            <div className="t-mute text-sm">ชื่อ + คำบรรยาย + โลโก้ · แก้แล้วบันทึก = ทุกหน้าใช้ทันที</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="brand-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+        {/* Logo card */}
+        <div className="card card-elev" style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontWeight:800, fontSize:15 }}>โลโก้</div>
+
+          {/* Current preview */}
+          <div style={{ display:"flex", alignItems:"center", gap:14, padding:"14px", background:"var(--soft)", borderRadius:14, border:"1px solid var(--line)" }}>
+            <BrandLogoIcon preset={local.preset} logoUrl={local.logo} size={60} />
+            <div>
+              <div className="fw-8">{local.name || "ชื่อระบบ"}</div>
+              <div className="t-mute text-sm">{local.tagline || "คำบรรยาย"}</div>
+              {local.logo && (
+                <button className="btn btn-sm" style={{ marginTop:8, fontSize:11, color:"var(--red)", border:"1px solid rgba(239,68,68,0.4)", background:"rgba(239,68,68,0.08)", padding:"3px 10px", borderRadius:8 }}
+                  onClick={() => upd("logo", null)}>
+                  <Icon name="trash" size={11} /> ลบรูปเอง
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Preset grid */}
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:"var(--ink-mute)", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.08em" }}>โลโก้สำเร็จรูป</div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+              {Object.entries(BRAND_PRESETS).map(([key, p]) => {
+                const active = local.preset === key && !local.logo;
+                return (
+                  <button key={key} onClick={() => setLocal(b => ({ ...b, preset:key, logo:null }))}
+                    style={{
+                      display:"flex", flexDirection:"column", alignItems:"center", gap:7,
+                      padding:"10px 6px", borderRadius:12, cursor:"pointer",
+                      border:`2px solid ${active ? "var(--pea-purple-500)" : "var(--line)"}`,
+                      background: active ? "rgba(139,63,196,0.08)" : "var(--soft)",
+                      transition:"all 140ms", position:"relative",
+                    }}>
+                    {active && <span style={{ position:"absolute", top:5, right:5, width:8, height:8, borderRadius:"50%", background:"var(--pea-purple-500)" }} />}
+                    <BrandLogoIcon preset={key} size={38} />
+                    <span style={{ fontSize:10, fontWeight:600, color: active ? "var(--pea-purple-600)" : "var(--ink-mute)" }}>{p.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Custom upload */}
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:"var(--ink-mute)", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.08em" }}>อัปโหลดเอง</div>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display:"none" }} onChange={handleFile} />
+            <button className="btn btn-outline btn-sm" onClick={() => fileRef.current.click()} style={{ width:"100%" }}>
+              <Icon name="upload" size={14} /> เลือกรูปภาพ
+            </button>
+            <div className="t-mute" style={{ fontSize:11, marginTop:5 }}>PNG / JPEG / WEBP · ≤ 2MB · แนะนำสี่เหลี่ยมจัตุรัส</div>
+          </div>
+        </div>
+
+        {/* Text + Preview card */}
+        <div className="card card-elev" style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontWeight:800, fontSize:15 }}>ข้อความ</div>
+
+          <div className="field">
+            <label className="field-label">ชื่อระบบ <span className="t-mute" style={{fontWeight:400}}>(max 40)</span></label>
+            <input className="input" value={local.name} onChange={e => upd("name", e.target.value)} placeholder="PEA Meter & TR" maxLength={40} />
+            <div className="t-mute" style={{ fontSize:11, marginTop:4 }}>แสดงใน Sidebar (ใหญ่) + Login + Email subject</div>
+          </div>
+
+          <div className="field">
+            <label className="field-label">คำบรรยาย</label>
+            <input className="input" value={local.tagline} onChange={e => upd("tagline", e.target.value)} placeholder="GIS มิเตอร์ · v3.7" maxLength={50} />
+            <div className="t-mute" style={{ fontSize:11, marginTop:4 }}>แสดงใต้ชื่อใน Sidebar (เล็ก)</div>
+          </div>
+
+          <div className="field">
+            <label className="field-label">ชื่อองค์กร</label>
+            <input className="input" value={local.org} onChange={e => upd("org", e.target.value)} placeholder="PEA FANG" maxLength={30} />
+            <div className="t-mute" style={{ fontSize:11, marginTop:4 }}>Eyebrow label บน Login + Sidebar</div>
+          </div>
+
+          {/* Live preview */}
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:"var(--ink-mute)", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.08em" }}>ตัวอย่าง — SIDEBAR</div>
+            <div style={{ borderRadius:14, background:"linear-gradient(145deg,#1a0826,#2e1043)", padding:"14px 16px", border:"1px solid rgba(139,63,196,0.3)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <BrandLogoIcon preset={local.preset} logoUrl={local.logo} size={46} />
+                <div style={{ color:"white" }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:"#ffba7a", letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:2 }}>
+                    {local.org || "ชื่อองค์กร"}
+                  </div>
+                  <div style={{ fontSize:16, fontWeight:900, lineHeight:1.1 }}>{local.name || "ชื่อระบบ"}</div>
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:3 }}>{local.tagline || "คำบรรยาย"}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile stacked layout */}
+      <style>{`
+        @media (max-width: 680px) {
+          .brand-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* Actions */}
+      <div style={{ display:"flex", gap:10, justifyContent:"flex-end", alignItems:"center" }}>
+        {isDirty && <span style={{ fontSize:12, color:"var(--pea-orange-500)", fontWeight:600 }}>● มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</span>}
+        <button className="btn btn-outline" onClick={reset}>รีเซ็ตค่าเริ่มต้น</button>
+        <button className="btn btn-primary" onClick={save} disabled={saving || !isDirty}>
+          {saving ? <><div style={{ width:14,height:14,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.3)",borderTopColor:"white",animation:"adm-spin 0.8s linear infinite" }} /></> : <><Icon name="check" size={14} /> บันทึก</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const DEFAULT_MSG = "ผู้ดูแลระบบกำลังดำเนินการปรับปรุงระบบ\nกรุณากลับมาใหม่ภายหลัง หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลระบบ";
 
 function AdminSettings({ maintenanceMode, setMaintenanceMode, maintenanceMessage, setMaintenanceMessage, maintenanceUntil, setMaintenanceUntil, addAudit, currentUser, devInfo, setDevInfo, allowExport, setAllowExport, privacyPolicy, setPrivacyPolicy, pushPermission, subscribePush, unsubscribePush }) {

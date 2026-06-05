@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Icon, _supabase, useLang */
+/* global React, ReactDOM, Icon, _supabase, useLang, BrandLogoIcon */
 const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
 
 /* ── Animated power poles canvas ────────────────────────────────────────── */
@@ -294,7 +294,8 @@ function pwStrength(pw) {
 }
 const strengthColor = ["", "#ef4444", "#f97316", "#eab308", "#22c55e", "#16a34a"];
 
-function AuthScreen({ initialError }) {
+function AuthScreen({ initialError, brand }) {
+  const _b = brand || { name: "PEA Meter & TR", tagline: "GIS มิเตอร์ · v3.7", org: "PEA FANG", preset: "pea", logo: null };
   const { t, lang, setLang } = useLang();
   const strengthLabel = ["", t("pwVeryWeak"), t("pwWeak"), t("pwFair"), t("pwStrong"), t("pwVeryStrong")];
   const [mode, setMode] = useStateA("login"); // login | signup | forgot
@@ -451,10 +452,12 @@ function AuthScreen({ initialError }) {
         <AnimatedPowerGrid />
 
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14 }}>
-          <img src="logo.svg" alt="PEA" style={{ width: 56, height: 56, borderRadius: 16, boxShadow: "0 12px 32px rgba(139,63,196,0.5)", flexShrink: 0, animation: "authLogoFloat 5s ease-in-out infinite" }} />
+          <div style={{ animation: "authLogoFloat 5s ease-in-out infinite" }}>
+            <BrandLogoIcon preset={_b.preset} logoUrl={_b.logo} size={56} />
+          </div>
           <div>
-            <div className="t-eyebrow" style={{ color: "#ffba7a" }}>PEA</div>
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em" }}>Meter &amp; TR Search</div>
+            <div className="t-eyebrow" style={{ color: "#ffba7a" }}>{_b.org || "PEA FANG"}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em" }}>{_b.name || "Meter & TR Search"}</div>
           </div>
         </div>
 
@@ -506,11 +509,13 @@ function AuthScreen({ initialError }) {
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, animation: "authHeroIn 600ms 80ms var(--ease-out) both" }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{ position: "absolute", inset: -6, borderRadius: 20, background: "radial-gradient(circle, rgba(244,123,32,0.5), transparent 70%)", animation: "authLogoGlow 2.8s ease-in-out infinite" }} />
-              <img src="logo.svg" alt="PEA" style={{ width: 52, height: 52, borderRadius: 14, boxShadow: "0 8px 28px rgba(139,63,196,0.55)", position: "relative", animation: "authLogoFloat 5s ease-in-out infinite" }} />
+              <div style={{ position: "relative", animation: "authLogoFloat 5s ease-in-out infinite" }}>
+                <BrandLogoIcon preset={_b.preset} logoUrl={_b.logo} size={52} />
+              </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, letterSpacing: "0.2em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>PEA FANG</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>Meter &amp; TR Search</div>
+              <div style={{ fontSize: 10, letterSpacing: "0.2em", fontWeight: 700, color: "#ffba7a", textTransform: "uppercase" }}>{_b.org || "PEA FANG"}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>{_b.name || "Meter & TR Search"}</div>
             </div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1.25, marginBottom: 4, animation: "authHeroIn 600ms 160ms var(--ease-out) both" }}>

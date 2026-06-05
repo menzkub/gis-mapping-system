@@ -603,8 +603,102 @@ const PeaDB = (() => {
   };
 })();
 
+/* ── Brand Logo Presets ─────────────────────────────────────────────────── */
+const BRAND_PRESETS = {
+  pea: {
+    label: "PEA Classic",
+    bg: "linear-gradient(145deg, #8b3fc4, #5b1a91)",
+    paths: [
+      { d: "M14.5 3L7 14h6l-3 9 11-13h-7z", fill: "#f97316" },
+      { d: "M14.5 3L7 14h6l-3 9 11-13h-7z", fill: "rgba(255,230,150,0.25)", transform: "translate(-0.3,-0.3)" },
+    ],
+    circles: [{ cx: 12, cy: 12, r: 10, stroke: "rgba(249,115,22,0.3)", strokeWidth: 1.2, fill: "none" }],
+  },
+  bolt: {
+    label: "Electric",
+    bg: "linear-gradient(145deg, #1e3a8a, #1d4ed8)",
+    paths: [
+      { d: "M4 12.5Q6 7,8 12.5Q10 18,12 12.5Q14 7,16 12.5Q18 18,20 12.5", stroke: "#93c5fd", strokeWidth: 2.2, strokeLinecap: "round", fill: "none" },
+      { d: "M8 6.5L9 4M12 5L12 2.5M16 6.5L17 4", stroke: "#bfdbfe", strokeWidth: 1.2, strokeLinecap: "round" },
+    ],
+    circles: [
+      { cx: 8, cy: 12.5, r: 1.5, fill: "#60a5fa" },
+      { cx: 12, cy: 12.5, r: 1.5, fill: "#93c5fd" },
+      { cx: 16, cy: 12.5, r: 1.5, fill: "#60a5fa" },
+    ],
+  },
+  gauge: {
+    label: "Meter",
+    bg: "linear-gradient(145deg, #14532d, #166534)",
+    paths: [
+      { d: "M4.5 17A8.5 8.5 0 1 1 19.5 17", stroke: "rgba(255,255,255,0.15)", strokeWidth: 3, strokeLinecap: "round", fill: "none" },
+      { d: "M4.5 17A8.5 8.5 0 0 1 12 3.5", stroke: "#4ade80", strokeWidth: 3, strokeLinecap: "round", fill: "none" },
+      { d: "M12 17L9 10", stroke: "#86efac", strokeWidth: 2, strokeLinecap: "round" },
+      { d: "M5.5 10L7 11M10 5.5L10.5 7M14 5.5L13.5 7M18.5 10L17 11", stroke: "rgba(255,255,255,0.3)", strokeWidth: 1.2, strokeLinecap: "round" },
+    ],
+    circles: [{ cx: 12, cy: 17, r: 2, fill: "#4ade80" }],
+  },
+  pin: {
+    label: "Location",
+    bg: "linear-gradient(145deg, #9a3412, #c2410c)",
+    paths: [
+      { d: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fill: "#fed7aa" },
+      { d: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", fill: "rgba(255,255,255,0.12)", transform: "translate(-0.4,-0.4)" },
+    ],
+    circles: [
+      { cx: 12, cy: 9, r: 2.8, fill: "#9a3412" },
+      { cx: 11.2, cy: 8, r: 0.8, fill: "rgba(255,255,255,0.4)" },
+    ],
+  },
+  hex: {
+    label: "Circuit",
+    bg: "linear-gradient(145deg, #1e1b4b, #312e81)",
+    paths: [
+      { d: "M12 2L21.5 7.5v9L12 22l-9.5-5.5v-9z", stroke: "#818cf8", strokeWidth: 1.5, fill: "rgba(99,102,241,0.12)" },
+      { d: "M12 7v3M7.8 9.5L10.5 12M16.2 9.5L13.5 12M12 17v-3M7.8 14.5L10.5 12M16.2 14.5L13.5 12", stroke: "#a5b4fc", strokeWidth: 1.4, strokeLinecap: "round" },
+    ],
+    circles: [
+      { cx: 12, cy: 12, r: 2, fill: "#c7d2fe" },
+      { cx: 12, cy: 7, r: 1.2, fill: "#6366f1" },
+      { cx: 12, cy: 17, r: 1.2, fill: "#6366f1" },
+      { cx: 7.8, cy: 9.5, r: 1.2, fill: "#6366f1" },
+      { cx: 16.2, cy: 9.5, r: 1.2, fill: "#6366f1" },
+      { cx: 7.8, cy: 14.5, r: 1.2, fill: "#6366f1" },
+      { cx: 16.2, cy: 14.5, r: 1.2, fill: "#6366f1" },
+    ],
+  },
+  solar: {
+    label: "Solar",
+    bg: "linear-gradient(145deg, #713f12, #92400e)",
+    paths: [
+      { d: "M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77", stroke: "#fcd34d", strokeWidth: 1.8, strokeLinecap: "round" },
+    ],
+    circles: [
+      { cx: 12, cy: 12, r: 4.8, fill: "#fbbf24" },
+      { cx: 12, cy: 12, r: 3, fill: "#fde68a" },
+    ],
+  },
+};
+
+function BrandLogoIcon({ preset = "pea", logoUrl = null, size = 48 }) {
+  const r = Math.round(size * 0.27);
+  if (logoUrl) {
+    return <img src={logoUrl} alt="" style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flexShrink: 0, display: "block" }} />;
+  }
+  const p = BRAND_PRESETS[preset] || BRAND_PRESETS.pea;
+  const iconSize = size * 0.62;
+  return (
+    <div style={{ width: size, height: size, borderRadius: r, background: p.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative", boxShadow: `0 ${Math.round(size*0.1)}px ${Math.round(size*0.35)}px rgba(0,0,0,0.4)` }}>
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none">
+        {(p.paths || []).map((pa, i) => <path key={i} {...pa} />)}
+        {(p.circles || []).map((c, i) => <circle key={i} {...c} />)}
+      </svg>
+    </div>
+  );
+}
+
 /* expose */
-Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, downloadPDF, formatThaiDate, PeaSelect, PeaDB });
+Object.assign(window, { Icon, ToastProvider, useToast, ConfirmProvider, useConfirm, Modal, EmptyState, StatCard, SkeletonCard, downloadCSV, downloadXLSX, downloadPDF, formatThaiDate, PeaSelect, PeaDB, BrandLogoIcon, BRAND_PRESETS });
 
 /* ── SkeletonCard ───────────────────────────────────────────── */
 function SkeletonCard({ height = 120, style = {} }) {

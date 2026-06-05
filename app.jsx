@@ -1,6 +1,7 @@
 /* global React, ReactDOM, Icon, ToastProvider, ConfirmProvider, useToast, useConfirm,
    AuthScreen, SearchView, AdminPanel, TILE_LAYERS, formatThaiDate,
-   _supabase, toProfile, toAuditEntry, useLang, LanguageProvider */
+   _supabase, toProfile, toAuditEntry, useLang, LanguageProvider,
+   BrandLogoIcon, BRAND_PRESETS */
 const {
   useState: useStateApp,
   useEffect: useEffectApp,
@@ -3510,6 +3511,25 @@ function App() {
   );
   const [myNotifs, setMyNotifs] = useStateApp([]);
   const [isOnline, setIsOnline] = useStateApp(() => navigator.onLine !== false);
+  const _DEFAULT_BRAND = { name: "PEA Meter & TR", tagline: "GIS มิเตอร์ · v3.7", org: "PEA FANG", preset: "pea", logo: null };
+  const [brand, setBrand] = useStateApp(_DEFAULT_BRAND);
+
+  // Load brand before auth so AuthScreen & LoadingScreen get it early
+  useEffectApp(() => {
+    _supabase.from("settings").select("key,value")
+      .in("key", ["brand_name","brand_tagline","brand_org","brand_preset","brand_logo"])
+      .then(({ data }) => {
+        if (!data?.length) return;
+        const m = Object.fromEntries(data.map(r => [r.key, r.value]));
+        setBrand({
+          name:    m.brand_name    || _DEFAULT_BRAND.name,
+          tagline: m.brand_tagline || _DEFAULT_BRAND.tagline,
+          org:     m.brand_org     || _DEFAULT_BRAND.org,
+          preset:  m.brand_preset  || "pea",
+          logo:    m.brand_logo    || null,
+        });
+      }).catch(() => {});
+  }, []);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
@@ -3595,6 +3615,13 @@ function App() {
       setMaintenanceMessage(settingsMap["maintenance_message"] || "");
       setMaintenanceUntil(settingsMap["maintenance_until"] || "");
       setAllowExport(settingsMap["allow_export"] !== "false");
+      setBrand({
+        name:    settingsMap["brand_name"]    || _DEFAULT_BRAND.name,
+        tagline: settingsMap["brand_tagline"] || _DEFAULT_BRAND.tagline,
+        org:     settingsMap["brand_org"]     || _DEFAULT_BRAND.org,
+        preset:  settingsMap["brand_preset"]  || "pea",
+        logo:    settingsMap["brand_logo"]    || null,
+      });
       setDevInfo({
         name:       settingsMap["dev_name"]       || "",
         position:   settingsMap["dev_position"]   || "",
@@ -4114,7 +4141,7 @@ function App() {
   if (appState === "unauthed" || !currentUser) {
     return (
       <ToastProvider><ConfirmProvider>
-        <AuthScreen initialError={window.__peaAuthErr || null} />
+        <AuthScreen initialError={window.__peaAuthErr || null} brand={brand} />
       </ConfirmProvider></ToastProvider>
     );
   }
@@ -4306,16 +4333,16 @@ function App() {
         }}>
           <div className="sidebar-brand" style={{ padding: "4px 6px 0", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <img src="logo.svg" alt="PEA" style={{
-                width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-                boxShadow: "0 8px 28px rgba(244,123,32,0.50), 0 0 0 2px rgba(244,123,32,0.40), 0 0 0 5px rgba(139,63,196,0.18)",
-              }} />
+              <div style={{ position:"relative", flexShrink:0 }}>
+                <div style={{ position:"absolute", inset:-4, borderRadius:20, background:"radial-gradient(circle,rgba(244,123,32,0.4),transparent 70%)", pointerEvents:"none" }} />
+                <BrandLogoIcon preset={brand.preset} logoUrl={brand.logo} size={52} />
+              </div>
               <div className="sidebar-brand-text">
-                <div style={{ fontSize: 10, letterSpacing: "0.22em", fontWeight: 800, color: "#ffba7a", textTransform: "uppercase", marginBottom: 3 }}>
-                  การไฟฟ้าส่วนภูมิภาค
+                <div style={{ fontSize: 9, letterSpacing: "0.22em", fontWeight: 800, color: "#ffba7a", textTransform: "uppercase", marginBottom: 3 }}>
+                  {brand.org || "PEA FANG"}
                 </div>
-                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.1, letterSpacing: "-0.01em" }}>Meter &amp; TR</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 4, fontWeight: 500 }}>GIS Mapping System</div>
+                <div style={{ fontWeight: 900, fontSize: 17, lineHeight: 1.1, letterSpacing: "-0.01em" }}>{brand.name || "PEA Meter & TR"}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 3, fontWeight: 500 }}>{brand.tagline || "GIS Mapping System"}</div>
               </div>
             </div>
             <div className="sidebar-brand-sep" style={{ height: 1, margin: "14px -6px 14px", background: "linear-gradient(90deg, transparent 0%, rgba(244,123,32,0.60) 35%, rgba(139,63,196,0.60) 65%, transparent 100%)" }} />
@@ -4521,8 +4548,8 @@ function App() {
 
           {/* Mobile brand */}
           <div className="topbar-mobile-brand">
-            <img src="logo.svg" alt="PEA" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0 }} />
-            <span style={{ fontWeight: 800, fontSize: 14 }}>PEA Meter & TR</span>
+            <BrandLogoIcon preset={brand.preset} logoUrl={brand.logo} size={28} />
+            <span style={{ fontWeight: 800, fontSize: 14 }}>{brand.name || "PEA Meter & TR"}</span>
           </div>
 
           {/* Map layer switcher — only on search page */}
@@ -5004,7 +5031,8 @@ function App() {
               pushPermission={pushPermission} subscribePush={subscribePush} unsubscribePush={unsubscribePush}
               onRefresh={handleRefresh} refreshing={refreshing}
               refreshUsersOnly={refreshUsersOnly}
-              onPasswordChanged={() => setDaysUntilExpiry(45)} />
+              onPasswordChanged={() => setDaysUntilExpiry(45)}
+              brand={brand} setBrand={setBrand} />
           )}
           </div>
         </main>
