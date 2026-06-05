@@ -225,16 +225,31 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
   const [filterFeeder, setFilterFeeder] = useStateAd("all");
   const [feederMeters, setFeederMeters] = useStateAd(null); // null = show total
   const [feederTrs,    setFeederTrs]    = useStateAd(null);
+  const [feederKva,    setFeederKva]    = useStateAd(null);
+  const [feederPeaKva, setFeederPeaKva] = useStateAd(null);
+  const [feederCustKva, setFeederCustKva] = useStateAd(null);
   const [feederLoading, setFeederLoading] = useStateAd(false);
   useEffectAd(() => {
-    if (filterFeeder === "all") { setFeederMeters(null); setFeederTrs(null); return; }
+    if (filterFeeder === "all") {
+      setFeederMeters(null); setFeederTrs(null);
+      setFeederKva(null); setFeederPeaKva(null); setFeederCustKva(null);
+      return;
+    }
     setFeederLoading(true);
     Promise.all([
       _supabase.from("meters").select("objectid", { count: "exact", head: true }).eq("feederid", filterFeeder),
       _supabase.from("transformers").select("objectid", { count: "exact", head: true }).eq("feeder1", filterFeeder),
-    ]).then(([mRes, tRes]) => {
+      _supabase.from("transformers").select("kva,owner_tr").eq("feeder1", filterFeeder),
+    ]).then(([mRes, tRes, kvaRes]) => {
       setFeederMeters(mRes.count ?? 0);
       setFeederTrs(tRes.count ?? 0);
+      const rows = kvaRes.data || [];
+      const kTotal = rows.reduce((sum, r) => sum + (+(r.kva) || 0), 0);
+      const kPea   = rows.filter(r => r.owner_tr === "PEA").reduce((sum, r) => sum + (+(r.kva) || 0), 0);
+      const kCust  = rows.filter(r => r.owner_tr === "Customer").reduce((sum, r) => sum + (+(r.kva) || 0), 0);
+      setFeederKva(Math.round(kTotal));
+      setFeederPeaKva(Math.round(kPea));
+      setFeederCustKva(Math.round(kCust));
       setFeederLoading(false);
     }).catch(() => setFeederLoading(false));
   }, [filterFeeder]);
@@ -256,6 +271,11 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
   const feederStats = (s.top_feeders || []).map(f => [f.feeder, +f.n]);
   const displayMeterCount = feederMeters !== null ? feederMeters : meterCount;
   const displayTrCount    = feederTrs    !== null ? feederTrs    : trCount;
+  const displayTotalKva   = feederKva    !== null ? feederKva    : totalKva;
+  const displayPeaKva     = feederPeaKva !== null ? feederPeaKva : peaKva;
+  const displayCustKva    = feederCustKva !== null ? feederCustKva : custKva;
+  const displayOtherKva   = Math.max(0, displayTotalKva - displayPeaKva - displayCustKva);
+  const displayKvaPct     = (v) => displayTotalKva > 0 ? Math.round(v / displayTotalKva * 100) : 0;
   const grandTotal = meterCount + trCount;
   const isLoading = meterCount === 0 && trCount === 0 && totalKva === 0;
   const donutSegs = [
@@ -344,11 +364,11 @@ function AdminDashboard({ data, privacyPolicyUpdatedAt, onRefresh, refreshing })
             <StatCard label={t("dbMeters")} value={feederLoading ? "…" : fmtStat(displayMeterCount)} delta={4} icon="meter-m" accent="purple" />
             <StatCard label={t("dbTrs")}    value={feederLoading ? "…" : fmtStat(displayTrCount)}    delta={2} icon="tr-tri" accent="orange" />
             <div className="db-kva-span">
-              <StatCard label={t("dbKva")}  value={fmtStat(totalKva)}   delta={6} icon="bolt"  accent="blue"
+              <StatCard label={t("dbKva")}  value={feederLoading ? "…" : fmtStat(displayTotalKva)}   delta={6} icon="bolt"  accent="blue"
                 breakdown={[
-                  { label: "PEA",           value: peaKva.toLocaleString(),  color: "#8b3fc4", pct: kvaPct(peaKva)  },
-                  { label: t("custLabel"),  value: custKva.toLocaleString(), color: "#3b82f6", pct: kvaPct(custKva) },
-                  ...(otherKva > 0 ? [{ label: t("unknownLabel"), value: otherKva.toLocaleString(), color: "#94a3b8", pct: kvaPct(otherKva) }] : []),
+                  { label: "PEA",           value: displayPeaKva.toLocaleString(),  color: "#8b3fc4", pct: displayKvaPct(displayPeaKva)  },
+                  { label: t("custLabel"),  value: displayCustKva.toLocaleString(), color: "#3b82f6", pct: displayKvaPct(displayCustKva) },
+                  ...(displayOtherKva > 0 ? [{ label: t("unknownLabel"), value: displayOtherKva.toLocaleString(), color: "#94a3b8", pct: displayKvaPct(displayOtherKva) }] : []),
                 ]}
               />
             </div>
