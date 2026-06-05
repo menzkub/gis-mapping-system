@@ -20,6 +20,8 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
   };
   const pendingCount = data.users.filter(u => u.status === "pending").length;
   const [showDrawer, setShowDrawer] = useStateAd(false);
+  const [drawerDx, setDrawerDx] = useStateAd(0);
+  const drawerTouchStartX = React.useRef(null);
 
   const DRAWER_SECTIONS = [
     {
@@ -145,8 +147,26 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
       `}</style>
 
       {/* Hamburger Drawer — always in DOM for CSS transition; hidden on desktop via CSS */}
-      <div className={"adm-drawer-overlay" + (showDrawer ? " open" : "")} onClick={() => setShowDrawer(false)} />
-      <div className={"adm-drawer" + (showDrawer ? " open" : "")}>
+      <div
+        className={"adm-drawer-overlay" + (showDrawer ? " open" : "")}
+        style={drawerDx < 0 ? { opacity: Math.max(0, 1 + drawerDx / 200) } : undefined}
+        onClick={() => setShowDrawer(false)}
+      />
+      <div
+        className={"adm-drawer" + (showDrawer ? " open" : "")}
+        style={drawerDx < 0 ? { transform: `translateX(${drawerDx}px)`, transition: "none" } : undefined}
+        onTouchStart={(e) => { drawerTouchStartX.current = e.touches[0].clientX; setDrawerDx(0); }}
+        onTouchMove={(e) => {
+          if (drawerTouchStartX.current === null) return;
+          const dx = e.touches[0].clientX - drawerTouchStartX.current;
+          if (dx < 0) setDrawerDx(dx);
+        }}
+        onTouchEnd={() => {
+          if (drawerDx < -70) setShowDrawer(false);
+          setDrawerDx(0);
+          drawerTouchStartX.current = null;
+        }}
+      >
         <div className="adm-drawer-head">
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div>

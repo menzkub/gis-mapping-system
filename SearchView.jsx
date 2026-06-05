@@ -493,7 +493,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               {/* Hint overlay before any search */}
               {!hasSearched && (
                 <div className="fade-up" style={{
-                  position: "absolute", bottom: 28, left: 0, right: 0, zIndex: 500,
+                  position: "absolute", bottom: "calc(28px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0, zIndex: 500,
                   display: "flex", justifyContent: "center", pointerEvents: "none", padding: "0 16px",
                 }}>
                   <div style={{
@@ -513,7 +513,7 @@ function SearchView({ data, baseMap, onLogSearch, currentUser, allowExport = tru
               {/* Empty state overlay — shown after search returns no results */}
               {hasSearched && results.length === 0 && query && !searching && (
                 <div className="fade-up" style={{
-                  position: "absolute", bottom: 28, left: 0, right: 0, zIndex: 500,
+                  position: "absolute", bottom: "calc(28px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0, zIndex: 500,
                   display: "flex", justifyContent: "center", pointerEvents: "none", padding: "0 16px",
                 }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "18px 28px", gap: 10,
