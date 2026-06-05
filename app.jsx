@@ -4276,15 +4276,16 @@ function App() {
 
         {/* Sidebar */}
         <aside className="app-sidebar" style={{
-          background: "linear-gradient(180deg, #1b0926 0%, #321148 50%, #1b0926 100%)",
+          background: "radial-gradient(ellipse at 25% 8%, rgba(244,123,32,0.16) 0%, transparent 52%), radial-gradient(ellipse at 78% 94%, rgba(139,63,196,0.14) 0%, transparent 52%), linear-gradient(180deg, #1a0826 0%, #2e1043 45%, #1a0826 100%)",
           color: "white", padding: "22px 16px", display: "flex", flexDirection: "column", gap: 0,
-          borderRight: "1px solid rgba(255,255,255,0.06)",
+          borderRight: "1px solid rgba(139,63,196,0.30)",
+          boxShadow: "4px 0 32px rgba(0,0,0,0.55), inset -1px 0 0 rgba(244,123,32,0.07)",
         }}>
-          <div className="sidebar-brand" style={{ padding: "4px 6px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+          <div className="sidebar-brand" style={{ padding: "4px 6px 0", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <img src="logo.svg" alt="PEA" style={{
                 width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-                boxShadow: "0 12px 32px rgba(139,63,196,0.55), 0 0 0 1px rgba(255,255,255,0.08)",
+                boxShadow: "0 8px 28px rgba(244,123,32,0.50), 0 0 0 2px rgba(244,123,32,0.40), 0 0 0 5px rgba(139,63,196,0.18)",
               }} />
               <div className="sidebar-brand-text">
                 <div style={{ fontSize: 10, letterSpacing: "0.22em", fontWeight: 800, color: "#ffba7a", textTransform: "uppercase", marginBottom: 3 }}>
@@ -4294,6 +4295,7 @@ function App() {
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 4, fontWeight: 500 }}>GIS Mapping System</div>
               </div>
             </div>
+            <div style={{ height: 1, margin: "14px -6px 14px", background: "linear-gradient(90deg, transparent 0%, rgba(244,123,32,0.60) 35%, rgba(139,63,196,0.60) 65%, transparent 100%)" }} />
           </div>
           <nav className="sidebar-nav f-col f-gap-2 sidebar-nav-scroll">
             {navItems.map(it => (
@@ -4302,14 +4304,20 @@ function App() {
                   className={"sidebar-nav-btn" + (route === it.id ? " sidebar-nav-btn--active" : "")}
                   onClick={() => setRoute(it.id)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "13px 16px",
-                    borderRadius: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 15,
-                    background: route === it.id ? "linear-gradient(135deg, rgba(244,123,32,0.25), rgba(139,63,196,0.25))" : "transparent",
-                    border: route === it.id ? "1px solid rgba(244,123,32,0.5)" : "1px solid transparent",
-                    boxShadow: route === it.id ? "0 8px 20px rgba(244,123,32,0.18)" : "none",
+                    display: "flex", alignItems: "center", gap: 12, padding: "13px 16px 13px 19px",
+                    borderRadius: 12,
+                    color: route === it.id ? "white" : "rgba(255,255,255,0.72)",
+                    fontWeight: route === it.id ? 700 : 600, fontSize: 15,
+                    background: route === it.id ? "linear-gradient(135deg, rgba(244,123,32,0.24), rgba(139,63,196,0.22))" : "transparent",
+                    border: route === it.id ? "1px solid rgba(244,123,32,0.45)" : "1px solid transparent",
+                    boxShadow: route === it.id ? "0 8px 24px rgba(244,123,32,0.22), inset 0 1px 0 rgba(255,255,255,0.06)" : "none",
                     textAlign: "left", transition: "all 180ms var(--ease-out)",
+                    position: "relative", overflow: "hidden",
                   }}
                 >
+                  {route === it.id && (
+                    <span style={{ position: "absolute", left: 0, top: "14%", bottom: "14%", width: 3, borderRadius: "0 3px 3px 0", background: "linear-gradient(180deg, #f47b20 0%, #8b3fc4 100%)", boxShadow: "0 0 12px rgba(244,123,32,0.9)", pointerEvents: "none" }} />
+                  )}
                   <Icon name={it.icon} size={20} />
                   <span className="sidebar-nav-label">{it.label}</span>
                   {hasNewVer && (it.id === "admin" || it.id === "user-settings") && (
@@ -4389,7 +4397,7 @@ function App() {
             ))}
           </nav>
 
-          <div className="sidebar-user" style={{ marginTop: "auto", flexShrink: 0, padding: 14, background: "rgba(255,255,255,0.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="sidebar-user" style={{ marginTop: "auto", flexShrink: 0, padding: 14, background: "linear-gradient(135deg, rgba(244,123,32,0.11) 0%, rgba(107,44,145,0.18) 100%)", borderRadius: 14, border: "1px solid rgba(244,123,32,0.24)", boxShadow: "0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)" }}>
             <div className="f-gap-3 flex" style={{ alignItems: "center" }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #f47b20, #6b2c91)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
                 {currentUser.name?.[0] || currentUser.username[0]}
