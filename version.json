@@ -1,7 +1,7 @@
 {
-  "commit": "1853b91e352dd6cd07a05c7443ee63f601203505",
-  "shortCommit": "1853b91",
-  "message": "feat: split donut chart into Meter and TR, rename labels TH/EN",
-  "date": "2026-06-05T14:24:17Z",
+  "commit": "9efbe7f3610436591d590dce7e0fe18361be0a53",
+  "shortCommit": "9efbe7f",
+  "message": "ux: premium sidebar \u2014 glow background, accent bar, gradient separator",
+  "date": "2026-06-05T14:36:15Z",
   "branch": "main"
 }
