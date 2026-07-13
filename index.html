@@ -39,9 +39,6 @@
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 
-  <!-- Babel Standalone (compile JSX in browser) -->
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
-
   <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 
@@ -63,15 +60,16 @@
   <!-- Supabase client + mappers (must load before JSX files) -->
   <script src="config.js"></script>
 
-  <!-- App components -->
-  <script type="text/babel" src="lang.jsx"></script>
-  <script type="text/babel" src="components.jsx"></script>
-  <script type="text/babel" src="MapView.jsx"></script>
-  <script type="text/babel" src="AuthScreen.jsx"></script>
-  <script type="text/babel" src="SearchView.jsx"></script>
-  <script type="text/babel" src="AdminPanel.jsx"></script>
-  <script type="text/babel" src="PaymentView.jsx"></script>
-  <script type="text/babel" src="app.jsx"></script>
+  <!-- App components — คอมไพล์ล่วงหน้าเป็น dist/*.js (esbuild) ไม่ต้องรัน Babel ในเบราว์เซอร์แล้ว
+       แก้โค้ดที่ไฟล์ .jsx เท่านั้น — CI จะ build dist/ ทับให้อัตโนมัติทุก push (workflow: update-version.yml) -->
+  <script src="dist/lang.js"></script>
+  <script src="dist/components.js"></script>
+  <script src="dist/MapView.js"></script>
+  <script src="dist/AuthScreen.js"></script>
+  <script src="dist/SearchView.js"></script>
+  <script src="dist/AdminPanel.js"></script>
+  <script src="dist/PaymentView.js"></script>
+  <script src="dist/app.js"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

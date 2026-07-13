@@ -1,17 +1,18 @@
-const CACHE = "gis-meter-v39";
+const CACHE = "gis-meter-v40";
 
 const STATIC = [
   "/gis-mapping-system/",
   "/gis-mapping-system/index.html",
   "/gis-mapping-system/styles.css",
   "/gis-mapping-system/config.js",
-  "/gis-mapping-system/lang.jsx",
-  "/gis-mapping-system/components.jsx",
-  "/gis-mapping-system/MapView.jsx",
-  "/gis-mapping-system/AuthScreen.jsx",
-  "/gis-mapping-system/SearchView.jsx",
-  "/gis-mapping-system/AdminPanel.jsx",
-  "/gis-mapping-system/app.jsx",
+  "/gis-mapping-system/dist/lang.js",
+  "/gis-mapping-system/dist/components.js",
+  "/gis-mapping-system/dist/MapView.js",
+  "/gis-mapping-system/dist/AuthScreen.js",
+  "/gis-mapping-system/dist/SearchView.js",
+  "/gis-mapping-system/dist/AdminPanel.js",
+  "/gis-mapping-system/dist/PaymentView.js",
+  "/gis-mapping-system/dist/app.js",
   "/gis-mapping-system/logo.svg",
   "/gis-mapping-system/icon-192.png",
   "/gis-mapping-system/icon-512.png",
