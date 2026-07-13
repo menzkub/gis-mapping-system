@@ -121,6 +121,7 @@ body {
   font-size: 15px;
   line-height: 1.5;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 button, input, select, textarea {
   font-family: inherit;
@@ -332,7 +333,8 @@ a { color: inherit; text-decoration: none; }
 .app-root {
   display: grid;
   grid-template-columns: 260px 1fr;
-  grid-template-rows: 64px 1fr;
+  /* เผื่อ safe-area บน (นอตช์/Dynamic Island) — PWA เป็น black-translucent เนื้อหาลอดใต้ status bar */
+  grid-template-rows: calc(64px + env(safe-area-inset-top, 0px)) 1fr;
   grid-template-areas:
     "sidebar topbar"
     "sidebar main";
@@ -351,7 +353,7 @@ a { color: inherit; text-decoration: none; }
 @media (min-width: 1440px) {
   .app-root {
     grid-template-columns: 290px 1fr;
-    grid-template-rows: 68px 1fr;
+    grid-template-rows: calc(68px + env(safe-area-inset-top, 0px)) 1fr;
   }
   .app-topbar { font-size: 16px; }
   .app-sidebar { padding: 26px 18px !important; }
@@ -505,10 +507,12 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 640px) {
   .app-root {
     grid-template-columns: 1fr;
-    grid-template-rows: 56px 1fr calc(76px + env(safe-area-inset-bottom, 0px));
+    grid-template-rows: calc(56px + env(safe-area-inset-top, 0px)) 1fr calc(76px + env(safe-area-inset-bottom, 0px));
     grid-template-areas: "topbar" "main" "sidebar";
   }
-  .app-topbar { padding: 0 14px !important; }
+  .app-topbar { padding: env(safe-area-inset-top, 0px) 14px 0 !important; }
+  /* แบนเนอร์รหัสผ่านหมดอายุ: ซ่อนคำอธิบายยาวบนจอเล็ก — เหลือหัวข้อ + ปุ่ม กินที่น้อยลง */
+  .pw-banner-desc { display: none !important; }
   .topbar-greeting,
   .topbar-mapswitcher { display: none !important; }
 

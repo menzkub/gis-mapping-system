@@ -1423,6 +1423,7 @@ const CHANGELOG = [
     tagColor: "#dc2626", items: [
       { cat: "fix", text: { th: "เปลี่ยนรหัสผ่านในโปรไฟล์ไม่สำเร็จ (ขึ้น 'Current password required when setting new password') — ปรับให้ส่งรหัสผ่านเดิมเป็น current_password ตาม API ใหม่ของ Supabase (เดิมส่งเป็น nonce ซึ่งเซิร์ฟเวอร์ไม่ยอมรับ)", en: "Profile password change failed with 'Current password required when setting new password' — now sends the old password as current_password per Supabase's secure-password-change API (was sent as nonce, which the server rejects)" } },
       { cat: "fix", text: { th: "ข้อความผิดพลาดตอนเปลี่ยนรหัสผ่านแสดงเป็นภาษาไทย: รหัสผ่านเดิมไม่ถูกต้อง · รหัสใหม่ซ้ำรหัสเดิม", en: "Password-change errors now shown in Thai: wrong current password · new password same as old" } },
+      { cat: "fix", text: { th: "แบนเนอร์รหัสผ่านหมดอายุดันโลโก้/เมนูบนขึ้นไปใต้ status bar จนกดไม่ได้ (iPhone PWA) — เผื่อ safe-area บน (นอตช์/Dynamic Island) ให้ topbar ทุกขนาดจอ + กัน document เลื่อนค้าง + ย่อแบนเนอร์บนมือถือ (ซ่อนคำอธิบายยาว เหลือหัวข้อ+ปุ่ม)", en: "Password-expiry banner pushed logo/top menu under the status bar making them untappable (iPhone PWA) — added top safe-area (notch/Dynamic Island) to topbar on all screens + guard against stuck document scroll + compact banner on mobile (long description hidden, title+button only)" } },
     ],
   },
   {
@@ -3583,6 +3584,18 @@ function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [appState, currentUser]);
 
+  // ── iOS PWA: กัน document ถูกเลื่อนค้าง (คีย์บอร์ด/banner ดัน) จน topbar จมใต้ status bar ──
+  // layout ทั้งแอปเป็น grid สูง 100vh — window ไม่ควรเลื่อนได้เลย ถ้าเลื่อนเมื่อไรให้ดีดกลับ 0
+  useEffectApp(() => {
+    const reset = () => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); };
+    window.addEventListener("scroll", reset, { passive: true });
+    window.visualViewport?.addEventListener("resize", reset);
+    return () => {
+      window.removeEventListener("scroll", reset);
+      window.visualViewport?.removeEventListener("resize", reset);
+    };
+  }, []);
+
   // ── Mark changelog as seen when guide tab is opened ─────────────────────
   useEffectApp(() => {
     const guideOpen = (route === "admin" && adminTab === "guide") ||
@@ -4509,7 +4522,8 @@ function App() {
         {/* Topbar */}
         <header className="app-topbar" style={{
           background: "var(--surface)", borderBottom: "1px solid var(--line)",
-          padding: "0 20px", display: "flex", alignItems: "center", gap: 10,
+          padding: "0 20px", paddingTop: "env(safe-area-inset-top, 0px)",
+          display: "flex", alignItems: "center", gap: 10,
           position: "relative",
         }}>
           <style>{`
@@ -4932,7 +4946,7 @@ function App() {
                 ? "⚠️ รหัสผ่านหมดอายุพรุ่งนี้!"
                 : `⚠️ รหัสผ่านหมดอายุใน ${daysUntilExpiry} วัน`}
             </span>
-            <span style={{ fontSize: 12, opacity: 0.9, flex: 1 }}>
+            <span className="pw-banner-desc" style={{ fontSize: 12, opacity: 0.9, flex: 1 }}>
               กรุณาเปลี่ยนรหัสผ่านก่อนหมดอายุ มิฉะนั้นจะไม่สามารถเข้าสู่ระบบได้
             </span>
             <button
