@@ -1440,6 +1440,8 @@ const CHANGELOG = [
       { cat: "fix", text: { th: "เผื่อ safe-area บนให้ element ลอยที่เหลือทั้งหมด: แถบออฟไลน์ · เตือนเซสชันใกล้หมดอายุ · หัว Drawer เมนู (ปุ่มปิดไม่จมใต้ Dynamic Island อีกต่อไป)", en: "Top safe-area added to all remaining floating elements: offline bar · session-expiring warning · menu drawer head (close button no longer sinks under the Dynamic Island)" } },
       { cat: "ux",  text: { th: "แบนเนอร์รหัสผ่านหมดอายุ: ปุ่ม 'เปลี่ยนรหัสผ่าน' เด้งเข้าแท็บรหัสผ่าน + โฟกัสช่องรหัสเดิมให้ทันที (จบใน 1 คลิก) และเพิ่มปุ่ม ✕ ซ่อนแบนเนอร์ถึงสิ้นวัน (ยกเว้นวันสุดท้ายก่อนหมดอายุที่ต้องเห็นตลอด)", en: "Password-expiry banner: 'Change Password' now jumps straight to the password tab and focuses the current-password field (one click), plus ✕ to hide the banner until end of day (except on the final day)" } },
       { cat: "new", text: { th: "แอปเปิดเร็วขึ้นมาก: คอมไพล์ JSX ล่วงหน้าเป็น dist/*.js ด้วย esbuild (อัตโนมัติใน CI ทุก push) — เบราว์เซอร์เลิกโหลด Babel (~3MB) และเลิกคอมไพล์โค้ด ~16,000 บรรทัดใหม่ทุกครั้งที่เปิดแอป", en: "Much faster startup: JSX precompiled to dist/*.js with esbuild (automatic in CI on every push) — the browser no longer downloads Babel (~3MB) nor recompiles ~16,000 lines of code on every launch" } },
+      { cat: "fix", text: { th: "สลับไปแอปอื่นแล้วกลับมา ไม่ขึ้นจอหมุนโหลดใหม่ทั้งแอปอีกต่อไป — กัน event SIGNED_IN ที่ Supabase ยิงซ้ำทุกครั้งที่แอปกลับมาโฟกัส (แถมเลิกบันทึก log เข้าสู่ระบบซ้ำ ๆ ด้วย)", en: "Switching to another app and back no longer reloads the whole app with a spinner — duplicate SIGNED_IN events Supabase fires on refocus are now ignored (also stops duplicate login log entries)" } },
+      { cat: "fix", text: { th: "ปุ่มปิด (✕) ใน Drawer เมนูมองไม่เห็น — ไอคอนอ้างชื่อ 'x' ซึ่งไม่มีในคลังไอคอน แก้เป็น 'close'", en: "Menu drawer close (✕) button was invisible — icon referenced 'x' which doesn't exist in the icon set; now uses 'close'" } },
     ],
   },
   {
@@ -3627,6 +3629,9 @@ function App() {
 
   // ── Load app data after auth ─────────────────────────────────────────────
   const loadAppData = useCallbackApp(async (supabaseUser, logLogin = false) => {
+    // กันโหลดซ้อน — ตอนเปิดแอป getSession และ SIGNED_IN อาจสั่งโหลด user เดียวกันพร้อมกัน
+    if (loadingUserRef.current === supabaseUser.id) return;
+    loadingUserRef.current = supabaseUser.id;
     setAppState("loading");
     try {
       const [myProfileRes, settingsRes] = await Promise.all([
@@ -3789,6 +3794,7 @@ function App() {
         localStorage.setItem("pea_cache_data", JSON.stringify({ feeders, dashStats }));
       } catch {}
       setAppState("ready");
+      loadedUserRef.current = supabaseUser.id; // โหลดครบแล้ว — SIGNED_IN ซ้ำของ user นี้ไม่ต้องโหลดใหม่
       if (needsConsent) setShowPrivacyConsent(true);
 
       // Load in-app notifications for this user (non-blocking)
@@ -3822,11 +3828,17 @@ function App() {
         }
       } catch {}
       setAppState("unauthed");
+    } finally {
+      loadingUserRef.current = null;
     }
   }, []);
 
   // ── Auth state listener ──────────────────────────────────────────────────
   const inRecoveryRef = React.useRef(false);
+  // จำ user id ที่โหลดข้อมูลเสร็จแล้ว — กัน SIGNED_IN ที่ supabase ยิงซ้ำ
+  // ทุกครั้งที่สลับแอปกลับมา ไม่ให้โหลดใหม่ทั้งแอป (จอหมุน) โดยไม่จำเป็น
+  const loadedUserRef = React.useRef(null);
+  const loadingUserRef = React.useRef(null); // user ที่กำลังโหลดค้างอยู่ (in-flight)
 
   useEffectApp(() => {
     // Pre-arm ref BEFORE async callbacks — ensures getSession callback sees the flag
@@ -3882,6 +3894,9 @@ function App() {
             refresh_token: session.refresh_token,
           }));
         }
+        // สลับแอป/แท็บแล้วกลับมา supabase จะยิง SIGNED_IN ซ้ำสำหรับ user เดิม
+        // — แอปโหลดอยู่แล้ว ไม่ต้องโหลดใหม่ (และไม่ log login ซ้ำ)
+        if (loadedUserRef.current === session.user.id) return;
         loadAppData(session.user, true); // normal login — log it
         return;
       }
@@ -3896,6 +3911,7 @@ function App() {
       }
       if (event === "SIGNED_OUT") {
         inRecoveryRef.current = false;
+        loadedUserRef.current = null;
         sessionStorage.removeItem("pea_recovery");
         sessionStorage.removeItem("pea_active");
         setShowBioBanner(false);

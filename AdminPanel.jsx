@@ -191,7 +191,7 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
               <div style={{ fontSize:18, fontWeight:800 }}>{t("adminDefault")}</div>
             </div>
             <button className="adm-drawer-close" onClick={() => setShowDrawer(false)} aria-label="ปิด">
-              <Icon name="x" size={18} />
+              <Icon name="close" size={18} />
             </button>
           </div>
         </div>
