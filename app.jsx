@@ -230,6 +230,18 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
     });
   }, []);
 
+  // เด้งมาจากแบนเนอร์ "เปลี่ยนรหัสผ่าน" → เปิดแท็บรหัสผ่าน + โฟกัสช่องรหัสเดิมให้เลย
+  useEffectApp(() => {
+    if (sessionStorage.getItem("pea_jump_pw") !== "1") return;
+    sessionStorage.removeItem("pea_jump_pw");
+    setTabPV("password");
+    setTimeout(() => {
+      const el = document.querySelector('input[autocomplete="current-password"]');
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus({ preventScroll: true });
+    }, 350);
+  }, []);
+
   useEffectApp(() => {
     if (tab !== "password") return;
     setPwHistLoad(true);
@@ -1425,6 +1437,8 @@ const CHANGELOG = [
       { cat: "fix", text: { th: "ข้อความผิดพลาดตอนเปลี่ยนรหัสผ่านแสดงเป็นภาษาไทย: รหัสผ่านเดิมไม่ถูกต้อง · รหัสใหม่ซ้ำรหัสเดิม", en: "Password-change errors now shown in Thai: wrong current password · new password same as old" } },
       { cat: "fix", text: { th: "แบนเนอร์รหัสผ่านหมดอายุดันโลโก้/เมนูบนขึ้นไปใต้ status bar จนกดไม่ได้ (iPhone PWA) — เผื่อ safe-area บน (นอตช์/Dynamic Island) ให้ topbar ทุกขนาดจอ + กัน document เลื่อนค้าง + ย่อแบนเนอร์บนมือถือ (ซ่อนคำอธิบายยาว เหลือหัวข้อ+ปุ่ม)", en: "Password-expiry banner pushed logo/top menu under the status bar making them untappable (iPhone PWA) — added top safe-area (notch/Dynamic Island) to topbar on all screens + guard against stuck document scroll + compact banner on mobile (long description hidden, title+button only)" } },
       { cat: "fix", text: { th: "Toast แจ้งเตือน (เช่น 'เปิดใช้ Face ID แล้ว') ลอยชิดบนทับนาฬิกา/Dynamic Island — เลื่อนลงมาตาม safe-area บน + จำกัดความกว้างไม่ให้ล้นขอบจอ", en: "Toast notifications (e.g. 'Face ID enabled') floated over the clock/Dynamic Island — now offset by top safe-area + width capped to stay on screen" } },
+      { cat: "fix", text: { th: "เผื่อ safe-area บนให้ element ลอยที่เหลือทั้งหมด: แถบออฟไลน์ · เตือนเซสชันใกล้หมดอายุ · หัว Drawer เมนู (ปุ่มปิดไม่จมใต้ Dynamic Island อีกต่อไป)", en: "Top safe-area added to all remaining floating elements: offline bar · session-expiring warning · menu drawer head (close button no longer sinks under the Dynamic Island)" } },
+      { cat: "ux",  text: { th: "แบนเนอร์รหัสผ่านหมดอายุ: ปุ่ม 'เปลี่ยนรหัสผ่าน' เด้งเข้าแท็บรหัสผ่าน + โฟกัสช่องรหัสเดิมให้ทันที (จบใน 1 คลิก) และเพิ่มปุ่ม ✕ ซ่อนแบนเนอร์ถึงสิ้นวัน (ยกเว้นวันสุดท้ายก่อนหมดอายุที่ต้องเห็นตลอด)", en: "Password-expiry banner: 'Change Password' now jumps straight to the password tab and focuses the current-password field (one click), plus ✕ to hide the banner until end of day (except on the final day)" } },
     ],
   },
   {
@@ -3520,6 +3534,9 @@ function App() {
   const [privacyPolicyUpdatedAt, setPrivacyPolicyUpdatedAt] = useStateApp(null);
   const [showPrivacyConsent, setShowPrivacyConsent] = useStateApp(false);
   const [daysUntilExpiry, setDaysUntilExpiry] = useStateApp(null);
+  // แบนเนอร์รหัสผ่านหมดอายุ: ผู้ใช้กด ✕ ซ่อนได้ถึงสิ้นวัน (เก็บวันที่ไว้ใน localStorage)
+  const [pwBannerHidden, setPwBannerHidden] = useStateApp(() =>
+    localStorage.getItem("pea_pw_banner_dismiss") === new Date().toLocaleDateString("sv-SE"));
   const [idleWarnSecs, setIdleWarnSecs] = useStateApp(null);
   const [pushPermission, setPushPermission] = useStateApp(() =>
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
@@ -4305,6 +4322,8 @@ function App() {
             top: 0, left: 0, right: 0,
             background: "linear-gradient(135deg, #374151, #1f2937)",
             color: "white", padding: "10px 18px",
+            // เผื่อ safe-area บน — แถบคลุมโซน status bar แต่ข้อความอยู่ใต้นาฬิกา
+            paddingTop: "calc(env(safe-area-inset-top, 0px) + 10px)",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
             fontSize: 13, fontWeight: 700, letterSpacing: "0.02em",
             boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
@@ -4318,7 +4337,7 @@ function App() {
         {idleWarnSecs !== null && (
           <div className="fade-up" style={{
             position: "fixed", zIndex: 9800,
-            top: 72, right: 16, left: "auto",
+            top: "calc(env(safe-area-inset-top, 0px) + 72px)", right: 16, left: "auto",
             maxWidth: 360, width: "calc(100% - 32px)",
             background: "linear-gradient(135deg,#f47b20,#d96512)",
             color: "white", borderRadius: 16,
@@ -4930,7 +4949,7 @@ function App() {
         <main className="app-main">
 
         {/* Password Expiry Warning Banner */}
-        {daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
+        {daysUntilExpiry !== null && daysUntilExpiry <= 7 && !pwBannerHidden && (
           <div style={{
             display: "flex", alignItems: "center", gap: 12, padding: "10px 20px",
             background: daysUntilExpiry <= 1
@@ -4951,7 +4970,12 @@ function App() {
               กรุณาเปลี่ยนรหัสผ่านก่อนหมดอายุ มิฉะนั้นจะไม่สามารถเข้าสู่ระบบได้
             </span>
             <button
-              onClick={() => setRoute("user-settings")}
+              onClick={() => {
+                // เปิดแท็บรหัสผ่านและโฟกัสช่องรหัสเดิมให้เลย — จบใน 1 คลิก
+                sessionStorage.setItem("pea_jump_pw", "1");
+                setUserSettingsTab("account");
+                setRoute("user-settings");
+              }}
               style={{
                 padding: "5px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.5)",
                 background: "rgba(255,255,255,0.15)", color: "white",
@@ -4961,6 +4985,24 @@ function App() {
             >
               <Icon name="lock" size={12} /> เปลี่ยนรหัสผ่าน
             </button>
+            {/* ปิดชั่วคราวได้ถึงสิ้นวัน — ยกเว้นวันสุดท้ายที่ต้องเห็นตลอด */}
+            {daysUntilExpiry > 1 && (
+              <button
+                aria-label="ซ่อนแบนเนอร์ถึงสิ้นวัน"
+                onClick={() => {
+                  localStorage.setItem("pea_pw_banner_dismiss", new Date().toLocaleDateString("sv-SE"));
+                  setPwBannerHidden(true);
+                }}
+                style={{
+                  width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                  display: "grid", placeItems: "center",
+                  background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.85)",
+                  border: "none", cursor: "pointer",
+                }}
+              >
+                <Icon name="close" size={13} />
+              </button>
+            )}
           </div>
         )}
 

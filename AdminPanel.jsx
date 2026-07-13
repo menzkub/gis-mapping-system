@@ -121,7 +121,9 @@ function AdminPanel({ data, setData, currentUser, addAudit, tab, setTab, hasNewV
           }
           .adm-drawer.open { transform: translateX(0); }
           .adm-drawer-head {
-            padding: 52px 16px 14px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+            /* เผื่อ safe-area บน (นอตช์/Dynamic Island) — ปุ่มปิดต้องไม่จมใต้ status bar */
+            padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px 14px;
+            border-bottom: 1px solid var(--line); flex-shrink: 0;
           }
           .adm-drawer-close {
             width: 36px; height: 36px; border-radius: 10px; border: none;
