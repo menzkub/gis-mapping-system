@@ -562,6 +562,28 @@ function PeaSelect({ value, onChange, children, className = "", style = {}, disa
   );
 }
 
+/* ── MonthSelect — เลือกเดือนธีมเดียวกับระบบ (แทน input type="month"
+      ที่ iOS เปิด picker ภาษาอังกฤษ/ธีมสว่างไม่เข้ากับแอป) ───────────── */
+function MonthSelect({ value, onChange, back = 12, ahead = 2, style = {}, placeholder = "เลือกเดือน" }) {
+  const now = new Date();
+  const opts = [];
+  for (let i = ahead; i >= -back; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    opts.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  if (value && !opts.includes(value)) opts.push(value);
+  const thM = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  const label = (ym) => { const [y, m] = ym.split("-"); return `${thM[+m - 1]} ${+y + 543}`; };
+  const cur = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return (
+    <PeaSelect style={style} value={value} onChange={onChange} placeholder={placeholder}>
+      {opts.map(ym => (
+        <option key={ym} value={ym}>{label(ym)}{ym === cur ? " · เดือนนี้" : ""}</option>
+      ))}
+    </PeaSelect>
+  );
+}
+
 /* ── PeaDB — IndexedDB search result cache ─────────────────── */
 const PeaDB = (() => {
   const DB_NAME = "pea_search_cache";

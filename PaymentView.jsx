@@ -306,7 +306,7 @@ function PaymentUploadTab({ currentUser, paidThisMonth, fmtMonth, toast, s, onSu
       <div className="card card-elev" style={{ marginBottom:16, padding:"16px 20px" }}>
         <div className="field" style={{ maxWidth:220, margin:0 }}>
           <label className="field-label">{s("เดือนที่ชำระ","Payment month")}</label>
-          <input className="input" type="month" value={month} onChange={e => setMonth(e.target.value)} style={{ width:"100%" }} />
+          <MonthSelect value={month} onChange={e => setMonth(e.target.value)} style={{ width:"100%" }} />
         </div>
       </div>
 

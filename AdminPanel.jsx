@@ -8168,7 +8168,7 @@ function AdminPayments({ currentUser, addAudit }) {
           </div>
           <div className="field" style={{ margin:0 }}>
             <label className="field-label">{s("เดือนอ้างอิง","Reference month")}</label>
-            <input className="input" type="month" style={{ height:40 }} value={notifMonth} onChange={e => setNotifMonth(e.target.value)} />
+            <MonthSelect style={{ height:40 }} value={notifMonth} onChange={e => setNotifMonth(e.target.value)} />
           </div>
         </div>
 
