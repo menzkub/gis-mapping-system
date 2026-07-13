@@ -84,12 +84,17 @@ function ToastProvider({ children }) {
   return (
     <ToastCtx.Provider value={push}>
       {children}
-      <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{
+        // เผื่อ safe-area บน (นอตช์/Dynamic Island บน iPhone PWA) — ไม่ให้ toast ลอยทับ status bar
+        position: "fixed", top: "calc(env(safe-area-inset-top, 0px) + 16px)", right: 16,
+        zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8,
+      }}>
         {items.map(i => (
           <div key={i.id} className="fade-up" style={{
             padding: "12px 18px", borderRadius: 14, background: "var(--surface)",
             boxShadow: "var(--shadow-lg)", border: "1px solid var(--line)",
             display: "flex", alignItems: "center", gap: 10, minWidth: 240,
+            maxWidth: "calc(100vw - 32px)",
             borderLeft: `4px solid ${i.type === "success" ? "var(--green)" : i.type === "error" ? "var(--red)" : "var(--pea-purple-500)"}`,
           }}>
             <Icon name={i.type === "success" ? "check" : i.type === "error" ? "close" : "bell"} size={18} />
