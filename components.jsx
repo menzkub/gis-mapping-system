@@ -524,7 +524,8 @@ function PeaSelect({ value, onChange, children, className = "", style = {}, disa
           <path d="M6 9l6 6 6-6" />
         </svg>
       </div>
-      {open && menuRect && (
+      {/* portal ไป body — กัน ancestor ที่มี transform/backdrop-filter ทำให้พิกัด fixed เพี้ยน (เมนูเด้งไปคนละที่กับช่อง) */}
+      {open && menuRect && ReactDOM.createPortal(
         <div ref={dropRef} style={{
           position: "fixed", top: menuRect.bottom + 4, left: menuRect.left, width: menuRect.width, zIndex: 99999,
           background: "var(--surface)", border: "1.5px solid rgba(107,44,145,0.3)", borderRadius: 10,
@@ -554,7 +555,8 @@ function PeaSelect({ value, onChange, children, className = "", style = {}, disa
               </div>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

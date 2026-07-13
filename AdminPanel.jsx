@@ -8240,7 +8240,13 @@ function AdminPayments({ currentUser, addAudit }) {
           <option value="approved">{s("อนุมัติแล้ว","Approved")}</option>
           <option value="rejected">{s("ปฏิเสธ","Rejected")}</option>
         </PeaSelect>
-        <input className="input" type="month" style={{ flex:"0 0 160px", height:38 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
+        {/* เดิมเป็น <input type="month"> — บน iOS ค่าว่างจะเป็นกล่องเปล่าไม่มี placeholder ดูเหมือนช่องพัง */}
+        <PeaSelect style={{ flex:"0 0 160px", height:38 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
+          <option value="">{s("ทุกเดือน","All months")}</option>
+          {[...new Set(slips.map(x => x.payment_month).filter(Boolean))].sort().reverse().map(m => (
+            <option key={m} value={m}>{fmtMonth(m)}</option>
+          ))}
+        </PeaSelect>
       </div>
 
       {/* Table */}
