@@ -1442,6 +1442,7 @@ const CHANGELOG = [
       { cat: "new", text: { th: "แอปเปิดเร็วขึ้นมาก: คอมไพล์ JSX ล่วงหน้าเป็น dist/*.js ด้วย esbuild (อัตโนมัติใน CI ทุก push) — เบราว์เซอร์เลิกโหลด Babel (~3MB) และเลิกคอมไพล์โค้ด ~16,000 บรรทัดใหม่ทุกครั้งที่เปิดแอป", en: "Much faster startup: JSX precompiled to dist/*.js with esbuild (automatic in CI on every push) — the browser no longer downloads Babel (~3MB) nor recompiles ~16,000 lines of code on every launch" } },
       { cat: "fix", text: { th: "สลับไปแอปอื่นแล้วกลับมา ไม่ขึ้นจอหมุนโหลดใหม่ทั้งแอปอีกต่อไป — กัน event SIGNED_IN ที่ Supabase ยิงซ้ำทุกครั้งที่แอปกลับมาโฟกัส (แถมเลิกบันทึก log เข้าสู่ระบบซ้ำ ๆ ด้วย)", en: "Switching to another app and back no longer reloads the whole app with a spinner — duplicate SIGNED_IN events Supabase fires on refocus are now ignored (also stops duplicate login log entries)" } },
       { cat: "fix", text: { th: "ปุ่มปิด (✕) ใน Drawer เมนูมองไม่เห็น — ไอคอนอ้างชื่อ 'x' ซึ่งไม่มีในคลังไอคอน แก้เป็น 'close'", en: "Menu drawer close (✕) button was invisible — icon referenced 'x' which doesn't exist in the icon set; now uses 'close'" } },
+      { cat: "fix", text: { th: "คีย์บอร์ดบังช่องกรอกรหัสผ่าน (หน้าเข้าสู่ระบบ) — ตัวกัน scroll ค้างดีดหน้ากลับแรงเกินไป ตอนนี้ยกเว้นระหว่างพิมพ์ ให้เบราว์เซอร์เลื่อนหาช่องที่โฟกัสได้ตามปกติ แล้วค่อยดีดกลับเมื่อปิดคีย์บอร์ด", en: "Keyboard covered the password field (login) — the stuck-scroll guard was snapping the page back too aggressively; it now pauses while typing so the browser can reveal the focused field, snapping back only after the keyboard closes" } },
     ],
   },
   {
@@ -3607,13 +3608,26 @@ function App() {
 
   // ── iOS PWA: กัน document ถูกเลื่อนค้าง (คีย์บอร์ด/banner ดัน) จน topbar จมใต้ status bar ──
   // layout ทั้งแอปเป็น grid สูง 100vh — window ไม่ควรเลื่อนได้เลย ถ้าเลื่อนเมื่อไรให้ดีดกลับ 0
+  // ข้อยกเว้นสำคัญ: ระหว่างพิมพ์ (คีย์บอร์ดเปิด) ต้องปล่อยให้เบราว์เซอร์เลื่อนหา
+  // ช่องกรอกที่โฟกัสอยู่ — ห้ามดีดกลับ ไม่งั้นคีย์บอร์ดจะบังช่องกรอก
   useEffectApp(() => {
-    const reset = () => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); };
+    const typing = () => {
+      const ae = document.activeElement;
+      return ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
+    };
+    const reset = () => {
+      if (typing()) return;
+      if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+    };
+    // หลังเลิกพิมพ์/คีย์บอร์ดปิด ค่อยดีดกลับ (รอ blur จบก่อนหนึ่งจังหวะ)
+    const onBlur = () => setTimeout(reset, 60);
     window.addEventListener("scroll", reset, { passive: true });
     window.visualViewport?.addEventListener("resize", reset);
+    window.addEventListener("focusout", onBlur);
     return () => {
       window.removeEventListener("scroll", reset);
       window.visualViewport?.removeEventListener("resize", reset);
+      window.removeEventListener("focusout", onBlur);
     };
   }, []);
 
