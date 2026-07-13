@@ -1,7 +1,7 @@
 {
-  "commit": "9a391d5964fb24d0580745ef9fbd970ef8fa9f76",
-  "shortCommit": "9a391d5",
-  "message": "Create keepalive.yml",
-  "date": "2026-07-13T10:45:58+07:00",
+  "commit": "41f11bdbb3ca124e50a7b10675718f2b475aaf60",
+  "shortCommit": "41f11bd",
+  "message": "fix(profile): \u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e43\u0e19\u0e42\u0e1b\u0e23\u0e44\u0e1f\u0e25\u0e4c\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08 \u2014 \u0e2a\u0e48\u0e07\u0e23\u0e2b\u0e31\u0e2a\u0e40\u0e14\u0e34\u0e21\u0e40\u0e1b\u0e47\u0e19 current_password (v3.8)",
+  "date": "2026-07-13T04:03:57Z",
   "branch": "main"
 }
