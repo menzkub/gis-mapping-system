@@ -1,0 +1,58 @@
+name: Supabase Keepalive
+
+# Supabase Free tier pauses a project after ~7 days with no API activity.
+# This workflow pings the database every 3 days so the idle timer never fires.
+
+on:
+  schedule:
+    - cron: '17 3 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Read Supabase config
+        id: cfg
+        run: |
+          URL=$(grep -oP 'SUPABASE_URL\s*=\s*"\K[^"]+' config.js)
+          ANON=$(grep -oP 'SUPABASE_ANON\s*=\s*"\K[^"]+' config.js)
+          if [ -z "$URL" ] || [ -z "$ANON" ]; then
+            echo "::error::Could not parse config.js"
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$ANON"
+          echo "anon=$ANON" >> "$GITHUB_OUTPUT"
+          echo "Parsed Supabase URL: $URL"
+
+      - name: Ping Supabase REST
+        env:
+          SUPABASE_URL: ${{ steps.cfg.outputs.url }}
+          SUPABASE_ANON: ${{ steps.cfg.outputs.anon }}
+        run: |
+          URL="${SUPABASE_URL}/rest/v1/settings?select=key&limit=1"
+          echo "Pinging ${SUPABASE_URL}/rest/v1/settings"
+          for attempt in 1 2 3 4; do
+            CODE=$(curl -s -o /tmp/body.txt -w "%{http_code}" --max-time 30 \
+              "$URL" \
+              -H "apikey: ${SUPABASE_ANON}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON}" || echo "000")
+            echo "Attempt $attempt -> HTTP $CODE"
+            if [ "$CODE" -ge 200 ] && [ "$CODE" -lt 500 ]; then
+              echo "OK Supabase reached (HTTP $CODE) - idle timer reset."
+              exit 0
+            fi
+            echo "Unreachable or server error."
+            if [ "$attempt" -lt 4 ]; then
+              SLEEP=$((10 * (2 ** (attempt - 1))))
+              echo "Retrying in ${SLEEP}s..."
+              sleep "$SLEEP"
+            fi
+          done
+          echo "::error::Supabase did not respond. The project may be paused."
+          exit 1
