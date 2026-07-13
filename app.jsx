@@ -307,10 +307,16 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
     });
     if (!ok) return;
     setSaving(true);
-    const { error } = await _supabase.auth.updateUser({ password: newPw, nonce: currentPw });
+    // Supabase secure password change: ต้องส่งรหัสเดิมเป็น current_password
+    // (nonce ใช้กับ OTP จาก reauthenticate() เท่านั้น — ส่งรหัสเดิมเป็น nonce จะถูกปฏิเสธ)
+    const { error } = await _supabase.auth.updateUser({ password: newPw, current_password: currentPw });
     if (error) {
       setSaving(false);
-      setErr(error.message);
+      const msg = error.message || "";
+      if (/current[_ ]?password/i.test(msg) && /required/i.test(msg)) setErr(t("currentPwRequired"));
+      else if (/current[_ ]?password/i.test(msg)) setErr(t("pwCurrentWrong"));
+      else if (/different from the old|same[_ ]?password/i.test(msg)) setErr(t("pwSameAsOld"));
+      else setErr(msg);
     } else {
       const now = new Date().toISOString();
       await _supabase.from("profiles").update({ password_changed_at: now }).eq("id", currentUser.id);
@@ -1412,6 +1418,13 @@ function UserSettingsPanel({ currentUser, data, addAudit, onPasswordChanged, pri
    ChangelogView — UX/UI improvement history
    ============================================================ */
 const CHANGELOG = [
+  {
+    version: "v3.8", date: "13 ก.ค. 2569", tag: "Password Fix",
+    tagColor: "#dc2626", items: [
+      { cat: "fix", text: { th: "เปลี่ยนรหัสผ่านในโปรไฟล์ไม่สำเร็จ (ขึ้น 'Current password required when setting new password') — ปรับให้ส่งรหัสผ่านเดิมเป็น current_password ตาม API ใหม่ของ Supabase (เดิมส่งเป็น nonce ซึ่งเซิร์ฟเวอร์ไม่ยอมรับ)", en: "Profile password change failed with 'Current password required when setting new password' — now sends the old password as current_password per Supabase's secure-password-change API (was sent as nonce, which the server rejects)" } },
+      { cat: "fix", text: { th: "ข้อความผิดพลาดตอนเปลี่ยนรหัสผ่านแสดงเป็นภาษาไทย: รหัสผ่านเดิมไม่ถูกต้อง · รหัสใหม่ซ้ำรหัสเดิม", en: "Password-change errors now shown in Thai: wrong current password · new password same as old" } },
+    ],
+  },
   {
     version: "v3.7", date: "4 มิ.ย. 2569", tag: "Hamburger Nav & Face ID",
     tagColor: "#6b2c91", items: [
@@ -3511,7 +3524,7 @@ function App() {
   );
   const [myNotifs, setMyNotifs] = useStateApp([]);
   const [isOnline, setIsOnline] = useStateApp(() => navigator.onLine !== false);
-  const _DEFAULT_BRAND = { name: "PEA Meter & TR", tagline: "GIS มิเตอร์ · v3.7", org: "PEA FANG", preset: "pea", logo: null };
+  const _DEFAULT_BRAND = { name: "PEA Meter & TR", tagline: "GIS มิเตอร์ · v3.8", org: "PEA FANG", preset: "pea", logo: null };
   const [brand, setBrand] = useStateApp(_DEFAULT_BRAND);
 
   // Load brand before auth so AuthScreen & LoadingScreen get it early
