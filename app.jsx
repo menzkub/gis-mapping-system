@@ -202,6 +202,22 @@ function NotifPanel({ data, currentUser, myNotifs = [], setMyNotifs }) {
 }
 
 // ── ProfileView ───────────────────────────────────────────────────────────
+// บังคับโหลดเวอร์ชันใหม่แบบชัวร์: ล้าง CacheStorage ทั้งหมด + สั่ง service worker
+// เช็คอัปเดต แล้วรีโหลดพร้อม ?v=timestamp — ใช้ร่วมกันทั้งปุ่ม "โหลดใหม่" และ Deploy popup
+async function forceReloadFresh() {
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.update().catch(() => {})));
+    }
+  } catch {}
+  const url = new URL(window.location.href);
+  url.searchParams.set("v", Date.now());
+  window.location.replace(url.toString());
+}
+
 function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
   const { t, lang } = useLang();
   const [tab, setTabPV]           = useStateApp("info");
@@ -848,7 +864,7 @@ function ProfileView({ currentUser, data, addAudit, onPasswordChanged }) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--ink-mute)" }}>{CHANGELOG[0].date}</span>
-          <button onClick={() => { window.location.reload(true); }} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "var(--surface)", border: "1px solid var(--line)", cursor: "pointer", color: "var(--pea-purple-500)", display: "flex", alignItems: "center", gap: 5 }}>
+          <button onClick={() => { forceReloadFresh(); }} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "var(--surface)", border: "1px solid var(--line)", cursor: "pointer", color: "var(--pea-purple-500)", display: "flex", alignItems: "center", gap: 5 }}>
             <Icon name="refresh" size={12} /> โหลดใหม่
           </button>
         </div>
@@ -1443,6 +1459,7 @@ const CHANGELOG = [
       { cat: "fix", text: { th: "สลับไปแอปอื่นแล้วกลับมา ไม่ขึ้นจอหมุนโหลดใหม่ทั้งแอปอีกต่อไป — กัน event SIGNED_IN ที่ Supabase ยิงซ้ำทุกครั้งที่แอปกลับมาโฟกัส (แถมเลิกบันทึก log เข้าสู่ระบบซ้ำ ๆ ด้วย)", en: "Switching to another app and back no longer reloads the whole app with a spinner — duplicate SIGNED_IN events Supabase fires on refocus are now ignored (also stops duplicate login log entries)" } },
       { cat: "fix", text: { th: "ปุ่มปิด (✕) ใน Drawer เมนูมองไม่เห็น — ไอคอนอ้างชื่อ 'x' ซึ่งไม่มีในคลังไอคอน แก้เป็น 'close'", en: "Menu drawer close (✕) button was invisible — icon referenced 'x' which doesn't exist in the icon set; now uses 'close'" } },
       { cat: "fix", text: { th: "คีย์บอร์ดบังช่องกรอกรหัสผ่าน (หน้าเข้าสู่ระบบ) — ตัวกัน scroll ค้างดีดหน้ากลับแรงเกินไป ตอนนี้ยกเว้นระหว่างพิมพ์ ให้เบราว์เซอร์เลื่อนหาช่องที่โฟกัสได้ตามปกติ แล้วค่อยดีดกลับเมื่อปิดคีย์บอร์ด", en: "Keyboard covered the password field (login) — the stuck-scroll guard was snapping the page back too aggressively; it now pauses while typing so the browser can reveal the focused field, snapping back only after the keyboard closes" } },
+      { cat: "fix", text: { th: "อัปเดตเวอร์ชันมาถึงเครื่องในรอบเดียว — service worker เปลี่ยนจาก cache-first เป็น network-first สำหรับโค้ดแอป (เดิม deploy แล้วต้องปิด-เปิดแอปสองรอบหรือล้างแคชเองถึงจะเห็นของใหม่) และปุ่ม 'โหลดใหม่/โหลดเวอร์ชันใหม่' ล้างแคชทั้งหมดจริง ๆ ก่อนรีโหลด", en: "Updates now arrive in a single relaunch — service worker switched from cache-first to network-first for app code (previously needed two app restarts or a manual cache clear), and the 'Reload / Load New Version' buttons now truly purge all caches before reloading" } },
     ],
   },
   {
@@ -1824,11 +1841,7 @@ function DeployStatusDot() {
                 <Icon name="refresh" size={13} style={{ animation: isLoading ? "pea-spin 0.8s linear infinite" : "none" }} />
                 {t("deployRecheck")}
               </button>
-              <button onClick={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.set("v", Date.now());
-                window.location.replace(url.toString());
-              }} style={{
+              <button onClick={() => { forceReloadFresh(); }} style={{
                 flex: 1, padding: "8px 0", borderRadius: 10,
                 border: "1px solid rgba(139,63,196,0.4)", background: "rgba(139,63,196,0.09)",
                 fontSize: 12, fontWeight: 700, cursor: "pointer",

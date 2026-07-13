@@ -1,4 +1,4 @@
-const CACHE = "gis-meter-v40";
+const CACHE = "gis-meter-v41";
 
 const STATIC = [
   "/gis-mapping-system/",
@@ -48,7 +48,33 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // ไฟล์แอป → cache first, fallback network (network updates cache silently)
+  // โค้ดแอป (เปลี่ยนทุก deploy) → network-first: ออนไลน์ได้ของใหม่ทันทีรอบเดียว
+  // (เดิมเป็น cache-first ทำให้ deploy แล้วต้องปิด-เปิดแอปสองรอบ/ล้างแคชเอง)
+  // GitHub Pages ตอบ 304 เมื่อไฟล์ไม่เปลี่ยน — ต้นทุน network ต่ำ · offline ใช้ cache ได้เหมือนเดิม
+  const p = url.pathname;
+  const isAppCode =
+    e.request.mode === "navigate" ||
+    p.endsWith("/") || p.endsWith("/index.html") ||
+    p.includes("/dist/") ||
+    p.endsWith("/config.js") || p.endsWith("/styles.css") ||
+    p.endsWith("/version.json") || p.endsWith("/manifest.json");
+  if (isAppCode) {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        if (res && res.status === 200 && res.type !== "opaque") {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() =>
+        // offline → ใช้ตัวล่าสุดที่เคยแคชไว้ (ignoreSearch รองรับ ?v=timestamp)
+        caches.match(e.request, { ignoreSearch: true })
+      )
+    );
+    return;
+  }
+
+  // ไฟล์คงที่ (รูป/ไอคอน/โลโก้) → cache first, fallback network เหมือนเดิม
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;
