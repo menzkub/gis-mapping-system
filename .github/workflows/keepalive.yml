@@ -1,12 +1,17 @@
-name: Supabase Keepalive
+name: Supabase Keepalive & Health Check
 
-# Supabase Free tier pauses a project after ~7 days with no API activity.
-# This workflow pings the database every 3 days so the idle timer never fires.
+# 1) กัน Supabase Free tier หลับ (พักโปรเจกต์เมื่อไม่มี API activity ~7 วัน) — ping ทุกวัน
+# 2) เช็คสุขภาพระบบ: REST API · Auth (GoTrue) · เว็บบน GitHub Pages
+# 3) ถ้าเช็คตัวไหนพัง → เปิด GitHub Issue อัตโนมัติ (GitHub ส่งอีเมลแจ้งเจ้าของ repo เอง)
 
 on:
   schedule:
-    - cron: '17 3 */3 * *'
+    - cron: '17 3 * * *' # ทุกวัน 03:17 UTC (~10:17 น. ไทย)
   workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   ping:
@@ -30,7 +35,7 @@ jobs:
           echo "anon=$ANON" >> "$GITHUB_OUTPUT"
           echo "Parsed Supabase URL: $URL"
 
-      - name: Ping Supabase REST
+      - name: Ping Supabase REST (keepalive)
         env:
           SUPABASE_URL: ${{ steps.cfg.outputs.url }}
           SUPABASE_ANON: ${{ steps.cfg.outputs.anon }}
@@ -44,7 +49,7 @@ jobs:
               -H "Authorization: Bearer ${SUPABASE_ANON}" || echo "000")
             echo "Attempt $attempt -> HTTP $CODE"
             if [ "$CODE" -ge 200 ] && [ "$CODE" -lt 500 ]; then
-              echo "OK Supabase reached (HTTP $CODE) - idle timer reset."
+              echo "OK Supabase REST reached (HTTP $CODE) - idle timer reset."
               exit 0
             fi
             echo "Unreachable or server error."
@@ -54,5 +59,55 @@ jobs:
               sleep "$SLEEP"
             fi
           done
-          echo "::error::Supabase did not respond. The project may be paused."
+          echo "::error::Supabase REST did not respond. The project may be paused."
           exit 1
+
+      - name: Check Supabase Auth (GoTrue) health
+        env:
+          SUPABASE_URL: ${{ steps.cfg.outputs.url }}
+          SUPABASE_ANON: ${{ steps.cfg.outputs.anon }}
+        run: |
+          for attempt in 1 2 3; do
+            CODE=$(curl -s -o /tmp/auth.txt -w "%{http_code}" --max-time 30 \
+              "${SUPABASE_URL}/auth/v1/health" -H "apikey: ${SUPABASE_ANON}" || echo "000")
+            echo "Attempt $attempt -> HTTP $CODE"
+            if [ "$CODE" -ge 200 ] && [ "$CODE" -lt 300 ]; then
+              echo "OK Auth healthy:"; cat /tmp/auth.txt; exit 0
+            fi
+            [ "$attempt" -lt 3 ] && sleep 10
+          done
+          echo "::error::Supabase Auth /health failed — users may not be able to log in!"
+          exit 1
+
+      - name: Check website on GitHub Pages
+        run: |
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 30 "https://menzkub.github.io/gis-mapping-system/version.json?t=$(date +%s)" | python3 -m json.tool; then
+              echo "OK site is up."
+              exit 0
+            fi
+            echo "Attempt $attempt failed."
+            [ "$attempt" -lt 3 ] && sleep 10
+          done
+          echo "::error::Website (GitHub Pages) unreachable or version.json invalid."
+          exit 1
+
+      - name: Alert — open GitHub Issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="🚨 Health check ล้มเหลว $(date -u +%Y-%m-%d)"
+          BODY="การตรวจสุขภาพระบบอัตโนมัติล้มเหลว — ดูรายละเอียดที่ ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          สิ่งที่ควรเช็คทันที:
+          - Supabase dashboard: โปรเจกต์ถูกพัก (paused) หรือไม่ → กด Resume
+          - เปิดแอปแล้วลองเข้าสู่ระบบ
+          - GitHub Pages: เปิด https://menzkub.github.io/gis-mapping-system/ ขึ้นหรือไม่"
+          # ไม่เปิด issue ซ้ำถ้ายังมีอันเดิมค้างอยู่
+          EXISTING=$(gh issue list --repo "${{ github.repository }}" --state open --search "in:title 🚨 Health check" --json number --jq 'length')
+          if [ "$EXISTING" = "0" ]; then
+            gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body "$BODY"
+          else
+            echo "มี issue health check เปิดค้างอยู่แล้ว — ไม่เปิดซ้ำ"
+          fi

@@ -5380,6 +5380,100 @@ const ALL_ACTIONS = [
   "approve_user","ban_user","update_user","import_csv","export_csv","create_user",
 ];
 /* ─────────── Security Panel ─────────── */
+// ── System Health — เช็คสุขภาพระบบสด ๆ จากหน้า Admin ─────────────────────────
+// รวมทุกอย่างที่ทำให้ "ล็อกอินเข้าไม่ได้" ไว้ที่เดียว: Supabase REST/Auth ·
+// เว็บ deploy · workflow keepalive/build · รหัสผ่านหมดอายุ
+function SystemHealthCard({ users, s }) {
+  const [checks, setChecks] = useStateAd(null);
+  const [checking, setChecking] = useStateAd(false);
+
+  const runChecks = React.useCallback(async () => {
+    setChecking(true);
+    const out = {};
+    try {
+      const t0 = performance.now();
+      const { error } = await _supabase.from("settings").select("key").limit(1);
+      out.rest = { ok: !error, detail: error ? error.message : `ตอบใน ${Math.round(performance.now() - t0)} ms` };
+    } catch (e) { out.rest = { ok: false, detail: String(e?.message || e) }; }
+    try {
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/health`, { headers: { apikey: SUPABASE_ANON } });
+      out.auth = { ok: r.ok, detail: r.ok ? s("ระบบล็อกอินปกติ", "Auth service OK") : `HTTP ${r.status}` };
+    } catch { out.auth = { ok: false, detail: s("ติดต่อไม่ได้", "Unreachable") }; }
+    try {
+      const r = await fetch(`version.json?t=${Date.now()}`, { cache: "no-store" });
+      const v = await r.json();
+      out.site = { ok: r.ok, detail: `${v.shortCommit} · ${new Date(v.date).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` };
+    } catch { out.site = { ok: false, detail: s("อ่าน version.json ไม่ได้", "Cannot read version.json") }; }
+    for (const [key, wf] of [["keepalive", "keepalive.yml"], ["build", "update-version.yml"]]) {
+      try {
+        const r = await fetch(`https://api.github.com/repos/menzkub/gis-mapping-system/actions/workflows/${wf}/runs?per_page=1`);
+        const j = await r.json();
+        const run = j.workflow_runs && j.workflow_runs[0];
+        out[key] = run
+          ? { ok: run.conclusion === "success", detail: `${run.conclusion || run.status} · ${new Date(run.updated_at).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` }
+          : { ok: null, detail: s("ไม่พบประวัติรัน", "No runs found") };
+      } catch { out[key] = { ok: null, detail: s("เช็คไม่ได้ (rate limit?)", "Check failed (rate limit?)") }; }
+    }
+    setChecks(out);
+    setChecking(false);
+  }, []);
+
+  useEffectAd(() => { runChecks(); }, []);
+
+  const ageDays = (u) => u.password_changed_at ? (Date.now() - new Date(u.password_changed_at)) / 864e5 : null;
+  const expired = (users || []).filter(u => { const d = ageDays(u); return d !== null && d > 45; }).length;
+  const expSoon = (users || []).filter(u => { const d = ageDays(u); return d !== null && d > 38 && d <= 45; }).length;
+  const pwOk = expired === 0;
+
+  const ROWS = [
+    { key: "auth", label: s("Supabase Auth (ล็อกอิน)", "Supabase Auth (login)") },
+    { key: "rest", label: s("Supabase ฐานข้อมูล", "Supabase Database") },
+    { key: "site", label: s("เว็บบน GitHub Pages", "Website on GitHub Pages") },
+    { key: "keepalive", label: s("Workflow กัน Supabase หลับ", "Keepalive workflow") },
+    { key: "build", label: s("Workflow build & deploy", "Build & deploy workflow") },
+  ];
+  const dot = (ok) => ok === true ? "#22c55e" : ok === false ? "#ef4444" : "#94a3b8";
+
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 18, padding: "18px 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="cpu" size={16} /> {s("สุขภาพระบบ", "System Health")}
+        </div>
+        <button onClick={runChecks} disabled={checking} style={{
+          padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+          background: "var(--surface-2)", border: "1px solid var(--line)", color: "var(--ink)",
+          cursor: checking ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 5, opacity: checking ? 0.6 : 1,
+        }}>
+          <Icon name="refresh" size={12} style={{ animation: checking ? "pea-spin 0.8s linear infinite" : "none" }} />
+          {checking ? s("กำลังเช็ค…", "Checking…") : s("เช็คอีกครั้ง", "Re-check")}
+        </button>
+      </div>
+      <div className="f-col" style={{ gap: 8 }}>
+        {ROWS.map(row => {
+          const c = checks?.[row.key];
+          return (
+            <div key={row.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--line)" }}>
+              <span style={{ width: 9, height: 9, borderRadius: "50%", flexShrink: 0, background: dot(c ? c.ok : null), boxShadow: c?.ok === false ? "0 0 0 3px rgba(239,68,68,0.2)" : "none" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{row.label}</span>
+              <span style={{ fontSize: 11.5, color: c?.ok === false ? "#ef4444" : "var(--ink-mute)", fontWeight: c?.ok === false ? 700 : 500 }}>
+                {c ? c.detail : s("กำลังเช็ค…", "Checking…")}
+              </span>
+            </div>
+          );
+        })}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--line)" }}>
+          <span style={{ width: 9, height: 9, borderRadius: "50%", flexShrink: 0, background: pwOk ? (expSoon ? "#eab308" : "#22c55e") : "#ef4444" }} />
+          <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{s("รหัสผ่านผู้ใช้", "User passwords")}</span>
+          <span style={{ fontSize: 11.5, color: pwOk ? "var(--ink-mute)" : "#ef4444", fontWeight: pwOk ? 500 : 700 }}>
+            {s(`หมดอายุ ${expired} คน · ใกล้หมด (≤7 วัน) ${expSoon} คน`, `${expired} expired · ${expSoon} expiring (≤7d)`)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminSecurity({ data }) {
   const { t, lang } = useLang();
   const s = (th, en) => lang === "en" ? en : th;
@@ -5519,6 +5613,9 @@ function AdminSecurity({ data }) {
 
   return (
     <div className="f-col f-gap-4 fade-up" style={{ maxWidth: 900, margin: "0 auto" }}>
+
+      {/* ── System Health — สถานะสดของทุกอย่างที่ทำให้ล็อกอินไม่ได้ ── */}
+      <SystemHealthCard users={users} s={s} />
 
       {/* ── Score + Status header ─────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 20, alignItems: "center",
