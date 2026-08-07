@@ -2685,6 +2685,14 @@ function AdminUsers({ data, setData, addAudit, currentUser, refreshUsersOnly }) 
     setUserRefreshing(false);
   };
 
+  // ต้องประกาศก่อน filterFn — เดิมอยู่ท้ายไฟล์ กดการ์ด "รหัสหมดอายุ" แล้ว
+  // filter รันตอน render ก่อนถึงบรรทัดประกาศ → crash "Cannot access before initialization"
+  const pwDaysLeft = (u) => {
+    if (!u.passwordChangedAt) return null;
+    const daysOld = (Date.now() - new Date(u.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24);
+    return Math.ceil(45 - daysOld);
+  };
+
   const filterFn = (u) => {
     if (statusFilter === "active")    return u.status === "active";
     if (statusFilter === "pending")   return u.status === "pending";
@@ -2793,12 +2801,6 @@ function AdminUsers({ data, setData, addAudit, currentUser, refreshUsersOnly }) 
       "unlock_password", `ปลดล็อครหัสผ่านหมดอายุ ${u.username}`,
       `ปลดล็อค ${u.name} แล้ว — ผู้ใช้ต้องเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบ`
     );
-  };
-
-  const pwDaysLeft = (u) => {
-    if (!u.passwordChangedAt) return null;
-    const daysOld = (Date.now() - new Date(u.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24);
-    return Math.ceil(45 - daysOld);
   };
 
   const openPwHistory = async (u) => {
