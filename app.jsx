@@ -1466,6 +1466,7 @@ const CHANGELOG = [
       { cat: "ux",  text: { th: "หน้าการชำระเงิน (Admin): ตัวกรองเดือนเปลี่ยนจากช่องเปล่า ๆ (input type=month ที่ iOS ไม่โชว์ placeholder) เป็น dropdown รายชื่อเดือนที่มีสลิปจริง + ตัวเลือก 'ทุกเดือน'", en: "Payments (Admin): month filter changed from a blank-looking native month input (iOS shows no placeholder) to a dropdown of months that actually have slips + an 'All months' option" } },
       { cat: "ux",  text: { th: "ตัวเลือกเดือนทั้งระบบเป็นธีมเดียวกับแอปแล้ว (ชื่อเดือนไทย + ปี พ.ศ. + ป้าย 'เดือนนี้') — เดิม 'เดือนอ้างอิง' ในแจ้งเตือนการชำระเงิน และ 'เดือนที่ชำระ' ตอนส่งสลิป เปิดเป็นวงล้อ iOS ภาษาอังกฤษธีมสว่างไม่เข้ากับระบบ", en: "Month pickers now match the app theme system-wide (Thai month names + Buddhist year + 'this month' tag) — previously the payment-notification reference month and slip submission month opened the light-themed English iOS wheel" } },
       { cat: "fix", text: { th: "หน้าผู้ใช้งาน (Admin) crash 'Application Error' เมื่อกดการ์ดสถิติ 'รหัสหมดอายุ' — ฟังก์ชันคำนวณวันหมดอายุถูกเรียกก่อนบรรทัดประกาศ (Cannot access pwDaysLeft before initialization) ย้ายมาประกาศก่อนใช้แล้ว", en: "Users page (Admin) crashed with 'Application Error' when tapping the 'expired passwords' stat card — the expiry-days helper was called before its declaration (TDZ); now declared before use" } },
+      { cat: "fix", text: { th: "บัญชีที่เปิด 2FA ถูกบังคับเปลี่ยนรหัสแล้วติด 'AAL2 session is required' — สลับลำดับให้ยืนยันรหัส 2FA ก่อนเข้าหน้าตั้งรหัสใหม่ (บังคับเปลี่ยน/หมดอายุ) เพื่อให้ session ผ่านเกณฑ์ Supabase + แปลข้อความ error เป็นไทยพร้อมวิธีแก้", en: "2FA accounts hit 'AAL2 session is required' on forced password change — the 2FA verification step now runs before the set-new-password screens (forced/expired) so the session meets Supabase's requirement; the error is also translated to Thai with guidance" } },
     ],
   },
   {
@@ -2991,7 +2992,9 @@ function ResetPasswordScreen({ recoveryUser, onComplete }) {
           ip: (navigator.userAgent || "").slice(0, 200),
         });
       }
-      setErr(e2.message);
+      setErr(/aal2/i.test(e2.message || "")
+        ? "บัญชีนี้เปิด 2FA — ลิงก์อีเมลยืนยันตัวตนได้ไม่พอสำหรับตั้งรหัสใหม่ กรุณาเข้าสู่ระบบด้วยรหัสผ่านเดิม + รหัส 2FA แล้วเปลี่ยนรหัสในหน้าโปรไฟล์ หรือติดต่อผู้ดูแลระบบ"
+        : e2.message);
       setSaving(false);
     }
   };
@@ -3182,7 +3185,9 @@ function ForcePasswordChangeScreen({ currentUser, supabaseUser, onComplete }) {
       });
       onComplete();
     } catch (e2) {
-      setErr(e2.message);
+      setErr(/aal2/i.test(e2.message || "")
+        ? "บัญชีนี้เปิด 2FA — กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่ (ระบบจะให้กรอกรหัส 2FA ก่อน) แล้วจึงตั้งรหัสผ่านใหม่"
+        : e2.message);
       setSaving(false);
     }
   };
@@ -3740,7 +3745,30 @@ function App() {
         return;
       }
 
-      // ── Password expiry check ─────────────────────────────────────────────
+      // ── Recovery intercept — skip 2FA and load, go straight to reset ────
+      if (sessionStorage.getItem("pea_recovery") || inRecoveryRef.current) {
+        sessionStorage.removeItem("pea_recovery");
+        inRecoveryRef.current = true;
+        setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+        setPendingUser(supabaseUser);
+        setAppState("pw_reset");
+        return;
+      }
+      // ── 2FA check ────────────────────────────────────────────────────────
+      if (myProfile.require_2fa) {
+        const { data: aal } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.currentLevel !== "aal2") {
+          setPendingUser(supabaseUser);
+          setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+          setAppState(aal?.nextLevel === "aal2" ? "mfa_verify" : "mfa_setup");
+          return;
+        }
+      }
+      // ── end 2FA check ────────────────────────────────────────────────────
+
+      // ── Password expiry check — ต้องอยู่หลัง 2FA เสมอ ──────────────────────
+      // บัญชีที่เปิด MFA ต้องยืนยัน 2FA ให้ session เป็น AAL2 ก่อน ไม่งั้น
+      // หน้าตั้งรหัสใหม่จะติด "AAL2 session is required to update password"
       if (myProfile.pw_force_change) {
         setPendingUser(supabaseUser);
         setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
@@ -3762,27 +3790,6 @@ function App() {
         setDaysUntilExpiry(null);
       }
       // ── end password expiry check ─────────────────────────────────────────
-
-      // ── Recovery intercept — skip 2FA and load, go straight to reset ────
-      if (sessionStorage.getItem("pea_recovery") || inRecoveryRef.current) {
-        sessionStorage.removeItem("pea_recovery");
-        inRecoveryRef.current = true;
-        setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
-        setPendingUser(supabaseUser);
-        setAppState("pw_reset");
-        return;
-      }
-      // ── 2FA check ────────────────────────────────────────────────────────
-      if (myProfile.require_2fa) {
-        const { data: aal } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (aal?.currentLevel !== "aal2") {
-          setPendingUser(supabaseUser);
-          setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
-          setAppState(aal?.nextLevel === "aal2" ? "mfa_verify" : "mfa_setup");
-          return;
-        }
-      }
-      // ── end 2FA check ────────────────────────────────────────────────────
 
       const [profilesRes, auditRes, feedersRes, statsRes] = await Promise.all([
         _supabase.from("profiles").select("*").order("created_at"),
