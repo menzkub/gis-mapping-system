@@ -22,6 +22,17 @@ if (_isRecoveryLoad) sessionStorage.setItem("pea_recovery", "1");
 // PKCE recovery: link URL contains ?code= (no type= visible) — detect early
 const _hasOAuthCode = new URLSearchParams(_searchOnLoad).has("code");
 if (_hasOAuthCode && !_isRecoveryLoad) sessionStorage.setItem("pea_recovery", "1");
+// ลิงก์อีเมลพัง/หมดอายุ — Supabase redirect กลับมาพร้อม #error=... เดิมแอปเงียบ
+// แล้วโชว์หน้า login เฉย ๆ ผู้ใช้ไม่รู้ว่าเกิดอะไร → จับมาแจ้งชัด ๆ บนหน้า login
+const _urlErrCode =
+  new URLSearchParams(_hashOnLoad.replace(/^#/, "")).get("error_code") ||
+  new URLSearchParams(_searchOnLoad).get("error_code") || "";
+if (_urlErrCode) {
+  sessionStorage.removeItem("pea_recovery");
+  window.__peaAuthErr = /otp_expired|access_denied/i.test(_urlErrCode)
+    ? "ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือถูกใช้ไปแล้ว — กรุณากด 'ลืมรหัสผ่าน?' ขอลิงก์ใหม่ แล้วเปิดจากอีเมลฉบับล่าสุดทันที (ลิงก์ใช้ได้ครั้งเดียว)"
+    : `ลิงก์ไม่ถูกต้อง (${_urlErrCode}) — กรุณาขอลิงก์รีเซ็ตรหัสผ่านใหม่`;
+}
 
 // ── Loading screen ────────────────────────────────────────────────────────
 function LoadingScreen({ message = "กำลังโหลดข้อมูล…" }) {
@@ -1466,6 +1477,7 @@ const CHANGELOG = [
       { cat: "ux",  text: { th: "หน้าการชำระเงิน (Admin): ตัวกรองเดือนเปลี่ยนจากช่องเปล่า ๆ (input type=month ที่ iOS ไม่โชว์ placeholder) เป็น dropdown รายชื่อเดือนที่มีสลิปจริง + ตัวเลือก 'ทุกเดือน'", en: "Payments (Admin): month filter changed from a blank-looking native month input (iOS shows no placeholder) to a dropdown of months that actually have slips + an 'All months' option" } },
       { cat: "ux",  text: { th: "ตัวเลือกเดือนทั้งระบบเป็นธีมเดียวกับแอปแล้ว (ชื่อเดือนไทย + ปี พ.ศ. + ป้าย 'เดือนนี้') — เดิม 'เดือนอ้างอิง' ในแจ้งเตือนการชำระเงิน และ 'เดือนที่ชำระ' ตอนส่งสลิป เปิดเป็นวงล้อ iOS ภาษาอังกฤษธีมสว่างไม่เข้ากับระบบ", en: "Month pickers now match the app theme system-wide (Thai month names + Buddhist year + 'this month' tag) — previously the payment-notification reference month and slip submission month opened the light-themed English iOS wheel" } },
       { cat: "fix", text: { th: "หน้าผู้ใช้งาน (Admin) crash 'Application Error' เมื่อกดการ์ดสถิติ 'รหัสหมดอายุ' — ฟังก์ชันคำนวณวันหมดอายุถูกเรียกก่อนบรรทัดประกาศ (Cannot access pwDaysLeft before initialization) ย้ายมาประกาศก่อนใช้แล้ว", en: "Users page (Admin) crashed with 'Application Error' when tapping the 'expired passwords' stat card — the expiry-days helper was called before its declaration (TDZ); now declared before use" } },
+      { cat: "fix", text: { th: "กดลิงก์รีเซ็ตรหัสผ่านจากอีเมลแล้วเด้งกลับหน้า login เงียบ ๆ — กรณีลิงก์หมดอายุ/ถูกใช้ไปแล้ว (Gmail มัก prefetch ลิงก์จนโทเคนถูกใช้) ตอนนี้แจ้งสาเหตุชัดเจนบนหน้า login พร้อมวิธีขอลิงก์ใหม่", en: "Tapping an email reset link silently bounced to the login page — when the link is expired/already used (Gmail often prefetches links, consuming the one-time token) the login page now explains why and how to request a fresh link" } },
       { cat: "fix", text: { th: "บัญชีที่เปิด 2FA ถูกบังคับเปลี่ยนรหัสแล้วติด 'AAL2 session is required' — สลับลำดับให้ยืนยันรหัส 2FA ก่อนเข้าหน้าตั้งรหัสใหม่ (บังคับเปลี่ยน/หมดอายุ) เพื่อให้ session ผ่านเกณฑ์ Supabase + แปลข้อความ error เป็นไทยพร้อมวิธีแก้", en: "2FA accounts hit 'AAL2 session is required' on forced password change — the 2FA verification step now runs before the set-new-password screens (forced/expired) so the session meets Supabase's requirement; the error is also translated to Thai with guidance" } },
     ],
   },
