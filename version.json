@@ -1,7 +1,7 @@
 {
-  "commit": "4e75233f06264119c793c1d70b1e13bda2631fd9",
-  "shortCommit": "4e75233",
-  "message": "fix(auth): gate 2FA \u0e40\u0e0a\u0e47\u0e04\u0e08\u0e32\u0e01\u0e01\u0e32\u0e23\u0e25\u0e07\u0e17\u0e30\u0e40\u0e1a\u0e35\u0e22\u0e19 TOTP \u0e08\u0e23\u0e34\u0e07 \u0e44\u0e21\u0e48\u0e43\u0e0a\u0e48\u0e41\u0e04\u0e48\u0e18\u0e07 require_2fa (v3.8)",
-  "date": "2026-08-09T06:20:47Z",
+  "commit": "8fcb1fdbd8c35a113a9bcaae7ccc054a3705ffbc",
+  "shortCommit": "8fcb1fd",
+  "message": "fix(auth): \u0e25\u0e34\u0e07\u0e01\u0e4c\u0e23\u0e35\u0e40\u0e0b\u0e47\u0e15\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38/\u0e16\u0e39\u0e01\u0e43\u0e0a\u0e49\u0e41\u0e25\u0e49\u0e27 \u0e40\u0e14\u0e49\u0e07\u0e2b\u0e19\u0e49\u0e32 login \u0e40\u0e07\u0e35\u0e22\u0e1a \u0e46 \u0e44\u0e21\u0e48\u0e1a\u0e2d\u0e01\u0e2a\u0e32\u0e40\u0e2b\u0e15\u0e38 (v3.8)",
+  "date": "2026-08-09T08:04:44Z",
   "branch": "main"
 }
