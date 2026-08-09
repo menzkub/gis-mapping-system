@@ -3755,13 +3755,26 @@ function App() {
         return;
       }
       // ── 2FA check ────────────────────────────────────────────────────────
-      if (myProfile.require_2fa) {
+      // เช็คจาก AAL จริงของ Supabase ไม่ใช่แค่ธง require_2fa — ผู้ใช้ที่เปิด 2FA
+      // เองจากโปรไฟล์ (ธงไม่ได้ตั้ง) ก็ต้องยืนยันรหัส 6 หลักก่อนเช่นกัน ไม่งั้น
+      // session เป็น AAL1 แล้วหน้าตั้งรหัสใหม่จะติด "AAL2 session is required"
+      {
         const { data: aal } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (aal?.currentLevel !== "aal2") {
-          setPendingUser(supabaseUser);
-          setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
-          setAppState(aal?.nextLevel === "aal2" ? "mfa_verify" : "mfa_setup");
-          return;
+          if (aal?.nextLevel === "aal2") {
+            // มี TOTP ลงทะเบียนไว้ → ต้องยืนยันก่อนเสมอ
+            setPendingUser(supabaseUser);
+            setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+            setAppState("mfa_verify");
+            return;
+          }
+          if (myProfile.require_2fa) {
+            // ถูกกำหนดให้ใช้ 2FA แต่ยังไม่ได้ตั้งค่า → ไปหน้าตั้งค่า
+            setPendingUser(supabaseUser);
+            setCurrentUser(toProfile({ ...myProfile, email: supabaseUser.email }));
+            setAppState("mfa_setup");
+            return;
+          }
         }
       }
       // ── end 2FA check ────────────────────────────────────────────────────
